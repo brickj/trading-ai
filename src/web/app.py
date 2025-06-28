@@ -228,16 +228,20 @@ def analyze_stock():
     """Analyze a single stock"""
     try:
         data = request.get_json()
+        trading_logger.api_logger.info(f"[DEBUG] Incoming /api/analyze_stock request: {data}")
         if not data or "symbol" not in data:
+            trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock missing symbol: {data}")
             return (
                 jsonify({"status": "error", "error": "Missing required parameter: symbol"}),
                 400,
             )
         symbol = data["symbol"].strip().upper() if data["symbol"] else ""
         if not symbol:
+            trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock empty symbol: {data}")
             return jsonify({"status": "error", "error": "Symbol cannot be empty"}), 400
         # Check rate limits
         if not check_rate_limit("analyze_stock"):
+            trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock rate limit hit: {data}")
             return (
                 jsonify(
                     {
@@ -251,14 +255,15 @@ def analyze_stock():
         cache_key = f"stock_analysis_{symbol}"
         cached_result = get_cached_result(cache_key)
         if cached_result:
-            return jsonify(
-                {
-                    "status": "success",
-                    "data": cached_result,
-                    "cache_status": "hit",
-                    "timestamp": datetime.now().isoformat(),
-                }
-            )
+            trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock cache hit for {symbol}")
+            response = {
+                "status": "success",
+                "data": cached_result,
+                "cache_status": "hit",
+                "timestamp": datetime.now().isoformat(),
+            }
+            trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock response: {response}")
+            return jsonify(response)
         # Perform analysis
         start_time = time.time()
         result = analyze_single_stock(symbol)
@@ -271,16 +276,16 @@ def analyze_stock():
             "cache_status": "miss",
             "timestamp": datetime.now().isoformat(),
         }
-        return jsonify(
-            {
-                "status": "success",
-                "data": result,
-                "cache_status": "miss",
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
+        response = {
+            "status": "success",
+            "data": result,
+            "cache_status": "miss",
+            "timestamp": datetime.now().isoformat(),
+        }
+        trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock response: {response}")
+        return jsonify(response)
     except Exception as e:
-        log_error(f"Error analyzing stock: {str(e)}")
+        trading_logger.api_logger.error(f"[DEBUG] /api/analyze_stock error: {str(e)}", exc_info=True)
         return jsonify({"status": "error", "error": str(e)}), 500
 
 
@@ -1789,20 +1794,21 @@ def enhanced_analysis():
     """Enhanced stock analysis with multiple strategies and backtesting"""
     try:
         data = request.get_json()
+        trading_logger.api_logger.info(f"[DEBUG] Incoming /api/enhanced_analysis request: {data}")
         if not data or "symbol" not in data:
+            trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis missing symbol: {data}")
             return create_api_response(error="Missing required parameter: symbol", status_code=400)
-            
         symbol = data["symbol"].strip().upper()
         if not symbol:
+            trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis empty symbol: {data}")
             return create_api_response(error="Symbol cannot be empty", status_code=400)
-            
         # Check rate limits
         if not check_rate_limit("enhanced_analysis"):
+            trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis rate limit hit: {data}")
             return create_api_response(
                 error="Rate limit exceeded. Please try again later.",
                 status_code=429
             )
-            
         def emit_progress(step, message):
             """Emit progress updates via WebSocket"""
             socketio.emit('analysis_progress', {
@@ -1810,28 +1816,21 @@ def enhanced_analysis():
                 'message': message,
                 'timestamp': datetime.now().isoformat()
             })
-            
         try:
-            # Step 1: Fetch current price and news data
             emit_progress(1, "Fetching market data...")
-            price_data = data_fetcher.get_current_price(symbol)
+            price_data = data_fetcher.get_stock_price(symbol)
             if not price_data or 'current_price' not in price_data:
+                trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis missing price data: {price_data}")
                 return create_api_response(error=f"Could not fetch price data for {symbol}", status_code=400)
-                
             emit_progress(2, "Gathering news data...")
-            news_data = news_monitor.get_news(symbol)
+            news_data = data_fetcher.get_company_news(symbol)
             if not news_data:
+                trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis missing news data: {news_data}")
                 return create_api_response(error=f"Could not fetch news data for {symbol}", status_code=400)
-                
-            # Step 2: Analyze sentiment
             emit_progress(3, "Analyzing sentiment...")
-            sentiment_data = sentiment_analyzer.analyze_sentiment(news_data)
-            
-            # Step 3: Generate trading signal
+            sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data)
             emit_progress(4, "Generating trading signals...")
-            signal_data = trading_strategy.generate_signal(sentiment_data)
-            
-            # Step 4: Generate comprehensive recommendations
+            signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
             emit_progress(5, "Generating comprehensive recommendations...")
             recommendations = enhanced_trading_strategy.get_comprehensive_recommendations(
                 symbol,
@@ -1839,8 +1838,6 @@ def enhanced_analysis():
                 sentiment_data,
                 signal_data
             )
-            
-            # Step 5: Format response
             emit_progress(6, "Finalizing analysis...")
             response_data = {
                 'symbol': symbol,
@@ -1850,24 +1847,20 @@ def enhanced_analysis():
                 'recommendations': recommendations,
                 'timestamp': datetime.now().isoformat()
             }
-            
-            # Cache the result
             cache_result(f"enhanced_{symbol}", response_data)
-            
-            # Log successful analysis
-            log_info(trading_logger, f"Enhanced analysis completed for {symbol}")
-            
-            emit_progress(7, "Analysis complete!")
-            return create_api_response(data=response_data)
-            
+            response = {
+                'status': 'success',
+                'data': response_data,
+                'cache_status': 'miss',
+                'timestamp': datetime.now().isoformat()
+            }
+            trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis response: {response}")
+            return jsonify(response)
         except Exception as e:
-            log_exception("Enhanced analysis error", e)
-            error_msg = f"Error during enhanced analysis: {str(e)}"
-            emit_progress('error', error_msg)
-            return create_api_response(error=error_msg, status_code=500)
-            
+            trading_logger.api_logger.error(f"[DEBUG] /api/enhanced_analysis error: {str(e)}", exc_info=True)
+            return create_api_response(error=str(e), status_code=500)
     except Exception as e:
-        log_exception("Enhanced analysis endpoint error", e)
+        trading_logger.api_logger.error(f"[DEBUG] /api/enhanced_analysis error: {str(e)}", exc_info=True)
         return create_api_response(error=str(e), status_code=500)
 
 

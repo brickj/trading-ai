@@ -1,0 +1,246 @@
+{
+  "summary": {
+    "total_tests": 39,
+    "passed_tests": 25,
+    "failed_tests": 14,
+    "warning_tests": 0,
+    "success_rate": 64.1025641025641,
+    "timestamp": "2025-06-23T15:34:45.479279"
+  },
+  "results": [
+    {
+      "test": "System Status",
+      "status": "PASS",
+      "details": "Database: None, Cache: None",
+      "timestamp": "2025-06-23T15:34:08.909153"
+    },
+    {
+      "test": "Database Connection",
+      "status": "PASS",
+      "details": "160,274 records, 658 symbols, Range: 2024-06-20 to 2025-06-20",
+      "timestamp": "2025-06-23T15:34:08.974622"
+    },
+    {
+      "test": "Historical Data Usage",
+      "status": "PASS",
+      "details": "Retrieved 251 records for AAPL, Date range: 365 days (2024-06-20 to 2025-06-20)",
+      "timestamp": "2025-06-23T15:34:08.975071"
+    },
+    {
+      "test": "Stock Analysis - AAPL",
+      "status": "PASS",
+      "details": "Action: PUT, Strategy: N/A",
+      "timestamp": "2025-06-23T15:34:10.048769"
+    },
+    {
+      "test": "Stock Analysis - TSLA",
+      "status": "PASS",
+      "details": "Action: PUT, Strategy: N/A",
+      "timestamp": "2025-06-23T15:34:11.986252"
+    },
+    {
+      "test": "Stock Analysis - MSFT",
+      "status": "PASS",
+      "details": "Action: HOLD, Strategy: No position recommended - wait for clearer signals",
+      "timestamp": "2025-06-23T15:34:13.780957"
+    },
+    {
+      "test": "Recommendations Generation",
+      "status": "FAIL",
+      "details": "'EnhancedTradingStrategy' object has no attribute 'generate_recommendations'",
+      "timestamp": "2025-06-23T15:34:13.781070"
+    },
+    {
+      "test": "Telegram Configuration",
+      "status": "FAIL",
+      "details": "'Config' object has no attribute 'get'",
+      "timestamp": "2025-06-23T15:34:13.781090"
+    },
+    {
+      "test": "Telegram Message Sending",
+      "status": "PASS",
+      "details": "Test message sent successfully",
+      "timestamp": "2025-06-23T15:34:15.106663"
+    },
+    {
+      "test": "Telegram Recommendation Alert",
+      "status": "FAIL",
+      "details": "'TelegramAlerts' object has no attribute 'send_recommendation_alert'",
+      "timestamp": "2025-06-23T15:34:15.106777"
+    },
+    {
+      "test": "Bulk Analysis API",
+      "status": "FAIL",
+      "details": "HTTP 404",
+      "timestamp": "2025-06-23T15:34:15.114216"
+    },
+    {
+      "test": "Portfolio Management",
+      "status": "PASS",
+      "details": "Portfolio endpoint accessible",
+      "timestamp": "2025-06-23T15:34:15.119286"
+    },
+    {
+      "test": "Web Page - Dashboard",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 50061 chars",
+      "timestamp": "2025-06-23T15:34:15.124035"
+    },
+    {
+      "test": "Web Page - Stocks",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 18744 chars",
+      "timestamp": "2025-06-23T15:34:15.133364"
+    },
+    {
+      "test": "Web Page - Crypto",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 11457 chars",
+      "timestamp": "2025-06-23T15:34:15.137871"
+    },
+    {
+      "test": "Web Page - Opportunities",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 10341 chars",
+      "timestamp": "2025-06-23T15:34:15.142510"
+    },
+    {
+      "test": "Web Page - Portfolio",
+      "status": "FAIL",
+      "details": "HTTP 404",
+      "timestamp": "2025-06-23T15:34:15.145104"
+    },
+    {
+      "test": "Web Page - Backtest",
+      "status": "FAIL",
+      "details": "HTTP 404",
+      "timestamp": "2025-06-23T15:34:15.147571"
+    },
+    {
+      "test": "Web Page - Logs",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 22657 chars",
+      "timestamp": "2025-06-23T15:34:15.152488"
+    },
+    {
+      "test": "Web Page - System Status",
+      "status": "PASS",
+      "details": "HTTP 200, Content: 39847 chars",
+      "timestamp": "2025-06-23T15:34:15.158655"
+    },
+    {
+      "test": "API Endpoint - S&P 500 Analysis",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Read timed out. (read timeout=15)",
+      "timestamp": "2025-06-23T15:34:30.161123"
+    },
+    {
+      "test": "API Endpoint - System Status",
+      "status": "PASS",
+      "details": "Returns 6 data fields",
+      "timestamp": "2025-06-23T15:34:30.293721"
+    },
+    {
+      "test": "API Endpoint - Market Sentiment",
+      "status": "PASS",
+      "details": "Returns 5 data fields",
+      "timestamp": "2025-06-23T15:34:32.745567"
+    },
+    {
+      "test": "API Endpoint - Crypto Analysis",
+      "status": "PASS",
+      "details": "Returns successful response with data",
+      "timestamp": "2025-06-23T15:34:33.017077"
+    },
+    {
+      "test": "API Endpoint - Opportunities",
+      "status": "FAIL",
+      "details": "HTTP 404",
+      "timestamp": "2025-06-23T15:34:33.021188"
+    },
+    {
+      "test": "Stocks Page Data Population",
+      "status": "FAIL",
+      "details": "Only 0/5 key data sections found",
+      "timestamp": "2025-06-23T15:34:33.024405"
+    },
+    {
+      "test": "Dashboard Data Population",
+      "status": "FAIL",
+      "details": "Only 0/5 key dashboard sections found",
+      "timestamp": "2025-06-23T15:34:33.027697"
+    },
+    {
+      "test": "Crypto Page Data Population",
+      "status": "FAIL",
+      "details": "Only 0/4 key crypto sections found",
+      "timestamp": "2025-06-23T15:34:33.030326"
+    },
+    {
+      "test": "Opportunities Page Data Population",
+      "status": "FAIL",
+      "details": "Only 0/3 key opportunities sections found",
+      "timestamp": "2025-06-23T15:34:33.032720"
+    },
+    {
+      "test": "Page Stability - Dashboard",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:34.562969"
+    },
+    {
+      "test": "Page Stability - Stocks",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:36.089458"
+    },
+    {
+      "test": "Page Stability - Crypto",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:37.632817"
+    },
+    {
+      "test": "Page Stability - Opportunities",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:39.172719"
+    },
+    {
+      "test": "Page Stability - Portfolio",
+      "status": "FAIL",
+      "details": "Some requests failed: [404, 404, 404]",
+      "timestamp": "2025-06-23T15:34:40.702655"
+    },
+    {
+      "test": "Page Stability - Backtest",
+      "status": "FAIL",
+      "details": "Some requests failed: [404, 404, 404]",
+      "timestamp": "2025-06-23T15:34:42.249901"
+    },
+    {
+      "test": "Page Stability - Logs",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:43.889841"
+    },
+    {
+      "test": "Page Stability - System Status",
+      "status": "PASS",
+      "details": "All 3 requests returned HTTP 200",
+      "timestamp": "2025-06-23T15:34:45.423253"
+    },
+    {
+      "test": "No SQL Syntax Errors",
+      "status": "PASS",
+      "details": "No SQL syntax errors found in recent logs",
+      "timestamp": "2025-06-23T15:34:45.433287"
+    },
+    {
+      "test": "App Process Stability",
+      "status": "PASS",
+      "details": "Found 1 app process(es) running",
+      "timestamp": "2025-06-23T15:34:45.478766"
+    }
+  ]
+}

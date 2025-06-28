@@ -1,0 +1,306 @@
+{
+  "test_type": "web_page_data",
+  "timestamp": "2025-06-24T01:17:00.192809",
+  "summary": {
+    "total": 49,
+    "passed": 49,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "results": [
+    {
+      "test": "Main Dashboard - Title",
+      "status": "PASS",
+      "details": "Page title found",
+      "timestamp": "2025-06-24T01:16:08.162414"
+    },
+    {
+      "test": "Main Dashboard - Symbol Input",
+      "status": "PASS",
+      "details": "Stock symbol input found",
+      "timestamp": "2025-06-24T01:16:08.162494"
+    },
+    {
+      "test": "Main Dashboard - Standard Analysis Button",
+      "status": "PASS",
+      "details": "Standard analysis button found",
+      "timestamp": "2025-06-24T01:16:08.162573"
+    },
+    {
+      "test": "Main Dashboard - Enhanced Analysis Button",
+      "status": "PASS",
+      "details": "Enhanced analysis button found",
+      "timestamp": "2025-06-24T01:16:08.162657"
+    },
+    {
+      "test": "Stocks Page - Stock Analysis Section",
+      "status": "PASS",
+      "details": "Stock analysis section found",
+      "timestamp": "2025-06-24T01:16:08.169510"
+    },
+    {
+      "test": "Stocks Page - Data",
+      "status": "PASS",
+      "details": "Found 1 stock rows",
+      "timestamp": "2025-06-24T01:16:08.169735"
+    },
+    {
+      "test": "Portfolio Page - Portfolio Section",
+      "status": "PASS",
+      "details": "Portfolio section found",
+      "timestamp": "2025-06-24T01:16:08.175806"
+    },
+    {
+      "test": "Portfolio Page - Add Position Form",
+      "status": "PASS",
+      "details": "Add position form found",
+      "timestamp": "2025-06-24T01:16:08.175896"
+    },
+    {
+      "test": "Backtest Page - Backtest Form",
+      "status": "PASS",
+      "details": "Backtest form found",
+      "timestamp": "2025-06-24T01:16:08.183045"
+    },
+    {
+      "test": "Backtest Page - Days Selector",
+      "status": "PASS",
+      "details": "Days selector found",
+      "timestamp": "2025-06-24T01:16:08.183151"
+    },
+    {
+      "test": "Opportunities Page - Opportunities Section",
+      "status": "PASS",
+      "details": "Opportunities section found",
+      "timestamp": "2025-06-24T01:16:08.187933"
+    },
+    {
+      "test": "Opportunities Page - Find Button",
+      "status": "PASS",
+      "details": "Find opportunities button found",
+      "timestamp": "2025-06-24T01:16:08.188048"
+    },
+    {
+      "test": "Recommendations Page - Recommendations Section",
+      "status": "PASS",
+      "details": "Recommendations section found",
+      "timestamp": "2025-06-24T01:16:08.193782"
+    },
+    {
+      "test": "Recommendations Page - Performance Chart",
+      "status": "PASS",
+      "details": "Performance chart found",
+      "timestamp": "2025-06-24T01:16:08.193910"
+    },
+    {
+      "test": "System Status Page - Status Section",
+      "status": "PASS",
+      "details": "System status section found",
+      "timestamp": "2025-06-24T01:16:08.201162"
+    },
+    {
+      "test": "System Status Page - Performance Metrics",
+      "status": "PASS",
+      "details": "Performance metrics container found",
+      "timestamp": "2025-06-24T01:16:08.201278"
+    },
+    {
+      "test": "System Status Page - Database Status",
+      "status": "PASS",
+      "details": "Database status container found",
+      "timestamp": "2025-06-24T01:16:08.201441"
+    },
+    {
+      "test": "System Status Page - Data",
+      "status": "PASS",
+      "details": "Found 20 system overview cards",
+      "timestamp": "2025-06-24T01:16:08.201813"
+    },
+    {
+      "test": "Crypto Page - Crypto Section",
+      "status": "PASS",
+      "details": "Crypto analysis section found",
+      "timestamp": "2025-06-24T01:16:08.207084"
+    },
+    {
+      "test": "Crypto Page - Sentiment Chart",
+      "status": "PASS",
+      "details": "Sentiment chart found",
+      "timestamp": "2025-06-24T01:16:08.207211"
+    },
+    {
+      "test": "System Status API",
+      "status": "PASS",
+      "details": "Data returned successfully",
+      "timestamp": "2025-06-24T01:16:08.335913"
+    },
+    {
+      "test": "S&P 500 Analysis API",
+      "status": "PASS",
+      "details": "Data returned successfully",
+      "timestamp": "2025-06-24T01:16:17.359999"
+    },
+    {
+      "test": "Crypto Analysis API",
+      "status": "PASS",
+      "details": "Data returned successfully",
+      "timestamp": "2025-06-24T01:16:17.833904"
+    },
+    {
+      "test": "Portfolio API",
+      "status": "PASS",
+      "details": "Data returned successfully",
+      "timestamp": "2025-06-24T01:16:17.840465"
+    },
+    {
+      "test": "Recommendations API",
+      "status": "PASS",
+      "details": "Data returned successfully",
+      "timestamp": "2025-06-24T01:16:17.854099"
+    },
+    {
+      "test": "Stock Analysis with Data",
+      "status": "PASS",
+      "details": "Generated recommendation: HOLD",
+      "timestamp": "2025-06-24T01:16:19.701281"
+    },
+    {
+      "test": "Enhanced Analysis with Data",
+      "status": "PASS",
+      "details": "Generated 1 recommendations",
+      "timestamp": "2025-06-24T01:16:34.937980"
+    },
+    {
+      "test": "Dashboard Basic Analysis - Data Structure",
+      "status": "PASS",
+      "details": "All required fields present: price_data, sentiment_analysis, trading_recommendation",
+      "timestamp": "2025-06-24T01:16:34.955864"
+    },
+    {
+      "test": "Dashboard Basic Analysis - Price Data",
+      "status": "PASS",
+      "details": "Current price: $196.58",
+      "timestamp": "2025-06-24T01:16:34.955917"
+    },
+    {
+      "test": "Dashboard Basic Analysis - Sentiment",
+      "status": "PASS",
+      "details": "Sentiment score: -0.3",
+      "timestamp": "2025-06-24T01:16:34.955933"
+    },
+    {
+      "test": "Dashboard Basic Analysis - Recommendation",
+      "status": "PASS",
+      "details": "Action: HOLD",
+      "timestamp": "2025-06-24T01:16:34.955944"
+    },
+    {
+      "test": "Dashboard Enhanced Analysis - Data Structure",
+      "status": "PASS",
+      "details": "All required fields present: price_data, sentiment_data, signal_data, trade_signal",
+      "timestamp": "2025-06-24T01:16:50.095512"
+    },
+    {
+      "test": "Dashboard Enhanced Analysis - Stock Recommendations",
+      "status": "PASS",
+      "details": "Found 1 stock recommendations",
+      "timestamp": "2025-06-24T01:16:50.095543"
+    },
+    {
+      "test": "Dashboard Enhanced Analysis - Options Recommendations",
+      "status": "PASS",
+      "details": "Found 1 options recommendations",
+      "timestamp": "2025-06-24T01:16:50.095551"
+    },
+    {
+      "test": "Dashboard Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.098094"
+    },
+    {
+      "test": "S&P 500 Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.099894"
+    },
+    {
+      "test": "Crypto Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.101563"
+    },
+    {
+      "test": "Portfolio Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.103224"
+    },
+    {
+      "test": "Backtest Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.104781"
+    },
+    {
+      "test": "Opportunities Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.106310"
+    },
+    {
+      "test": "Recommendations Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.108106"
+    },
+    {
+      "test": "System Status Page - No Crashes",
+      "status": "PASS",
+      "details": "Page loads without errors",
+      "timestamp": "2025-06-24T01:16:50.110097"
+    },
+    {
+      "test": "Dashboard Dynamic Data - Basic Analysis",
+      "status": "PASS",
+      "details": "Real data: $196.58, Sentiment: -0.3, Action: HOLD",
+      "timestamp": "2025-06-24T01:16:50.117053"
+    },
+    {
+      "test": "S&P 500 Dynamic Data - Loading State",
+      "status": "PASS",
+      "details": "Page shows loading state (requires user interaction)",
+      "timestamp": "2025-06-24T01:16:50.123361"
+    },
+    {
+      "test": "S&P 500 Dynamic Data - Refresh Button",
+      "status": "PASS",
+      "details": "Refresh button available for data loading",
+      "timestamp": "2025-06-24T01:16:50.123489"
+    },
+    {
+      "test": "S&P 500 Dynamic Data - API Data",
+      "status": "PASS",
+      "details": "API returned 10 stock analysis results",
+      "timestamp": "2025-06-24T01:17:00.169213"
+    },
+    {
+      "test": "Crypto Dynamic Data - Content",
+      "status": "PASS",
+      "details": "Crypto container has substantial content",
+      "timestamp": "2025-06-24T01:17:00.174436"
+    },
+    {
+      "test": "Portfolio Dynamic Data - Content",
+      "status": "PASS",
+      "details": "Portfolio container has content",
+      "timestamp": "2025-06-24T01:17:00.180731"
+    },
+    {
+      "test": "System Status Dynamic Data - Performance",
+      "status": "PASS",
+      "details": "Performance metrics have content",
+      "timestamp": "2025-06-24T01:17:00.192503"
+    }
+  ]
+}

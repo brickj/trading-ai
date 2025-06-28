@@ -1,0 +1,246 @@
+{
+  "summary": {
+    "total_tests": 39,
+    "passed_tests": 7,
+    "failed_tests": 32,
+    "warning_tests": 0,
+    "success_rate": 17.94871794871795,
+    "timestamp": "2025-06-24T00:51:25.930107"
+  },
+  "results": [
+    {
+      "test": "System Status",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/system_status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb310>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:23.258368"
+    },
+    {
+      "test": "Database Connection",
+      "status": "PASS",
+      "details": "160,274 records, 658 symbols, Range: 2024-06-20 to 2025-06-20",
+      "timestamp": "2025-06-24T00:51:23.319126"
+    },
+    {
+      "test": "Historical Data Usage",
+      "status": "PASS",
+      "details": "Retrieved 251 records for AAPL, Date range: 365 days (2024-06-20 to 2025-06-20)",
+      "timestamp": "2025-06-24T00:51:23.322656"
+    },
+    {
+      "test": "Stock Analysis - AAPL",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/analyze_stock (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3280>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:23.324065"
+    },
+    {
+      "test": "Stock Analysis - TSLA",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/analyze_stock (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcbd00>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:23.325727"
+    },
+    {
+      "test": "Stock Analysis - MSFT",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/analyze_stock (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb220>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:23.326738"
+    },
+    {
+      "test": "Recommendations Generation",
+      "status": "PASS",
+      "details": "Generated 2 recommendations, Action: BUY",
+      "timestamp": "2025-06-24T00:51:23.326757"
+    },
+    {
+      "test": "Telegram Configuration",
+      "status": "PASS",
+      "details": "Bot token: 7992554082..., Chat ID: 7810294668",
+      "timestamp": "2025-06-24T00:51:23.326765"
+    },
+    {
+      "test": "Telegram Message Sending",
+      "status": "PASS",
+      "details": "Test message sent successfully",
+      "timestamp": "2025-06-24T00:51:24.588580"
+    },
+    {
+      "test": "Telegram Recommendation Alert",
+      "status": "PASS",
+      "details": "Recommendation alert sent successfully",
+      "timestamp": "2025-06-24T00:51:25.846452"
+    },
+    {
+      "test": "Bulk Analysis API",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/bulk_analyze (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3f40>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.850595"
+    },
+    {
+      "test": "Portfolio Management",
+      "status": "FAIL",
+      "details": "HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/portfolio (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e046a0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.855318"
+    },
+    {
+      "test": "Web Page - Dashboard",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3520>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.858843"
+    },
+    {
+      "test": "Web Page - Stocks",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /stocks (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb2e0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.860937"
+    },
+    {
+      "test": "Web Page - Crypto",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /crypto (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcbfa0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.863173"
+    },
+    {
+      "test": "Web Page - Opportunities",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /opportunities (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e0b070>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.864846"
+    },
+    {
+      "test": "Web Page - Portfolio",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /portfolio (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e0b9d0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.866345"
+    },
+    {
+      "test": "Web Page - Backtest",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /backtest (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e04d00>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.868139"
+    },
+    {
+      "test": "Web Page - Logs",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /logs (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcbcd0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.869494"
+    },
+    {
+      "test": "Web Page - System Status",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /system_status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3760>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.870905"
+    },
+    {
+      "test": "API Endpoint - S&P 500 Analysis",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/sp500_analysis (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3ca0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.872311"
+    },
+    {
+      "test": "API Endpoint - System Status",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/system_status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e0b640>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.873723"
+    },
+    {
+      "test": "API Endpoint - Market Sentiment",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/market_sentiment (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e193d0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.875340"
+    },
+    {
+      "test": "API Endpoint - Crypto Analysis",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/crypto_analysis (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3c40>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.876554"
+    },
+    {
+      "test": "API Endpoint - Opportunities",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /api/opportunities (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcbd90>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.877779"
+    },
+    {
+      "test": "Stocks Page Data Population",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /stocks (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb790>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.879022"
+    },
+    {
+      "test": "Dashboard Data Population",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e0bd00>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.880249"
+    },
+    {
+      "test": "Crypto Page Data Population",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /crypto (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e04dc0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.881440"
+    },
+    {
+      "test": "Opportunities Page Data Population",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /opportunities (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e04e20>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.882838"
+    },
+    {
+      "test": "Page Stability - Dashboard",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: / (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcbf70>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.883962"
+    },
+    {
+      "test": "Page Stability - Stocks",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /stocks (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3340>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.885025"
+    },
+    {
+      "test": "Page Stability - Crypto",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /crypto (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3160>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.886470"
+    },
+    {
+      "test": "Page Stability - Opportunities",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /opportunities (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e19370>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.887968"
+    },
+    {
+      "test": "Page Stability - Portfolio",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /portfolio (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118e123a0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.889354"
+    },
+    {
+      "test": "Page Stability - Backtest",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /backtest (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118de3b20>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.890634"
+    },
+    {
+      "test": "Page Stability - Logs",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /logs (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb370>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.891721"
+    },
+    {
+      "test": "Page Stability - System Status",
+      "status": "FAIL",
+      "details": "Exception: HTTPConnectionPool(host='localhost', port=5001): Max retries exceeded with url: /system_status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x118dcb9d0>: Failed to establish a new connection: [Errno 61] Connection refused'))",
+      "timestamp": "2025-06-24T00:51:25.892782"
+    },
+    {
+      "test": "No SQL Syntax Errors",
+      "status": "PASS",
+      "details": "No SQL syntax errors found in recent logs",
+      "timestamp": "2025-06-24T00:51:25.892928"
+    },
+    {
+      "test": "App Process Stability",
+      "status": "FAIL",
+      "details": "No app process found running",
+      "timestamp": "2025-06-24T00:51:25.929645"
+    }
+  ]
+}

@@ -1,0 +1,355 @@
+#!/usr/bin/env python3
+"""
+Trading AI - Cross-Platform App Starter with Enhanced Logging
+=============================================================
+
+Easy startup script for the Trading AI application with comprehensive logging.
+Works on Windows, macOS, and Linux.
+
+Usage:
+    python start_app.py
+"""
+
+import os
+import sys
+import subprocess
+import socket
+import platform
+import time
+from pathlib import Path
+import threading
+
+# Add src to path for imports
+current_dir = Path(__file__).parent
+src_path = current_dir / "src"
+sys.path.insert(0, str(src_path))
+
+# Colors for terminal output
+class Colors:
+    RED = '\033[0;31m'
+    GREEN = '\033[0;32m'
+    YELLOW = '\033[1;33m'
+    BLUE = '\033[0;34m'
+    CYAN = '\033[0;36m'
+    NC = '\033[0m'  # No Color
+
+    @classmethod
+    def disable_on_windows(cls):
+        """Disable colors on Windows if not supported"""
+        if platform.system() == 'Windows':
+            cls.RED = cls.GREEN = cls.YELLOW = cls.BLUE = cls.CYAN = cls.NC = ''
+
+# Initialize colors
+Colors.disable_on_windows()
+
+def print_status(message):
+    print(f"{Colors.BLUE}[INFO]{Colors.NC} {message}")
+
+def print_success(message):
+    print(f"{Colors.GREEN}[SUCCESS]{Colors.NC} {message}")
+
+def print_warning(message):
+    print(f"{Colors.YELLOW}[WARNING]{Colors.NC} {message}")
+
+def print_error(message):
+    print(f"{Colors.RED}[ERROR]{Colors.NC} {message}")
+
+def print_header():
+    print(f"{Colors.CYAN}🚀 Starting Trading AI Application with Enhanced Logging...{Colors.NC}")
+    print("=" * 60)
+
+def setup_logging():
+    """Initialize the logging system"""
+    try:
+        # Create logs directory
+        logs_dir = Path('logs')
+        if not logs_dir.exists():
+            logs_dir.mkdir(exist_ok=True)
+            print_success("Created logs directory")
+
+        # Initialize logging system
+        from src.core.logger import trading_logger, log_system_event, log_info
+
+        log_system_event("=== TRADING AI APPLICATION STARTUP ===", "INFO")
+        log_system_event(f"Python Version: {sys.version}", "INFO")
+        log_system_event(f"Working Directory: {os.getcwd()}", "INFO")
+        log_system_event(f"Script Path: {__file__}", "INFO")
+
+        # Check environment
+        use_go_services = os.getenv('USE_GO_SERVICES', 'false').lower() == 'true'
+        log_system_event(f"Go Services Enabled: {use_go_services}", "INFO")
+
+        print_success("Enhanced logging system initialized")
+        return True
+    except ImportError as e:
+        print_warning(f"Logging system not available: {e}")
+        print_warning("Continuing without enhanced logging...")
+        return False
+
+def check_project_directory():
+    """Check if we're in the correct project directory"""
+    app_file = Path("src/web/app.py")
+    if not app_file.exists():
+        print_error("Please run this script from the trading project root directory")
+        print_error("Expected to find: src/web/app.py")
+        return False
+
+    print_success("Found Trading AI project files")
+    return True
+
+def check_virtual_environment():
+    """Check and activate virtual environment if available"""
+    venv_paths = [".venv", "venv", ".env"]
+
+    for venv_path in venv_paths:
+        if Path(venv_path).exists():
+            print_success(f"Found virtual environment: {venv_path}")
+
+            # Check if we're already in a virtual environment
+            if sys.prefix != sys.base_prefix:
+                print_status("Already running in virtual environment")
+                return True
+            else:
+                print_warning("Virtual environment found but not activated")
+                print_status(f"Activate with: source {venv_path}/bin/activate (Linux/Mac)")
+                print_status(f"           or: {venv_path}\\Scripts\\activate (Windows)")
+                return True
+
+    print_warning("No virtual environment found")
+    print_status("Create one with: python -m venv .venv")
+    return False
+
+def check_dependencies():
+    """Check if required Python packages are installed"""
+    required_packages = [
+        'flask',
+        'psycopg2',
+        'requests',
+        'flask_socketio'
+    ]
+
+    missing_packages = []
+
+    for package in required_packages:
+        try:
+            __import__(package.replace('-', '_'))
+        except ImportError:
+            missing_packages.append(package)
+
+    if missing_packages:
+        print_warning(f"Missing packages: {', '.join(missing_packages)}")
+        print_status("Install with: pip install -r requirements.txt")
+        return False
+    else:
+        print_success("All required dependencies found")
+        return True
+
+def check_postgresql():
+    """Check PostgreSQL connection"""
+    try:
+        # Try to connect to PostgreSQL
+        result = subprocess.run([
+            'psql', '-h', 'localhost', '-U', 'trading_user', '-d', 'trading_db',
+            '-c', 'SELECT 1;'
+        ], capture_output=True, text=True, timeout=5)
+
+        if result.returncode == 0:
+            print_success("PostgreSQL connection working")
+            return True
+        else:
+            print_warning("PostgreSQL connection issue - cache will use fallback")
+            return False
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        print_warning("PostgreSQL not accessible - cache will use fallback")
+        print_status("To fix: Make sure PostgreSQL is running and database is set up")
+        return False
+
+def check_port(port=5001):
+    """Check if port is available"""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(1)
+    result = sock.connect_ex(('localhost', port))
+    sock.close()
+
+    if result == 0:
+        print_warning(f"Port {port} is already in use")
+        return False
+    else:
+        print_success(f"Port {port} is available")
+        return True
+
+def kill_existing_processes():
+    """Kill existing app processes"""
+    try:
+        if platform.system() == 'Windows':
+            subprocess.run(['taskkill', '/f', '/im', 'python.exe'],
+                         capture_output=True)
+        else:
+            # More targeted kill for Flask apps
+            subprocess.run(['pkill', '-f', 'flask'], capture_output=True)
+            subprocess.run(['pkill', '-f', 'socketio'], capture_output=True)
+            subprocess.run(['lsof', '-ti:5001'], capture_output=True).stdout
+            if result := subprocess.run(['lsof', '-ti:5001'], capture_output=True).stdout.strip():
+                subprocess.run(['kill', '-9'] + result.decode().split(), capture_output=True)
+
+        print_status("Stopped existing processes")
+        time.sleep(2)
+        return True
+    except:
+        print_warning("Could not stop existing processes")
+        return False
+
+def get_local_ip():
+    """Get local IP address"""
+    try:
+        # Create a socket to get local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except:
+        return "your-ip"
+
+def print_app_info():
+    """Print application information"""
+    local_ip = get_local_ip()
+
+    print()
+    print(f"{Colors.CYAN}🔗 Application will be available at:{Colors.NC}")
+    print(f"   📱 Local:   http://localhost:5001")
+    print(f"   🌐 Network: http://{local_ip}:5001")
+    print()
+    print(f"{Colors.CYAN}📊 Available pages:{Colors.NC}")
+    print("   🏠 Dashboard:     http://localhost:5001/")
+    print("   📈 Stocks:        http://localhost:5001/stocks")
+    print("   💰 Crypto:        http://localhost:5001/crypto")
+    print("   🎯 Opportunities: http://localhost:5001/opportunities")
+    print("   ⚙️  System Status: http://localhost:5001/system_status")
+    print("   🔍 Logs Viewer:   http://localhost:5001/logs")
+    print()
+    print(f"{Colors.CYAN}⚡ Features enabled:{Colors.NC}")
+    print("   🗄️  PostgreSQL cache (2,400x performance improvement)")
+    print("   🚀 Smart batching (5-10x faster bulk analysis)")
+    print("   📡 WebSocket real-time progress updates")
+    print("   🤖 Ollama AI sentiment analysis (local & free)")
+    print("   📊 Enhanced logging system with web viewer")
+    print()
+    print(f"{Colors.CYAN}🔥 Log Files Available:{Colors.NC}")
+    print("   📝 app.log - General application events")
+    print("   🌐 api_calls.log - API requests and responses")
+    print("   ❌ errors.log - Errors and exceptions")
+    print("   ⚡ performance.log - Timing and performance metrics")
+    print("   👤 user_actions.log - User interactions and clicks")
+    print("   🖥️  system.log - System status and health")
+    print()
+    print(f"{Colors.YELLOW}🛑 Press Ctrl+C to stop the application{Colors.NC}")
+    print("=" * 60)
+
+def start_app():
+    """Start the Flask application with enhanced logging"""
+    try:
+        print_status("Starting Flask application with SocketIO and enhanced logging...")
+
+        # Change to the project directory
+        os.chdir(Path(__file__).parent)
+
+        # Import and start Flask app with logging
+        try:
+            from src.core.logger import log_system_event, log_info, log_exception
+            from src.web.app import create_app
+
+            log_info("Successfully imported Flask app components", "system")
+            log_system_event("Starting Flask application via create_app", "INFO")
+
+            print_success("Flask application components loaded")
+            print_status("Starting server on http://localhost:5001")
+
+            # Start the application using create_app function
+            create_app()
+
+        except ImportError as e:
+            print_error(f"Failed to import Flask components: {e}")
+            print_error("Make sure all dependencies are installed:")
+            print_error("  pip install -r requirements.txt")
+            return False
+
+    except KeyboardInterrupt:
+        print()
+        print_status("Application stopped by user")
+        try:
+            from src.core.logger import log_system_event
+            log_system_event("Application stopped by user (Ctrl+C)", "INFO")
+        except:
+            pass
+    except Exception as e:
+        print_error(f"Failed to start application: {e}")
+        try:
+            from src.core.logger import log_exception
+            log_exception("Application startup failure", e)
+        except:
+            pass
+        return False
+
+    return True
+
+def main():
+    """Main function"""
+    from src.core.startup import run_startup_checks
+    print_header()
+
+    # Start the update logic in a background thread
+    update_thread = threading.Thread(target=run_startup_checks, daemon=True)
+    update_thread.start()
+
+    # Check project directory
+    if not check_project_directory():
+        sys.exit(1)
+
+    # Setup logging system
+    logging_enabled = setup_logging()
+
+    # Check virtual environment
+    check_virtual_environment()
+
+    # Check dependencies
+    if not check_dependencies():
+        print_error("Missing dependencies. Please install them first.")
+        sys.exit(1)
+
+    # Check PostgreSQL
+    check_postgresql()
+
+    # Check if port is available
+    if not check_port():
+        print_status("Attempting to free port 5001...")
+        kill_existing_processes()
+
+        if not check_port():
+            print_error("Could not free port 5001. Please stop the process manually.")
+            print_status("Try: lsof -ti:5001 | xargs kill -9")
+            sys.exit(1)
+
+    # Print application information
+    print_app_info()
+
+    # Start the application (web server)
+    if not start_app():
+        sys.exit(1)
+
+if __name__ == "__main__":
+    try:
+        # Try to get the current working directory
+        current_dir = os.getcwd()
+        print(f"Current directory: {current_dir}")
+    except OSError as e:
+        print(f"Error getting current directory: {e}")
+
+    try:
+        # Try to get the project root directory
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        print(f"Project root: {project_root}")
+    except OSError as e:
+        print(f"Error getting project root: {e}")
+
+    main()
