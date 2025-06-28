@@ -1,0 +1,494 @@
+/* Ultra-Simple Dashboard JavaScript */
+
+console.log('Dashboard JS loaded');
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard DOM loaded, initializing...');
+    
+    // Add event listeners
+    if (document.getElementById('stockSymbol')) {
+        document.getElementById('stockSymbol').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                doStandardAnalysis();
+            }
+        });
+    }
+});
+
+function doStandardAnalysis() {
+    console.log('[DEBUG] doStandardAnalysis called');
+    const symbol = document.getElementById('stockSymbol').value.trim().toUpperCase();
+    if (!symbol) {
+        alert('Please enter a stock symbol');
+        return;
+    }
+    
+    console.log('Standard analysis for:', symbol);
+    showResults('Analyzing ' + symbol + '...');
+    
+    // Update debug panel with request info
+    updateDebugPanel('request', {
+        method: 'POST',
+        url: '/api/analyze_stock',
+        symbol: symbol,
+        ai_provider: 'ollama',
+        timestamp: new Date().toISOString()
+    });
+    
+    const requestBody = { symbol: symbol, ai_provider: 'ollama' };
+    
+    fetch('/api/analyze_stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => {
+        // Update debug panel with response status
+        updateDebugPanel('response', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            timestamp: new Date().toISOString()
+        });
+        return response.json();
+    })
+    .then(data => {
+        console.log('Analysis complete:', data);
+        
+        // Update debug panel with response data
+        updateDebugPanel('responseData', data);
+        
+        if (data.status === 'error') {
+            showResults('Error: ' + data.error);
+        } else {
+            const result = data.data;
+            const trading = result.trading_recommendation;
+            
+            let resultHtml = `
+                <div class="row">
+                    <!-- Stock Analysis -->
+                    <div class="col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h5><i class="fas fa-chart-line"></i> Stock Analysis</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Symbol:</strong> ${symbol}</p>
+                                <p><strong>Current Price:</strong> $${result.price_data.current_price.toFixed(2)}</p>
+                                <p><strong>News Sources:</strong> ${Object.entries(result.news_sources).map(([source, count]) => 
+                                    `${source}: ${count}`).join(', ')}</p>
+                                <p><strong>Sentiment:</strong> ${result.sentiment_analysis.overall_sentiment || 'Neutral'}</p>
+                                <p><strong>Confidence:</strong> ${((result.sentiment_analysis.confidence || 0) * 100).toFixed(1)}%</p>
+                                <p><strong>Action:</strong> <span class="badge ${trading.action === 'CALL' ? 'bg-success' : trading.action === 'PUT' ? 'bg-danger' : 'bg-secondary'}">${trading.action || 'HOLD'}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Options Trading Recommendation -->
+                    <div class="col-md-6">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h5><i class="fas fa-options"></i> Options Trading</h5>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Strategy:</strong> ${trading.strategy_type || 'Standard'}</p>
+                                <p><strong>Option Type:</strong> <span class="badge ${trading.option_type === 'call' ? 'bg-success' : trading.option_type === 'put' ? 'bg-danger' : 'bg-secondary'}">${trading.option_type?.toUpperCase() || 'N/A'}</span></p>
+                                <p><strong>Strike Price:</strong> ${trading.strike_price ? '$' + trading.strike_price : 'N/A'}</p>
+                                <p><strong>Option Price:</strong> ${trading.option_price ? '$' + trading.option_price : 'N/A'}</p>
+                                <p><strong>Days to Expiry:</strong> ${trading.days_to_expiry || 'N/A'}</p>
+                                <p><strong>Hold Time:</strong> ${trading.hold_time || 'N/A'}</p>
+                                <p><strong>Target Gain:</strong> ${trading.target_gain_percent ? trading.target_gain_percent + '%' : 'N/A'}</p>
+                                <p><strong>Stop Loss:</strong> ${trading.stop_loss_percent ? trading.stop_loss_percent + '%' : 'N/A'}</p>
+                                <p><strong>Position Size:</strong> ${trading.position_size || 'N/A'} contracts</p>
+                                ${trading.action === 'HOLD' ? '<p class="text-warning mt-3"><i class="fas fa-info-circle"></i> Currently holding - waiting for clearer market signals</p>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <!-- Position Recommendations -->
+                    <div class="col-md-6">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
+                            </div>
+                            <div class="card-body">
+                                ${Object.entries(trading.position_recommendations || {}).map(([account, details]) => `
+                                    <div class="mb-2">
+                                        <strong>${account} Account:</strong><br>
+                                        <small>
+                                            Contracts: ${details.contracts || 'N/A'}<br>
+                                            Cost: $${details.total_cost || 'N/A'}<br>
+                                            Risk: ${details.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${details.risk_reward_ratio || 'N/A'}
+                                        </small>
+                                    </div>
+                                `).join('') || '<p class="text-muted">No position recommendations available</p>'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Trading Notes -->
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6><i class="fas fa-lightbulb"></i> Trading Notes</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    ${(trading.day_trading_notes || []).map(note => `<li><small>${note}</small></li>`).join('') || '<li class="text-muted">No trading notes available</li>'}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-secondary">
+                            <small class="text-muted">Analysis completed at: ${new Date(result.timestamp).toLocaleString()}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showResults(resultHtml);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        updateDebugPanel('response', {
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+        showResults('Error: ' + error.message);
+    });
+}
+
+function doEnhancedAnalysis() {
+    console.log('[DEBUG] doEnhancedAnalysis called');
+    const symbol = document.getElementById('stockSymbol').value.trim().toUpperCase();
+    if (!symbol) {
+        alert('Please enter a stock symbol');
+        return;
+    }
+    
+    console.log('Enhanced analysis for:', symbol);
+    showResults('Enhanced analyzing ' + symbol + '...');
+    
+    // Update debug panel with request info
+    updateDebugPanel('request', {
+        method: 'POST',
+        url: '/api/enhanced_analysis',
+        symbol: symbol,
+        timestamp: new Date().toISOString()
+    });
+    
+    const requestBody = { symbol: symbol };
+    
+    fetch('/api/enhanced_analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => {
+        // Update debug panel with response status
+        updateDebugPanel('response', {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries()),
+            timestamp: new Date().toISOString()
+        });
+        return response.json();
+    })
+    .then(data => {
+        console.log('Enhanced analysis complete:', data);
+        
+        // Update debug panel with response data
+        updateDebugPanel('responseData', data);
+        
+        if (!data.success) {
+            showResults('Error: ' + (data.error || 'Unknown error'));
+            return;
+        }
+        
+        const result = data.data;
+        const recommendations = result.recommendations;
+        
+        let resultHtml = `
+            <div class="row">
+                <!-- Stock Analysis -->
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="fas fa-chart-line"></i> Enhanced Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Symbol:</strong> ${symbol}</p>
+                            <p><strong>Current Price:</strong> $${result.price_data.current_price.toFixed(2)}</p>
+                            <p><strong>News Analyzed:</strong> ${result.news_count} articles</p>
+                            <p><strong>Sentiment:</strong> ${result.sentiment_analysis.overall_sentiment || 'Neutral'}</p>
+                            <p><strong>Base Confidence:</strong> ${((result.sentiment_analysis.confidence || 0) * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Top Recommendation -->
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5><i class="fas fa-star"></i> Top Recommendation</h5>
+                        </div>
+                        <div class="card-body">
+                            ${recommendations.top_recommendation ? `
+                                <p><strong>Category:</strong> ${recommendations.top_recommendation.category}</p>
+                                <p><strong>Type:</strong> ${recommendations.top_recommendation.recommendation_type}</p>
+                                <p><strong>Action:</strong> <span class="badge ${getBadgeClass(recommendations.top_recommendation.action)}">${recommendations.top_recommendation.action}</span></p>
+                                <p><strong>Confidence:</strong> ${(recommendations.top_recommendation.confidence * 100).toFixed(1)}%</p>
+                                <p><strong>Risk Level:</strong> ${recommendations.top_recommendation.risk_level || 'Medium'}</p>
+                                <p><strong>Time Horizon:</strong> ${recommendations.top_recommendation.time_horizon || 'N/A'}</p>
+                                <p><strong>Reasoning:</strong> ${recommendations.top_recommendation.reasoning || 'N/A'}</p>
+                            ` : '<p class="text-muted">No top recommendation available</p>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stock Recommendations -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Stock Recommendations</h5>
+                            <span class="badge bg-light text-dark">${recommendations.stock_recommendations?.length || 0} strategies</span>
+                        </div>
+                        <div class="card-body">
+                            ${recommendations.stock_recommendations?.length ? `
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Strategy</th>
+                                                <th>Action</th>
+                                                <th>Target</th>
+                                                <th>Stop Loss</th>
+                                                <th>Position Size</th>
+                                                <th>Confidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${recommendations.stock_recommendations.map(rec => `
+                                                <tr>
+                                                    <td>${rec.recommendation_type}</td>
+                                                    <td><span class="badge ${getBadgeClass(rec.action)}">${rec.action}</span></td>
+                                                    <td>${rec.target_price ? '$' + rec.target_price.toFixed(2) : 'N/A'}</td>
+                                                    <td>${rec.stop_loss_price ? '$' + rec.stop_loss_price.toFixed(2) : 'N/A'}</td>
+                                                    <td>${rec.shares_recommended || 'N/A'} shares</td>
+                                                    <td>${(rec.confidence * 100).toFixed(1)}%</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : '<p class="text-muted">No stock recommendations available</p>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Options Recommendations -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0"><i class="fas fa-options"></i> Options Recommendations</h5>
+                            <span class="badge bg-light text-dark">${recommendations.options_recommendations?.length || 0} strategies</span>
+                        </div>
+                        <div class="card-body">
+                            ${recommendations.options_recommendations?.length ? `
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Strategy</th>
+                                                <th>Type</th>
+                                                <th>Strike</th>
+                                                <th>Expiry</th>
+                                                <th>Target</th>
+                                                <th>Stop Loss</th>
+                                                <th>Confidence</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${recommendations.options_recommendations.map(rec => `
+                                                <tr>
+                                                    <td>${rec.recommendation_type}</td>
+                                                    <td><span class="badge ${getBadgeClass(rec.option_type)}">${rec.option_type?.toUpperCase()}</span></td>
+                                                    <td>$${rec.strike_price?.toFixed(2) || 'N/A'}</td>
+                                                    <td>${rec.days_to_expiry} days</td>
+                                                    <td>${rec.target_gain_percent}%</td>
+                                                    <td>${rec.stop_loss_percent}%</td>
+                                                    <td>${(rec.confidence * 100).toFixed(1)}%</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <!-- Historical Performance -->
+                                ${recommendations.options_recommendations.some(rec => rec.historical_stats) ? `
+                                    <div class="mt-4">
+                                        <h6><i class="fas fa-history"></i> Historical Performance</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Strategy</th>
+                                                        <th>Win Rate</th>
+                                                        <th>Avg Return</th>
+                                                        <th>Max Gain</th>
+                                                        <th>Max Loss</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${recommendations.options_recommendations.map(rec => `
+                                                        <tr>
+                                                            <td>${rec.recommendation_type}</td>
+                                                            <td>${rec.historical_stats?.win_rate?.toFixed(1)}%</td>
+                                                            <td>${rec.historical_stats?.avg_return?.toFixed(1)}%</td>
+                                                            <td class="text-success">+${rec.historical_stats?.max_gain?.toFixed(1)}%</td>
+                                                            <td class="text-danger">${rec.historical_stats?.max_loss?.toFixed(1)}%</td>
+                                                        </tr>
+                                                    `).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            ` : '<p class="text-muted">No options recommendations available</p>'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analysis Summary -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>Analysis Summary:</strong> 
+                                ${recommendations.recommendation_summary ? `
+                                    ${recommendations.recommendation_summary.total_strategies} strategies analyzed • 
+                                    Best performing: ${recommendations.recommendation_summary.best_category} • 
+                                    Highest confidence: ${(recommendations.recommendation_summary.best_confidence * 100).toFixed(1)}%
+                                ` : 'No summary available'}
+                            </div>
+                            <small class="text-muted">
+                                Analysis completed at ${new Date(result.timestamp).toLocaleString()}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        showResults(resultHtml);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        updateDebugPanel('response', {
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+        showResults('Error: ' + error.message);
+    });
+}
+
+function getBadgeClass(action) {
+    switch(action?.toUpperCase()) {
+        case 'CALL':
+        case 'BUY':
+            return 'bg-success';
+        case 'PUT':
+        case 'SELL':
+        case 'SELL_SHORT':
+        case 'SHORT':
+            return 'bg-danger';
+        case 'HOLD':
+            return 'bg-secondary';
+        default:
+            return 'bg-info';
+    }
+}
+
+// Debug panel functions
+function updateDebugPanel(type, data) {
+    console.log('Updating debug panel:', type, data);
+    
+    switch(type) {
+        case 'request':
+            document.getElementById('requestStatus').innerHTML = `
+                <strong>Request in progress</strong><br>
+                <small>
+                    Method: ${data.method}<br>
+                    URL: ${data.url}<br>
+                    Timestamp: ${new Date(data.timestamp).toLocaleString()}
+                </small>
+            `;
+            document.getElementById('requestData').textContent = JSON.stringify(data, null, 2);
+            break;
+            
+        case 'response':
+            const statusClass = data.status >= 200 && data.status < 300 ? 'text-success' : 'text-danger';
+            document.getElementById('requestStatus').innerHTML = `
+                <strong class="${statusClass}">Response received</strong><br>
+                <small>
+                    Status: ${data.status} ${data.statusText}<br>
+                    Timestamp: ${new Date(data.timestamp).toLocaleString()}<br>
+                    ${data.error ? `Error: ${data.error}` : ''}
+                </small>
+            `;
+            document.getElementById('responseData').textContent = JSON.stringify(data, null, 2);
+            break;
+            
+        case 'responseData':
+            document.getElementById('responseData').textContent = JSON.stringify(data, null, 2);
+            break;
+            
+        case 'error':
+            document.getElementById('requestStatus').innerHTML = `
+                <strong class="text-danger">Error occurred</strong><br>
+                <small>
+                    Error: ${data.message || data.error || 'Unknown error'}<br>
+                    Timestamp: ${new Date(data.timestamp).toLocaleString()}
+                </small>
+            `;
+            document.getElementById('responseData').textContent = JSON.stringify(data, null, 2);
+            break;
+    }
+}
+
+function clearDebugPanel() {
+    document.getElementById('requestStatus').innerHTML = '<small>No request made yet</small>';
+    document.getElementById('requestData').textContent = 'No request data';
+    document.getElementById('responseData').textContent = 'No response data';
+}
+
+function showResults(content) {
+    const resultsSection = document.getElementById('resultsSection');
+    if (!resultsSection) {
+        console.error('Results section not found');
+        return;
+    }
+    
+    resultsSection.style.display = 'block';
+    resultsSection.innerHTML = `
+        <div class="col-12">
+            ${content}
+        </div>
+    `;
+}
+
+console.log('Dashboard functions ready'); 

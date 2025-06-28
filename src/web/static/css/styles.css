@@ -1,0 +1,359 @@
+/* Trading AI Dashboard - Main Styles */
+
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+[data-theme="dark"] {
+    --bs-body-bg: #121212;
+    --bs-body-color: #ffffff;
+    --bs-card-bg: #1e1e1e;
+    --bs-border-color: #333333;
+    --results-bg: #252525;
+}
+
+[data-theme="light"] {
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #000000;
+    --bs-card-bg: #ffffff;
+    --bs-border-color: #dee2e6;
+    --results-bg: #f8f9fa;
+}
+
+body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: all 0.3s ease;
+}
+
+.card {
+    background-color: var(--bs-card-bg);
+    border-color: var(--bs-border-color);
+}
+
+.results-box {
+    background-color: var(--results-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    padding: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ai4all-icon .fa-globe-americas {
+    color: #007bff;
+}
+
+.ai4all-icon .fa-robot {
+    color: #28a745;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-idle { background-color: #6c757d; }
+.status-working { background-color: #007bff; animation: pulse 1s infinite; }
+.status-success { background-color: #28a745; }
+.status-error { background-color: #dc3545; }
+
+.theme-toggle {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #ffffff !important;
+}
+
+.navbar-brand .fa-stack-2x {
+    color: #007bff !important;
+}
+
+.navbar-brand .fa-stack-1x {
+    color: #28a745 !important;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    transform: translateY(-1px);
+}
+
+.footer {
+    background-color: var(--bs-card-bg);
+    border-top: 1px solid var(--bs-border-color);
+    margin-top: 3rem;
+}
+
+/* Additional utility styles for common UI elements */
+
+/* Progress containers (used in stocks, crypto, opportunities pages) */
+#sp500-progress-container,
+#crypto-progress-container,
+#watchlist-progress-container,
+#analysisLoading {
+    background-color: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+/* Result sections (used in dashboard and other pages) */
+#resultsSection,
+#enhancedRecommendationsSection,
+#executionResultsSection {
+    background-color: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+}
+
+/* Debug panels (used in dashboard) */
+#requestData,
+#responseData {
+    background-color: var(--light-color);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    font-family: 'Courier New', Monaco, monospace;
+    font-size: 0.85rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+[data-theme="dark"] #requestData,
+[data-theme="dark"] #responseData {
+    background-color: #2d2d2d;
+    color: #e6e6e6;
+}
+
+/* Log containers */
+#logContainer {
+    background-color: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    font-family: 'Courier New', Monaco, monospace;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Button loading states */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading .btn-text {
+    opacity: 0.6;
+}
+
+/* Floating elements */
+.floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    border-radius: 50px;
+    width: 60px;
+    height: 60px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Alert positioning for consistent placement */
+.alert-floating {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Sentiment indicators */
+.sentiment-positive {
+    color: var(--success-color);
+}
+
+.sentiment-negative {
+    color: var(--danger-color);
+}
+
+.sentiment-neutral {
+    color: var(--warning-color);
+}
+
+/* Signal badges */
+.signal-buy {
+    background-color: var(--success-color);
+    color: white;
+}
+
+.signal-sell {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.signal-hold {
+    background-color: var(--warning-color);
+    color: var(--dark-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .floating-btn {
+        bottom: 80px;
+        right: 15px;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .alert-floating {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+    }
+}
+
+/* Animation utilities */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin-animation {
+    animation: spin 1s linear infinite;
+}
+
+/* Status indicators */
+.status-online {
+    color: var(--success-color);
+}
+
+.status-offline {
+    color: var(--danger-color);
+}
+
+.status-pending {
+    color: var(--warning-color);
+}
+
+/* Sticky Controls */
+.sticky-controls {
+    position: sticky;
+    top: 10px;
+    z-index: 1020;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+[data-theme="dark"] .sticky-controls {
+    background-color: rgba(33, 37, 41, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Progress Bar Styling */
+.progress {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .progress {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth animations */
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+/* Analysis badge styling */
+.badge {
+    font-size: 0.7rem;
+    padding: 0.25em 0.5em;
+}
+
+/* How It Works card animation */
+#howItWorksCard {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Enhanced Recommendations Layout - FORCE SIDE BY SIDE */
+#enhancedRecommendationsSection {
+    display: block !important;
+}
+
+#enhancedRecommendationsSection .row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 1rem;
+}
+
+#enhancedRecommendationsSection .col-lg-5 {
+    flex: 0 0 42% !important;
+    max-width: 42% !important;
+    width: 42% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#enhancedRecommendationsSection .col-lg-7 {
+    flex: 0 0 58% !important;
+    max-width: 58% !important;
+    width: 58% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+#enhancedRecommendationsSection .card {
+    height: 100% !important;
+}
+
+/* Force on all screen sizes above 768px */
+@media (min-width: 768px) {
+    #enhancedRecommendationsSection .col-lg-5,
+    #enhancedRecommendationsSection .col-lg-7 {
+        float: left !important;
+    }
+}

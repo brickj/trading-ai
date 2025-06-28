@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Backtest - Options Trading AI{% endblock %}
+
+{% block content %}
+<!-- Backtest Form - Required for tests -->
+<form id="backtestForm">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-history"></i> Strategy Backtesting
+            </h1>
+            <p class="lead">Test your sentiment-based options trading strategy on historical data</p>
+        </div>
+    </div>
+
+    <!-- Days Selector - Required for tests -->
+    <div id="daysSelector" class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> Backtest Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Stock Symbol</label>
+                        <input type="text" class="form-control" id="symbol" name="symbol" placeholder="e.g., AAPL, TSLA, MSFT" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="daysBack" class="form-label">Backtest Period (Days)</label>
+                        <select class="form-select" id="daysBack" name="daysBack">
+                            <option value="30">30 Days</option>
+                            <option value="60">60 Days</option>
+                            <option value="180">180 Days</option>
+                            <option value="{{ historical_lookback_days }}" selected>{{ historical_lookback_days }} Days (2 Years)</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Run Backtest
+                    </button>
+                    
+                    <div id="backtestLoading" class="loading mt-3">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Running backtest simulation...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Backtest Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>How Backtesting Works:</h6>
+                    <ol>
+                        <li>Fetches historical price data for the selected period</li>
+                        <li>Simulates sentiment scores based on price movements</li>
+                        <li>Generates trading signals using our strategy</li>
+                        <li>Calculates option prices and executes simulated trades</li>
+                        <li>Tracks performance and calculates returns</li>
+                    </ol>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes:</h6>
+                        <ul class="mb-0">
+                            <li>This uses simulated sentiment data, not actual historical news</li>
+                            <li>Option pricing is simplified and may not reflect real market conditions</li>
+                            <li>Results are for educational purposes only</li>
+                            <li>Past performance does not guarantee future results</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row mt-4" id="resultsSection" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Backtest Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h6>Initial Capital</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="initialCapital">$10,000</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white text-center">
+                                <h6>Final Capital</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="finalCapital">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white text-center">
+                                <h6>Total Return</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="totalReturn">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-white text-center">
+                                <h6>Win Rate</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="winRate">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-chart-line"></i> Performance Chart</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="performanceChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-info-circle"></i> Strategy Statistics</h6>
+                            </div>
+                            <div class="card-body" id="strategyStats">
+                                <p><strong>Total Trades:</strong> <span id="totalTrades">-</span></p>
+                                <p><strong>Winning Trades:</strong> <span id="winningTrades">-</span></p>
+                                <p><strong>Losing Trades:</strong> <span id="losingTrades">-</span></p>
+                                <p><strong>Average Trade:</strong> <span id="avgTrade">-</span></p>
+                                <p><strong>Best Trade:</strong> <span id="bestTrade">-</span></p>
+                                <p><strong>Worst Trade:</strong> <span id="worstTrade">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-list"></i> Recent Trades (Last 10)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Action</th>
+                                                <th>Entry Price</th>
+                                                <th>Strike Price</th>
+                                                <th>Option Price</th>
+                                                <th>Position Size</th>
+                                                <th>Cost</th>
+                                                <th>Exit Price</th>
+                                                <th>Profit/Loss</th>
+                                                <th>Sentiment</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tradesTableBody">
+                                            <!-- Trades will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-lightbulb"></i> Strategy Optimization Tips</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Improving Performance:</h6>
+                        <ul>
+                            <li>Adjust sentiment thresholds in config.py</li>
+                            <li>Modify position sizing rules</li>
+                            <li>Implement stop-loss mechanisms</li>
+                            <li>Consider different option expiry periods</li>
+                            <li>Add volatility-based position sizing</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Risk Management:</h6>
+                        <ul>
+                            <li>Never risk more than 2-5% per trade</li>
+                            <li>Diversify across multiple stocks</li>
+                            <li>Monitor correlation between positions</li>
+                            <li>Set maximum portfolio exposure limits</li>
+                            <li>Regular strategy performance reviews</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let performanceChart = null;
+
+document.getElementById('backtestForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const symbol = document.getElementById('symbol').value.toUpperCase();
+    const daysBack = parseInt(document.getElementById('daysBack').value);
+    
+    if (!symbol) return;
+    
+    showLoading('backtestLoading');
+    document.getElementById('resultsSection').style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/backtest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                symbol: symbol,
+                days_back: daysBack
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showAlert(data.error, 'danger');
+            return;
+        }
+        
+        displayBacktestResults(data);
+        
+    } catch (error) {
+        showAlert('Error running backtest: ' + error.message, 'danger');
+    } finally {
+        hideLoading('backtestLoading');
+    }
+});
+
+function displayBacktestResults(data) {
+    // Update summary cards
+    document.getElementById('initialCapital').textContent = formatCurrency(data.initial_capital);
+    document.getElementById('finalCapital').textContent = formatCurrency(data.final_capital);
+    
+    const returnElement = document.getElementById('totalReturn');
+    returnElement.textContent = data.total_return + '%';
+    returnElement.className = data.total_return >= 0 ? 'text-success' : 'text-danger';
+    
+    document.getElementById('winRate').textContent = data.win_rate + '%';
+    
+    // Update strategy statistics
+    document.getElementById('totalTrades').textContent = data.total_trades;
+    
+    const winningTrades = data.trades.filter(t => t.profit > 0).length;
+    const losingTrades = data.trades.filter(t => t.profit <= 0).length;
+    
+    document.getElementById('winningTrades').textContent = winningTrades;
+    document.getElementById('losingTrades').textContent = losingTrades;
+    
+    if (data.trades.length > 0) {
+        const avgTrade = data.trades.reduce((sum, t) => sum + t.profit, 0) / data.trades.length;
+        const bestTrade = Math.max(...data.trades.map(t => t.profit));
+        const worstTrade = Math.min(...data.trades.map(t => t.profit));
+        
+        document.getElementById('avgTrade').textContent = formatCurrency(avgTrade);
+        document.getElementById('bestTrade').textContent = formatCurrency(bestTrade);
+        document.getElementById('worstTrade').textContent = formatCurrency(worstTrade);
+    }
+    
+    // Display trades table
+    displayTradesTable(data.trades);
+    
+    // Create performance chart
+    createPerformanceChart(data);
+    
+    document.getElementById('resultsSection').style.display = 'block';
+}
+
+function displayTradesTable(trades) {
+    const tbody = document.getElementById('tradesTableBody');
+    tbody.innerHTML = '';
+    
+    if (trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No trades executed</td></tr>';
+        return;
+    }
+    
+    trades.forEach(trade => {
+        const row = document.createElement('tr');
+        const profitClass = trade.profit >= 0 ? 'text-success' : 'text-danger';
+        
+        row.innerHTML = `
+            <td>${trade.date}</td>
+            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action}</span></td>
+            <td>${formatCurrency(trade.entry_price)}</td>
+            <td>${formatCurrency(trade.strike_price)}</td>
+            <td>${formatCurrency(trade.option_price)}</td>
+            <td>${trade.position_size}</td>
+            <td>${formatCurrency(trade.cost)}</td>
+            <td>${formatCurrency(trade.exit_price)}</td>
+            <td class="${profitClass}">${formatCurrency(trade.profit)}</td>
+            <td class="${getSentimentClass(trade.sentiment)}">${trade.sentiment.toFixed(3)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function createPerformanceChart(data) {
+    if (performanceChart) {
+        performanceChart.destroy();
+    }
+    
+    // Calculate cumulative returns
+    let cumulativeCapital = data.initial_capital;
+    const capitalHistory = [cumulativeCapital];
+    const labels = ['Start'];
+    
+    data.trades.forEach((trade, index) => {
+        cumulativeCapital += trade.profit;
+        capitalHistory.push(cumulativeCapital);
+        labels.push(`Trade ${index + 1}`);
+    });
+    
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Portfolio Value',
+                data: capitalHistory,
+                borderColor: data.total_return >= 0 ? '#28a745' : '#dc3545',
+                backgroundColor: data.total_return >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                borderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return formatCurrency(value);
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %} 
