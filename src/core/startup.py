@@ -19,6 +19,7 @@ import time
 import requests
 import yfinance as yf
 from .database import get_system_flag, set_system_flag
+import pandas as pd
 
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -85,8 +86,14 @@ def get_last_trading_day_from_api() -> Optional[date]:
         
         if not hist.empty:
             # Get the last date with actual trading data
-            last_trading_date = hist.index[-1].strftime('%Y-%m-%d')
-            last_trading_date = datetime.strptime(last_trading_date, '%Y-%m-%d').date()
+            # Handle pandas timestamp index properly
+            if len(hist.index) > 0:
+                # Convert to string first to avoid pandas-specific method issues
+                last_date_str = str(hist.index[-1])
+                last_trading_date = datetime.strptime(last_date_str[:10], '%Y-%m-%d').date()
+            else:
+                # Fallback in case of unexpected index format
+                last_trading_date = datetime.now().date() - timedelta(days=1)
             print(f"[DEBUG] Yahoo Finance returned last trading day: {last_trading_date}")
             return last_trading_date
         else:
@@ -277,24 +284,26 @@ class StartupManager:
                 start_date = latest_date + timedelta(days=1)
                 last_trading_day = get_last_trading_day()
                 
-                # Skip if we're trying to fetch weekend data
+                # If start date falls on a weekend, adjust to the next Monday
                 if start_date.weekday() >= 5:  # Saturday or Sunday
-                    print(f"    ✅ {symbol} is already up to date (next update would be on weekend)")
-                    result["status"] = "skipped"
-                    return result
-                
+                    days_to_monday = (7 - start_date.weekday()) % 7
+                    next_monday = start_date + timedelta(days=days_to_monday)
+                    print(f"    ⏭️ {symbol} next update scheduled for next trading day: {next_monday}")
+                    # Continue with the update using the next trading day
+                    start_date = next_monday
+
                 if start_date > last_trading_day:
                     print(f"    ✅ {symbol} is already up to date")
                     result["status"] = "skipped"
                     return result
-                
+
                 # Ensure we're not trying to fetch a very small date range
                 days_diff = (last_trading_day - start_date).days
                 if days_diff < 1:
                     print(f"    ✅ {symbol} is already up to date (only {days_diff} days difference)")
                     result["status"] = "skipped"
                     return result
-                
+
                 # Only fetch if we have actual trading days to fetch
                 if start_date <= last_trading_day:
                     print(f"    🔄 Fetching missing data from {start_date} to {last_trading_day} ({days_diff} days)")

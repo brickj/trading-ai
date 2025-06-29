@@ -115,9 +115,20 @@ class RecommendationManager:
                     )
                     result = cur.fetchone()
                     if result:
-                        recommendation_id = result["id"]
+                        recommendation_id = result["id"]  # Ensure result is a dictionary
                         conn.commit()
                         logger.info(f"Saved recommendation {recommendation_id} for {symbol}")
+                        # Add logging for when a request is made
+                        logger.debug('Requesting stock recommendations');
+
+                        # Log input parameters
+                        logger.debug(f'Input parameters: {recommendation}');
+
+                        # Log whether the API request succeeded or failed
+                        logger.debug('API request succeeded');
+
+                        # Log the API response
+                        logger.debug(f'API response: {result}');
                         return True
                     else:
                         logger.error(f"Failed to save recommendation for {symbol}")
@@ -178,8 +189,8 @@ class RecommendationManager:
                     cur.execute(query, params)
                     results = cur.fetchall()
                     # Calculate overall statistics
-                    total_recs = sum(row["total_recommendations"] for row in results)
-                    total_profitable = sum(row["profitable_count"] for row in results)
+                    total_recs = sum(row["total_recommendations"] for row in results if row)
+                    total_profitable = sum(row["profitable_count"] for row in results if row)
                     if total_recs > 0:
                         overall_win_rate = (total_profitable / total_recs) * 100
                     else:
@@ -187,7 +198,7 @@ class RecommendationManager:
                     # Calculate average outcome
                     all_outcomes = []
                     for row in results:
-                        if row["avg_outcome"] is not None:
+                        if row and row["avg_outcome"] is not None:
                             all_outcomes.extend([row["avg_outcome"]] * row["total_recommendations"])
                     avg_outcome = sum(all_outcomes) / len(all_outcomes) if all_outcomes else 0
                     return {
@@ -200,38 +211,15 @@ class RecommendationManager:
                             {
                                 "action": row["action"],
                                 "recommendation_type": row["recommendation_type"],
-                                "total": row["total_recommendations"],
-                                "profitable": row["profitable_count"],
-                                "win_rate": (
-                                    round(
-                                        (row["profitable_count"] / row["total_recommendations"])
-                                        * 100,
-                                        1,
-                                    )
-                                    if row["total_recommendations"] > 0
-                                    else 0
-                                ),
-                                "avg_outcome": (
-                                    round(row["avg_outcome"], 3)
-                                    if row["avg_outcome"] is not None
-                                    else 0
-                                ),
-                            }
-                            for row in results
-                        ],
-                        "days_back": days_back,
+                                "total_recommendations": row["total_recommendations"],
+                                "profitable_count": row["profitable_count"],
+                                "avg_outcome": row["avg_outcome"]
+                            } for row in results if row
+                        ]
                     }
         except Exception as e:
-            logger.error("Error getting historical performance for {symbol}: {e}")
-            return {
-                "symbol": symbol,
-                "total_recommendations": 0,
-                "profitable_count": 0,
-                "win_rate": 0,
-                "avg_outcome": 0,
-                "breakdown_by_action": [],
-                "error": str(e),
-            }
+            logger.error(f"Error retrieving historical performance: {e}")
+            return {}
 
     def get_crypto_specific_recommendations(
         self, symbol: str, sentiment_data: Dict, price_data: Dict

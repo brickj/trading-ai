@@ -2,6 +2,73 @@
 
 console.log('Dashboard JS loaded');
 
+// Set up fetch interceptor to capture all API requests/responses
+(function() {
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+        // Only intercept API calls
+        if (typeof url === 'string' && url.includes('/api/')) {
+            const requestStartTime = new Date();
+            
+            // Extract request details
+            let requestBody = {};
+            if (options && options.body) {
+                try {
+                    requestBody = JSON.parse(options.body);
+                } catch (e) {
+                    console.error('Error parsing request body:', e);
+                }
+            }
+            
+            // Update debug panel with request info
+            updateDebugPanel('request', {
+                method: options?.method || 'GET',
+                url: url,
+                symbol: requestBody.symbol || 'N/A',
+                ai_provider: requestBody.ai_provider || 'default',
+                timestamp: requestStartTime.toISOString()
+            });
+            
+            // Call original fetch
+            return originalFetch(url, options).then(async response => {
+                // Clone the response so we can read the body
+                const clonedResponse = response.clone();
+                let data;
+                try {
+                    data = await clonedResponse.json();
+                } catch (error) {
+                    data = null;
+                    console.error('Error parsing response:', error);
+                }
+                // Update debug panel with response status
+                updateDebugPanel('response', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: Object.fromEntries(response.headers.entries()),
+                    timestamp: new Date().toISOString()
+                });
+                updateDebugPanel('responseData', data);
+                // Reconstruct a new response so downstream code can read it again
+                const body = data !== null ? JSON.stringify(data) : null;
+                return new Response(body, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: response.headers
+                });
+            }).catch(error => {
+                // Update debug panel with error
+                updateDebugPanel('error', {
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                });
+                throw error;
+            });
+        }
+        // Pass through non-API calls
+        return originalFetch(url, options);
+    };
+})();
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard DOM loaded, initializing...');
@@ -13,6 +80,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 doStandardAnalysis();
             }
         });
+    }
+    
+    // Make sure debug panel is visible by default
+    const debugPanel = document.getElementById('debugPanelBody');
+    if (debugPanel) {
+        debugPanel.style.display = 'block';
     }
 });
 
@@ -35,15 +108,6 @@ function doStandardAnalysis() {
     standardBtnContent.style.display = 'none';
     standardBtnLoading.style.display = 'inline';
     
-    // Update debug panel with request info
-    updateDebugPanel('request', {
-        method: 'POST',
-        url: '/api/analyze_stock',
-        symbol: symbol,
-        ai_provider: 'ollama',
-        timestamp: new Date().toISOString()
-    });
-    
     const requestBody = { symbol: symbol, ai_provider: 'ollama' };
     
     fetch('/api/analyze_stock', {
@@ -52,20 +116,10 @@ function doStandardAnalysis() {
         body: JSON.stringify(requestBody)
     })
     .then(response => {
-        // Update debug panel with response status
-        updateDebugPanel('response', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            timestamp: new Date().toISOString()
-        });
         return response.json();
     })
     .then(data => {
         console.log('Analysis complete:', data);
-        
-        // Update debug panel with response data
-        updateDebugPanel('responseData', data);
         
         // Hide loading state
         standardBtnContent.style.display = 'inline';
@@ -76,6 +130,7 @@ function doStandardAnalysis() {
         } else {
             const result = data.data;
             const trading = result.trading_recommendation;
+            const options = result.options_recommendation;
             
             let resultHtml = `
                 <div class="row">
@@ -101,19 +156,22 @@ function doStandardAnalysis() {
                     <div class="col-md-6">
                         <div class="card border-warning">
                             <div class="card-header bg-warning text-dark">
-                                <h5><i class="fas fa-options"></i> Options Trading</h5>
+                                <h5><i class="fas fa-chart-line"></i> Options Trading</h5>
                             </div>
                             <div class="card-body">
-                                <p><strong>Strategy:</strong> ${trading.strategy_type || 'Standard'}</p>
-                                <p><strong>Option Type:</strong> <span class="badge ${trading.option_type === 'call' ? 'bg-success' : trading.option_type === 'put' ? 'bg-danger' : 'bg-secondary'}">${trading.option_type?.toUpperCase() || 'N/A'}</span></p>
-                                <p><strong>Strike Price:</strong> ${trading.strike_price ? '$' + trading.strike_price : 'N/A'}</p>
-                                <p><strong>Option Price:</strong> ${trading.option_price ? '$' + trading.option_price : 'N/A'}</p>
-                                <p><strong>Days to Expiry:</strong> ${trading.days_to_expiry || 'N/A'}</p>
-                                <p><strong>Hold Time:</strong> ${trading.hold_time || 'N/A'}</p>
-                                <p><strong>Target Gain:</strong> ${trading.target_gain_percent ? trading.target_gain_percent + '%' : 'N/A'}</p>
-                                <p><strong>Stop Loss:</strong> ${trading.stop_loss_percent ? trading.stop_loss_percent + '%' : 'N/A'}</p>
-                                <p><strong>Position Size:</strong> ${trading.position_size || 'N/A'} contracts</p>
-                                ${trading.action === 'HOLD' ? '<p class="text-warning mt-3"><i class="fas fa-info-circle"></i> Currently holding - waiting for clearer market signals</p>' : ''}
+                                ${options && options.action !== 'HOLD' ? 
+                                    `<p><strong>Strategy:</strong> ${options.strategy_type || 'Standard'}</p>
+                                    <p><strong>Option Type:</strong> <span class="badge ${options.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${options.option_type?.toUpperCase() || 'N/A'}</span></p>
+                                    <p><strong>Strike Price:</strong> $${options.strike_price?.toFixed(2) || 'N/A'}</p>
+                                    <p><strong>Option Price:</strong> $${options.option_price?.toFixed(2) || 'N/A'}</p>
+                                    <p><strong>Days to Expiry:</strong> ${options.days_to_expiry || 'N/A'}</p>
+                                    <p><strong>Target Gain:</strong> ${options.target_gain || 'N/A'}</p>
+                                    <p><strong>Stop Loss:</strong> ${options.stop_loss || 'N/A'}</p>
+                                    <p><strong>Position Size:</strong> ${options.position_size || 'N/A'} contracts</p>
+                                    <p><strong>Confidence:</strong> ${((options.confidence || 0) * 100).toFixed(1)}%</p>
+                                    <p><strong>Reasoning:</strong> ${options.reasoning || 'N/A'}</p>` : 
+                                    '<p class="text-warning mt-3"><i class="fas fa-info-circle"></i> No options recommendation - wait for clearer signals</p>'
+                                }
                             </div>
                         </div>
                     </div>
@@ -127,17 +185,36 @@ function doStandardAnalysis() {
                                 <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
                             </div>
                             <div class="card-body">
-                                ${Object.entries(trading.position_recommendations || {}).map(([account, details]) => `
-                                    <div class="mb-2">
-                                        <strong>${account} Account:</strong><br>
+                                ${options && options.action !== 'HOLD' && options.position_recommendations ? 
+                                    `<div class="mb-2">
+                                        <strong>Conservative Account:</strong><br>
                                         <small>
-                                            Contracts: ${details.contracts || 'N/A'}<br>
-                                            Cost: $${details.total_cost || 'N/A'}<br>
-                                            Risk: ${details.risk_percent || 'N/A'}%<br>
-                                            R/R Ratio: ${details.risk_reward_ratio || 'N/A'}
+                                            Contracts: ${options.position_recommendations['$500']?.contracts || 'N/A'}<br>
+                                            Cost: $${options.position_recommendations['$500']?.total_cost?.toFixed(2) || 'N/A'}<br>
+                                            Risk: ${options.position_recommendations['$500']?.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${options.position_recommendations['$500']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
                                         </small>
                                     </div>
-                                `).join('') || '<p class="text-muted">No position recommendations available</p>'}
+                                    <div class="mb-2">
+                                        <strong>Moderate Account:</strong><br>
+                                        <small>
+                                            Contracts: ${options.position_recommendations['$1000']?.contracts || 'N/A'}<br>
+                                            Cost: $${options.position_recommendations['$1000']?.total_cost?.toFixed(2) || 'N/A'}<br>
+                                            Risk: ${options.position_recommendations['$1000']?.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${options.position_recommendations['$1000']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
+                                        </small>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Aggressive Account:</strong><br>
+                                        <small>
+                                            Contracts: ${options.position_recommendations['$2000']?.contracts || 'N/A'}<br>
+                                            Cost: $${options.position_recommendations['$2000']?.total_cost?.toFixed(2) || 'N/A'}<br>
+                                            Risk: ${options.position_recommendations['$2000']?.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${options.position_recommendations['$2000']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
+                                        </small>
+                                    </div>` :
+                                    '<p class="text-muted">No position recommendations available</p>'
+                                }
                             </div>
                         </div>
                     </div>
@@ -150,7 +227,10 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <ul class="list-unstyled">
-                                    ${(trading.day_trading_notes || []).map(note => `<li><small>${note}</small></li>`).join('') || '<li class="text-muted">No trading notes available</li>'}
+                                    ${options && options.action !== 'HOLD' ? 
+                                        options.trading_notes.map(note => `<li><small>${note}</small></li>`).join('') :
+                                        '<li class="text-muted">No trading notes available</li>'
+                                    }
                                 </ul>
                             </div>
                         </div>
@@ -175,10 +255,6 @@ function doStandardAnalysis() {
         standardBtnContent.style.display = 'inline';
         standardBtnLoading.style.display = 'none';
         
-        updateDebugPanel('error', {
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
         showResults('Error: ' + error.message);
     });
 }
@@ -202,14 +278,6 @@ function doEnhancedAnalysis() {
     enhancedBtnContent.style.display = 'none';
     enhancedBtnLoading.style.display = 'inline';
     
-    // Update debug panel with request info
-    updateDebugPanel('request', {
-        method: 'POST',
-        url: '/api/enhanced_analysis',
-        symbol: symbol,
-        timestamp: new Date().toISOString()
-    });
-    
     const requestBody = { symbol: symbol };
     
     fetch('/api/enhanced_analysis', {
@@ -218,20 +286,10 @@ function doEnhancedAnalysis() {
         body: JSON.stringify(requestBody)
     })
     .then(response => {
-        // Update debug panel with response status
-        updateDebugPanel('response', {
-            status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries()),
-            timestamp: new Date().toISOString()
-        });
         return response.json();
     })
     .then(data => {
         console.log('Enhanced analysis complete:', data);
-        
-        // Update debug panel with response data
-        updateDebugPanel('responseData', data);
         
         // Hide loading state
         enhancedBtnContent.style.display = 'inline';
@@ -368,10 +426,6 @@ function doEnhancedAnalysis() {
         enhancedBtnContent.style.display = 'inline';
         enhancedBtnLoading.style.display = 'none';
         
-        updateDebugPanel('error', {
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
         showResults('Error: ' + error.message);
     });
 }
@@ -396,6 +450,10 @@ function getBadgeClass(action) {
 // Debug panel functions
 function updateDebugPanel(type, data) {
     console.log('Updating debug panel:', type, data);
+    
+    // Make sure debug panel is visible by default
+    const debugPanel = document.getElementById('debugPanelBody');
+    debugPanel.style.display = 'block';
     
     switch(type) {
         case 'request':

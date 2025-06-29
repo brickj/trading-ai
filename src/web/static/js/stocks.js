@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load S&P 500 analysis data
 async function loadSP500Data() {
+    console.log('[DEBUG] Requesting S&P 500 data from API');
+    console.log('[DEBUG] loadSP500Data called');
     showLoading('loadingSpinner');
     if (document.getElementById('refreshBtn')) {
         document.getElementById('refreshBtn').disabled = true;
@@ -25,26 +27,44 @@ async function loadSP500Data() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
+        console.log('[DEBUG] Making fetch request to /api/sp500_analysis');
         const response = await fetch('/api/sp500_analysis', {
             signal: controller.signal
         });
         
         clearTimeout(timeoutId);
+        console.log('[DEBUG] API response status:', response.status);
         const data = await response.json();
+        
+        if (response.ok) {
+            console.log('[DEBUG] API request succeeded');
+        } else {
+            console.error('[DEBUG] API request failed with status:', response.status);
+        }
+        
+        console.log('[DEBUG] API response data:', data);
         
         if (data.error) {
             showAlert(data.error, 'danger');
+            console.log('[DEBUG] API error:', data.error);
             return;
         }
         
         // The API returns data.data.enhanced_analysis array
         sp500Data = data.data.enhanced_analysis || [];
+        console.log('[DEBUG] Parsed sp500Data:', sp500Data);
+        console.log('[DEBUG] Number of stocks in response:', sp500Data.length);
+        
+        // Display the data in the UI
+        console.log('[DEBUG] Calling displaySP500Table with data');
         displaySP500Table(sp500Data);
+        console.log('[DEBUG] Calling displayWinnersLosers with data');
         displayWinnersLosers(sp500Data);
         
         if (document.getElementById('lastUpdated')) {
-            document.getElementById('lastUpdated').textContent = 
-                `Last updated: ${new Date(data.data.timestamp).toLocaleString()}`;
+            const timestamp = data.data.timestamp ? new Date(data.data.timestamp).toLocaleString() : 'Unknown';
+            console.log('[DEBUG] Updating lastUpdated with timestamp:', timestamp);
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timestamp}`;
         }
         
         // Show summary statistics
@@ -89,30 +109,34 @@ async function loadSP500Data() {
             document.getElementById('summaryStats').style.display = 'block';
         }
         
-    } catch (error) {
-        if (error.name === 'AbortError') {
-            showAlert('S&P 500 analysis timed out. The analysis is taking longer than expected. Please try again later or contact support if the issue persists.', 'warning');
-        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            showAlert('Network error loading S&P 500 data. Please check your connection and try again.', 'danger');
-        } else {
-            showAlert('Error loading S&P 500 data: ' + error.message, 'danger');
-        }
+        console.log('[DEBUG] Rendering UI components for stock data');
+        
+    } catch (err) {
+        showAlert('Failed to load S&P 500 data', 'danger');
+        console.error('[DEBUG] Exception in loadSP500Data:', err);
     } finally {
-        hideLoading('loadingSpinner');
         if (document.getElementById('refreshBtn')) {
             document.getElementById('refreshBtn').disabled = false;
         }
+        hideLoading('loadingSpinner');
     }
 }
 
 // Display S&P 500 data in table
 function displaySP500Table(stocks) {
+    console.log('[DEBUG] displaySP500Table called with', stocks.length, 'stocks');
     const tbody = document.getElementById('stocksTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('[DEBUG] stocksTableBody element not found');
+        return;
+    }
     
+    console.log('[DEBUG] Clearing stocksTableBody');
     tbody.innerHTML = '';
     
-    stocks.forEach(stock => {
+    console.log('[DEBUG] Starting to populate stocks table');
+    stocks.forEach((stock, index) => {
+        console.log(`[DEBUG] Processing stock ${index + 1}/${stocks.length}: ${stock.symbol}`);
         const row = document.createElement('tr');
         const sentimentData = stock.sentiment_data || {};
         const priceData = stock.price_data || {};
@@ -141,16 +165,23 @@ function displaySP500Table(stocks) {
         `;
         tbody.appendChild(row);
     });
+    console.log('[DEBUG] Finished populating stocks table with', stocks.length, 'rows');
 }
 
 // Display winners and losers summary
 function displayWinnersLosers(stocks) {
+    console.log('[DEBUG] displayWinnersLosers called with:', stocks);
     const winnersList = document.getElementById('winnersList');
     const losersList = document.getElementById('losersList');
     const winnersSummary = document.getElementById('winnersLosersSummary');
     const enhancedResults = document.getElementById('enhancedAnalysisResults');
     
-    if (!winnersList || !losersList) return;
+    if (!winnersList || !losersList) {
+        console.error('[DEBUG] winnersList or losersList element not found');
+        console.error('[DEBUG] winnersList exists:', !!winnersList);
+        console.error('[DEBUG] losersList exists:', !!losersList);
+        return;
+    }
     
     // Sort stocks by type (winners vs losers) and then by sentiment score
     const winners = stocks.filter(stock => stock.type === 'winner').sort((a, b) => {
@@ -158,15 +189,17 @@ function displayWinnersLosers(stocks) {
         const bScore = (b.sentiment_data?.sentiment_score || 0);
         return bScore - aScore;
     });
-    
     const losers = stocks.filter(stock => stock.type === 'loser').sort((a, b) => {
         const aScore = (a.sentiment_data?.sentiment_score || 0);
         const bScore = (b.sentiment_data?.sentiment_score || 0);
         return aScore - bScore;
     });
+    console.log('[DEBUG] Filtered winners:', winners.length, winners.map(w => w.symbol));
+    console.log('[DEBUG] Filtered losers:', losers.length, losers.map(l => l.symbol));
     
     // Display winners
     winnersList.innerHTML = '';
+    console.log('[DEBUG] Rendering winners to winnersList');
     winners.slice(0, 5).forEach(stock => {
         const priceData = stock.price_data || {};
         const sentimentData = stock.sentiment_data || {};
@@ -174,7 +207,6 @@ function displayWinnersLosers(stocks) {
         const isPositive = changePercent.includes('-') === false;
         const changeClass = isPositive ? 'text-success' : 'text-danger';
         const changeIcon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
-        
         winnersList.innerHTML += `
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
@@ -190,9 +222,11 @@ function displayWinnersLosers(stocks) {
             </div>
         `;
     });
+    console.log('[DEBUG] Winners HTML content length:', winnersList.innerHTML.length);
     
     // Display losers
     losersList.innerHTML = '';
+    console.log('[DEBUG] Rendering losers to losersList');
     losers.slice(0, 5).forEach(stock => {
         const priceData = stock.price_data || {};
         const sentimentData = stock.sentiment_data || {};
@@ -200,7 +234,6 @@ function displayWinnersLosers(stocks) {
         const isPositive = changePercent.includes('-') === false;
         const changeClass = isPositive ? 'text-success' : 'text-danger';
         const changeIcon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
-        
         losersList.innerHTML += `
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <div>
@@ -216,13 +249,21 @@ function displayWinnersLosers(stocks) {
             </div>
         `;
     });
+    console.log('[DEBUG] Losers HTML content length:', losersList.innerHTML.length);
     
     // Show the summary sections
     if (winnersSummary) {
         winnersSummary.style.display = 'block';
+        console.log('[DEBUG] winnersSummary shown (display set to block)');
+    } else {
+        console.error('[DEBUG] winnersSummary element not found');
     }
+    
     if (enhancedResults) {
         enhancedResults.style.display = 'block';
+        console.log('[DEBUG] enhancedResults shown (display set to block)');
+    } else {
+        console.error('[DEBUG] enhancedResults element not found');
     }
 }
 

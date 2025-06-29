@@ -191,7 +191,7 @@
                         <h6><i class="fas fa-rocket"></i> Enhanced Analysis Process</h6>
                         <ol>
                             <li><strong>Multi-Strategy Generation:</strong> Create distinct trading strategies (Conservative, Moderate, Income-Focused)</li>
-                            <li><strong>Historical Backtesting:</strong> Test each strategy against {{ historical_lookback_days }} days (2 years) of real market data from Alpha Vantage</li>
+                            <li><strong>Historical Backtesting:</strong> Test each strategy against 730 days (2 years) of real market data from Alpha Vantage</li>
                             <li><strong>Performance Validation:</strong> Calculate win rates, average returns, and consistency scores for each strategy</li>
                             <li><strong>Advanced Confidence Scoring:</strong> Combine sentiment analysis (30%) with historical performance (70%)</li>
                             <li><strong>Strategy Ranking:</strong> Rank all strategies by confidence and select the highest-performing approach</li>
@@ -202,7 +202,7 @@
                         </div>
                         
                         <div class="alert alert-info">
-                            <small><i class="fas fa-lightbulb"></i> <strong>Enhanced Analysis:</strong> Uses sophisticated backtesting with {{ historical_lookback_days }} days (2 years) of historical data to validate strategies before recommendations. This provides much higher confidence in trade outcomes!</small>
+                            <small><i class="fas fa-lightbulb"></i> <strong>Enhanced Analysis:</strong> Uses sophisticated backtesting with 730 days (2 years) of historical data to validate strategies before recommendations. This provides much higher confidence in trade outcomes!</small>
                         </div>
                     </div>
                 </div>
@@ -285,5 +285,86 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/static/js/dashboard.js?v=2.0"></script>
+    
+    <!-- Additional JavaScript to ensure debug panel works properly -->
+    <script>
+        // Make sure debug panel is visible when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Ensuring debug panel is visible...');
+            const debugPanel = document.getElementById('debugPanelBody');
+            if (debugPanel) {
+                debugPanel.style.display = 'block';
+            }
+            
+            // Override fetch to capture all API requests/responses
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                // Only intercept API calls
+                if (typeof url === 'string' && url.includes('/api/')) {
+                    const requestStartTime = new Date();
+                    
+                    // Extract request details
+                    let requestBody = {};
+                    if (options && options.body) {
+                        try {
+                            requestBody = JSON.parse(options.body);
+                        } catch (e) {
+                            console.error('Error parsing request body:', e);
+                        }
+                    }
+                    
+                    // Update debug panel with request info
+                    if (typeof updateDebugPanel === 'function') {
+                        updateDebugPanel('request', {
+                            method: options?.method || 'GET',
+                            url: url,
+                            symbol: requestBody.symbol || 'N/A',
+                            ai_provider: requestBody.ai_provider || 'default',
+                            timestamp: requestStartTime.toISOString()
+                        });
+                    }
+                    
+                    // Call original fetch
+                    return originalFetch(url, options).then(response => {
+                        // Clone the response so we can read the body
+                        const clonedResponse = response.clone();
+                        
+                        // Update debug panel with response status
+                        if (typeof updateDebugPanel === 'function') {
+                            updateDebugPanel('response', {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: Object.fromEntries(response.headers.entries()),
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                        
+                        // Process response body
+                        clonedResponse.json().then(data => {
+                            if (typeof updateDebugPanel === 'function') {
+                                updateDebugPanel('responseData', data);
+                            }
+                        }).catch(error => {
+                            console.error('Error parsing response:', error);
+                        });
+                        
+                        return response;
+                    }).catch(error => {
+                        // Update debug panel with error
+                        if (typeof updateDebugPanel === 'function') {
+                            updateDebugPanel('error', {
+                                error: error.message,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
+                        throw error;
+                    });
+                }
+                
+                // Pass through non-API calls
+                return originalFetch(url, options);
+            };
+        });
+    </script>
 </body>
 </html> 

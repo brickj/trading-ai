@@ -257,31 +257,36 @@ def analyze_stock():
         if cached_result:
             trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock cache hit for {symbol}")
             response = {
-                "status": "success",
-                "data": cached_result,
-                "cache_status": "hit",
-                "timestamp": datetime.now().isoformat(),
-            }
+                    "status": "success",
+                    "data": cached_result,
+                    "cache_status": "hit",
+                    "timestamp": datetime.now().isoformat(),
+                }
             trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock response: {response}")
             return jsonify(response)
         # Perform analysis
         start_time = time.time()
         result = analyze_single_stock(symbol)
+        print(f"[DEBUG] analyze_single_stock result: {result}")  # ADDED DEBUG
+        print(f"[DEBUG] analyze_single_stock result keys: {list(result.keys()) if isinstance(result, dict) else 'not dict'}")  # ADDED DEBUG
+        print(f"[DEBUG] Has options_recommendation: {'options_recommendation' in result if isinstance(result, dict) else False}")  # ADDED DEBUG
         execution_time = time.time() - start_time
         # Cache the result
         cache_result(cache_key, result)
         # Add performance metrics
-        result["performance_metrics"] = {
-            "execution_time_seconds": execution_time,
-            "cache_status": "miss",
-            "timestamp": datetime.now().isoformat(),
-        }
+        if isinstance(result, dict):
+            result["performance_metrics"] = {
+                "execution_time_seconds": execution_time,
+                "cache_status": "miss",
+                "timestamp": datetime.now().isoformat(),
+            }
         response = {
-            "status": "success",
-            "data": result,
-            "cache_status": "miss",
-            "timestamp": datetime.now().isoformat(),
-        }
+                "status": "success",
+                "data": result,
+                "cache_status": "miss",
+                "timestamp": datetime.now().isoformat(),
+            }
+        print(f"[DEBUG] /api/analyze_stock response: {response}")  # ADDED DEBUG
         trading_logger.api_logger.info(f"[DEBUG] /api/analyze_stock response: {response}")
         return jsonify(response)
     except Exception as e:
@@ -397,34 +402,53 @@ def analyze_stock_by_symbol(symbol):
 
 @app.route("/api/sp500_analysis")
 def sp500_analysis():
-    print("DEBUG: Entered sp500_analysis endpoint")  # DEBUG
+    """API endpoint for S&P 500 winners and losers analysis"""
+    trading_logger.api_logger.info("[DEBUG] Entered sp500_analysis endpoint")
     try:
         # Get limit parameter for testing purposes
         limit = request.args.get('limit', type=int)
-        if limit and limit > 0:
-            print(f"🔧 TEST MODE: Limiting analysis to {limit} stocks")
+        refresh = request.args.get('refresh', default=0, type=int)
+        trading_logger.api_logger.info(f"[DEBUG] sp500_analysis request params: limit={limit}, refresh={refresh}")
         
-        # Clear cache to ensure fresh data with fixed symbols
+        if limit and limit > 0:
+            trading_logger.api_logger.info(f"[DEBUG] TEST MODE: Limiting analysis to {limit} stocks")
+        
+        cache_key = "sp500_analysis"
+        # Only clear cache if refresh=1 is passed
+        if refresh:
+            trading_logger.api_logger.info("[DEBUG] Manual refresh requested, clearing cache...")
         try:
             clear_cache()
         except Exception as e:
-            print(f"⚠️ Cache clear failed: {e}")
+                trading_logger.error_logger.error(f"[ERROR] Cache clear failed: {e}")
         
         # Check cache first
-        cache_key = "sp500_analysis"
         cached_result = get_cached_result(cache_key)
-        if cached_result:
+        if cached_result and not refresh:
             # Ensure cached_result is a dictionary, not a string
             if isinstance(cached_result, dict):
                 # Modify cached result to indicate it came from cache
                 cached_result["cached"] = True
                 cached_result["cache_timestamp"] = datetime.now().isoformat()
+                trading_logger.api_logger.info("[DEBUG] Returning cached sp500_analysis result")
+                # Still emit cached progress for UI consistency
+                socketio.emit(
+                    "sp500_progress",
+                    {
+                        "current": cached_result.get("opportunities_found", 0),
+                        "total": cached_result.get("total_analyzed", 0),
+                        "symbol": "CACHED",
+                        "status": "completed",
+                        "cached": True,
+                    },
+                )
+                return create_api_response(data=cached_result)
             else:
                 # If cached result is not a dict (e.g., string), clear cache and proceed
-                print(f"⚠️ Invalid winners_losers data type: {type(cached_result)}")
+                trading_logger.error_logger.error(f"[ERROR] Invalid winners_losers data type: {type(cached_result)}")
                 cached_result = None
         
-        if cached_result:
+        if cached_result and not refresh:
             # Still emit cached progress for UI consistency
             socketio.emit(
                 "sp500_progress",
@@ -437,42 +461,45 @@ def sp500_analysis():
                 },
             )
             return create_api_response(data=cached_result)
-        print("🚀 Starting S&P 500 winners/losers analysis...")
         
         # Get top gainers and losers from Alpha Vantage API (much faster!)
-        limit_per_category = 5  # Reduced from 5 to 5 (keeping 5 winners + 5 losers = 10 total)
+        limit_per_category = 3  # Reduced from 5 to 3 (keeping 3 winners + 3 losers = 6 total)
         try:
+            trading_logger.api_logger.info("[DEBUG] Fetching top gainers/losers from Alpha Vantage API")
             winners_losers = data_fetcher.get_top_gainers_losers(limit=limit_per_category)
-            print(f"🔍 DEBUG: top_gainers_losers type: {type(winners_losers)}, value: {winners_losers}")
+            trading_logger.api_logger.info(f"[DEBUG] top_gainers_losers type: {type(winners_losers)}, value: {winners_losers}")
         except Exception as e:
-            print(f"❌ Error getting top gainers/losers: {e}")
+            trading_logger.error_logger.error(f"[ERROR] Error getting top gainers/losers: {e}")
             # Fallback to default symbols if API fails
             winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-                "losers": ["META", "NVDA", "JPM", "V", "UNH"],
+                "gainers": ["AAPL", "MSFT", "GOOGL"],
+                "losers": ["META", "NVDA", "JPM"],
                 "timestamp": datetime.now().isoformat(),
                 "source": "fallback"
             }
+            trading_logger.api_logger.info("[DEBUG] Using fallback symbols for gainers/losers")
         
         # Ensure winners_losers is a dictionary
         if not isinstance(winners_losers, dict):
-            print(f"⚠️ Invalid top_gainers_losers data type: {type(winners_losers)}")
+            trading_logger.error_logger.error(f"[ERROR] Invalid top_gainers_losers data type: {type(winners_losers)}")
             # Fallback to default symbols
             winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-                "losers": ["META", "NVDA", "JPM", "V", "UNH"],
+                "gainers": ["AAPL", "MSFT", "GOOGL"],
+                "losers": ["META", "NVDA", "JPM"],
                 "timestamp": datetime.now().isoformat(),
                 "source": "fallback"
             }
+            trading_logger.api_logger.info("[DEBUG] Using fallback symbols due to invalid data type")
             
         if not winners_losers.get("gainers") and not winners_losers.get("losers"):
-            print("⚠️ No gainers/losers data, using fallback")
+            trading_logger.error_logger.error("[ERROR] No gainers/losers data returned")
             winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"],
-                "losers": ["META", "NVDA", "JPM", "V", "UNH"],
+                "gainers": ["AAPL", "MSFT", "GOOGL"],
+                "losers": ["META", "NVDA", "JPM"],
                 "timestamp": datetime.now().isoformat(),
                 "source": "fallback"
             }
+            trading_logger.api_logger.info("[DEBUG] Using fallback symbols due to empty gainers/losers lists")
             
         # Combine gainers and losers for analysis
         symbols_to_analyze = []
@@ -482,10 +509,10 @@ def sp500_analysis():
         # Apply limit if specified (for testing)
         if limit and limit > 0:
             symbols_to_analyze = symbols_to_analyze[:limit]
-            print(f"🔧 TEST MODE: Limited to {len(symbols_to_analyze)} symbols: {symbols_to_analyze}")
+            trading_logger.api_logger.info(f"[DEBUG] TEST MODE: Limited to {len(symbols_to_analyze)} symbols: {symbols_to_analyze}")
         
-        print(
-            f"🔍 Running optimized analysis for {len(symbols_to_analyze)} symbols: "
+        trading_logger.api_logger.info(
+            f"[DEBUG] Running optimized analysis for {len(symbols_to_analyze)} symbols: "
             f"{symbols_to_analyze}"
         )
         # Progress callback for WebSocket updates
@@ -1183,9 +1210,21 @@ def watchlist_opportunities():
                 # Modify cached result to indicate it came from cache
                 cached_result["cached"] = True
                 cached_result["cache_timestamp"] = datetime.now().isoformat()
+                # Still emit cached progress for UI consistency
+                socketio.emit(
+                    "watchlist_progress",
+                    {
+                        "current": cached_result.get("total_analyzed", 0),
+                        "total": cached_result.get("total_analyzed", 0),
+                        "symbol": "CACHED",
+                        "status": "completed",
+                        "cached": True,
+                    },
+                )
+                return create_api_response(data=cached_result)
             else:
                 # If cached result is not a dict (e.g., string), clear cache and proceed
-                print(f"⚠️ Invalid cached result type: {type(cached_result)}, clearing cache")
+                print(f"⚠️ Invalid winners_losers data type: {type(cached_result)}")
                 cached_result = None
         
         if cached_result:
@@ -1920,7 +1959,7 @@ def analyze_sentiment_with_fallback(news_data, price_data, symbol, ai_provider=N
         Dict: Sentiment analysis result with news_sentiment field
     """
     try:
-        # First try news-based sentiment analysis
+                # First try news-based sentiment analysis
         if news_data and len(news_data) > 0:
             print(f"🔍 Analyzing {symbol} using news sentiment...")
             if isinstance(ai_provider, str):
@@ -1969,6 +2008,7 @@ def analyze_sentiment_with_fallback(news_data, price_data, symbol, ai_provider=N
 
 def analyze_single_stock(symbol):
     """Analyze a single stock and return the results"""
+    print(f"[DEBUG] analyze_single_stock called for {symbol} from API context")  # ADDED DEBUG
     # Get stock price data
     price_data = data_fetcher.get_stock_price(symbol)
     print(f"🔍 DEBUG price_data for {symbol}: type={type(price_data)}, value={price_data}")
@@ -2047,6 +2087,29 @@ def analyze_single_stock(symbol):
     if not isinstance(trading_recommendation, dict):
         print(f"[ERROR] trading_recommendation is not a dict: {type(trading_recommendation)} - {trading_recommendation}")
         return {"error": f"Trading recommendation returned invalid data type: {type(trading_recommendation)}"}
+    
+    # Generate options recommendation using OptionsStrategy
+    try:
+        from src.trading.enhanced_trading_strategy import OptionsStrategy
+        print(f"[DEBUG] Successfully imported OptionsStrategy for {symbol}")  # ADDED DEBUG
+        options_strategy = OptionsStrategy()
+        print(f"[DEBUG] Successfully created OptionsStrategy instance for {symbol}")  # ADDED DEBUG
+        options_recommendation = options_strategy.get_recommendation(
+            symbol, price_data, sentiment_result, signal_data
+        )
+        print(f"🔍 DEBUG: options_recommendation type: {type(options_recommendation)}, value: {options_recommendation}")
+    except Exception as e:
+        print(f"[ERROR] Failed to generate options recommendation for {symbol}: {str(e)}")
+        import traceback
+        traceback.print_exc()  # ADDED DEBUG
+        options_recommendation = {
+            "symbol": symbol,
+            "action": "HOLD",
+            "recommendation": "Options analysis failed",
+            "reasoning": f"Error generating options recommendation: {str(e)}",
+            "confidence": 0.0
+        }
+    
     result = {
         "symbol": symbol,
         "price_data": price_data,
@@ -2059,8 +2122,11 @@ def analyze_single_stock(symbol):
             "reddit": len(reddit_news),
         },
         "trading_recommendation": trading_recommendation,
+        "options_recommendation": options_recommendation,
         "timestamp": datetime.now().isoformat(),
     }
+    print(f"🔍 DEBUG: Final result keys: {list(result.keys())}")
+    print(f"🔍 DEBUG: options_recommendation in result: {'options_recommendation' in result}")
     return result
 
 
