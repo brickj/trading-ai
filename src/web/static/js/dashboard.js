@@ -109,16 +109,32 @@ function doStandardAnalysis() {
     standardBtnLoading.style.display = 'inline';
     
     const requestBody = { symbol: symbol, ai_provider: 'ollama' };
+    // Debug: capture request
+    if (typeof captureDebug === 'function') {
+        captureDebug({
+            method: 'POST',
+            url: '/api/analyze_stock',
+            body: requestBody,
+            headers: { 'Content-Type': 'application/json' }
+        }, null);
+    }
     
     fetch('/api/analyze_stock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
     })
-    .then(response => {
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
+        // Debug: capture response
+        if (typeof captureDebug === 'function') {
+            captureDebug({
+                method: 'POST',
+                url: '/api/analyze_stock',
+                body: requestBody,
+                headers: { 'Content-Type': 'application/json' }
+            }, data);
+        }
         console.log('Analysis complete:', data);
         
         // Hide loading state
@@ -129,8 +145,8 @@ function doStandardAnalysis() {
             showResults('Error: ' + data.error);
         } else {
             const result = data.data;
-            const trading = result.trading_recommendation;
-            const options = result.options_recommendation;
+            const trading = result && result.trading_recommendation ? result.trading_recommendation : null;
+            const options = result && result.options_recommendation ? result.options_recommendation : null;
             
             let resultHtml = `
                 <div class="row">
@@ -142,16 +158,14 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <p><strong>Symbol:</strong> ${symbol}</p>
-                                <p><strong>Current Price:</strong> $${result.price_data.current_price.toFixed(2)}</p>
-                                <p><strong>News Sources:</strong> ${Object.entries(result.news_sources).map(([source, count]) => 
-                                    `${source}: ${count}`).join(', ')}</p>
-                                <p><strong>Sentiment:</strong> ${result.sentiment_analysis.overall_sentiment || 'Neutral'}</p>
-                                <p><strong>Confidence:</strong> ${((result.sentiment_analysis.confidence || 0) * 100).toFixed(1)}%</p>
-                                <p><strong>Action:</strong> <span class="badge ${trading.action === 'CALL' ? 'bg-success' : trading.action === 'PUT' ? 'bg-danger' : 'bg-secondary'}">${trading.action || 'HOLD'}</span></p>
+                                <p><strong>Current Price:</strong> $${result && result.price_data && result.price_data.current_price ? result.price_data.current_price.toFixed(2) : 'N/A'}</p>
+                                <p><strong>News Sources:</strong> ${result && result.news_sources ? Object.entries(result.news_sources).map(([source, count]) => `${source}: ${count}`).join(', ') : 'N/A'}</p>
+                                <p><strong>Sentiment:</strong> ${result && result.sentiment_analysis && result.sentiment_analysis.overall_sentiment ? result.sentiment_analysis.overall_sentiment : 'Neutral'}</p>
+                                <p><strong>Confidence:</strong> ${result && result.sentiment_analysis && result.sentiment_analysis.confidence ? ((result.sentiment_analysis.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
+                                <p><strong>Action:</strong> <span class="badge ${trading && trading.action === 'CALL' ? 'bg-success' : trading && trading.action === 'PUT' ? 'bg-danger' : 'bg-secondary'}">${trading && trading.action ? trading.action : 'HOLD'}</span></p>
                             </div>
                         </div>
                     </div>
-                    
                     <!-- Options Trading Recommendation -->
                     <div class="col-md-6">
                         <div class="card border-warning">
@@ -159,16 +173,16 @@ function doStandardAnalysis() {
                                 <h5><i class="fas fa-chart-line"></i> Options Trading</h5>
                             </div>
                             <div class="card-body">
-                                ${options && options.action !== 'HOLD' ? 
+                                ${options && options.action && options.action !== 'HOLD' ? 
                                     `<p><strong>Strategy:</strong> ${options.strategy_type || 'Standard'}</p>
-                                    <p><strong>Option Type:</strong> <span class="badge ${options.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${options.option_type?.toUpperCase() || 'N/A'}</span></p>
-                                    <p><strong>Strike Price:</strong> $${options.strike_price?.toFixed(2) || 'N/A'}</p>
-                                    <p><strong>Option Price:</strong> $${options.option_price?.toFixed(2) || 'N/A'}</p>
+                                    <p><strong>Option Type:</strong> <span class="badge ${options.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${options.option_type ? options.option_type.toUpperCase() : 'N/A'}</span></p>
+                                    <p><strong>Strike Price:</strong> $${options.strike_price ? options.strike_price.toFixed(2) : 'N/A'}</p>
+                                    <p><strong>Option Price:</strong> $${options.option_price ? options.option_price.toFixed(2) : 'N/A'}</p>
                                     <p><strong>Days to Expiry:</strong> ${options.days_to_expiry || 'N/A'}</p>
                                     <p><strong>Target Gain:</strong> ${options.target_gain || 'N/A'}</p>
                                     <p><strong>Stop Loss:</strong> ${options.stop_loss || 'N/A'}</p>
                                     <p><strong>Position Size:</strong> ${options.position_size || 'N/A'} contracts</p>
-                                    <p><strong>Confidence:</strong> ${((options.confidence || 0) * 100).toFixed(1)}%</p>
+                                    <p><strong>Confidence:</strong> ${options.confidence ? ((options.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
                                     <p><strong>Reasoning:</strong> ${options.reasoning || 'N/A'}</p>` : 
                                     '<p class="text-warning mt-3"><i class="fas fa-info-circle"></i> No options recommendation - wait for clearer signals</p>'
                                 }
@@ -176,7 +190,6 @@ function doStandardAnalysis() {
                         </div>
                     </div>
                 </div>
-                
                 <div class="row mt-3">
                     <!-- Position Recommendations -->
                     <div class="col-md-6">
@@ -185,7 +198,7 @@ function doStandardAnalysis() {
                                 <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
                             </div>
                             <div class="card-body">
-                                ${options && options.action !== 'HOLD' && options.position_recommendations ? 
+                                ${options && options.action && options.action !== 'HOLD' && options.position_recommendations ? 
                                     `<div class="mb-2">
                                         <strong>Conservative Account:</strong><br>
                                         <small>
@@ -218,7 +231,6 @@ function doStandardAnalysis() {
                             </div>
                         </div>
                     </div>
-                    
                     <!-- Trading Notes -->
                     <div class="col-md-6">
                         <div class="card border-success">
@@ -227,20 +239,16 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <ul class="list-unstyled">
-                                    ${options && options.action !== 'HOLD' ? 
-                                        options.trading_notes.map(note => `<li><small>${note}</small></li>`).join('') :
-                                        '<li class="text-muted">No trading notes available</li>'
-                                    }
+                                    ${options && options.trading_notes ? options.trading_notes.map(note => `<li><small>${note}</small></li>`).join('') : '<li class="text-muted">No trading notes available</li>'}
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
-                
                 <div class="row mt-3">
                     <div class="col-12">
                         <div class="alert alert-secondary">
-                            <small class="text-muted">Analysis completed at: ${new Date(result.timestamp).toLocaleString()}</small>
+                            <small class="text-muted">Analysis completed at: ${result && result.timestamp ? new Date(result.timestamp).toLocaleString() : 'N/A'}</small>
                         </div>
                     </div>
                 </div>
@@ -250,12 +258,19 @@ function doStandardAnalysis() {
     })
     .catch(error => {
         console.error('Error:', error);
-        
         // Hide loading state
         standardBtnContent.style.display = 'inline';
         standardBtnLoading.style.display = 'none';
-        
         showResults('Error: ' + error.message);
+        // Debug: capture error
+        if (typeof captureDebug === 'function') {
+            captureDebug({
+                method: 'POST',
+                url: '/api/analyze_stock',
+                body: requestBody,
+                headers: { 'Content-Type': 'application/json' }
+            }, { error: error.message });
+        }
     });
 }
 
@@ -279,6 +294,13 @@ function doEnhancedAnalysis() {
     enhancedBtnLoading.style.display = 'inline';
     
     const requestBody = { symbol: symbol };
+    // Capture request in debug panel
+    if (typeof captureDebug === 'function') {
+        captureDebug(requestBody, {});
+    } else {
+        document.getElementById('requestData').textContent = JSON.stringify(requestBody, null, 2);
+        document.getElementById('requestStatus').innerHTML = '<small class="text-success">Request captured</small>';
+    }
     
     fetch('/api/enhanced_analysis', {
         method: 'POST',
@@ -289,6 +311,14 @@ function doEnhancedAnalysis() {
         return response.json();
     })
     .then(data => {
+        // Capture response in debug panel
+        if (typeof captureDebug === 'function') {
+            captureDebug(requestBody, data);
+        } else {
+            document.getElementById('responseData').textContent = JSON.stringify(data, null, 2);
+            document.getElementById('responseStatus').innerHTML = '<small class="text-success">Response received</small>';
+        }
+        
         console.log('Enhanced analysis complete:', data);
         
         // Hide loading state
@@ -304,15 +334,21 @@ function doEnhancedAnalysis() {
             console.log('[DEBUG] Enhanced analysis response:', data);
             console.log('[DEBUG] Recommendations object:', recommendations);
             
-            // Add defensive checks for undefined values
-            if (!recommendations || !recommendations.top_recommendation) {
-                console.error('[DEBUG] Missing recommendations data:', recommendations);
-                showResults('Error: Invalid response structure - missing recommendations data');
+            // Defensive checks for top recommendation
+            let topRec = null;
+            if (recommendations) {
+                topRec = recommendations.top_recommendation || recommendations.top_stock_recommendation || recommendations.top_options_recommendation;
+            }
+            if (!topRec) {
+                // Try legacy or fallback keys
+                topRec = result.top_recommendation || result.top_stock_recommendation || result.top_options_recommendation;
+            }
+            // Robust null check for topRec
+            if (!topRec || typeof topRec !== 'object' || Array.isArray(topRec)) {
+                console.error('[DEBUG] Invalid or missing top recommendation:', recommendations, topRec);
+                showResults('Error: Invalid response structure - missing or invalid top recommendation data');
                 return;
             }
-            
-            const topRec = recommendations.top_recommendation;
-            console.log('[DEBUG] Top recommendation:', topRec);
             
             let resultHtml = `
                 <div class="row">
@@ -324,7 +360,6 @@ function doEnhancedAnalysis() {
                         </div>
                     </div>
                 </div>
-                
                 <!-- Top Recommendation -->
                 <div class="row">
                     <div class="col-12">
@@ -355,7 +390,6 @@ function doEnhancedAnalysis() {
                         </div>
                     </div>
                 </div>
-                
                 <!-- Options Recommendations -->
                 <div class="row">
                     <div class="col-12">
@@ -388,7 +422,6 @@ function doEnhancedAnalysis() {
                         `).join('') : '<p>No options recommendations available</p>'}
                     </div>
                 </div>
-                
                 <!-- Stock Recommendations -->
                 <div class="row mt-3">
                     <div class="col-12">
@@ -420,7 +453,6 @@ function doEnhancedAnalysis() {
                         `).join('') : '<p>No stock recommendations available</p>'}
                     </div>
                 </div>
-                
                 <div class="row mt-3">
                     <div class="col-12">
                         <div class="alert alert-secondary">
@@ -434,11 +466,16 @@ function doEnhancedAnalysis() {
     })
     .catch(error => {
         console.error('Enhanced analysis error:', error);
-        
         // Hide loading state
         enhancedBtnContent.style.display = 'inline';
         enhancedBtnLoading.style.display = 'none';
-        
+        // Capture error in debug panel
+        if (typeof captureDebug === 'function') {
+            captureDebug(requestBody, { error: error.message || error });
+        } else {
+            document.getElementById('responseData').textContent = JSON.stringify({ error: error.message || error }, null, 2);
+            document.getElementById('responseStatus').innerHTML = '<small class="text-danger">Error</small>';
+        }
         // Provide more detailed error information
         let errorMessage = 'Unknown error occurred';
         if (error.message) {
@@ -446,7 +483,6 @@ function doEnhancedAnalysis() {
         } else if (error.statusText) {
             errorMessage = `HTTP ${error.status}: ${error.statusText}`;
         }
-        
         showResults(`<div class="alert alert-danger">
             <h5><i class="fas fa-exclamation-triangle"></i> Enhanced Analysis Failed</h5>
             <p><strong>Error:</strong> ${errorMessage}</p>
