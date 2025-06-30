@@ -19,10 +19,20 @@ import time
 from pathlib import Path
 import threading
 
-# Add src to path for imports
-current_dir = Path(__file__).parent
-src_path = current_dir / "src"
-sys.path.insert(0, str(src_path))
+from pathlib import Path
+import sys
+
+# Set project root and src path
+project_root = Path(__file__).parent.resolve()
+src_path = project_root / "src"
+
+# Add both to sys.path
+for path in [str(project_root), str(src_path)]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+
+
 
 # Colors for terminal output
 class Colors:

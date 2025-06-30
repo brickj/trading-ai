@@ -6,6 +6,7 @@ Enhanced with comprehensive logging and monitoring
 import logging
 from flask import Flask, render_template, request, jsonify, send_file, redirect, flash
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 import json
 from datetime import datetime, timedelta
 from src.data.data_fetcher import DataFetcher
@@ -47,8 +48,12 @@ from src.core.database import get_db_connection
 import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
+# Enable CORS for all routes
+CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+
 # FORCE PRODUCTION MODE - SET DEBUG OFF ONCE AND ONLY ONCE
 app.debug = False
 app.config["DEBUG"] = False
@@ -417,9 +422,9 @@ def sp500_analysis():
         # Only clear cache if refresh=1 is passed
         if refresh:
             trading_logger.api_logger.info("[DEBUG] Manual refresh requested, clearing cache...")
-        try:
-            clear_cache()
-        except Exception as e:
+            try:
+                clear_cache()
+            except Exception as e:
                 trading_logger.error_logger.error(f"[ERROR] Cache clear failed: {e}")
         
         # Check cache first
@@ -448,6 +453,7 @@ def sp500_analysis():
                 trading_logger.error_logger.error(f"[ERROR] Invalid winners_losers data type: {type(cached_result)}")
                 cached_result = None
         
+        # Get top gainers and losers from Alpha Vantage API (much faster!)
         if cached_result and not refresh:
             # Still emit cached progress for UI consistency
             socketio.emit(
@@ -597,101 +603,68 @@ def sp500_analysis():
                 print(f"✅ Generated recommendations for {symbol} (historical testing skipped for speed)")
                 
                 # Get the top recommendation
-                trade_signal = comprehensive_result.get(
-                    "top_recommendation",
-                    enhanced_recommendations[0] if enhanced_recommendations else {},
+                top_recommendation = next(
+                    (r for r in comprehensive_result.get("recommendations", []) if r.get("is_top_recommendation")),
+                    {},
                 )
                 
-                # Create result in same format as enhanced_analysis endpoint
+                # Determine if this is a winner or loser based on the symbol
+                symbol_type = "winner" if symbol in winners_losers.get("gainers", []) else "loser"
+                
+                # Create the enhanced analysis result
                 result = {
                     "symbol": symbol,
-                    "type": (
-                        "winner"
-                        if symbol in winners_losers.get("gainers", [])
-                        else "loser"
-                    ),
+                    "type": symbol_type,
                     "price_data": price_data,
                     "sentiment_data": sentiment_data,
                     "signal_data": signal_data,
-                    "trade_signal": trade_signal,
-                    "enhanced_recommendations": comprehensive_result.get(
-                        "options_recommendations", []
-                    ),
-                    "stock_recommendations": comprehensive_result.get("stock_recommendations", []),
-                    "options_recommendations": comprehensive_result.get(
-                        "options_recommendations", []
-                    ),
-                    "comprehensive_analysis": comprehensive_result,
-                    "recommendation_summary": comprehensive_result.get(
-                        "recommendation_summary", {}
-                    ),
-                    "news_count": len(news_data),
-                    "analysis_timestamp": datetime.now().isoformat(),
+                    "news_count": len(news_data) if news_data else 0,
+                    "top_recommendation": top_recommendation,
+                    "timestamp": datetime.now().isoformat()
                 }
+                
                 enhanced_results.append(result)
                 
-                # Progress update
-                progress_callback(symbol, i + 1, len(symbols_to_analyze), result)
+                # Call progress callback
+                progress_callback(
+                    symbol, i + 1, len(symbols_to_analyze), result
+                )
                 
-                # OPTIMIZATION 8: Check if we're taking too long and skip remaining stocks
-                elapsed_time = time.time() - start_time
-                if elapsed_time > 45:  # Stop if taking more than 45 seconds
-                    print(f"⏰ Analysis taking too long ({elapsed_time:.1f}s), stopping early")
-                    break
-                    
             except Exception as e:
-                error_msg = f"Error analyzing {symbol}: {str(e)}"
-                print(f"❌ {error_msg}")
-                errors.append({"symbol": symbol, "error": error_msg})
-                progress_callback(symbol, i + 1, len(symbols_to_analyze), {"error": error_msg})
+                trading_logger.error_logger.error(f"[ERROR] Error analyzing {symbol}: {e}")
+                errors.append({"symbol": symbol, "error": str(e)})
+                # Call progress callback with error
+                progress_callback(
+                    symbol, i + 1, len(symbols_to_analyze), {"error": str(e)}
+                )
         
-        total_time = time.time() - start_time
-        print(f"⏱️ Total analysis time: {total_time:.1f} seconds")
-        
-        result_data = {
-            "top_gainers_losers": winners_losers,  # Updated field name
+        # Ensure we have valid results
+        if not enhanced_results:
+            enhanced_results = []
+            
+        # Create the final response
+        response_data = {
             "enhanced_analysis": enhanced_results,
             "errors": errors,
-            "timestamp": datetime.now().isoformat(),
             "total_analyzed": len(symbols_to_analyze),
-            "opportunities_found": len([r for r in enhanced_results if r.get("trade_signal")]),
+            "opportunities_found": len(enhanced_results),
             "errors_count": len(errors),
-            "cached": False,
             "performance": {
-                "time_taken": f"{total_time:.1f}s",
-                "success_rate": (
-                    f"{((len(symbols_to_analyze) - len(errors)) / len(symbols_to_analyze) * 100):.1f}%"
-                ),
-                "opportunity_rate": (
-                    f"{(len([r for r in enhanced_results if r.get('trade_signal')]) / len(symbols_to_analyze) * 100):.1f}%"
-                ),
+                "execution_time": round(time.time() - start_time, 2),
+                "success_rate": f"{round(len(enhanced_results) / len(symbols_to_analyze) * 100, 1)}%" if len(symbols_to_analyze) > 0 else "0%"
             },
-            "note": f"Analyzed top {len(winners_losers.get('gainers', []))} gainers and {len(winners_losers.get('losers', []))} losers with optimized processing",
+            "timestamp": datetime.now().isoformat()
         }
-        # Cache the result
-        cache_result(cache_key, result_data)
-        # Emit completion
-        socketio.emit(
-            "sp500_progress",
-            {
-                "current": len(symbols_to_analyze),
-                "total": len(symbols_to_analyze),
-                "symbol": "COMPLETED",
-                "status": "completed",
-                "opportunities_found": len([r for r in enhanced_results if r.get("trade_signal")]),
-                "errors_count": len(errors),
-                "cached": False,
-            },
-        )
-        return create_api_response(data=result_data)
+        
+        # Cache the results for future use
+        cache_result(cache_key, response_data)  # Cache for 5 minutes
+        
+        trading_logger.api_logger.info(f"[DEBUG] Returning sp500_analysis result with {len(enhanced_results)} stocks")
+        return create_api_response(data=response_data)
+        
     except Exception as e:
-        print(f"DEBUG: Exception in sp500_analysis: {e}")  # DEBUG
-        log_error(f"sp500_analysis error: {e}\n" + traceback.format_exc())
-        return create_api_response(
-            success=False,
-            error=f"Failed to analyze S&P 500: {e}",
-            status_code=500,
-        )
+        trading_logger.error_logger.error(f"[ERROR] Error in sp500_analysis endpoint: {str(e)}")
+        return create_api_response(error=f"Failed to analyze S&P 500: {str(e)}", status_code=500)
 
 
 @app.route("/api/crypto_analysis")
@@ -1159,7 +1132,22 @@ def send_raw_telegram_message():
 @app.route("/stocks")
 def stocks_page():
     """S&P 500 stocks analysis page"""
-    return render_template("stocks.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS)
+    try:
+        trading_logger.api_logger.info("[DEBUG] Entering stocks_page route handler")
+        
+        # Check if preloaded data is available (warm the cache)
+        try:
+            if not preloaded_data:
+                trading_logger.api_logger.warning("[DEBUG] No preloaded data available for stocks page")
+        except Exception as e:
+            trading_logger.error_logger.error(f"[DEBUG] Error checking preloaded_data: {str(e)}")
+        
+        trading_logger.api_logger.info("[DEBUG] Rendering stocks.html template")
+        return render_template("stocks.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS)
+    except Exception as e:
+        trading_logger.error_logger.error(f"[CRITICAL] Error rendering stocks page: {str(e)}")
+        # Return a simple error page instead of crashing
+        return f"<html><body><h1>Error loading stocks page</h1><p>Please try again later. Error: {str(e)}</p></body></html>", 500
 
 
 @app.route("/crypto")
@@ -2165,6 +2153,189 @@ def create_app():
         from src.core.logger import log_exception
         log_exception("Failed to start Flask application", e)
         raise e
+
+# Global cache for preloaded data
+preloaded_data = None
+preload_timestamp = None
+
+# Function to preload data
+def preload_stock_data():
+    global preloaded_data, preload_timestamp
+    print('[DEBUG] Preloading stock data...')
+    try:
+        # Use internal function call instead of HTTP request to avoid circular dependency
+        from src.data.data_fetcher import DataFetcher
+        from src.trading.enhanced_trading_strategy import EnhancedTradingStrategy
+        
+        # Initialize components if not already done
+        if 'data_fetcher' not in globals():
+            global data_fetcher, enhanced_trading_strategy
+            data_fetcher = DataFetcher()
+            enhanced_trading_strategy = EnhancedTradingStrategy()
+        
+        # Get S&P 500 analysis directly
+        print('[DEBUG] Fetching S&P 500 analysis for preloading...')
+        start_time = time.time()
+        
+        # Use the same logic as the main SP500 analysis to ensure consistency
+        # Get top 6 stocks for analysis (3 winners, 3 losers)
+        winners_losers = data_fetcher.get_sp500_winners_losers()
+        if not winners_losers or (not winners_losers.get('winners') and not winners_losers.get('losers')):
+            print('[ERROR] No S&P 500 winners/losers data available for preloading')
+            return
+            
+        # Get symbols to analyze
+        symbols_to_analyze = []
+        if winners_losers.get('winners'):
+            symbols_to_analyze.extend([w['symbol'] for w in winners_losers['winners'][:3]])
+        if winners_losers.get('losers'):
+            symbols_to_analyze.extend([l['symbol'] for l in winners_losers['losers'][:3]])
+        
+        # Analyze each stock using the same method as the main API
+        enhanced_analysis = []
+        for i, symbol in enumerate(symbols_to_analyze):
+            try:
+                print(f'🔍 Analyzing {symbol} ({i+1}/{len(symbols_to_analyze)})...')
+                
+                # Get enhanced analysis
+                result = analyze_single_stock(symbol)
+                if 'error' not in result:
+                    enhanced_analysis.append(result)
+                    
+            except Exception as e:
+                print(f'[ERROR] Failed to preload analysis for {symbol}: {str(e)}')
+                continue
+        
+                # Now classify as winners/losers based on the original data
+        print(f'[DEBUG] Classifying {len(enhanced_analysis)} stocks...')
+        for result in enhanced_analysis:
+            symbol = result.get('symbol')
+            print(f'[DEBUG] Processing {symbol}...')
+            
+            # Check if it's a winner
+            winner_symbols = [w['symbol'] for w in winners_losers.get('winners', [])]
+            loser_symbols = [l['symbol'] for l in winners_losers.get('losers', [])]
+            print(f'[DEBUG] Winner symbols: {winner_symbols[:3]}')
+            print(f'[DEBUG] Loser symbols: {loser_symbols[:3]}')
+            
+            if symbol in winner_symbols:
+                result['type'] = 'winner'
+                print(f'[DEBUG] {symbol} classified as winner')
+            elif symbol in loser_symbols:
+                result['type'] = 'loser'
+                print(f'[DEBUG] {symbol} classified as loser')
+            else:
+                print(f'[DEBUG] {symbol} not found in winners or losers lists!')
+            
+            # Ensure sentiment_data field exists (map from sentiment_analysis if needed)
+            if 'sentiment_analysis' in result and 'sentiment_data' not in result:
+                result['sentiment_data'] = result['sentiment_analysis']
+                print(f'[DEBUG] Added sentiment_data for {symbol}')
+        
+        # Cache the results
+        preloaded_data = {
+            'enhanced_analysis': enhanced_analysis,
+            'total_analyzed': len(enhanced_analysis),
+            'opportunities_found': len([r for r in enhanced_analysis if r.get('trading_recommendation', {}).get('action') in ['BUY', 'STRONG_BUY']]),
+            'timestamp': datetime.now().isoformat(),
+            'cache_duration': time.time() - start_time
+        }
+        preload_timestamp = datetime.now()
+        
+        print(f'[DEBUG] Successfully preloaded {len(enhanced_analysis)} stock analyses in {time.time() - start_time:.2f} seconds')
+        
+    except Exception as e:
+        print(f'[ERROR] Failed to preload stock data: {str(e)}')
+        import traceback
+        traceback.print_exc()
+
+# Schedule the preload task
+scheduler = BackgroundScheduler()
+# Run at 9:35 AM on trading days
+scheduler.add_job(preload_stock_data, 'cron', day_of_week='mon-fri', hour=9, minute=35, timezone='America/New_York')
+# Also run every 60 seconds for testing/development
+scheduler.add_job(preload_stock_data, 'interval', seconds=60)
+scheduler.start()
+
+# Preload data immediately on startup
+print('[DEBUG] Preloading data on startup...')
+preload_stock_data()
+
+@app.route("/api/preloaded_data")
+def get_preloaded_data():
+    """Endpoint to get preloaded stock data"""
+    global preloaded_data, preload_timestamp
+    
+    # Always return cached data if available, even if older than 1 hour
+    # This provides better user experience with fast loading
+    if preloaded_data and preload_timestamp:
+        age_minutes = (datetime.now() - preload_timestamp).total_seconds() / 60
+        
+        # Return cached data with age information
+        cache_status = "fresh" if age_minutes < 60 else "stale"
+        return create_api_response(
+            data=preloaded_data, 
+            message=f"Cached data (age: {age_minutes:.1f} minutes, status: {cache_status})"
+        )
+    
+    # If no cached data, try to generate some quickly
+    try:
+        print('[DEBUG] No cached data available, attempting quick preload...')
+        preload_stock_data()
+        
+        if preloaded_data:
+            return create_api_response(
+                data=preloaded_data, 
+                message="Freshly generated data"
+            )
+    except Exception as e:
+        print(f'[ERROR] Quick preload failed: {str(e)}')
+    
+    # Final fallback - return empty structure that frontend can handle
+    fallback_data = {
+        'enhanced_analysis': [],
+        'total_analyzed': 0,
+        'opportunities_found': 0,
+        'timestamp': datetime.now().isoformat(),
+        'fallback': True
+    }
+    
+    return create_api_response(
+        data=fallback_data, 
+        message="No cached data available - using fallback"
+    )
+
+@app.route("/api/frontend_logs", methods=["POST"])
+def frontend_logs():
+    """Endpoint to receive frontend logs"""
+    try:
+        data = request.get_json()
+        if not data:
+            return create_api_response(error="No log data provided", status_code=400)
+        
+        # Extract log information
+        level = data.get('level', 'INFO')
+        message = data.get('message', '')
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        session_id = data.get('sessionId', 'unknown')
+        
+        # Log the frontend message
+        log_message = f"[FRONTEND] [{session_id}] {message}"
+        
+        if level == 'ERROR':
+            log_error(log_message, "frontend")
+        elif level == 'WARN':
+            log_warning(log_message, "frontend")
+        elif level == 'DEBUG':
+            log_debug(log_message, "frontend")
+        else:
+            log_info(log_message, "frontend")
+        
+        return create_api_response(message="Log received successfully")
+        
+    except Exception as e:
+        log_exception("Frontend logs endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
 
 if __name__ == "__main__":
     create_app()

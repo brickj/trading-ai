@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "@playwright/test": "^1.53.1",
+    "playwright": "^1.53.1"
+  },
+  "name": "trading",
+  "version": "1.0.0",
+  "description": "⚠️ **IMPORTANT: PROTECTED CODE** ⚠️",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brickj/trading-ai.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/brickj/trading-ai/issues"
+  },
+  "homepage": "https://github.com/brickj/trading-ai#readme"
+}

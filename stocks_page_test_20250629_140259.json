@@ -1,0 +1,28 @@
+{
+  "timestamp": "2025-06-29T14:02:54.042346",
+  "api_test": {
+    "success": true,
+    "response_time_ms": 3950,
+    "data_count": 6,
+    "winners_count": 3,
+    "losers_count": 3,
+    "error": null
+  },
+  "page_test": {
+    "success": false,
+    "page_load_time_ms": 203,
+    "data_load_time_ms": 10,
+    "winners_displayed": true,
+    "losers_displayed": true,
+    "table_rows": 1,
+    "error": null
+  },
+  "js_errors": [
+    {
+      "level": "SEVERE",
+      "message": "http://localhost:5001/favicon.ico - Failed to load resource: the server responded with a status of 404 (NOT FOUND)",
+      "source": "network",
+      "timestamp": 1751220179167
+    }
+  ]
+}

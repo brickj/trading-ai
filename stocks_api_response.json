@@ -1,0 +1,191 @@
+{
+  "data": {
+    "cache_timestamp": "2025-06-29T17:53:52.113713",
+    "cached": true,
+    "enhanced_analysis": [
+      {
+        "news_count": 1,
+        "price_data": {
+          "change": 5.75,
+          "change_percent": "225.4902%",
+          "current_price": 8.3,
+          "symbol": "LCFY",
+          "timestamp": "2025-06-29T17:52:27.306072",
+          "volume": 95218173
+        },
+        "sentiment_data": {
+          "confidence": 0.8,
+          "has_news": true,
+          "news_sentiment": 0.53,
+          "provider": "ollama",
+          "sentiment_score": 0.53,
+          "summary": "Positive sentiment, indicating a promising partnership that expands Locafy's U.S. business listing syndication and positions its AI search readiness solutions as value-added upsells."
+        },
+        "signal_data": {
+          "action": "CALL",
+          "confidence": 0.8,
+          "reasoning": "Positive sentiment (0.53) with high confidence (0.80)",
+          "signal_strength": 0.42400000000000004
+        },
+        "symbol": "LCFY",
+        "timestamp": "2025-06-29T17:52:41.006557",
+        "top_recommendation": {},
+        "type": "winner"
+      },
+      {
+        "news_count": 0,
+        "price_data": {
+          "change": 42.39,
+          "change_percent": "210.7907%",
+          "current_price": 62.5,
+          "symbol": "BGL",
+          "timestamp": "2025-06-29T17:52:41.078987",
+          "volume": 391614
+        },
+        "sentiment_data": {
+          "analysis_method": "price_based",
+          "confidence": 0.5,
+          "news_count": 0,
+          "sentiment_label": "neutral",
+          "sentiment_score": 0.0
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.5,
+          "reasoning": "Low confidence or weak sentiment signal",
+          "signal_strength": 0
+        },
+        "symbol": "BGL",
+        "timestamp": "2025-06-29T17:52:53.323400",
+        "top_recommendation": {},
+        "type": "winner"
+      },
+      {
+        "news_count": 2,
+        "price_data": {
+          "change": 1.808,
+          "change_percent": "126.2570%",
+          "current_price": 3.24,
+          "symbol": "RCT",
+          "timestamp": "2025-06-29T17:52:53.393772",
+          "volume": 77482184
+        },
+        "sentiment_data": {
+          "confidence": 0.6,
+          "has_news": true,
+          "news_sentiment": -0.1,
+          "provider": "ollama",
+          "sentiment_score": -0.1,
+          "summary": "Neutral, with a slight positive tone due to the launch of an innovative program and potential solution to systemic inefficiencies in FMCG products supply chain."
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.6,
+          "reasoning": "Neutral sentiment",
+          "signal_strength": 0
+        },
+        "symbol": "RCT",
+        "timestamp": "2025-06-29T17:53:06.332195",
+        "top_recommendation": {},
+        "type": "winner"
+      },
+      {
+        "news_count": 0,
+        "price_data": {
+          "change": -7.76,
+          "change_percent": "-47.2307%",
+          "current_price": 8.67,
+          "symbol": "DAIC",
+          "timestamp": "2025-06-29T17:53:06.402723",
+          "volume": 405428
+        },
+        "sentiment_data": {
+          "analysis_method": "price_based",
+          "confidence": 0.5,
+          "news_count": 0,
+          "sentiment_label": "neutral",
+          "sentiment_score": 0.0
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.5,
+          "reasoning": "Low confidence or weak sentiment signal",
+          "signal_strength": 0
+        },
+        "symbol": "DAIC",
+        "timestamp": "2025-06-29T17:53:18.647151",
+        "top_recommendation": {},
+        "type": "loser"
+      },
+      {
+        "news_count": 4,
+        "price_data": {
+          "change": -0.4192,
+          "change_percent": "-43.1010%",
+          "current_price": 0.5534,
+          "symbol": "OTRK",
+          "timestamp": "2025-06-29T17:53:18.750587",
+          "volume": 3324023
+        },
+        "sentiment_data": {
+          "confidence": 0.8,
+          "has_news": true,
+          "news_sentiment": -1,
+          "provider": "ollama",
+          "sentiment_score": -1,
+          "summary": "OST's share price plunge is very negative, while Ontrak's public offering and growth companies with high insider ownership are neutral to positive."
+        },
+        "signal_data": {
+          "action": "PUT",
+          "confidence": 0.8,
+          "reasoning": "Negative sentiment (-1.00) with high confidence (0.80)",
+          "signal_strength": 0.8
+        },
+        "symbol": "OTRK",
+        "timestamp": "2025-06-29T17:53:31.748039",
+        "top_recommendation": {},
+        "type": "loser"
+      },
+      {
+        "news_count": 0,
+        "price_data": {
+          "change": -7.12,
+          "change_percent": "-42.8916%",
+          "current_price": 9.48,
+          "symbol": "LIMN",
+          "timestamp": "2025-06-29T17:53:31.817483",
+          "volume": 684271
+        },
+        "sentiment_data": {
+          "analysis_method": "price_based",
+          "confidence": 0.5,
+          "news_count": 0,
+          "sentiment_label": "neutral",
+          "sentiment_score": 0.0
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.5,
+          "reasoning": "Low confidence or weak sentiment signal",
+          "signal_strength": 0
+        },
+        "symbol": "LIMN",
+        "timestamp": "2025-06-29T17:53:44.113609",
+        "top_recommendation": {},
+        "type": "loser"
+      }
+    ],
+    "errors": [],
+    "errors_count": 0,
+    "opportunities_found": 6,
+    "performance": {
+      "execution_time": 76.88,
+      "success_rate": "100.0%"
+    },
+    "timestamp": "2025-06-29T17:53:44.113727",
+    "total_analyzed": 6
+  },
+  "message": "",
+  "success": true,
+  "timestamp": "2025-06-29T17:53:52.113839"
+}

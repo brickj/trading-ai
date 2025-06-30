@@ -2,7 +2,7 @@
 
 // Theme management
 function toggleTheme() {
-    log.userAction('Theme Toggle Clicked');
+    frontendLogger.logUserAction('Theme Toggle Clicked');
     
     const html = document.documentElement;
     const currentTheme = html.getAttribute('data-theme');
@@ -18,7 +18,7 @@ function toggleTheme() {
         icon.className = 'fas fa-sun';
     }
     
-    log.userAction('Theme Changed', { from: currentTheme, to: newTheme });
+    frontendLogger.logUserAction('Theme Changed', null, { from: currentTheme, to: newTheme });
 }
 
 // Initialize theme from localStorage
@@ -85,7 +85,7 @@ function getSignalClass(action) {
 
 // Show/hide loading spinner
 function showLoading(elementId) {
-    log.userAction('Loading Started', { element: elementId });
+    frontendLogger.logUserAction('Loading Started', elementId);
     const element = document.getElementById(elementId);
     if (element) {
         element.style.display = 'block';
@@ -93,7 +93,7 @@ function showLoading(elementId) {
 }
 
 function hideLoading(elementId) {
-    log.userAction('Loading Ended', { element: elementId });
+    frontendLogger.logUserAction('Loading Ended', elementId);
     const element = document.getElementById(elementId);
     if (element) {
         element.style.display = 'none';
@@ -102,7 +102,7 @@ function hideLoading(elementId) {
 
 // Show alert messages
 function showAlert(message, type) {
-    log.userAction('Alert Shown', { message, type });
+    frontendLogger.logUserAction('Alert Shown', null, { message, type });
     
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
@@ -125,15 +125,15 @@ function showAlert(message, type) {
 const socket = io();
 
 socket.on('connect', function() {
-    log.info('Socket.IO connected', { socketId: socket.id }, 'WEBSOCKET');
+    frontendLogger.info('Socket.IO connected', 'websocket');
 });
 
 socket.on('disconnect', function() {
-    log.warn('Socket.IO disconnected', null, 'WEBSOCKET');
+    frontendLogger.warn('Socket.IO disconnected', 'websocket');
 });
 
 socket.on('analysis_progress', function(data) {
-    log.debug('Analysis Progress Update', data, 'WEBSOCKET');
+    frontendLogger.debug('Analysis Progress Update: ' + JSON.stringify(data), 'websocket');
     
     const loadingText = document.getElementById('loadingText');
     if (loadingText && data.message) {
@@ -143,30 +143,21 @@ socket.on('analysis_progress', function(data) {
 
 // Enhanced error handling for debugging
 function debugLog(message, data = null) {
-    log.debug(message, data, 'DEBUG');
+    frontendLogger.debug(message + (data ? ': ' + JSON.stringify(data) : ''), 'debug');
 }
 
 // Initialize theme on page load
 document.addEventListener('DOMContentLoaded', function() {
     initializeTheme();
-    log.info('Page Loaded', { url: window.location.href }, 'NAVIGATION');
+    frontendLogger.info('Page Loaded: ' + window.location.href, 'navigation');
 });
 
 // Log any unhandled errors
 window.addEventListener('error', function(event) {
-    log.error('JavaScript Error', {
-        message: event.message,
-        filename: event.filename,
-        lineno: event.lineno,
-        colno: event.colno,
-        stack: event.error?.stack
-    }, 'ERROR');
+    frontendLogger.error('JavaScript Error: ' + event.message + ' at ' + event.filename + ':' + event.lineno, 'error');
 });
 
 // Global error handler for async operations
 window.addEventListener('unhandledrejection', function(event) {
-    log.error('Unhandled Promise Rejection', {
-        reason: event.reason,
-        promise: event.promise
-    }, 'ERROR');
+    frontendLogger.error('Unhandled Promise Rejection: ' + event.reason, 'error');
 }); 

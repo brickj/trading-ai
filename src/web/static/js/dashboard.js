@@ -301,13 +301,26 @@ function doEnhancedAnalysis() {
             const result = data.data;
             const recommendations = result.recommendations;
             
+            console.log('[DEBUG] Enhanced analysis response:', data);
+            console.log('[DEBUG] Recommendations object:', recommendations);
+            
+            // Add defensive checks for undefined values
+            if (!recommendations || !recommendations.top_recommendation) {
+                console.error('[DEBUG] Missing recommendations data:', recommendations);
+                showResults('Error: Invalid response structure - missing recommendations data');
+                return;
+            }
+            
+            const topRec = recommendations.top_recommendation;
+            console.log('[DEBUG] Top recommendation:', topRec);
+            
             let resultHtml = `
                 <div class="row">
                     <div class="col-12">
                         <div class="alert alert-success">
                             <h5><i class="fas fa-rocket"></i> Enhanced Analysis Complete</h5>
                             <p><strong>Symbol:</strong> ${symbol} | <strong>Analysis Type:</strong> Enhanced Multi-Strategy</p>
-                            <p><strong>Top Recommendation:</strong> ${recommendations.top_recommendation.recommendation_type} - ${recommendations.top_recommendation.action}</p>
+                            <p><strong>Top Recommendation:</strong> ${topRec.recommendation_type || 'N/A'} - ${topRec.action || 'N/A'}</p>
                         </div>
                     </div>
                 </div>
@@ -322,22 +335,22 @@ function doEnhancedAnalysis() {
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <p><strong>Type:</strong> ${recommendations.top_recommendation.recommendation_type}</p>
-                                        <p><strong>Action:</strong> <span class="badge ${getBadgeClass(recommendations.top_recommendation.action)}">${recommendations.top_recommendation.action}</span></p>
-                                        <p><strong>Confidence:</strong> ${(recommendations.top_recommendation.confidence * 100).toFixed(1)}%</p>
+                                        <p><strong>Type:</strong> ${topRec.recommendation_type || 'N/A'}</p>
+                                        <p><strong>Action:</strong> <span class="badge ${getBadgeClass(topRec.action)}">${topRec.action || 'N/A'}</span></p>
+                                        <p><strong>Confidence:</strong> ${((topRec.confidence || 0) * 100).toFixed(1)}%</p>
                                     </div>
                                     <div class="col-md-4">
-                                        <p><strong>Entry Price:</strong> $${recommendations.top_recommendation.entry_price?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Target Price:</strong> $${recommendations.top_recommendation.target_price?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Stop Loss:</strong> $${recommendations.top_recommendation.stop_loss?.toFixed(2) || 'N/A'}</p>
+                                        <p><strong>Entry Price:</strong> $${topRec.entry_price?.toFixed(2) || 'N/A'}</p>
+                                        <p><strong>Target Price:</strong> $${topRec.target_price?.toFixed(2) || 'N/A'}</p>
+                                        <p><strong>Stop Loss:</strong> $${topRec.stop_loss?.toFixed(2) || 'N/A'}</p>
                                     </div>
                                     <div class="col-md-4">
-                                        <p><strong>Position Size:</strong> ${recommendations.top_recommendation.position_size || 'N/A'}</p>
-                                        <p><strong>Risk/Reward:</strong> ${recommendations.top_recommendation.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Hold Time:</strong> ${recommendations.top_recommendation.hold_time || 'N/A'}</p>
+                                        <p><strong>Position Size:</strong> ${topRec.position_size || 'N/A'}</p>
+                                        <p><strong>Risk/Reward:</strong> ${topRec.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
+                                        <p><strong>Hold Time:</strong> ${topRec.hold_time || 'N/A'}</p>
                                     </div>
                                 </div>
-                                <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${recommendations.top_recommendation.reasoning}</small></p>
+                                <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${topRec.reasoning || 'N/A'}</small></p>
                             </div>
                         </div>
                     </div>
@@ -347,13 +360,13 @@ function doEnhancedAnalysis() {
                 <div class="row">
                     <div class="col-12">
                         <h5 class="mb-3">Options Trading Recommendations</h5>
-                        ${recommendations.options_recommendations ? recommendations.options_recommendations.map(rec => `
+                        ${recommendations.options_recommendations && recommendations.options_recommendations.length > 0 ? recommendations.options_recommendations.map(rec => `
                             <div class="card mb-3 border-warning recommendation-card">
                                 <div class="card-body">
-                                    <h6 class="recommendation-type">${rec.recommendation_type}</h6>
+                                    <h6 class="recommendation-type">${rec.recommendation_type || 'N/A'}</h6>
                                     <div class="row">
                                         <div class="col-md-4">
-                                            <p><strong>Action:</strong> <span class="badge ${getBadgeClass(rec.action)}">${rec.action}</span></p>
+                                            <p><strong>Action:</strong> <span class="badge ${getBadgeClass(rec.action)}">${rec.action || 'N/A'}</span></p>
                                             <p><strong>Option Type:</strong> <span class="badge ${rec.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${rec.option_type?.toUpperCase() || 'N/A'}</span></p>
                                             <p><strong>Strike Price:</strong> $${rec.strike_price?.toFixed(2) || 'N/A'}</p>
                                         </div>
@@ -363,13 +376,13 @@ function doEnhancedAnalysis() {
                                             <p><strong>Position Size:</strong> ${rec.position_size || 'N/A'} contracts</p>
                                         </div>
                                         <div class="col-md-4">
-                                            <p><strong>Base Confidence:</strong> ${(rec.base_confidence * 100).toFixed(1)}%</p>
-                                            <p><strong>Historical Confidence:</strong> ${(rec.historical_confidence * 100).toFixed(1)}%</p>
-                                            <p><strong>Final Confidence:</strong> ${(rec.confidence * 100).toFixed(1)}%</p>
+                                            <p><strong>Base Confidence:</strong> ${((rec.base_confidence || 0) * 100).toFixed(1)}%</p>
+                                            <p><strong>Historical Confidence:</strong> ${((rec.historical_confidence || 0) * 100).toFixed(1)}%</p>
+                                            <p><strong>Final Confidence:</strong> ${((rec.confidence || 0) * 100).toFixed(1)}%</p>
                                             <p><strong>Rank:</strong> ${rec.rank || 'N/A'}</p>
                                         </div>
                                     </div>
-                                    <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${rec.reasoning}</small></p>
+                                    <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${rec.reasoning || 'N/A'}</small></p>
                                 </div>
                             </div>
                         `).join('') : '<p>No options recommendations available</p>'}
@@ -380,13 +393,13 @@ function doEnhancedAnalysis() {
                 <div class="row mt-3">
                     <div class="col-12">
                         <h5 class="mb-3">Stock Trading Recommendations</h5>
-                        ${recommendations.stock_recommendations ? recommendations.stock_recommendations.map(rec => `
+                        ${recommendations.stock_recommendations && recommendations.stock_recommendations.length > 0 ? recommendations.stock_recommendations.map(rec => `
                             <div class="card mb-3 border-primary recommendation-card">
                                 <div class="card-body">
-                                    <h6 class="recommendation-type">${rec.recommendation_type}</h6>
+                                    <h6 class="recommendation-type">${rec.recommendation_type || 'N/A'}</h6>
                                     <div class="row">
                                         <div class="col-md-4">
-                                            <p><strong>Action:</strong> <span class="badge ${getBadgeClass(rec.action)}">${rec.action}</span></p>
+                                            <p><strong>Action:</strong> <span class="badge ${getBadgeClass(rec.action)}">${rec.action || 'N/A'}</span></p>
                                             <p><strong>Entry Price:</strong> $${rec.entry_price?.toFixed(2) || 'N/A'}</p>
                                             <p><strong>Target Price:</strong> $${rec.target_price?.toFixed(2) || 'N/A'}</p>
                                         </div>
@@ -396,12 +409,12 @@ function doEnhancedAnalysis() {
                                             <p><strong>Risk/Reward:</strong> ${rec.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
                                         </div>
                                         <div class="col-md-4">
-                                            <p><strong>Base Confidence:</strong> ${(rec.base_confidence * 100).toFixed(1)}%</p>
-                                            <p><strong>Historical Confidence:</strong> ${(rec.historical_confidence * 100).toFixed(1)}%</p>
-                                            <p><strong>Final Confidence:</strong> ${(rec.confidence * 100).toFixed(1)}%</p>
+                                            <p><strong>Base Confidence:</strong> ${((rec.base_confidence || 0) * 100).toFixed(1)}%</p>
+                                            <p><strong>Historical Confidence:</strong> ${((rec.historical_confidence || 0) * 100).toFixed(1)}%</p>
+                                            <p><strong>Final Confidence:</strong> ${((rec.confidence || 0) * 100).toFixed(1)}%</p>
                                         </div>
                                     </div>
-                                    <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${rec.reasoning}</small></p>
+                                    <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${rec.reasoning || 'N/A'}</small></p>
                                 </div>
                             </div>
                         `).join('') : '<p>No stock recommendations available</p>'}
@@ -420,13 +433,25 @@ function doEnhancedAnalysis() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('Enhanced analysis error:', error);
         
         // Hide loading state
         enhancedBtnContent.style.display = 'inline';
         enhancedBtnLoading.style.display = 'none';
         
-        showResults('Error: ' + error.message);
+        // Provide more detailed error information
+        let errorMessage = 'Unknown error occurred';
+        if (error.message) {
+            errorMessage = error.message;
+        } else if (error.statusText) {
+            errorMessage = `HTTP ${error.status}: ${error.statusText}`;
+        }
+        
+        showResults(`<div class="alert alert-danger">
+            <h5><i class="fas fa-exclamation-triangle"></i> Enhanced Analysis Failed</h5>
+            <p><strong>Error:</strong> ${errorMessage}</p>
+            <p><small>Please try again or contact support if the problem persists.</small></p>
+        </div>`);
     });
 }
 
@@ -568,6 +593,17 @@ function showResults(content) {
             ${content}
         </div>
     `;
+}
+
+function toggleHowItWorks() {
+    const howItWorksCard = document.getElementById('howItWorksCard');
+    if (howItWorksCard) {
+        if (howItWorksCard.style.display === 'none') {
+            howItWorksCard.style.display = 'block';
+        } else {
+            howItWorksCard.style.display = 'none';
+        }
+    }
 }
 
 console.log('Dashboard functions ready'); 
