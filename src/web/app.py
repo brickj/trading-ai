@@ -7,7 +7,6 @@ import logging
 from flask import Flask, render_template, request, jsonify, send_file, redirect, flash
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
-import json
 from datetime import datetime, timedelta
 from src.data.data_fetcher import DataFetcher
 from src.core.sentiment_analyzer import SentimentAnalyzer
@@ -25,7 +24,6 @@ from src.core.batch_processor import (
 import requests
 import time
 from src.trading.enhanced_trading_strategy import EnhancedTradingStrategy
-import os
 import sys
 import psutil
 import platform
@@ -49,6 +47,9 @@ import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
 from apscheduler.schedulers.background import BackgroundScheduler
+import psycopg2
+from psycopg2.extras import Json
+import threading
 
 app = Flask(__name__)
 # Enable CORS for all routes
@@ -593,25 +594,17 @@ def sp500_analysis():
                 # Historical data testing is very slow and not essential for S&P 500 overview
                 historical_data = []
                 
-                # OPTIMIZATION 6: Simplified recommendation generation
+                # Generate comprehensive recommendations with position sizes and trading notes
                 comprehensive_result = enhanced_trading_strategy.get_comprehensive_recommendations(
                     symbol, price_data["current_price"], sentiment_data, signal_data
                 )
                 
-                # OPTIMIZATION 7: Skip historical testing entirely for speed
-                enhanced_recommendations = []
-                print(f"✅ Generated recommendations for {symbol} (historical testing skipped for speed)")
-                
-                # Get the top recommendation
-                top_recommendation = next(
-                    (r for r in comprehensive_result.get("recommendations", []) if r.get("is_top_recommendation")),
-                    {},
-                )
+                print(f"✅ Generated comprehensive recommendations for {symbol}")
                 
                 # Determine if this is a winner or loser based on the symbol
                 symbol_type = "winner" if symbol in winners_losers.get("gainers", []) else "loser"
                 
-                # Create the enhanced analysis result
+                # Create the enhanced analysis result with comprehensive analysis
                 result = {
                     "symbol": symbol,
                     "type": symbol_type,
@@ -619,7 +612,7 @@ def sp500_analysis():
                     "sentiment_data": sentiment_data,
                     "signal_data": signal_data,
                     "news_count": len(news_data) if news_data else 0,
-                    "top_recommendation": top_recommendation,
+                    "comprehensive_analysis": comprehensive_result,
                     "timestamp": datetime.now().isoformat()
                 }
                 
@@ -1517,7 +1510,7 @@ def consolidated_test():
                         "summary": "This is a test message for sentiment analysis showing positive financial news"
                     }
                 ]
-                sentiment = sentiment_analyzer.analyze_news_sentiment(test_articles)
+                sentiment = sentiment_analyzer.analyze_news_sentiment(test_articles, symbol="TEST")
                 results["tests"]["sentiment"] = {
                     "status": "success",
                     "result": sentiment,
@@ -1855,7 +1848,7 @@ def enhanced_analysis():
                 trading_logger.api_logger.info(f"[DEBUG] /api/enhanced_analysis missing news data: {news_data}")
                 return create_api_response(error=f"Could not fetch news data for {symbol}", status_code=400)
             emit_progress(3, "Analyzing sentiment...")
-            sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data)
+            sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
             emit_progress(4, "Generating trading signals...")
             signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
             emit_progress(5, "Generating comprehensive recommendations...")
@@ -1951,9 +1944,9 @@ def analyze_sentiment_with_fallback(news_data, price_data, symbol, ai_provider=N
         if news_data and len(news_data) > 0:
             print(f"🔍 Analyzing {symbol} using news sentiment...")
             if isinstance(ai_provider, str):
-                sentiment_result = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider=ai_provider)
+                sentiment_result = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider=ai_provider, symbol=symbol)
             else:
-                sentiment_result = sentiment_analyzer.analyze_news_sentiment(news_data)
+                sentiment_result = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
             # Add news_sentiment field to indicate news was used
             sentiment_result["news_sentiment"] = sentiment_result["sentiment_score"]
             sentiment_result["has_news"] = True
@@ -2141,18 +2134,23 @@ def check_rate_limit(endpoint):
 
 def create_app():
     """Create and start the Flask application"""
+    import sys
+    print('[DEBUG] Entered create_app()')
     try:
         from src.core.logger import log_info, log_system_event
         log_info("Starting Flask application via create_app", "system")
         log_system_event("Flask application starting", "INFO")
-        
+        print('[DEBUG] About to start socketio.run() on 0.0.0.0:5001')
+        sys.stdout.flush()
         # Start the SocketIO server
         socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)
-        
+        print('[DEBUG] socketio.run() has exited (should not happen unless server stops)')
+        sys.stdout.flush()
     except Exception as e:
+        print(f'[DEBUG] Exception in create_app: {e}')
         from src.core.logger import log_exception
         log_exception("Failed to start Flask application", e)
-        raise e
+        sys.stdout.flush()
 
 # Global cache for preloaded data
 preloaded_data = None
@@ -2160,8 +2158,9 @@ preload_timestamp = None
 
 # Function to preload data
 def preload_stock_data():
-    global preloaded_data, preload_timestamp
-    print('[DEBUG] Preloading stock data...')
+    import sys
+    print('[DEBUG] Starting background preload_stock_data()')
+    sys.stdout.flush()
     try:
         # Use internal function call instead of HTTP request to avoid circular dependency
         from src.data.data_fetcher import DataFetcher
@@ -2231,6 +2230,11 @@ def preload_stock_data():
             if 'sentiment_analysis' in result and 'sentiment_data' not in result:
                 result['sentiment_data'] = result['sentiment_analysis']
                 print(f'[DEBUG] Added sentiment_data for {symbol}')
+            
+            # Ensure signal_data field exists (map from trading_recommendation if needed)
+            if 'trading_recommendation' in result and 'signal_data' not in result:
+                result['signal_data'] = result['trading_recommendation']
+                print(f'[DEBUG] Added signal_data for {symbol}')
         
         # Cache the results
         preloaded_data = {
@@ -2245,21 +2249,23 @@ def preload_stock_data():
         print(f'[DEBUG] Successfully preloaded {len(enhanced_analysis)} stock analyses in {time.time() - start_time:.2f} seconds')
         
     except Exception as e:
-        print(f'[ERROR] Failed to preload stock data: {str(e)}')
-        import traceback
-        traceback.print_exc()
+        print(f'[DEBUG] Exception in preload_stock_data: {e}')
+        sys.stdout.flush()
+    print('[DEBUG] Finished background preload_stock_data()')
+    sys.stdout.flush()
 
 # Schedule the preload task
 scheduler = BackgroundScheduler()
 # Run at 9:35 AM on trading days
 scheduler.add_job(preload_stock_data, 'cron', day_of_week='mon-fri', hour=9, minute=35, timezone='America/New_York')
-# Also run every 60 seconds for testing/development
-scheduler.add_job(preload_stock_data, 'interval', seconds=60)
 scheduler.start()
 
-# Preload data immediately on startup
-print('[DEBUG] Preloading data on startup...')
-preload_stock_data()
+# Preload data in a background thread on startup (do NOT block main thread)
+def start_preload_in_background():
+    preload_thread = threading.Thread(target=preload_stock_data, daemon=True)
+    preload_thread.start()
+
+start_preload_in_background()
 
 @app.route("/api/preloaded_data")
 def get_preloaded_data():
@@ -2336,6 +2342,39 @@ def frontend_logs():
     except Exception as e:
         log_exception("Frontend logs endpoint", e)
         return create_api_response(error=str(e), status_code=500)
+
+def save_preloaded_data_to_db():
+    global preloaded_data
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO preloaded_data (data, timestamp)
+                    VALUES (%s, NOW())
+                """, [Json(preloaded_data)])
+                conn.commit()
+        print('[DEBUG] Preloaded data saved to database')
+    except Exception as e:
+        print(f'[ERROR] Failed to save preloaded data to database: {e}')
+
+def load_preloaded_data_from_db():
+    global preloaded_data, preload_timestamp
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT data, timestamp FROM preloaded_data ORDER BY timestamp DESC LIMIT 1")
+                row = cur.fetchone()
+                if row:
+                    preloaded_data = row[0]
+                    preload_timestamp = row[1]
+                    print('[DEBUG] Preloaded data loaded from database')
+                else:
+                    print('[DEBUG] No preloaded data found in database')
+    except Exception as e:
+        print(f'[ERROR] Failed to load preloaded data from database: {e}')
+
+# At startup, load from database before running preload_stock_data
+load_preloaded_data_from_db()
 
 if __name__ == "__main__":
     create_app()

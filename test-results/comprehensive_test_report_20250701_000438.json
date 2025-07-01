@@ -1,0 +1,343 @@
+{
+  "test_info": {
+    "test_name": "Comprehensive Playwright Test Suite",
+    "timestamp": "2025-07-01T00:04:38.961095",
+    "configuration": {
+      "base_url": "http://localhost:5001",
+      "pages": [
+        {
+          "path": "/",
+          "name": "Dashboard"
+        },
+        {
+          "path": "/stocks",
+          "name": "Stocks"
+        },
+        {
+          "path": "/crypto",
+          "name": "Crypto"
+        },
+        {
+          "path": "/opportunities",
+          "name": "Opportunities"
+        },
+        {
+          "path": "/system_status",
+          "name": "System Status"
+        },
+        {
+          "path": "/logs",
+          "name": "Logs Viewer"
+        }
+      ],
+      "wait_timeout": 30000,
+      "click_delay": 1000,
+      "screenshot_on_error": true,
+      "record_video": true,
+      "dangerous_selectors": [
+        "button[onclick*=\"delete\"]",
+        "button[data-action*=\"delete\"]",
+        "button[class*=\"delete\"]",
+        "a[href*=\"delete\"]",
+        "button[onclick*=\"remove\"]",
+        "button[data-action*=\"remove\"]",
+        "button[class*=\"remove\"]",
+        "button[onclick*=\"clear\"]",
+        "button[data-action*=\"clear\"]",
+        "button[class*=\"clear\"]"
+      ]
+    }
+  },
+  "summary": {
+    "test_duration": "0:00:40.685556",
+    "pages": {
+      "total": 6,
+      "successful": 0,
+      "failed": 6
+    },
+    "interactions": {
+      "total_clicks": 15,
+      "successful_clicks": 14,
+      "failed_clicks": 1
+    },
+    "errors": {
+      "total": 9,
+      "by_page": {}
+    },
+    "response_times": {
+      "min_ms": 1600.8992195129395,
+      "max_ms": 5742.4821853637695,
+      "avg_ms": 1921.6038703918457,
+      "total_samples": 15
+    },
+    "screenshots_taken": 3
+  },
+  "detailed_results": {
+    "pages_visited": [
+      {
+        "page": "Dashboard",
+        "url": "http://localhost:5001/",
+        "success": false,
+        "error": "Page test failed: Page.wait_for_timeout: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.718965"
+      },
+      {
+        "page": "Stocks",
+        "url": "http://localhost:5001/stocks",
+        "success": false,
+        "error": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.721449"
+      },
+      {
+        "page": "Crypto",
+        "url": "http://localhost:5001/crypto",
+        "success": false,
+        "error": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.723573"
+      },
+      {
+        "page": "Opportunities",
+        "url": "http://localhost:5001/opportunities",
+        "success": false,
+        "error": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.725395"
+      },
+      {
+        "page": "System Status",
+        "url": "http://localhost:5001/system_status",
+        "success": false,
+        "error": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.727027"
+      },
+      {
+        "page": "Logs Viewer",
+        "url": "http://localhost:5001/logs",
+        "success": false,
+        "error": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "timestamp": "2025-07-01T00:04:38.728766"
+      }
+    ],
+    "buttons_clicked": [
+      {
+        "page": "Dashboard",
+        "button_text": "Standard\n                        \n                ",
+        "selector": "button:visible:nth-child(1)",
+        "response_time_ms": 1600.8992195129395,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:03.908057"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Enhanced\n                        \n                ",
+        "selector": "button:visible:nth-child(2)",
+        "response_time_ms": 1651.9479751586914,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:06.065926"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Help",
+        "selector": "button:visible:nth-child(3)",
+        "response_time_ms": 1620.844841003418,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:08.197176"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Toggle",
+        "selector": "button:visible:nth-child(4)",
+        "response_time_ms": 1619.673728942871,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:10.324023"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "",
+        "selector": "button:visible:nth-child(6)",
+        "response_time_ms": 1623.9171028137207,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:12.461190"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "",
+        "selector": "button:visible:nth-child(7)",
+        "response_time_ms": 1614.8552894592285,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:14.588722"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Trading AI",
+        "selector": "a:visible:nth-child(1)",
+        "response_time_ms": 1651.9527435302734,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:16.755137"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Dashboard",
+        "selector": "a:visible:nth-child(2)",
+        "response_time_ms": 1634.3679428100586,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:18.914429"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "S&P 500",
+        "selector": "a:visible:nth-child(3)",
+        "response_time_ms": 1651.6690254211426,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:21.088998"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Crypto",
+        "selector": "a:visible:nth-child(4)",
+        "response_time_ms": 1739.4628524780273,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:23.353135"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Portfolio",
+        "selector": "a:visible:nth-child(5)",
+        "response_time_ms": 1668.80202293396,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:25.653063"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Backtest",
+        "selector": "a:visible:nth-child(6)",
+        "response_time_ms": 1654.3760299682617,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:27.953696"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "Opportunities",
+        "selector": "a:visible:nth-child(7)",
+        "response_time_ms": 1708.1708908081055,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:30.182391"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "System Status",
+        "selector": "a:visible:nth-child(8)",
+        "response_time_ms": 1640.6362056732178,
+        "success": true,
+        "error": null,
+        "timestamp": "2025-07-01T00:04:32.452699"
+      },
+      {
+        "page": "Dashboard",
+        "button_text": "",
+        "selector": "[onclick]:visible:nth-child(1)",
+        "response_time_ms": 5742.4821853637695,
+        "success": false,
+        "error": "Locator.scroll_into_view_if_needed: Target page, context or browser has been closed\nCall log:\n  - waiting for locator(\"[onclick]:visible\").first\n",
+        "timestamp": "2025-07-01T00:04:38.717311"
+      }
+    ],
+    "errors": [
+      {
+        "page": "Dashboard",
+        "error_type": "Post-Click Error",
+        "message": "Important Notes:\n                        \n                            Cryptocurrency markets are highly volatile and operate 24/7\n                            Sentiment analysis is based on general crypto news, not coin-specific news\n                            Options trading on crypto is limited and highly risky\n                            Consider using crypto futures or spot trading instead\n                            Always use proper risk management and position sizing",
+        "details": ".alert-warning",
+        "timestamp": "2025-07-01T00:04:23.375247"
+      },
+      {
+        "page": "Dashboard",
+        "error_type": "Post-Click Error",
+        "message": "Error loading portfolio data: Cannot read properties of undefined (reading 'current_capital')",
+        "details": ".alert-danger",
+        "timestamp": "2025-07-01T00:04:25.670564"
+      },
+      {
+        "page": "Dashboard",
+        "error_type": "Post-Click Error",
+        "message": "Best for: Systematic analysis of favorite stocks",
+        "details": ".alert-warning",
+        "timestamp": "2025-07-01T00:04:30.203050"
+      },
+      {
+        "page": "Dashboard",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.wait_for_timeout: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 504, in test_page\n    await page.wait_for_timeout(500)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 11396, in wait_for_timeout\n    await self._impl_obj.wait_for_timeout(timeout=timeout)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 1105, in wait_for_timeout\n    await self._main_frame.wait_for_timeout(timeout)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 804, in wait_for_timeout\n    await self._channel.send(\"waitForTimeout\", None, locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.wait_for_timeout: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.719171"
+      },
+      {
+        "page": "Stocks",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 462, in test_page\n    await page.goto(page_url)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 8975, in goto\n    await self._impl_obj.goto(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 556, in goto\n    return await self._main_frame.goto(**locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 146, in goto\n    await self._channel.send(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.721587"
+      },
+      {
+        "page": "Crypto",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 462, in test_page\n    await page.goto(page_url)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 8975, in goto\n    await self._impl_obj.goto(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 556, in goto\n    return await self._main_frame.goto(**locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 146, in goto\n    await self._channel.send(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.723661"
+      },
+      {
+        "page": "Opportunities",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 462, in test_page\n    await page.goto(page_url)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 8975, in goto\n    await self._impl_obj.goto(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 556, in goto\n    return await self._main_frame.goto(**locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 146, in goto\n    await self._channel.send(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.725505"
+      },
+      {
+        "page": "System Status",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 462, in test_page\n    await page.goto(page_url)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 8975, in goto\n    await self._impl_obj.goto(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 556, in goto\n    return await self._main_frame.goto(**locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 146, in goto\n    await self._channel.send(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.727121"
+      },
+      {
+        "page": "Logs Viewer",
+        "error_type": "Test Exception",
+        "message": "Page test failed: Page.goto: Target page, context or browser has been closed",
+        "details": "Traceback (most recent call last):\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/test_comprehensive_playwright.py\", line 462, in test_page\n    await page.goto(page_url)\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/async_api/_generated.py\", line 8975, in goto\n    await self._impl_obj.goto(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_page.py\", line 556, in goto\n    return await self._main_frame.goto(**locals_to_params(locals()))\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_frame.py\", line 146, in goto\n    await self._channel.send(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 69, in send\n    return await self._connection.wrap_api_call(\n  File \"/Users/rick/Desktop/stuff/code_projects/IBS/trading/.venv/lib/python3.9/site-packages/playwright/_impl/_connection.py\", line 558, in wrap_api_call\n    raise rewrite_error(error, f\"{parsed_st['apiName']}: {error}\") from None\nplaywright._impl._errors.TargetClosedError: Page.goto: Target page, context or browser has been closed\n",
+        "timestamp": "2025-07-01T00:04:38.728865"
+      }
+    ],
+    "screenshots": [
+      {
+        "page": "Dashboard",
+        "filepath": "test-results/screenshots/dashboard_post_click_error_20250701_000423.png",
+        "reason": "post_click_error",
+        "timestamp": "2025-07-01T00:04:23.483716"
+      },
+      {
+        "page": "Dashboard",
+        "filepath": "test-results/screenshots/dashboard_post_click_error_20250701_000425.png",
+        "reason": "post_click_error",
+        "timestamp": "2025-07-01T00:04:25.796609"
+      },
+      {
+        "page": "Dashboard",
+        "filepath": "test-results/screenshots/dashboard_post_click_error_20250701_000430.png",
+        "reason": "post_click_error",
+        "timestamp": "2025-07-01T00:04:30.310518"
+      }
+    ]
+  }
+}

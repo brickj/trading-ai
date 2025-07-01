@@ -125,6 +125,12 @@ def execute_query(query, params=None, fetch_all=True):
             with conn.cursor() as cur:
                 cur.execute(query, params or ())
                 
+                # For non-SELECT queries (INSERT, UPDATE, DELETE), commit and return None
+                if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE')):
+                    conn.commit()
+                    return None
+                
+                # For SELECT queries, fetch results
                 if fetch_all:
                     return cur.fetchall()
                 else:

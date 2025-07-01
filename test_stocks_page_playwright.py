@@ -74,6 +74,13 @@ async def test_stocks_page():
                 table_row_count = await table_rows.count()
                 print(f"📊 Found {table_row_count} table rows")
                 
+                # Assert that there are exactly 6 rows (3 winners + 3 losers)
+                if table_row_count != 6:
+                    print(f"❌ FAILURE: Expected 6 rows in analysis results table, found {table_row_count}")
+                    return False
+                else:
+                    print("✅ Table contains 6 analysis results rows as expected")
+                
                 # Check if table has actual data (not just loading message)
                 if table_row_count > 0:
                     first_row_text = await table_rows.first.text_content()
@@ -141,6 +148,25 @@ async def test_stocks_page():
             
             print(f"✅ Winners data loaded: {has_winners_data}")
             print(f"✅ Losers data loaded: {has_losers_data}")
+            
+            # Trigger enhanced analysis (click the Analyze S&P 500 Winners/Losers button)
+            print("🧪 Triggering enhanced analysis...")
+            analyze_btn = page.locator("button:has-text('Analyze S&P 500 Winners/Losers')")
+            await analyze_btn.click()
+            await page.wait_for_timeout(4000)  # Wait for enhanced analysis to load
+
+            # Check for Position Sizes and Trading Notes in enhanced recommendations
+            print("🔍 Checking for Position Sizes and Trading Notes in enhanced recommendations...")
+            enhanced_container = page.locator("#enhancedRecommendationsContainer")
+            await enhanced_container.wait_for(state="visible", timeout=15000)
+            enhanced_html = await enhanced_container.inner_html()
+            if ("Position Sizes" in enhanced_html and "Trading Notes" in enhanced_html and
+                ("No position recommendations available" not in enhanced_html) and
+                ("No trading notes available" not in enhanced_html)):
+                print("✅ Position Sizes and Trading Notes are populated in enhanced recommendations!")
+            else:
+                print("❌ FAILURE: Position Sizes or Trading Notes are missing or empty in enhanced recommendations!")
+                return False
             
             # Final verification
             if has_winners_data and has_losers_data and actual_errors == 0:

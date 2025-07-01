@@ -257,23 +257,17 @@ class SentimentAnalyzer:
             }
             
         except Exception as e:
-            # Fallback to neutral sentiment if analysis fails
-            return {
-                "sentiment_score": 0.0,
-                "confidence": 0.3,
-                "summary": f"Price analysis failed for {symbol}",
-                "reasoning": f"Technical analysis error: {str(e)}",
-                "provider": "price_analysis",
-                "analysis_type": "fallback"
-            }
+            # NO FALLBACK - raise the error instead of returning fake data
+            raise Exception(f"Price analysis failed for {symbol}: {str(e)}")
 
-    def analyze_news_sentiment(self, news_articles: List[Dict], ai_provider: str = None) -> Dict:
+    def analyze_news_sentiment(self, news_articles: List[Dict], ai_provider: str = None, symbol: str = None) -> Dict:
         """
         Analyze sentiment of news articles using AI (Ollama, DeepSeek or OpenAI)
         Returns sentiment score between -1 (very negative) and 1 (very positive)
         Args:
             news_articles: List of news articles to analyze
             ai_provider: 'ollama', 'deepseek' or 'openai' - if None, uses preferred provider
+            symbol: Stock symbol for context and weighting stock-specific news
         """
         if not news_articles:
             raise Exception("No news articles provided for analysis")
@@ -287,9 +281,12 @@ class SentimentAnalyzer:
             raise Exception(
                 "Mock data provider is disabled for safety. Configure a real AI provider (ollama, deepseek, or openai)"
             )
-        # Prepare news text for analysis
-        news_text = ""
-        for article in news_articles[:5]:  # Limit to 5 most recent articles
+        
+        # Prepare news text for analysis with stock-specific weighting
+        stock_specific_news = []
+        general_news = []
+        
+        for article in news_articles[:10]:  # Increased limit to get more articles for better weighting
             # Handle different news formats (dict vs other types)
             if isinstance(article, dict):
                 headline = article.get("headline", article.get("title", ""))
@@ -300,17 +297,79 @@ class SentimentAnalyzer:
                 # If article is not a dict, skip it
                 print(f"Warning: Skipping non-dict article: {type(article)}")
                 continue
+                
             if headline or summary:
-                news_text += f"Headline: {headline}\nSummary: {summary}\n\n"
-        if not news_text.strip():
+                # Check if this is stock-specific news
+                is_stock_specific = self._is_stock_specific_news(headline, summary, symbol)
+                
+                if is_stock_specific:
+                    stock_specific_news.append({
+                        "headline": headline,
+                        "summary": summary,
+                        "weight": 3.0  # Higher weight for stock-specific news
+                    })
+                else:
+                    general_news.append({
+                        "headline": headline,
+                        "summary": summary,
+                        "weight": 1.0  # Lower weight for general news
+                    })
+        
+        # Combine news with weighting
+        combined_news = stock_specific_news + general_news
+        
+        if not combined_news:
             raise Exception("No valid news content found in articles")
+        
+        # Build weighted news text
+        news_text = ""
+        total_weight = 0
+        
+        for article in combined_news:
+            weight = article["weight"]
+            total_weight += weight
+            
+            # Repeat stock-specific news more to give it higher weight
+            repeat_count = int(weight)
+            for _ in range(repeat_count):
+                news_text += f"Headline: {article['headline']}\nSummary: {article['summary']}\n\n"
+        
+        # Add stock context to the prompt
+        stock_context = ""
+        if symbol:
+            stock_context = f"""
+IMPORTANT: Focus ONLY on news specifically about {symbol} stock. If news mentions {symbol} directly, give it higher importance in your analysis. 
+
+TECHNICAL CONTENT HANDLING: If the news contains technical jargon or complex terms, focus on the overall business sentiment and market reaction rather than technical details. Look for words like "bullish", "bearish", "positive", "negative", "growth", "decline", "strong", "weak", etc.
+
+MIXED SENTIMENT: If news contains both positive and negative elements, determine the overall trend. Look for:
+- Stock price movements (up/down percentages)
+- Analyst recommendations (buy/hold/sell)
+- Earnings performance (beat/miss expectations)
+- Market reactions and investor sentiment
+
+BEST EFFORT: Even if news is sparse or complex, provide your best estimate of sentiment for {symbol} based on any available information. If you must guess, explain your reasoning and provide a conservative estimate.
+
+SENTIMENT INDICATORS: Pay attention to:
+- Stock price changes and trends
+- Analyst ratings and price targets
+- Earnings reports and guidance
+- Market commentary and investor reactions
+- Company announcements and strategic moves"""
+
         prompt = f"""
         Analyze the sentiment of the following financial news articles and provide:
         1. A sentiment score between -1 (very negative) and 1 (very positive)
         2. A confidence level between 0 and 1
         3. A brief summary of the overall sentiment
         
-        News articles:
+        Focus on the overall sentiment trend for the stock, not individual technical details.
+        If the news is mixed, determine the dominant sentiment direction.
+        If news is sparse, provide your best estimate with lower confidence.
+        
+        {stock_context}
+        
+        News content:
         {news_text}
         
         IMPORTANT: Respond with ONLY this exact JSON format, no additional text or explanation:
@@ -320,16 +379,25 @@ class SentimentAnalyzer:
             "summary": "your analysis here"
         }}
         """
+        
         messages = [
             {
                 "role": "system",
-                "content": "You are a financial sentiment analysis expert. Analyze news sentiment for trading decisions.",
+                "content": f"You are a financial sentiment analysis expert. Analyze news sentiment for trading decisions. {f'Focus on {symbol} stock specifically.' if symbol else ''}",
             },
             {"role": "user", "content": prompt},
         ]
+        
         # Use only the selected provider - no fallback to mock data
         if selected_provider == "ollama":
             print("🔍 Using Ollama (local) for sentiment analysis...")
+            print(f"📝 News content being analyzed:")
+            print(f"   Stock-specific news: {len(stock_specific_news)} articles")
+            print(f"   General news: {len(general_news)} articles")
+            print(f"   Total weight: {total_weight}")
+            print(f"   News text length: {len(news_text)} characters")
+            if len(news_text) < 100:
+                print(f"   ⚠️  WARNING: Very short news text: '{news_text}'")
             try:
                 response = self._call_ollama_api(messages)
                 # Validate response structure
@@ -343,6 +411,11 @@ class SentimentAnalyzer:
                     raise Exception("No content in Ollama response message")
                 content = response["choices"][0]["message"]["content"]
                 provider_used = "ollama"
+                
+                # Log the Ollama response for debugging
+                print(f"🔍 Ollama response for sentiment analysis:")
+                print(f"   Content: {content[:500]}...")
+                print(f"   Content length: {len(content)}")
             except Exception as e:
                 raise Exception(
                     f"Ollama API failed: {str(e)}. Please ensure Ollama is running on {self.ollama_base_url}"
@@ -394,6 +467,7 @@ class SentimentAnalyzer:
             raise Exception(
                 f"Unknown AI provider: {selected_provider}. Supported providers: ollama, deepseek, openai"
             )
+        
         # Parse the JSON response
         try:
             # First, ensure content is a string
@@ -415,14 +489,23 @@ class SentimentAnalyzer:
                     result["sentiment_score"] = sentiment_dict["positive"] - sentiment_dict.get("negative", 0)
                     
         except json.JSONDecodeError:
-            # If JSON parsing fails, try to extract values from text
+            # If JSON parsing fails, try to extract values from text format
             import re
 
-            sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
-            confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
-            summary_match = re.search(r'"summary":\s*"([^"]*)"', content)
+            # Try new text format: "Sentiment Score: -0.5\nConfidence: 0.8\nReasoning: ..."
+            sentiment_match = re.search(r'Sentiment Score:\s*(-?\d+\.?\d*)', content, re.IGNORECASE)
+            confidence_match = re.search(r'Confidence:\s*(\d+\.?\d*)', content, re.IGNORECASE)
+            reasoning_match = re.search(r'Reasoning:\s*(.+)', content, re.IGNORECASE | re.DOTALL)
             
-            # Also try simple format
+            # If new format doesn't work, try old JSON format
+            if not sentiment_match:
+                sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
+            if not confidence_match:
+                confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
+            if not reasoning_match:
+                reasoning_match = re.search(r'"summary":\s*"([^"]*)"', content)
+            
+            # Also try simple JSON format
             if not sentiment_match:
                 sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', content)
             if not confidence_match:
@@ -432,7 +515,7 @@ class SentimentAnalyzer:
                 result = {
                     "sentiment_score": float(sentiment_match.group(1)),
                     "confidence": float(confidence_match.group(1)),
-                    "summary": (summary_match.group(1) if summary_match else "Analysis completed"),
+                    "summary": (reasoning_match.group(1).strip() if reasoning_match else "Analysis completed"),
                 }
             else:
                 # If parsing fails completely, raise an exception instead of using fallback values
@@ -445,16 +528,96 @@ class SentimentAnalyzer:
         # Validate the response
         sentiment_score = max(-1, min(1, float(result.get("sentiment_score", 0))))
         confidence = max(0, min(1, float(result.get("confidence", 0))))
+        
+        # NO FALLBACK - if confidence is zero, the analysis failed
         if confidence == 0:
-            raise Exception(
-                f"AI provider {selected_provider} returned zero confidence. This indicates a problem with the analysis."
-            )
+            raise Exception(f"AI provider {selected_provider} returned zero confidence for analysis. Analysis failed.")
+        
+        # Add analysis metadata
+        analysis_metadata = {
+            "stock_specific_count": len(stock_specific_news),
+            "general_news_count": len(general_news),
+            "total_weight": total_weight,
+            "stock_specific_ratio": len(stock_specific_news) / len(combined_news) if combined_news else 0
+        }
+        
         return {
             "sentiment_score": sentiment_score,
             "confidence": confidence,
             "summary": result.get("summary", "Analysis completed"),
             "provider": provider_used,
+            "analysis_metadata": analysis_metadata,
         }
+
+    def _is_stock_specific_news(self, headline: str, summary: str, symbol: str) -> bool:
+        """
+        Determine if news is specific to the given stock symbol
+        Args:
+            headline: News headline
+            summary: News summary
+            symbol: Stock symbol to check for
+        Returns:
+            True if news is specific to the stock, False if general market news
+        """
+        if not symbol:
+            return False
+            
+        # Convert to lowercase for case-insensitive matching
+        text = (headline + " " + summary).lower()
+        symbol_lower = symbol.lower()
+        
+        # Check for direct symbol mentions
+        if symbol_lower in text:
+            return True
+            
+        # Check for symbol in parentheses (common format)
+        if f"({symbol_lower})" in text:
+            return True
+            
+        # Check for company name variations
+        company_names = {
+            "AAPL": ["apple", "iphone", "ipad", "mac", "ios"],
+            "MSFT": ["microsoft", "windows", "azure", "office", "xbox"],
+            "GOOGL": ["google", "alphabet", "youtube", "android", "chrome"],
+            "AMZN": ["amazon", "aws", "alexa", "prime", "bezos"],
+            "TSLA": ["tesla", "elon musk", "electric vehicle", "ev", "model"],
+            "META": ["meta", "facebook", "instagram", "whatsapp", "zuckerberg"],
+            "NVDA": ["nvidia", "gpu", "ai chip", "graphics", "cuda"],
+            "NFLX": ["netflix", "streaming", "hastings"],
+            "AMD": ["amd", "ryzen", "radeon", "lisa su"],
+            "CRM": ["salesforce", "benioff"],
+            "UBER": ["uber", "rideshare", "khosrowshahi"],
+            "COIN": ["coinbase", "crypto exchange", "armstrong"],
+            "PLTR": ["palantir", "karp"],
+            "SNOW": ["snowflake", "frank slootman"],
+            "ZM": ["zoom", "video conference", "yuan"],
+            "ANET": ["arista networks", "arista"],
+            "AZO": ["autozone", "auto zone"],
+            "ALL": ["allstate", "all state"],
+            "ALB": ["albemarle", "lithium"],
+            "AES": ["aes corporation", "aes corp"],
+        }
+        
+        # Check for company name mentions
+        if symbol in company_names:
+            for name in company_names[symbol]:
+                if name in text:
+                    return True
+        
+        # Check for general market terms that indicate non-specific news
+        general_market_terms = [
+            "market", "dow jones", "s&p 500", "nasdaq", "federal reserve", "fed",
+            "wall street", "trading", "investors", "bulls", "bears", "rally",
+            "selloff", "volatility", "earnings season", "economic data",
+            "inflation", "interest rates", "recession", "recovery"
+        ]
+        
+        # If text contains mostly general market terms, it's likely general news
+        general_term_count = sum(1 for term in general_market_terms if term in text)
+        if general_term_count >= 2:  # If 2+ general terms, likely general news
+            return False
+            
+        return False  # Default to general news if uncertain
 
     def get_trading_signal(self, sentiment_data: Dict) -> Dict:
         """

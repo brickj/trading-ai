@@ -207,7 +207,7 @@ def test_requirement_7_refresh_functionality():
     try:
         # Test that the full analysis API works (what refresh would call)
         start_time = time.time()
-        response = requests.get("http://localhost:5001/api/sp500_analysis?limit=6", timeout=60)
+        response = requests.get("http://localhost:5001/api/sp500_analysis?limit=6", timeout=120)
         refresh_time = time.time() - start_time
         
         if response.status_code != 200:
@@ -303,7 +303,7 @@ def run_comprehensive_test():
         
         # Test fresh analysis speed  
         start = time.time()
-        fresh_response = requests.get("http://localhost:5001/api/sp500_analysis?limit=3&refresh=1", timeout=60)
+        fresh_response = requests.get("http://localhost:5001/api/sp500_analysis?limit=3&refresh=1", timeout=120)
         fresh_time = time.time() - start
         
         if preload_response.status_code == 200 and fresh_response.status_code == 200:

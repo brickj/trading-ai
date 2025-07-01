@@ -1,46 +1,15 @@
 {
   "data": {
-    "cache_timestamp": "2025-06-29T17:53:52.113713",
-    "cached": true,
     "enhanced_analysis": [
       {
-        "news_count": 1,
-        "price_data": {
-          "change": 5.75,
-          "change_percent": "225.4902%",
-          "current_price": 8.3,
-          "symbol": "LCFY",
-          "timestamp": "2025-06-29T17:52:27.306072",
-          "volume": 95218173
-        },
-        "sentiment_data": {
-          "confidence": 0.8,
-          "has_news": true,
-          "news_sentiment": 0.53,
-          "provider": "ollama",
-          "sentiment_score": 0.53,
-          "summary": "Positive sentiment, indicating a promising partnership that expands Locafy's U.S. business listing syndication and positions its AI search readiness solutions as value-added upsells."
-        },
-        "signal_data": {
-          "action": "CALL",
-          "confidence": 0.8,
-          "reasoning": "Positive sentiment (0.53) with high confidence (0.80)",
-          "signal_strength": 0.42400000000000004
-        },
-        "symbol": "LCFY",
-        "timestamp": "2025-06-29T17:52:41.006557",
-        "top_recommendation": {},
-        "type": "winner"
-      },
-      {
         "news_count": 0,
         "price_data": {
-          "change": 42.39,
-          "change_percent": "210.7907%",
-          "current_price": 62.5,
-          "symbol": "BGL",
-          "timestamp": "2025-06-29T17:52:41.078987",
-          "volume": 391614
+          "change": 29.635,
+          "change_percent": "694.8417%",
+          "current_price": 33.9,
+          "symbol": "BMNR",
+          "timestamp": "2025-06-30T22:18:23.481574",
+          "volume": 103643582
         },
         "sentiment_data": {
           "analysis_method": "price_based",
@@ -55,85 +24,34 @@
           "reasoning": "Low confidence or weak sentiment signal",
           "signal_strength": 0
         },
-        "symbol": "BGL",
-        "timestamp": "2025-06-29T17:52:53.323400",
+        "symbol": "BMNR",
+        "timestamp": "2025-06-30T22:18:36.726231",
         "top_recommendation": {},
         "type": "winner"
       },
       {
-        "news_count": 2,
+        "news_count": 10,
         "price_data": {
-          "change": 1.808,
-          "change_percent": "126.2570%",
-          "current_price": 3.24,
-          "symbol": "RCT",
-          "timestamp": "2025-06-29T17:52:53.393772",
-          "volume": 77482184
+          "change": 0.1262,
+          "change_percent": "120.1905%",
+          "current_price": 0.2312,
+          "symbol": "PET",
+          "timestamp": "2025-06-30T22:18:36.856275",
+          "volume": 128045413
         },
         "sentiment_data": {
-          "confidence": 0.6,
-          "has_news": true,
-          "news_sentiment": -0.1,
-          "provider": "ollama",
-          "sentiment_score": -0.1,
-          "summary": "Neutral, with a slight positive tone due to the launch of an innovative program and potential solution to systemic inefficiencies in FMCG products supply chain."
-        },
-        "signal_data": {
-          "action": "HOLD",
-          "confidence": 0.6,
-          "reasoning": "Neutral sentiment",
-          "signal_strength": 0
-        },
-        "symbol": "RCT",
-        "timestamp": "2025-06-29T17:53:06.332195",
-        "top_recommendation": {},
-        "type": "winner"
-      },
-      {
-        "news_count": 0,
-        "price_data": {
-          "change": -7.76,
-          "change_percent": "-47.2307%",
-          "current_price": 8.67,
-          "symbol": "DAIC",
-          "timestamp": "2025-06-29T17:53:06.402723",
-          "volume": 405428
-        },
-        "sentiment_data": {
-          "analysis_method": "price_based",
-          "confidence": 0.5,
-          "news_count": 0,
-          "sentiment_label": "neutral",
-          "sentiment_score": 0.0
-        },
-        "signal_data": {
-          "action": "HOLD",
-          "confidence": 0.5,
-          "reasoning": "Low confidence or weak sentiment signal",
-          "signal_strength": 0
-        },
-        "symbol": "DAIC",
-        "timestamp": "2025-06-29T17:53:18.647151",
-        "top_recommendation": {},
-        "type": "loser"
-      },
-      {
-        "news_count": 4,
-        "price_data": {
-          "change": -0.4192,
-          "change_percent": "-43.1010%",
-          "current_price": 0.5534,
-          "symbol": "OTRK",
-          "timestamp": "2025-06-29T17:53:18.750587",
-          "volume": 3324023
-        },
-        "sentiment_data": {
+          "analysis_metadata": {
+            "general_news_count": 3,
+            "stock_specific_count": 7,
+            "stock_specific_ratio": 0.7,
+            "total_weight": 24.0
+          },
           "confidence": 0.8,
           "has_news": true,
           "news_sentiment": -1,
           "provider": "ollama",
           "sentiment_score": -1,
-          "summary": "OST's share price plunge is very negative, while Ontrak's public offering and growth companies with high insider ownership are neutral to positive."
+          "summary": "The article discusses the earnings reports of Airbnb, Coursera, and ServiceNow, which all beat analyst expectations. Airbnb reported strong revenue growth and a significant increase in gross booking value. Coursera's quarterly earnings were also better than expected, with a surprise profit of 12 cents per share. ServiceNow's first-quarter revenue exceeded consensus estimates, driving its shares higher. The articles highlight the companies' strengths and growth prospects, but do not mention any negative news or concerns."
         },
         "signal_data": {
           "action": "PUT",
@@ -141,20 +59,125 @@
           "reasoning": "Negative sentiment (-1.00) with high confidence (0.80)",
           "signal_strength": 0.8
         },
-        "symbol": "OTRK",
-        "timestamp": "2025-06-29T17:53:31.748039",
+        "symbol": "PET",
+        "timestamp": "2025-06-30T22:18:54.710683",
+        "top_recommendation": {},
+        "type": "winner"
+      },
+      {
+        "news_count": 10,
+        "price_data": {
+          "change": 1.63,
+          "change_percent": "93.1429%",
+          "current_price": 3.38,
+          "symbol": "IPDN",
+          "timestamp": "2025-06-30T22:18:54.785549",
+          "volume": 54780166
+        },
+        "sentiment_data": {
+          "analysis_metadata": {
+            "general_news_count": 3,
+            "stock_specific_count": 7,
+            "stock_specific_ratio": 0.7,
+            "total_weight": 24.0
+          },
+          "confidence": 0.6,
+          "has_news": true,
+          "news_sentiment": -0.2,
+          "provider": "ollama",
+          "sentiment_score": -0.2,
+          "summary": "Overall sentiment is neutral with a slight negative bias due to the lack of significant news about IPDN stock. However, some articles suggest that the company's recent filing and upcoming earnings report may contribute to increased volatility."
+        },
+        "signal_data": {
+          "action": "PUT",
+          "confidence": 0.6,
+          "reasoning": "Negative sentiment (-0.20) with high confidence (0.60)",
+          "signal_strength": 0.12
+        },
+        "symbol": "IPDN",
+        "timestamp": "2025-06-30T22:19:10.438497",
+        "top_recommendation": {},
+        "type": "winner"
+      },
+      {
+        "news_count": 1,
+        "price_data": {
+          "change": -7.06,
+          "change_percent": "-65.9813%",
+          "current_price": 3.64,
+          "symbol": "JVSA",
+          "timestamp": "2025-06-30T22:19:10.512186",
+          "volume": 1097436
+        },
+        "sentiment_data": {
+          "analysis_metadata": {
+            "general_news_count": 1,
+            "stock_specific_count": 0,
+            "stock_specific_ratio": 0.0,
+            "total_weight": 1.0
+          },
+          "confidence": 0.2,
+          "has_news": true,
+          "news_sentiment": -0.1,
+          "provider": "ollama",
+          "sentiment_score": -0.1,
+          "summary": "Neutral, as the article does not mention JVSA stock directly and focuses on a related company's listing on Nasdaq."
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.2,
+          "reasoning": "Low confidence or weak sentiment signal",
+          "signal_strength": 0
+        },
+        "symbol": "JVSA",
+        "timestamp": "2025-06-30T22:19:24.073202",
+        "top_recommendation": {},
+        "type": "loser"
+      },
+      {
+        "news_count": 3,
+        "price_data": {
+          "change": -1.115,
+          "change_percent": "-59.1512%",
+          "current_price": 0.77,
+          "symbol": "CIIT",
+          "timestamp": "2025-06-30T22:19:24.453300",
+          "volume": 1390548
+        },
+        "sentiment_data": {
+          "analysis_metadata": {
+            "general_news_count": 1,
+            "stock_specific_count": 2,
+            "stock_specific_ratio": 0.6666666666666666,
+            "total_weight": 7.0
+          },
+          "confidence": 0.6,
+          "has_news": true,
+          "news_sentiment": -0.1,
+          "provider": "ollama",
+          "sentiment_score": -0.1,
+          "summary": "Generally positive sentiment, with a focus on the successful closing of CIIT's public offering and its implications for the company's future growth."
+        },
+        "signal_data": {
+          "action": "HOLD",
+          "confidence": 0.6,
+          "reasoning": "Neutral sentiment",
+          "signal_strength": 0
+        },
+        "symbol": "CIIT",
+        "timestamp": "2025-06-30T22:19:38.222767",
         "top_recommendation": {},
         "type": "loser"
       },
       {
         "news_count": 0,
         "price_data": {
-          "change": -7.12,
-          "change_percent": "-42.8916%",
-          "current_price": 9.48,
-          "symbol": "LIMN",
-          "timestamp": "2025-06-29T17:53:31.817483",
-          "volume": 684271
+          "change": -3.02,
+          "change_percent": "-56.6604%",
+          "current_price": 2.31,
+          "symbol": "INMB",
+          "timestamp": "2025-06-30T22:19:38.298598",
+          "volume": 32488759
         },
         "sentiment_data": {
           "analysis_method": "price_based",
@@ -169,8 +192,8 @@
           "reasoning": "Low confidence or weak sentiment signal",
           "signal_strength": 0
         },
-        "symbol": "LIMN",
-        "timestamp": "2025-06-29T17:53:44.113609",
+        "symbol": "INMB",
+        "timestamp": "2025-06-30T22:19:51.283224",
         "top_recommendation": {},
         "type": "loser"
       }
@@ -179,13 +202,13 @@
     "errors_count": 0,
     "opportunities_found": 6,
     "performance": {
-      "execution_time": 76.88,
+      "execution_time": 87.89,
       "success_rate": "100.0%"
     },
-    "timestamp": "2025-06-29T17:53:44.113727",
+    "timestamp": "2025-06-30T22:19:51.283242",
     "total_analyzed": 6
   },
   "message": "",
   "success": true,
-  "timestamp": "2025-06-29T17:53:52.113839"
+  "timestamp": "2025-06-30T22:19:51.288819"
 }

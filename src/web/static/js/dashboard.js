@@ -148,6 +148,10 @@ function doStandardAnalysis() {
             const trading = result && result.trading_recommendation ? result.trading_recommendation : null;
             const options = result && result.options_recommendation ? result.options_recommendation : null;
             
+            // Position sizes and trading notes are in trading_recommendation, not options_recommendation
+            const positionRecommendations = trading && trading.position_recommendations ? trading.position_recommendations : null;
+            const tradingNotes = trading && trading.day_trading_notes ? trading.day_trading_notes : null;
+            
             let resultHtml = `
                 <div class="row">
                     <!-- Stock Analysis -->
@@ -198,32 +202,14 @@ function doStandardAnalysis() {
                                 <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
                             </div>
                             <div class="card-body">
-                                ${options && options.action && options.action !== 'HOLD' && options.position_recommendations ? 
+                                ${positionRecommendations ? 
                                     `<div class="mb-2">
-                                        <strong>Conservative Account:</strong><br>
+                                        <strong>Position Recommendation:</strong><br>
                                         <small>
-                                            Contracts: ${options.position_recommendations['$500']?.contracts || 'N/A'}<br>
-                                            Cost: $${options.position_recommendations['$500']?.total_cost?.toFixed(2) || 'N/A'}<br>
-                                            Risk: ${options.position_recommendations['$500']?.risk_percent || 'N/A'}%<br>
-                                            R/R Ratio: ${options.position_recommendations['$500']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
-                                        </small>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Moderate Account:</strong><br>
-                                        <small>
-                                            Contracts: ${options.position_recommendations['$1000']?.contracts || 'N/A'}<br>
-                                            Cost: $${options.position_recommendations['$1000']?.total_cost?.toFixed(2) || 'N/A'}<br>
-                                            Risk: ${options.position_recommendations['$1000']?.risk_percent || 'N/A'}%<br>
-                                            R/R Ratio: ${options.position_recommendations['$1000']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
-                                        </small>
-                                    </div>
-                                    <div class="mb-2">
-                                        <strong>Aggressive Account:</strong><br>
-                                        <small>
-                                            Contracts: ${options.position_recommendations['$2000']?.contracts || 'N/A'}<br>
-                                            Cost: $${options.position_recommendations['$2000']?.total_cost?.toFixed(2) || 'N/A'}<br>
-                                            Risk: ${options.position_recommendations['$2000']?.risk_percent || 'N/A'}%<br>
-                                            R/R Ratio: ${options.position_recommendations['$2000']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
+                                            Contracts: ${positionRecommendations['${amount}']?.contracts || 'N/A'}<br>
+                                            Cost: $${positionRecommendations['${amount}']?.total_cost?.toFixed(2) || 'N/A'}<br>
+                                            Risk: ${positionRecommendations['${amount}']?.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${positionRecommendations['${amount}']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
                                         </small>
                                     </div>` :
                                     '<p class="text-muted">No position recommendations available</p>'
@@ -239,7 +225,7 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <ul class="list-unstyled">
-                                    ${options && options.trading_notes ? options.trading_notes.map(note => `<li><small>${note}</small></li>`).join('') : '<li class="text-muted">No trading notes available</li>'}
+                                    ${tradingNotes ? tradingNotes.map(note => `<li><small>${note}</small></li>`).join('') : '<li class="text-muted">No trading notes available</li>'}
                                 </ul>
                             </div>
                         </div>
