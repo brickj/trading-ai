@@ -275,8 +275,16 @@ def start_app():
             print_success("Flask application components loaded")
             print_status("Starting server on http://localhost:5001")
 
-            # Start the application using create_app function
-            create_app()
+            # Start the Flask application - create_app() will handle the server startup
+            # with the correct port configuration (5001)
+            try:
+                create_app()
+            except OSError as e:
+                if e.errno == 48:  # Address already in use
+                    print_error(f"Port 5001 is already in use. Please close the application using port 5001 and try again.")
+                else:
+                    print_error(f"Failed to start the application: {e}")
+                return False
 
         except ImportError as e:
             print_error(f"Failed to import Flask components: {e}")
