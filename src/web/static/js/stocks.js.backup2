@@ -727,13 +727,6 @@ function displayEnhancedAnalysisResults(data, symbol) {
     if (recommendations) {
         // Prioritize top_recommendation, then top_stock_recommendation, then top_options_recommendation
         topRec = recommendations.top_recommendation;
-if (!topRec) {
-            console.log('[DEBUG] top_recommendation is null/undefined, checking if it exists but is empty');
-            if (recommendations.top_recommendation && typeof recommendations.top_recommendation === 'object') {
-                console.log('[DEBUG] top_recommendation exists but might be empty object');
-                topRec = recommendations.top_recommendation;
-            }
-        }
         if (!topRec) {
             console.log('[DEBUG] top_recommendation not found, trying top_stock_recommendation');
             topRec = recommendations.top_stock_recommendation;
@@ -750,9 +743,6 @@ if (!topRec) {
     }
     
     console.log('[DEBUG] Selected topRec:', topRec);
-    console.log('[DEBUG] topRec.action:', topRec?.action);
-    console.log('[DEBUG] topRec.recommendation_type:', topRec?.recommendation_type);
-    console.log('[DEBUG] topRec.category:', topRec?.category);
     // Robust null check for topRec
     if (!topRec || typeof topRec !== 'object' || Array.isArray(topRec)) {
         console.error('[DEBUG] Invalid or missing top recommendation:', recommendations, topRec);
