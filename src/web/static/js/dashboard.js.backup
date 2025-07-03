@@ -330,33 +330,15 @@ function doEnhancedAnalysis() {
             console.log('[DEBUG] Enhanced analysis response:', data);
             console.log('[DEBUG] Recommendations object:', recommendations);
             
-            
             // Defensive checks for top recommendation
-            console.log('[DEBUG] Available recommendation fields:', Object.keys(recommendations || {}));
-            console.log('[DEBUG] top_recommendation:', recommendations?.top_recommendation);
-            console.log('[DEBUG] top_stock_recommendation:', recommendations?.top_stock_recommendation);
-            console.log('[DEBUG] top_options_recommendation:', recommendations?.top_options_recommendation);
-            
             let topRec = null;
             if (recommendations) {
-                // Prioritize top_recommendation, then top_stock_recommendation, then top_options_recommendation
-                topRec = recommendations.top_recommendation;
-                if (!topRec) {
-                    console.log('[DEBUG] top_recommendation not found, trying top_stock_recommendation');
-                    topRec = recommendations.top_stock_recommendation;
-                }
-                if (!topRec) {
-                    console.log('[DEBUG] top_stock_recommendation not found, falling back to top_options_recommendation');
-                    topRec = recommendations.top_options_recommendation;
-                }
+                topRec = recommendations.top_recommendation || recommendations.top_stock_recommendation || recommendations.top_options_recommendation;
             }
             if (!topRec) {
                 // Try legacy or fallback keys
-                console.log('[DEBUG] Trying fallback keys...');
                 topRec = result.top_recommendation || result.top_stock_recommendation || result.top_options_recommendation;
             }
-            
-            console.log('[DEBUG] Selected topRec:', topRec);
             // Robust null check for topRec
             if (!topRec || typeof topRec !== 'object' || Array.isArray(topRec)) {
                 console.error('[DEBUG] Invalid or missing top recommendation:', recommendations, topRec);
