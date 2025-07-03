@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard Analysis Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .failure {
+            color: red;
+            font-weight: bold;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr.pass {
+            background-color: #dff0d8;
+        }
+        tr.fail {
+            background-color: #f2dede;
+        }
+    </style>
+</head>
+<body>
+    <h1>Standard Analysis Test</h1>
+    <p>This page will open the Trading AI app in an iframe and run tests to verify that the standard analysis button is working correctly.</p>
+    
+    <button id="runTest">Run Test</button>
+    
+    <div id="results">
+        <p>Test results will appear here...</p>
+    </div>
+    
+    <iframe id="appFrame" src="http://localhost:5001" width="100%" height="600px" style="border: 1px solid #ddd; display: none;"></iframe>
+    
+    <script>
+        document.getElementById('runTest').addEventListener('click', function() {
+            // Show the iframe
+            const frame = document.getElementById('appFrame');
+            frame.style.display = 'block';
+            
+            // Wait for iframe to load
+            frame.onload = function() {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<p>Running test...</p>';
+                
+                // Wait a bit to ensure everything is loaded
+                setTimeout(() => {
+                    try {
+                        // Inject our test script
+                        const script = frame.contentDocument.createElement('script');
+                        script.src = '/test_standard_analysis_ui.js';
+                        frame.contentDocument.head.appendChild(script);
+                        
+                        // Listen for messages from the iframe
+                        window.addEventListener('message', function(event) {
+                            if (event.data && event.data.type === 'testResults') {
+                                displayResults(event.data.results);
+                            }
+                        });
+                        
+                        // Add message sender to the iframe
+                        const messageScript = frame.contentDocument.createElement('script');
+                        messageScript.textContent = `
+                            // Override the testStandardAnalysisUI function to send results back
+                            const originalTestFn = window.testStandardAnalysisUI;
+                            window.testStandardAnalysisUI = function() {
+                                return originalTestFn().then(results => {
+                                    window.parent.postMessage({
+                                        type: 'testResults',
+                                        results: results
+                                    }, '*');
+                                    return results;
+                                });
+                            };
+                        `;
+                        frame.contentDocument.head.appendChild(messageScript);
+                        
+                        // Run the test
+                        frame.contentWindow.testStandardAnalysisUI();
+                        
+                    } catch (error) {
+                        resultsDiv.innerHTML = '<p class="failure">Error running test: ' + error.message + '</p>';
+                    }
+                }, 1000);
+            };
+            
+            // Reload the iframe to ensure a fresh state
+            frame.src = frame.src;
+        });
+        
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = '<h2>Test Results</h2>';
+            
+            if (results.success) {
+                html += '<p class="success">✅ All checks passed! Standard Analysis is working correctly.</p>';
+            } else {
+                html += '<p class="failure">❌ Some checks failed. Standard Analysis has issues.</p>';
+            }
+            
+            html += '<table>';
+            html += '<tr><th>Check</th><th>Status</th><th>Details</th></tr>';
+            
+            results.checks.forEach(check => {
+                const rowClass = check.passed ? 'pass' : 'fail';
+                const status = check.passed ? '✅ Pass' : '❌ Fail';
+                
+                html += `<tr class="${rowClass}">`;
+                html += `<td>${check.name}</td>`;
+                html += `<td>${status}</td>`;
+                html += `<td>${check.value || ''}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

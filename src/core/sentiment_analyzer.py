@@ -358,32 +358,36 @@ SENTIMENT INDICATORS: Pay attention to:
 - Company announcements and strategic moves"""
 
         prompt = f"""
-        Analyze the sentiment of the following financial news articles and provide:
-        1. A sentiment score between -1 (very negative) and 1 (very positive)
-        2. A confidence level between 0 and 1
-        3. A brief summary of the overall sentiment
-        
-        Focus on the overall sentiment trend for the stock, not individual technical details.
-        If the news is mixed, determine the dominant sentiment direction.
-        If news is sparse, provide your best estimate with lower confidence.
-        
+        You are a financial news analyzer. Your task is to analyze the sentiment of news articles and provide a structured response.
+
+        Analyze the following news content and determine:
+        1. Overall sentiment (positive/negative/neutral)
+        2. Confidence in your assessment
+        3. Brief summary of key points
+
         {stock_context}
         
-        News content:
+        News content to analyze:
         {news_text}
         
-        IMPORTANT: Respond with ONLY this exact JSON format, no additional text or explanation:
+        Provide your analysis in this exact JSON format:
         {{
             "sentiment_score": 0.0,
             "confidence": 0.0,
             "summary": "your analysis here"
         }}
+        
+        Rules:
+        - sentiment_score: -1.0 (very negative) to 1.0 (very positive)
+        - confidence: 0.0 (low confidence) to 1.0 (high confidence)
+        - summary: brief description of the sentiment and key factors
+        - Respond ONLY with the JSON, no other text
         """
         
         messages = [
             {
                 "role": "system",
-                "content": f"You are a financial sentiment analysis expert. Analyze news sentiment for trading decisions. {f'Focus on {symbol} stock specifically.' if symbol else ''}",
+                "content": f"You are a news sentiment analyzer. Your job is to analyze news content and provide sentiment scores. {f'Focus on news related to {symbol}.' if symbol else ''}",
             },
             {"role": "user", "content": prompt},
         ]

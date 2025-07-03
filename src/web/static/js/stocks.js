@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', function() {
-            console.log('[DEBUG] Refresh button clicked');
-            loadSP500Data();
+            console.log('[DEBUG] Refresh button clicked - triggering full pipeline');
+            refreshMarketMoversData();
         });
         console.log('[DEBUG] Refresh button event listener added');
     } else {
@@ -472,13 +472,25 @@ function displayWinnersLosers(stocks) {
         return;
     }
     
-    // Sort stocks by type (winners vs losers) and then by sentiment score
-    const winners = stocks.filter(stock => stock && stock.type === 'winner' && stock.sentiment_data?.sentiment_score !== undefined).sort((a, b) => {
+    // Sort stocks by change_percent (winners vs losers) and then by sentiment score
+    const winners = stocks.filter(stock => {
+        if (!stock || stock.sentiment_data?.sentiment_score === undefined) return false;
+        const changePercent = stock.price_data?.change_percent || '0%';
+        // Convert string like "242.9752%" to number, removing % and converting to float
+        const changeValue = parseFloat(changePercent.replace('%', ''));
+        return changeValue > 0;
+    }).sort((a, b) => {
         const aScore = a.sentiment_data.sentiment_score;
         const bScore = b.sentiment_data.sentiment_score;
         return bScore - aScore;
     });
-    const losers = stocks.filter(stock => stock && stock.type === 'loser' && stock.sentiment_data?.sentiment_score !== undefined).sort((a, b) => {
+    const losers = stocks.filter(stock => {
+        if (!stock || stock.sentiment_data?.sentiment_score === undefined) return false;
+        const changePercent = stock.price_data?.change_percent || '0%';
+        // Convert string like "-40.3707%" to number, removing % and converting to float
+        const changeValue = parseFloat(changePercent.replace('%', ''));
+        return changeValue < 0;
+    }).sort((a, b) => {
         const aScore = a.sentiment_data.sentiment_score;
         const bScore = b.sentiment_data.sentiment_score;
         return aScore - bScore;
@@ -596,6 +608,64 @@ function analyzeStock(symbol) {
 // Run S&P 500 analysis (for the button click)
 function runSP500Analysis() {
     loadSP500Data();
+}
+
+// Refresh market movers data - triggers full pipeline
+async function refreshMarketMoversData() {
+    console.log('[DEBUG] refreshMarketMoversData called - triggering full pipeline');
+    
+    // Show loading indicator
+    showLoading('loadingSpinner');
+    
+    if (document.getElementById('refreshBtn')) {
+        document.getElementById('refreshBtn').disabled = true;
+        document.getElementById('refreshBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    }
+    
+    try {
+        // Trigger the full pipeline to get fresh market movers
+        console.log('[DEBUG] Making request to /api/refresh_market_movers');
+        const response = await fetch('/api/refresh_market_movers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+        
+        console.log('[DEBUG] Refresh API response status:', response.status);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('[DEBUG] Refresh API response:', result);
+            
+            if (result.success) {
+                showAlert('Market movers data refreshed successfully!', 'success');
+                // Now load the fresh data
+                await loadSP500Data();
+            } else {
+                throw new Error(result.error || 'Failed to refresh market movers data');
+            }
+        } else {
+            throw new Error(`Refresh API request failed with status: ${response.status}`);
+        }
+        
+    } catch (error) {
+        console.error('[DEBUG] Error refreshing market movers data:', error);
+        showAlert('Error refreshing market movers data: ' + error.message, 'danger');
+        
+        // Still try to load existing data
+        await loadSP500Data();
+    } finally {
+        // Hide loading indicator
+        hideLoading('loadingSpinner');
+        
+        if (document.getElementById('refreshBtn')) {
+            document.getElementById('refreshBtn').disabled = false;
+            document.getElementById('refreshBtn').innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Winners & Losers Analysis';
+        }
+    }
 }
 
 // Enhanced analysis function

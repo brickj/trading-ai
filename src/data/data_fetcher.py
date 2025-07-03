@@ -911,17 +911,54 @@ class DataFetcher:
         try:
             data = self._make_request(url, params)
             if data and "top_gainers" in data and "top_losers" in data:
-                # Filter first to only include common stock symbols (avoid warrants, etc.)
+                # Get all symbols first
                 all_gainers = [item["ticker"] for item in data["top_gainers"]]
                 all_losers = [item["ticker"] for item in data["top_losers"]]
                 
-                filtered_gainers = [symbol for symbol in all_gainers if len(symbol) <= 4 and symbol.isalpha()]
-                filtered_losers = [symbol for symbol in all_losers if len(symbol) <= 4 and symbol.isalpha()]
+                # Filter out symbols that are likely invalid (warrants, delisted stocks, etc.)
+                def is_valid_symbol(symbol):
+                    # Basic filtering
+                    if len(symbol) > 4 or not symbol.isalpha():
+                        return False
+                    # Skip common warrant suffixes
+                    if symbol.endswith('W') or symbol.endswith('+'):
+                        return False
+                    return True
                 
-                # Then take the requested number from the filtered results
+                # Test each symbol with GLOBAL_QUOTE to ensure it's accessible
+                def test_symbol_with_quote(symbol):
+                    try:
+                        test_url = "https://www.alphavantage.co/query"
+                        test_params = {
+                            "function": "GLOBAL_QUOTE",
+                            "symbol": symbol,
+                            "apikey": Config.ALPHA_VANTAGE_API_KEY,
+                        }
+                        test_data = self._make_request(test_url, test_params)
+                        # Check if we got a valid quote (not empty)
+                        return test_data and "Global Quote" in test_data and test_data["Global Quote"]
+                    except Exception:
+                        return False
+                
+                # Filter and test gainers
+                valid_gainers = []
+                for symbol in all_gainers:
+                    if is_valid_symbol(symbol) and test_symbol_with_quote(symbol):
+                        valid_gainers.append(symbol)
+                        if len(valid_gainers) >= limit:
+                            break
+                
+                # Filter and test losers
+                valid_losers = []
+                for symbol in all_losers:
+                    if is_valid_symbol(symbol) and test_symbol_with_quote(symbol):
+                        valid_losers.append(symbol)
+                        if len(valid_losers) >= limit:
+                            break
+                
                 result = {
-                    "gainers": filtered_gainers[:limit],
-                    "losers": filtered_losers[:limit],
+                    "gainers": valid_gainers,
+                    "losers": valid_losers,
                     "timestamp": datetime.now().isoformat(),
                     "source": "alpha_vantage"
                 }

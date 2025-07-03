@@ -124,8 +124,16 @@ function doStandardAnalysis() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Fetch response status:', response.status);
+        console.log('Fetch response ok:', response.ok);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Fetch response data received:', data);
         // Debug: capture response
         if (typeof captureDebug === 'function') {
             captureDebug({
@@ -136,6 +144,11 @@ function doStandardAnalysis() {
             }, data);
         }
         console.log('Analysis complete:', data);
+        console.log('Result data:', data.data);
+        console.log('Trading recommendation:', data.data?.trading_recommendation);
+        console.log('Options recommendation:', data.data?.options_recommendation);
+        console.log('Price data:', data.data?.price_data);
+        console.log('Sentiment analysis:', data.data?.sentiment_analysis);
         
         // Hide loading state
         standardBtnContent.style.display = 'inline';
@@ -145,12 +158,8 @@ function doStandardAnalysis() {
             showResults('Error: ' + data.error);
         } else {
             const result = data.data;
-            const trading = result && result.trading_recommendation ? result.trading_recommendation : null;
-            const options = result && result.options_recommendation ? result.options_recommendation : null;
-            
-            // Position sizes and trading notes are in trading_recommendation, not options_recommendation
-            const positionRecommendations = trading && trading.position_recommendations ? trading.position_recommendations : null;
-            const tradingNotes = trading && trading.day_trading_notes ? trading.day_trading_notes : null;
+            console.log('Processing result:', result);
+            // We'll use the result object directly in the template with proper nested property access
             
             let resultHtml = `
                 <div class="row">
@@ -162,11 +171,11 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <p><strong>Symbol:</strong> ${symbol}</p>
-                                <p><strong>Current Price:</strong> $${result && result.price_data && result.price_data.current_price ? result.price_data.current_price.toFixed(2) : 'N/A'}</p>
+                                <p><strong>Current Price:</strong> $${result && result.current_price ? result.current_price.toFixed(2) : result && result.price_data && result.price_data.current_price ? result.price_data.current_price.toFixed(2) : 'N/A'}</p>
                                 <p><strong>News Sources:</strong> ${result && result.news_sources ? Object.entries(result.news_sources).map(([source, count]) => `${source}: ${count}`).join(', ') : 'N/A'}</p>
-                                <p><strong>Sentiment:</strong> ${result && result.sentiment_analysis && result.sentiment_analysis.overall_sentiment ? result.sentiment_analysis.overall_sentiment : 'Neutral'}</p>
-                                <p><strong>Confidence:</strong> ${result && result.sentiment_analysis && result.sentiment_analysis.confidence ? ((result.sentiment_analysis.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
-                                <p><strong>Action:</strong> <span class="badge ${trading && trading.action === 'CALL' ? 'bg-success' : trading && trading.action === 'PUT' ? 'bg-danger' : 'bg-secondary'}">${trading && trading.action ? trading.action : 'HOLD'}</span></p>
+                                <p><strong>Sentiment:</strong> ${result && result.sentiment_score !== undefined ? (result.sentiment_score > 0 ? 'Positive' : result.sentiment_score < 0 ? 'Negative' : 'Neutral') : result && result.sentiment_analysis && result.sentiment_analysis.sentiment_score ? (result.sentiment_analysis.sentiment_score > 0 ? 'Positive' : result.sentiment_analysis.sentiment_score < 0 ? 'Negative' : 'Neutral') : 'Neutral'}</p>
+                                <p><strong>Confidence:</strong> ${result && result.confidence !== undefined ? ((result.confidence || 0) * 100).toFixed(1) : result && result.sentiment_analysis && result.sentiment_analysis.confidence ? ((result.sentiment_analysis.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
+                                <p><strong>Action:</strong> <span class="badge ${result && result.action === 'CALL' ? 'bg-success' : result && result.action === 'PUT' ? 'bg-danger' : result && result.trading_recommendation && result.trading_recommendation.action === 'CALL' ? 'bg-success' : result && result.trading_recommendation && result.trading_recommendation.action === 'PUT' ? 'bg-danger' : 'bg-secondary'}">${result && result.action ? result.action : result && result.trading_recommendation && result.trading_recommendation.action ? result.trading_recommendation.action : 'HOLD'}</span></p>
                             </div>
                         </div>
                     </div>
@@ -177,18 +186,19 @@ function doStandardAnalysis() {
                                 <h5><i class="fas fa-chart-line"></i> Options Trading</h5>
                             </div>
                             <div class="card-body">
-                                ${options && options.action && options.action !== 'HOLD' ? 
-                                    `<p><strong>Strategy:</strong> ${options.strategy_type || 'Standard'}</p>
-                                    <p><strong>Option Type:</strong> <span class="badge ${options.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${options.option_type ? options.option_type.toUpperCase() : 'N/A'}</span></p>
-                                    <p><strong>Strike Price:</strong> $${options.strike_price ? options.strike_price.toFixed(2) : 'N/A'}</p>
-                                    <p><strong>Option Price:</strong> $${options.option_price ? options.option_price.toFixed(2) : 'N/A'}</p>
-                                    <p><strong>Days to Expiry:</strong> ${options.days_to_expiry || 'N/A'}</p>
-                                    <p><strong>Target Gain:</strong> ${options.target_gain || 'N/A'}</p>
-                                    <p><strong>Stop Loss:</strong> ${options.stop_loss || 'N/A'}</p>
-                                    <p><strong>Position Size:</strong> ${options.position_size || 'N/A'} contracts</p>
-                                    <p><strong>Confidence:</strong> ${options.confidence ? ((options.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
-                                    <p><strong>Reasoning:</strong> ${options.reasoning || 'N/A'}</p>` : 
-                                    '<p class="text-warning mt-3"><i class="fas fa-info-circle"></i> No options recommendation - wait for clearer signals</p>'
+                                ${((result && result.action && result.action !== 'HOLD') || (result && result.trading_recommendation && result.trading_recommendation.action && result.trading_recommendation.action !== 'HOLD')) ? 
+                                    `<p><strong>Strategy:</strong> ${result.strategy_type || result.trading_recommendation?.strategy_type || 'Standard'}</p>
+                                    <p><strong>Option Type:</strong> <span class="badge ${(result.option_type === 'call' || result.trading_recommendation?.option_type === 'call') ? 'bg-success' : 'bg-danger'}">${result.option_type ? result.option_type.toUpperCase() : result.trading_recommendation?.option_type ? result.trading_recommendation.option_type.toUpperCase() : 'N/A'}</span></p>
+                                    <p><strong>Strike Price:</strong> $${result.strike_price ? result.strike_price.toFixed(2) : result.trading_recommendation?.strike_price ? result.trading_recommendation.strike_price.toFixed(2) : 'N/A'}</p>
+                                    <p><strong>Option Price:</strong> $${result.option_price ? result.option_price.toFixed(2) : result.trading_recommendation?.option_price ? result.trading_recommendation.option_price.toFixed(2) : 'N/A'}</p>
+                                    <p><strong>Days to Expiry:</strong> ${result.days_to_expiry || result.trading_recommendation?.days_to_expiry || 'N/A'}</p>
+                                    <p><strong>Target Gain:</strong> ${result.target_gain || result.trading_recommendation?.target_gain || 'N/A'}</p>
+                                    <p><strong>Stop Loss:</strong> ${result.stop_loss || result.trading_recommendation?.stop_loss || 'N/A'}</p>
+                                    <p><strong>Position Size:</strong> ${result.position_size || result.trading_recommendation?.position_size || 'N/A'} contracts</p>
+                                    <p><strong>Confidence:</strong> ${result.confidence ? ((result.confidence || 0) * 100).toFixed(1) : result.trading_recommendation?.confidence ? ((result.trading_recommendation.confidence || 0) * 100).toFixed(1) : 'N/A'}%</p>
+                                    <p><strong>Reasoning:</strong> ${result.reasoning || result.trading_recommendation?.reasoning || 'N/A'}</p>` :
+                                    `<p>No options trading recommended at this time.</p>
+                                    <p>Current market conditions or sentiment do not support options positions.</p>`
                                 }
                             </div>
                         </div>
@@ -202,14 +212,14 @@ function doStandardAnalysis() {
                                 <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
                             </div>
                             <div class="card-body">
-                                ${positionRecommendations ? 
+                                ${((result && result.position_recommendations) || (result && result.trading_recommendation && result.trading_recommendation.position_recommendations)) ? 
                                     `<div class="mb-2">
                                         <strong>Position Recommendation:</strong><br>
                                         <small>
-                                            Contracts: ${positionRecommendations['${amount}']?.contracts || 'N/A'}<br>
-                                            Cost: $${positionRecommendations['${amount}']?.total_cost?.toFixed(2) || 'N/A'}<br>
-                                            Risk: ${positionRecommendations['${amount}']?.risk_percent || 'N/A'}%<br>
-                                            R/R Ratio: ${positionRecommendations['${amount}']?.risk_reward_ratio?.toFixed(2) || 'N/A'}
+                                            Contracts: ${result.position_recommendations?.['$1000']?.contracts || result.trading_recommendation?.position_recommendations?.['$1000']?.contracts || 'N/A'}<br>
+                                            Cost: $${result.position_recommendations?.['$1000']?.total_cost || result.trading_recommendation?.position_recommendations?.['$1000']?.total_cost || 'N/A'}<br>
+                                            Risk: ${result.position_recommendations?.['$1000']?.risk_percent || result.trading_recommendation?.position_recommendations?.['$1000']?.risk_percent || 'N/A'}%<br>
+                                            R/R Ratio: ${result.position_recommendations?.['$1000']?.risk_reward_ratio || result.trading_recommendation?.position_recommendations?.['$1000']?.risk_reward_ratio || 'N/A'}
                                         </small>
                                     </div>` :
                                     '<p class="text-muted">No position recommendations available</p>'
@@ -225,7 +235,7 @@ function doStandardAnalysis() {
                             </div>
                             <div class="card-body">
                                 <ul class="list-unstyled">
-                                    ${tradingNotes ? tradingNotes.map(note => `<li><small>${note}</small></li>`).join('') : '<li class="text-muted">No trading notes available</li>'}
+                                    ${result && result.day_trading_notes ? result.day_trading_notes.map(note => `<li><small>${note}</small></li>`).join('') : result && result.trading_recommendation && result.trading_recommendation.day_trading_notes ? result.trading_recommendation.day_trading_notes.map(note => `<li><small>${note}</small></li>`).join('') : '<li class="text-muted">No trading notes available</li>'}
                                 </ul>
                             </div>
                         </div>
@@ -359,16 +369,29 @@ function doEnhancedAnalysis() {
                                         <p><strong>Type:</strong> ${topRec.recommendation_type || 'N/A'}</p>
                                         <p><strong>Action:</strong> <span class="badge ${getBadgeClass(topRec.action)}">${topRec.action || 'N/A'}</span></p>
                                         <p><strong>Confidence:</strong> ${((topRec.confidence || 0) * 100).toFixed(1)}%</p>
+                                        <p><strong>Category:</strong> ${topRec.category || 'N/A'}</p>
                                     </div>
                                     <div class="col-md-4">
-                                        <p><strong>Entry Price:</strong> $${topRec.entry_price?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Target Price:</strong> $${topRec.target_price?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Stop Loss:</strong> $${topRec.stop_loss?.toFixed(2) || 'N/A'}</p>
+                                        ${topRec.category === 'Stock' ? `
+                                            <p><strong>Current Price:</strong> $${topRec.current_price?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Target Price:</strong> $${topRec.target_price?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Stop Loss:</strong> $${topRec.stop_loss_price?.toFixed(2) || 'N/A'}</p>
+                                        ` : `
+                                            <p><strong>Entry Price:</strong> $${topRec.entry_price?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Target Price:</strong> $${topRec.target_price?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Stop Loss:</strong> $${topRec.stop_loss?.toFixed(2) || 'N/A'}</p>
+                                        `}
                                     </div>
                                     <div class="col-md-4">
-                                        <p><strong>Position Size:</strong> ${topRec.position_size || 'N/A'}</p>
-                                        <p><strong>Risk/Reward:</strong> ${topRec.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
-                                        <p><strong>Hold Time:</strong> ${topRec.hold_time || 'N/A'}</p>
+                                        ${topRec.category === 'Stock' ? `
+                                            <p><strong>Shares:</strong> ${topRec.shares_recommended || 'N/A'}</p>
+                                            <p><strong>Risk Level:</strong> ${topRec.risk_level || 'N/A'}</p>
+                                            <p><strong>Time Horizon:</strong> ${topRec.time_horizon || 'N/A'}</p>
+                                        ` : `
+                                            <p><strong>Position Size:</strong> ${topRec.position_size || 'N/A'}</p>
+                                            <p><strong>Risk/Reward:</strong> ${topRec.risk_reward_ratio?.toFixed(2) || 'N/A'}</p>
+                                            <p><strong>Hold Time:</strong> ${topRec.hold_time || 'N/A'}</p>
+                                        `}
                                     </div>
                                 </div>
                                 <p class="mt-2 mb-0"><small><strong>Reasoning:</strong> ${topRec.reasoning || 'N/A'}</small></p>
@@ -610,11 +633,7 @@ function showResults(content) {
     }
     
     resultsSection.style.display = 'block';
-    resultsSection.innerHTML = `
-        <div class="col-12">
-            ${content}
-        </div>
-    `;
+    resultsSection.innerHTML = content;
 }
 
 function toggleHowItWorks() {
