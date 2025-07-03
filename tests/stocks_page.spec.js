@@ -228,4 +228,218 @@ test('Comprehensive /stocks page requirements verification', async ({ page }) =>
   } else {
     throw new Error('Some requirements were not met. See performance summary above.');
   }
+});
+
+test.describe('Stocks Page', () => {
+  test.beforeEach(async ({ page }) => {
+    // Navigate to stocks page before each test
+    await page.goto('http://localhost:5001/stocks');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should load stocks page with winners and losers', async ({ page }) => {
+    // Wait for the table to load
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Check that we have stock rows
+    const stockRows = await page.locator('#stocksTableBody tr').count();
+    expect(stockRows).toBeGreaterThan(0);
+    
+    // Check that winners and losers sections exist
+    await expect(page.locator('#winnersList')).toBeVisible();
+    await expect(page.locator('#losersList')).toBeVisible();
+    
+    // Check that the enhanced analysis section exists but is hidden initially
+    await expect(page.locator('#enhancedAnalysisResults')).toBeHidden();
+  });
+
+  test('should display exactly 6 stocks in the analysis table', async ({ page }) => {
+    // Wait for the table to load
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Count the stock rows (excluding header)
+    const stockRows = await page.locator('#stocksTableBody tr').count();
+    expect(stockRows).toBe(6); // Exactly 6 stocks (3 winners + 3 losers)
+    
+    // Verify each row has an Analyze button
+    for (let i = 0; i < stockRows; i++) {
+      const analyzeButton = page.locator('#stocksTableBody tr').nth(i).locator('button[onclick*="analyzeStock"]');
+      await expect(analyzeButton).toBeVisible();
+    }
+  });
+
+  test('should show enhanced analysis when Analyze button is clicked', async ({ page }) => {
+    // Wait for the table to load and be populated
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Wait for the table to have actual data (not loading message)
+    await page.waitForFunction(() => {
+      const tbody = document.querySelector('#stocksTableBody');
+      if (!tbody) return false;
+      const rows = tbody.querySelectorAll('tr');
+      if (rows.length === 0) return false;
+      // Check if first row is not the loading message
+      const firstRow = rows[0];
+      return !firstRow.textContent.includes('Loading stock data');
+    }, { timeout: 10000 });
+    
+    // Find the first Analyze button
+    const analyzeButton = page.locator('button[onclick*="analyzeStock"]').first();
+    await expect(analyzeButton).toBeVisible();
+    
+    // Click the Analyze button
+    await analyzeButton.click();
+    
+    // Wait for the enhanced analysis section to become visible
+    await expect(page.locator('#enhancedAnalysisResults')).toBeVisible({ timeout: 60000 });
+    
+    // Wait for the loading to complete and content to appear
+    await page.waitForFunction(() => {
+      const container = document.querySelector('#enhancedAnalysisContainer');
+      if (!container) return false;
+      const content = container.textContent;
+      return content && content.length > 100 && !content.includes('Loading');
+    }, { timeout: 60000 });
+    
+    // Verify the enhanced analysis content
+    const container = page.locator('#enhancedAnalysisContainer');
+    await expect(container).toBeVisible();
+    
+    // Check for specific content elements
+    await expect(container.locator('text=Current Data')).toBeVisible();
+    await expect(container.locator('text=Trading Recommendations')).toBeVisible();
+    
+    // Check for price data (use first occurrence to avoid strict mode violation)
+    await expect(container.locator('text=Current Price:').first()).toBeVisible();
+    
+    // Check for recommendations
+    await expect(container.locator('text=Stock Recommendation').first()).toBeVisible();
+    await expect(container.locator('text=Options Recommendation').first()).toBeVisible();
+    
+    // Verify the content is not empty
+    const content = await container.textContent();
+    expect(content.length).toBeGreaterThan(500);
+  });
+
+  test('should display proper stock recommendation data', async ({ page }) => {
+    // Wait for the table to load and be populated
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Wait for the table to have actual data (not loading message)
+    await page.waitForFunction(() => {
+      const tbody = document.querySelector('#stocksTableBody');
+      if (!tbody) return false;
+      const rows = tbody.querySelectorAll('tr');
+      if (rows.length === 0) return false;
+      // Check if first row is not the loading message
+      const firstRow = rows[0];
+      return !firstRow.textContent.includes('Loading stock data');
+    }, { timeout: 10000 });
+    
+    // Click the first Analyze button
+    const analyzeButton = page.locator('button[onclick*="analyzeStock"]').first();
+    await analyzeButton.click();
+    
+    // Wait for enhanced analysis to load
+    await expect(page.locator('#enhancedAnalysisResults')).toBeVisible({ timeout: 60000 });
+    await page.waitForFunction(() => {
+      const container = document.querySelector('#enhancedAnalysisContainer');
+      if (!container) return false;
+      const content = container.textContent;
+      return content && content.length > 100 && !content.includes('Loading');
+    }, { timeout: 60000 });
+    
+    // Check stock recommendation section
+    const stockSection = page.locator('text=Stock Recommendation').first();
+    await expect(stockSection).toBeVisible();
+    
+    // Check for required fields (use first occurrence to avoid strict mode violation)
+    await expect(page.locator('text=Action:').first()).toBeVisible();
+    await expect(page.locator('text=Confidence:').first()).toBeVisible();
+    await expect(page.locator('text=Current Price:').first()).toBeVisible();
+    await expect(page.locator('text=Risk Level:').first()).toBeVisible();
+    await expect(page.locator('text=Time Horizon:').first()).toBeVisible();
+    await expect(page.locator('text=Reasoning:').first()).toBeVisible();
+  });
+
+  test('should display proper options recommendation data', async ({ page }) => {
+    // Wait for the table to load and be populated
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Wait for the table to have actual data (not loading message)
+    await page.waitForFunction(() => {
+      const tbody = document.querySelector('#stocksTableBody');
+      if (!tbody) return false;
+      const rows = tbody.querySelectorAll('tr');
+      if (rows.length === 0) return false;
+      // Check if first row is not the loading message
+      const firstRow = rows[0];
+      return !firstRow.textContent.includes('Loading stock data');
+    }, { timeout: 10000 });
+    
+    // Click the first Analyze button
+    const analyzeButton = page.locator('button[onclick*="analyzeStock"]').first();
+    await analyzeButton.click();
+    
+    // Wait for enhanced analysis to load
+    await expect(page.locator('#enhancedAnalysisResults')).toBeVisible({ timeout: 60000 });
+    await page.waitForFunction(() => {
+      const container = document.querySelector('#enhancedAnalysisContainer');
+      if (!container) return false;
+      const content = container.textContent;
+      return content && content.length > 100 && !content.includes('Loading');
+    }, { timeout: 60000 });
+    
+    // Check options recommendation section
+    const optionsSection = page.locator('text=Options Recommendation').first();
+    await expect(optionsSection).toBeVisible();
+    
+    // Check for required fields (use first occurrence to avoid strict mode violation)
+    await expect(page.locator('text=Strategy:').first()).toBeVisible();
+    await expect(page.locator('text=Action:').first()).toBeVisible();
+    await expect(page.locator('text=Strike Price:').first()).toBeVisible();
+    await expect(page.locator('text=Expiry:').first()).toBeVisible();
+    await expect(page.locator('text=Target Return:').first()).toBeVisible();
+    await expect(page.locator('text=Option Price:').first()).toBeVisible();
+    await expect(page.locator('text=Confidence:').first()).toBeVisible();
+    await expect(page.locator('text=Reasoning:').first()).toBeVisible();
+  });
+
+  test('should handle refresh button correctly', async ({ page }) => {
+    // Wait for the table to load
+    await page.waitForSelector('#stocksTableBody', { timeout: 10000 });
+    
+    // Find the refresh button
+    const refreshButton = page.locator('button:has-text("Refresh Winners & Losers Analysis")');
+    await expect(refreshButton).toBeVisible();
+    
+    // Get the initial timestamp
+    const initialTimestamp = await page.locator('#lastUpdated').textContent();
+    
+    // Click the refresh button
+    await refreshButton.click();
+    
+    // Wait for the refresh to complete
+    await page.waitForTimeout(5000);
+    
+    // Check that the timestamp has updated
+    const newTimestamp = await page.locator('#lastUpdated').textContent();
+    expect(newTimestamp).not.toBe(initialTimestamp);
+  });
+
+  test('should show winners and losers data correctly', async ({ page }) => {
+    // Wait for the winners and losers sections to load
+    await page.waitForSelector('#winnersList', { timeout: 10000 });
+    await page.waitForSelector('#losersList', { timeout: 10000 });
+    
+    // Check that winners section has content
+    const winnersContent = await page.locator('#winnersList').textContent();
+    expect(winnersContent.length).toBeGreaterThan(50);
+    expect(winnersContent).not.toContain('No winners data available');
+    
+    // Check that losers section has content
+    const losersContent = await page.locator('#losersList').textContent();
+    expect(losersContent.length).toBeGreaterThan(50);
+    expect(losersContent).not.toContain('No losers data available');
+  });
 }); 

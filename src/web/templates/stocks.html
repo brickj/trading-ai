@@ -23,9 +23,6 @@
                     <div class="card-body">
                         <h5 class="card-title">Enhanced Analysis</h5>
                         <p class="card-text">Get comprehensive trading recommendations for today's top 3 winning and bottom 3 losing S&P 500 stocks. Each stock receives full enhanced analysis with stock and options strategies.</p>
-                        <button class="btn btn-primary" onclick="runSP500Analysis()">
-                            <i class="fas fa-chart-line"></i> Analyze S&P 500 Winners/Losers
-                        </button>
                     </div>
                 </div>
             </div>
@@ -137,21 +134,6 @@
     </div>
 </div>
 
-<!-- Enhanced Analysis Results -->
-<div class="row" id="enhancedAnalysisResults">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-star"></i> Enhanced Trading Recommendations</h5>
-                <p class="mb-0 text-muted">Comprehensive analysis including stock strategies, options recommendations, sentiment analysis, and historical performance for each of the top 3 winners and bottom 3 losers.</p>
-            </div>
-            <div class="card-body" id="enhancedRecommendationsContainer">
-                <!-- Enhanced recommendations will be populated here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Legacy Table -->
 <div class="row" id="legacyTable">
     <div class="col-12">
@@ -184,6 +166,20 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Analysis Results Section -->
+<div class="row mt-4" id="enhancedAnalysisResults" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="fas fa-chart-line"></i> Enhanced Analysis Results</h5>
+            </div>
+            <div class="card-body" id="enhancedAnalysisContainer">
+                <!-- Enhanced analysis results will be populated here -->
             </div>
         </div>
     </div>
@@ -318,5 +314,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/stocks.js') }}?v=2.5&t=20250703"></script>
+<script src="{{ url_for('static', filename='js/stocks.js') }}"></script>
 {% endblock %} 

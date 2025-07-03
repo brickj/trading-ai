@@ -69,9 +69,9 @@ function stopAutoRefresh() {
 }
 
 // Load S&P 500 analysis data
-async function loadSP500Data() {
+async function loadSP500Data(forceRefresh = false) {
     console.log('[DEBUG] Requesting S&P 500 data from API');
-    console.log('[DEBUG] loadSP500Data called');
+    console.log('[DEBUG] loadSP500Data called with forceRefresh:', forceRefresh);
     const startTime = Date.now();
     
     // Clear any previous content
@@ -93,40 +93,45 @@ async function loadSP500Data() {
     }
     
     try {
-        // First, try to get preloaded data for faster loading
+        // First, try to get preloaded data for faster loading (unless forceRefresh is true)
         console.log('[DEBUG] Checking for preloaded data...');
         let data = null;
         let usingCachedData = false;
         let networkError = false;
         
-        try {
-            const preloadResponse = await fetch('/api/preloaded_data', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'same-origin'  // Include cookies for CSRF if needed
-            });
-            
-            if (preloadResponse.ok) {
-                const preloadData = await preloadResponse.json();
-                if (preloadData.success && preloadData.data && preloadData.data.enhanced_analysis) {
-                    data = {
-                        success: true,
-                        data: preloadData.data
-                    };
-                    usingCachedData = true;
-                    console.log('[DEBUG] Using preloaded cached data:', preloadData.message);
+        // Skip cache if forceRefresh is true
+        if (!forceRefresh) {
+            try {
+                const preloadResponse = await fetch('/api/preloaded_data', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin'  // Include cookies for CSRF if needed
+                });
+                
+                if (preloadResponse.ok) {
+                    const preloadData = await preloadResponse.json();
+                    if (preloadData.success && preloadData.data && preloadData.data.enhanced_analysis) {
+                        data = {
+                            success: true,
+                            data: preloadData.data
+                        };
+                        usingCachedData = true;
+                        console.log('[DEBUG] Using preloaded cached data:', preloadData.message);
+                    } else {
+                        console.log('[DEBUG] Preloaded data not available or invalid:', preloadData.message);
+                    }
                 } else {
-                    console.log('[DEBUG] Preloaded data not available or invalid:', preloadData.message);
+                    console.log('[DEBUG] Preloaded data endpoint returned error:', preloadResponse.status);
                 }
-            } else {
-                console.log('[DEBUG] Preloaded data endpoint returned error:', preloadResponse.status);
+            } catch (e) {
+                networkError = true;
+                console.log('[DEBUG] Network error accessing preloaded data:', e.message);
             }
-        } catch (e) {
-            networkError = true;
-            console.log('[DEBUG] Network error accessing preloaded data:', e.message);
+        } else {
+            console.log('[DEBUG] Force refresh requested - skipping cache');
         }
         
         // If no cached data and no network error, make full API call
@@ -254,8 +259,8 @@ async function loadSP500Data() {
         displaySP500Table(sp500Data);
         console.log('[DEBUG] Calling displayWinnersLosers with data');
         displayWinnersLosers(sp500Data);
-        console.log('[DEBUG] Calling displayEnhancedRecommendations with data');
-        displayEnhancedRecommendations(sp500Data);
+        console.log('[DEBUG] Calling displayEnhancedAnalysis with data');
+        // Note: displayEnhancedRecommendations was removed, using displayEnhancedAnalysis instead
         
         if (document.getElementById('lastUpdated')) {
             const timestamp = data.data.timestamp ? new Date(data.data.timestamp).toLocaleString() : 'Unknown';
@@ -382,10 +387,14 @@ function displaySP500Table(stocks) {
     
     console.log('[DEBUG] Starting to populate stocks table with', stocks.length, 'stocks');
     
+    // Ensure we only show exactly 6 stocks (3 winners + 3 losers)
+    const limitedStocks = stocks.slice(0, 6);
+    console.log('[DEBUG] Limited to', limitedStocks.length, 'stocks for table display');
+    
     // Build all HTML at once instead of appending to DOM multiple times
     let tableHtml = '';
     
-    stocks.forEach((stock, index) => {
+    limitedStocks.forEach((stock, index) => {
         if (!stock) {
             console.log(`[DEBUG] Skipping null/undefined stock at index ${index}`);
             return; // Skip null/undefined stocks
@@ -438,7 +447,7 @@ function displaySP500Table(stocks) {
     // Set the HTML all at once
     if (tableHtml) {
         tbody.innerHTML = tableHtml;
-        console.log('[DEBUG] Finished populating stocks table with', stocks.length, 'rows');
+        console.log('[DEBUG] Finished populating stocks table with', limitedStocks.length, 'rows');
     } else {
         tbody.innerHTML = `
             <tr>
@@ -454,6 +463,31 @@ function displaySP500Table(stocks) {
 // Display winners and losers summary
 function displayWinnersLosers(stocks) {
     console.log('[DEBUG] displayWinnersLosers called with:', stocks);
+    
+    // Debug: Print structure of each stock object
+    stocks.forEach((stock, idx) => {
+        if (!stock) {
+            console.warn(`[DEBUG] Stock at index ${idx} is null/undefined`);
+            return;
+        }
+        const hasPriceData = stock.hasOwnProperty('price_data');
+        const hasSentimentData = stock.hasOwnProperty('sentiment_data');
+        const changePercent = hasPriceData ? stock.price_data.change_percent : undefined;
+        const sentimentScore = hasSentimentData ? stock.sentiment_data.sentiment_score : undefined;
+        console.log(`[DEBUG][Stock ${idx}] symbol: ${stock.symbol}, has price_data: ${hasPriceData}, has sentiment_data: ${hasSentimentData}, change_percent:`, changePercent, ', sentiment_score:', sentimentScore);
+        if (!hasPriceData) {
+            console.warn(`[DEBUG][Stock ${idx}] MISSING price_data`);
+        }
+        if (!hasSentimentData) {
+            console.warn(`[DEBUG][Stock ${idx}] MISSING sentiment_data`);
+        }
+        if (hasPriceData && typeof changePercent === 'undefined') {
+            console.warn(`[DEBUG][Stock ${idx}] price_data MISSING change_percent`);
+        }
+        if (hasSentimentData && typeof sentimentScore === 'undefined') {
+            console.warn(`[DEBUG][Stock ${idx}] sentiment_data MISSING sentiment_score`);
+        }
+    });
     
     // Safety check - ensure stocks is an array
     if (!Array.isArray(stocks)) {
@@ -472,28 +506,24 @@ function displayWinnersLosers(stocks) {
         return;
     }
     
-    // Sort stocks by change_percent (winners vs losers) and then by sentiment score
+    // Sort stocks by change_percent (winners vs losers)
     const winners = stocks.filter(stock => {
-        if (!stock || stock.sentiment_data?.sentiment_score === undefined) return false;
-        const changePercent = stock.price_data?.change_percent || '0%';
-        // Convert string like "242.9752%" to number, removing % and converting to float
-        const changeValue = parseFloat(changePercent.replace('%', ''));
+        if (!stock || !stock.price_data || typeof stock.price_data.change_percent === 'undefined') return false;
+        const changeValue = parseFloat(String(stock.price_data.change_percent).replace('%', ''));
         return changeValue > 0;
     }).sort((a, b) => {
-        const aScore = a.sentiment_data.sentiment_score;
-        const bScore = b.sentiment_data.sentiment_score;
-        return bScore - aScore;
+        const aVal = parseFloat(String(a.price_data.change_percent).replace('%', ''));
+        const bVal = parseFloat(String(b.price_data.change_percent).replace('%', ''));
+        return bVal - aVal;
     });
     const losers = stocks.filter(stock => {
-        if (!stock || stock.sentiment_data?.sentiment_score === undefined) return false;
-        const changePercent = stock.price_data?.change_percent || '0%';
-        // Convert string like "-40.3707%" to number, removing % and converting to float
-        const changeValue = parseFloat(changePercent.replace('%', ''));
+        if (!stock || !stock.price_data || typeof stock.price_data.change_percent === 'undefined') return false;
+        const changeValue = parseFloat(String(stock.price_data.change_percent).replace('%', ''));
         return changeValue < 0;
     }).sort((a, b) => {
-        const aScore = a.sentiment_data.sentiment_score;
-        const bScore = b.sentiment_data.sentiment_score;
-        return aScore - bScore;
+        const aVal = parseFloat(String(a.price_data.change_percent).replace('%', ''));
+        const bVal = parseFloat(String(b.price_data.change_percent).replace('%', ''));
+        return aVal - bVal;
     });
     console.log('[DEBUG] Filtered winners:', winners.length, winners.map(w => w?.symbol || 'unknown'));
     console.log('[DEBUG] Filtered losers:', losers.length, losers.map(l => l?.symbol || 'unknown'));
@@ -598,11 +628,273 @@ function displayWinnersLosers(stocks) {
 }
 
 // Analyze individual stock
-function analyzeStock(symbol) {
-    showAlert(`Analyzing ${symbol}...`, 'info');
-    // This would typically call an API endpoint for detailed analysis
-    // For now, just show a basic message
-    showAlert(`Detailed analysis for ${symbol} would be performed here.`, 'info');
+async function analyzeStock(symbol) {
+    console.log(`[DEBUG] analyzeStock called for symbol: ${symbol}`);
+    
+    // Show loading state
+    showAlert(`Analyzing ${symbol} with enhanced analysis...`, 'info');
+    
+    // Show the enhanced analysis results section
+    const enhancedSection = document.getElementById('enhancedAnalysisResults');
+    if (enhancedSection) {
+        enhancedSection.style.display = 'block';
+    }
+    
+    // Show loading in the container
+    const container = document.getElementById('enhancedAnalysisContainer');
+    if (container) {
+        container.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Running comprehensive analysis for ${symbol}...</p>
+            </div>
+        `;
+    }
+    
+    try {
+        // Call the comprehensive analysis endpoint
+        const response = await fetch('/api/comprehensive_analysis', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                symbol: symbol,
+                ai_provider: 'ollama'
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`[DEBUG] Enhanced analysis response for ${symbol}:`, data);
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        // Display the enhanced analysis results
+        displayEnhancedAnalysis(data.data, symbol);
+        
+        showAlert(`Enhanced analysis completed for ${symbol}!`, 'success');
+        
+    } catch (error) {
+        console.error(`[DEBUG] Error analyzing ${symbol}:`, error);
+        showAlert(`Error analyzing ${symbol}: ${error.message}`, 'danger');
+        
+        // Show error in the container
+        if (container) {
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Error analyzing ${symbol}: ${error.message}
+                </div>
+            `;
+        }
+    }
+}
+
+// Display enhanced analysis results
+function displayEnhancedAnalysis(data, symbol) {
+    console.log('[DEBUG] displayEnhancedAnalysis called with data:', data);
+    console.log('[DEBUG] Symbol:', symbol);
+    
+    const container = document.getElementById('enhancedAnalysisContainer');
+    if (!container) {
+        console.error('[DEBUG] enhancedAnalysisContainer not found');
+        return;
+    }
+    console.log('[DEBUG] Found enhancedAnalysisContainer:', container);
+    
+    const priceData = data.price_data || {};
+    const sentimentData = data.sentiment_data || {};
+    const signalData = data.signal_data || {};
+    const comprehensiveRecommendations = data.comprehensive_recommendations || {};
+    
+    console.log('[DEBUG] Price data:', priceData);
+    console.log('[DEBUG] Sentiment data:', sentimentData);
+    console.log('[DEBUG] Signal data:', signalData);
+    console.log('[DEBUG] Comprehensive recommendations:', comprehensiveRecommendations);
+    
+    // Get the best options recommendation
+    const optionsRecommendations = comprehensiveRecommendations.options_recommendations || [];
+    const bestOption = optionsRecommendations.length > 0 ? optionsRecommendations[0] : null;
+    
+    // Get the best stock recommendation
+    const stockRecommendations = comprehensiveRecommendations.stock_recommendations || [];
+    const bestStock = stockRecommendations.length > 0 ? stockRecommendations[0] : null;
+    
+    console.log('[DEBUG] Options recommendations count:', optionsRecommendations.length);
+    console.log('[DEBUG] Stock recommendations count:', stockRecommendations.length);
+    console.log('[DEBUG] Best option:', bestOption);
+    console.log('[DEBUG] Best stock:', bestStock);
+    
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6><i class="fas fa-chart-bar"></i> ${symbol} - Current Data</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Current Price:</strong><br>
+                                <span class="h5 text-primary">${formatCurrency(priceData.current_price || 0)}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Change:</strong><br>
+                                <span class="h5 ${priceData.change_percent > 0 ? 'text-success' : 'text-danger'}">
+                                    ${priceData.change_percent || '0%'}
+                                </span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Sentiment Score:</strong><br>
+                                <span class="h6 ${getSentimentClass(sentimentData.sentiment_score || 0)}">
+                                    ${(sentimentData.sentiment_score || 0).toFixed(3)}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Confidence:</strong><br>
+                                <span class="h6">${((sentimentData.confidence || 0) * 100).toFixed(1)}%</span>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Signal:</strong><br>
+                                <span class="badge ${getSignalClass(signalData.action)}">${signalData.action || 'HOLD'}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Signal Strength:</strong><br>
+                                <span class="h6">${(signalData.signal_strength || 0).toFixed(3)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6><i class="fas fa-chart-line"></i> Trading Recommendations</h6>
+                    </div>
+                    <div class="card-body">
+    `;
+    
+    // Add stock recommendation
+    if (bestStock) {
+        html += `
+            <div class="mb-3">
+                <h6><i class="fas fa-stock"></i> Stock Recommendation</h6>
+                <div class="alert alert-info">
+                    <strong>Action:</strong> <span class="badge ${getSignalClass(bestStock.action)}">${bestStock.action}</span><br>
+                    <strong>Confidence:</strong> ${(bestStock.confidence * 100).toFixed(1)}%<br>
+                    <strong>Current Price:</strong> ${formatCurrency(bestStock.current_price || 0)}<br>
+                    <strong>Risk Level:</strong> <span class="badge bg-secondary">${bestStock.risk_level || 'N/A'}</span><br>
+                    <strong>Time Horizon:</strong> ${bestStock.time_horizon || 'N/A'}<br>
+                    <small><strong>Reasoning:</strong> ${bestStock.reasoning || 'No reasoning provided'}</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Add options recommendation
+    if (bestOption) {
+        html += `
+            <div class="mb-3">
+                <h6><i class="fas fa-options"></i> Options Recommendation</h6>
+                <div class="alert alert-warning">
+                    <strong>Strategy:</strong> ${bestOption.recommendation_type || 'N/A'}<br>
+                    <strong>Action:</strong> <span class="badge ${getSignalClass(bestOption.action)}">${bestOption.action}</span><br>
+                    <strong>Strike Price:</strong> ${formatCurrency(bestOption.strike_price || 0)}<br>
+                    <strong>Expiry:</strong> ${bestOption.days_to_expiry || 'N/A'} days<br>
+                    <strong>Target Return:</strong> ${bestOption.target_gain_percent || 'N/A'}%<br>
+                    <strong>Option Price:</strong> ${formatCurrency(bestOption.option_price || 0)}<br>
+                    <strong>Confidence:</strong> ${(bestOption.confidence * 100).toFixed(1)}%<br>
+                    <small><strong>Reasoning:</strong> ${bestOption.reasoning || 'No notes provided'}</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (!bestStock && !bestOption) {
+        html += `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i> No trading recommendations available for ${symbol}.
+            </div>
+        `;
+    }
+    
+    html += `
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add position sizing and risk management if available
+    const positionSizing = comprehensiveRecommendations.position_sizing;
+    const riskManagement = comprehensiveRecommendations.risk_management;
+    
+    if (positionSizing || riskManagement) {
+        html += `
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h6><i class="fas fa-shield-alt"></i> Position Sizing & Risk Management</h6>
+                        </div>
+                        <div class="card-body">
+        `;
+        
+        if (positionSizing) {
+            html += `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Position Sizing</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Recommended Position Size:</strong> ${positionSizing.recommended_size || 'N/A'}</li>
+                            <li><strong>Maximum Position:</strong> ${positionSizing.max_position || 'N/A'}</li>
+                            <li><strong>Portfolio Allocation:</strong> ${positionSizing.portfolio_allocation || 'N/A'}</li>
+                        </ul>
+                    </div>
+            `;
+        }
+        
+        if (riskManagement) {
+            html += `
+                    <div class="col-md-6">
+                        <h6>Risk Management</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Stop Loss:</strong> ${riskManagement.stop_loss || 'N/A'}</li>
+                            <li><strong>Take Profit:</strong> ${riskManagement.take_profit || 'N/A'}</li>
+                            <li><strong>Risk/Reward Ratio:</strong> ${riskManagement.risk_reward_ratio || 'N/A'}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    console.log('[DEBUG] About to set HTML content. HTML length:', html.length);
+    console.log('[DEBUG] HTML preview:', html.substring(0, 500) + '...');
+    container.innerHTML = html;
+    console.log('[DEBUG] HTML content set successfully');
 }
 
 // Run S&P 500 analysis (for the button click)
@@ -642,8 +934,8 @@ async function refreshMarketMoversData() {
             
             if (result.success) {
                 showAlert('Market movers data refreshed successfully!', 'success');
-                // Now load the fresh data
-                await loadSP500Data();
+                // Now load the fresh data with forceRefresh=true to bypass cache
+                await loadSP500Data(true);
             } else {
                 throw new Error(result.error || 'Failed to refresh market movers data');
             }
@@ -772,163 +1064,4 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
-// Display enhanced analysis results with position sizes and trading notes
-function displayEnhancedRecommendations(stocks) {
-    console.log('[DEBUG] displayEnhancedRecommendations called with', stocks ? stocks.length : 0, 'stocks');
-    
-    const container = document.getElementById('enhancedRecommendationsContainer');
-    if (!container) {
-        console.error('[DEBUG] enhancedRecommendationsContainer element not found');
-        return;
-    }
-    
-    // Clear the container
-    container.innerHTML = '';
-    
-    // Check if we have stocks data
-    if (!Array.isArray(stocks) || stocks.length === 0) {
-        container.innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> No enhanced analysis data available. Please try again later.
-            </div>
-        `;
-        return;
-    }
-    
-    let recommendationsHtml = '';
-    
-    stocks.forEach((stock, index) => {
-        if (!stock) {
-            console.log(`[DEBUG] Skipping null/undefined stock at index ${index}`);
-            return;
-        }
-        
-        console.log(`[DEBUG] Processing enhanced analysis for stock ${index + 1}/${stocks.length}: ${stock.symbol || 'unknown'}`);
-        
-        // Get the comprehensive analysis data
-        const comprehensiveAnalysis = stock.comprehensive_analysis || {};
-        const optionsRecommendations = comprehensiveAnalysis.options_recommendations || [];
-        const stockRecommendations = comprehensiveAnalysis.stock_recommendations || [];
-        
-        // Get the best options recommendation (first one with highest confidence)
-        const bestOption = optionsRecommendations.length > 0 ? optionsRecommendations[0] : null;
-        const bestStock = stockRecommendations.length > 0 ? stockRecommendations[0] : null;
-        
-        if (!bestOption && !bestStock) {
-            console.log(`[DEBUG] No recommendations found for ${stock.symbol}`);
-            return;
-        }
-        
-        const priceData = stock.price_data || {};
-        const sentimentData = stock.sentiment_data || {};
-        
-        recommendationsHtml += `
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-chart-line"></i> 
-                        <strong>${stock.symbol || 'Unknown'}</strong> - 
-                        ${formatCurrency(priceData.current_price || 0)} 
-                        <span class="badge ${getSentimentClass(sentimentData.sentiment_score || 0)}">
-                            ${(sentimentData.sentiment_score || 0).toFixed(3)} sentiment
-                        </span>
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        ${bestStock ? `
-                        <div class="col-md-6">
-                            <div class="card border-primary">
-                                <div class="card-header bg-primary text-white">
-                                    <h6><i class="fas fa-building"></i> Stock Recommendation</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Action:</strong> <span class="badge ${getSignalClass(bestStock.action)}">${bestStock.action || 'HOLD'}</span></p>
-                                    <p><strong>Confidence:</strong> ${((bestStock.confidence || 0) * 100).toFixed(1)}%</p>
-                                    <p><strong>Reasoning:</strong> ${bestStock.reasoning || 'No reasoning provided'}</p>
-                                    ${bestStock.shares_recommended ? `<p><strong>Shares:</strong> ${bestStock.shares_recommended}</p>` : ''}
-                                    ${bestStock.target_price ? `<p><strong>Target:</strong> ${formatCurrency(bestStock.target_price)}</p>` : ''}
-                                    ${bestStock.stop_loss_price ? `<p><strong>Stop Loss:</strong> ${formatCurrency(bestStock.stop_loss_price)}</p>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                        
-                        ${bestOption ? `
-                        <div class="col-md-6">
-                            <div class="card border-warning">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6><i class="fas fa-chart-line"></i> Options Recommendation</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Action:</strong> <span class="badge ${getSignalClass(bestOption.action)}">${bestOption.action || 'HOLD'}</span></p>
-                                    <p><strong>Option Type:</strong> <span class="badge ${bestOption.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${bestOption.option_type ? bestOption.option_type.toUpperCase() : 'N/A'}</span></p>
-                                    <p><strong>Strike Price:</strong> ${formatCurrency(bestOption.strike_price || 0)}</p>
-                                    <p><strong>Option Price:</strong> ${formatCurrency(bestOption.option_price || 0)}</p>
-                                    <p><strong>Days to Expiry:</strong> ${bestOption.days_to_expiry || 'N/A'}</p>
-                                    <p><strong>Target Gain:</strong> ${bestOption.target_gain_percent || 'N/A'}%</p>
-                                    <p><strong>Stop Loss:</strong> ${bestOption.stop_loss_percent || 'N/A'}%</p>
-                                    <p><strong>Confidence:</strong> ${((bestOption.confidence || 0) * 100).toFixed(1)}%</p>
-                                    <p><strong>Reasoning:</strong> ${bestOption.reasoning || 'No reasoning provided'}</p>
-                                </div>
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>
-                    
-                    ${bestOption && bestOption.position_recommendations ? `
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="card border-info">
-                                <div class="card-header bg-info text-white">
-                                    <h6><i class="fas fa-dollar-sign"></i> Position Sizes</h6>
-                                </div>
-                                <div class="card-body">
-                                    ${Object.entries(bestOption.position_recommendations).map(([accountSize, rec]) => `
-                                        <div class="mb-2">
-                                            <strong>${accountSize} Account:</strong><br>
-                                            <small>
-                                                Contracts: ${rec.contracts || 'N/A'}<br>
-                                                Cost: ${formatCurrency(rec.total_cost || 0)}<br>
-                                                Risk: ${rec.risk_percent || 'N/A'}%<br>
-                                                R/R Ratio: ${rec.risk_reward_ratio ? rec.risk_reward_ratio.toFixed(2) : 'N/A'}
-                                            </small>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card border-success">
-                                <div class="card-header bg-success text-white">
-                                    <h6><i class="fas fa-lightbulb"></i> Trading Notes</h6>
-                                </div>
-                                <div class="card-body">
-                                    ${bestOption.trading_notes || bestOption.day_trading_notes ? `
-                                        <ul class="list-unstyled">
-                                            ${(bestOption.trading_notes || bestOption.day_trading_notes).map(note => `<li><small>${note}</small></li>`).join('')}
-                                        </ul>
-                                    ` : '<p class="text-muted">No trading notes available</p>'}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    });
-    
-    if (recommendationsHtml) {
-        container.innerHTML = recommendationsHtml;
-        console.log('[DEBUG] Enhanced recommendations content added to DOM');
-    } else {
-        container.innerHTML = `
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No enhanced recommendations available. Please try again later.
-            </div>
-        `;
-        console.log('[DEBUG] No enhanced recommendations HTML generated');
-    }
-} 
+ 
