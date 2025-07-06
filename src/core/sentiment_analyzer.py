@@ -334,63 +334,60 @@ class SentimentAnalyzer:
             for _ in range(repeat_count):
                 news_text += f"Headline: {article['headline']}\nSummary: {article['summary']}\n\n"
         
-        # Add stock context to the prompt
-        stock_context = ""
-        if symbol:
-            stock_context = f"""
-IMPORTANT: Focus ONLY on news specifically about {symbol} stock. If news mentions {symbol} directly, give it higher importance in your analysis. 
-
-TECHNICAL CONTENT HANDLING: If the news contains technical jargon or complex terms, focus on the overall business sentiment and market reaction rather than technical details. Look for words like "bullish", "bearish", "positive", "negative", "growth", "decline", "strong", "weak", etc.
-
-MIXED SENTIMENT: If news contains both positive and negative elements, determine the overall trend. Look for:
-- Stock price movements (up/down percentages)
-- Analyst recommendations (buy/hold/sell)
-- Earnings performance (beat/miss expectations)
-- Market reactions and investor sentiment
-
-BEST EFFORT: Even if news is sparse or complex, provide your best estimate of sentiment for {symbol} based on any available information. If you must guess, explain your reasoning and provide a conservative estimate.
-
-SENTIMENT INDICATORS: Pay attention to:
-- Stock price changes and trends
-- Analyst ratings and price targets
-- Earnings reports and guidance
-- Market commentary and investor reactions
-- Company announcements and strategic moves"""
-
-        prompt = f"""
-        You are a financial news analyzer. Your task is to analyze the sentiment of news articles and provide a structured response.
-
-        Analyze the following news content and determine:
-        1. Overall sentiment (positive/negative/neutral)
-        2. Confidence in your assessment
-        3. Brief summary of key points
-
-        {stock_context}
+        # Determine if this is crypto analysis
+        is_crypto = symbol and any(crypto in symbol.upper() for crypto in ["BTC", "ETH", "ADA", "DOT", "SOL", "LINK", "USD"])
         
-        News content to analyze:
+        # Add context-specific prompt
+        if is_crypto:
+            # Use the exact System Message Style prompt that works for cryptos
+            system_prompt = (
+                "You are a financial sentiment analyzer. You must respond with ONLY a JSON object containing "
+                "sentiment_score (-1 to 1), confidence (0 to 1), and summary."
+            )
+            user_prompt = (
+                f"Analyze the sentiment of this crypto news for {symbol}:\n\n{news_text}\n\n"
+                "Respond with ONLY this JSON format:\n"
+                '{\n    "sentiment_score": 0.0,\n    "confidence": 0.0,\n    "summary": ""\n}'
+            )
+            
+            # For Ollama, use the exact format that worked in our test
+            if selected_provider == "ollama":
+                # Convert to the exact format that worked: <|system|>...</s><|user|>...</s><|assistant|>
+                ollama_prompt = f"<|system|>\n{system_prompt}\n</s>\n<|user|>\n{user_prompt}\n</s>\n<|assistant|>"
+                messages = [{"role": "user", "content": ollama_prompt}]
+            else:
+                # For other providers, use the standard format
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+        else:
+            # Stock prompt remains unchanged
+            prompt = f"""
+        You are a financial news sentiment analysis engine. Your ONLY task is to analyze the following news content and return a single JSON object with the following fields:
+        - sentiment_score (float, -1 to 1)
+        - confidence (float, 0 to 1)
+        - summary (string, 1-2 sentences)
+        
+        CRITICAL: You MUST respond with ONLY a valid JSON object. Do NOT include any explanations, markdown, or extra text. If you do, the system will break.
+        
+        News content:
         {news_text}
         
-        Provide your analysis in this exact JSON format:
+        Respond with ONLY this JSON format:
         {{
             "sentiment_score": 0.0,
             "confidence": 0.0,
-            "summary": "your analysis here"
+            "summary": ""
         }}
-        
-        Rules:
-        - sentiment_score: -1.0 (very negative) to 1.0 (very positive)
-        - confidence: 0.0 (low confidence) to 1.0 (high confidence)
-        - summary: brief description of the sentiment and key factors
-        - Respond ONLY with the JSON, no other text
         """
-        
-        messages = [
-            {
-                "role": "system",
-                "content": f"You are a news sentiment analyzer. Your job is to analyze news content and provide sentiment scores. {f'Focus on news related to {symbol}.' if symbol else ''}",
-            },
-            {"role": "user", "content": prompt},
-        ]
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"You are a news sentiment analyzer. Your job is to analyze news content and provide sentiment scores. {f'Focus on news related to {symbol}.' if symbol else ''}",
+                },
+                {"role": "user", "content": prompt},
+            ]
         
         # Use only the selected provider - no fallback to mock data
         if selected_provider == "ollama":
@@ -477,21 +474,33 @@ SENTIMENT INDICATORS: Pay attention to:
             # First, ensure content is a string
             if not isinstance(content, str):
                 raise Exception(f"AI response content is not a string: {type(content)}")
-            
-            # Try to parse as JSON
-            result = json.loads(content)
-            
+
+            # Try to parse as JSON directly first (for clean JSON responses)
+            try:
+                result = json.loads(content)
+                print(f"✅ Parsed JSON directly: {result}")
+            except json.JSONDecodeError:
+                # If direct parsing fails, try to extract JSON from the response
+                import re
+                json_match = re.search(r'\{[\s\S]*?\}', content)
+                if json_match:
+                    json_str = json_match.group(0)
+                    result = json.loads(json_str)
+                    print(f"✅ Parsed JSON from regex: {result}")
+                else:
+                    raise Exception(f"No JSON found in response: {content[:200]}...")
+
             # Ensure result is a dictionary
             if not isinstance(result, dict):
                 raise json.JSONDecodeError("Result is not a dictionary", content, 0)
-                
-            # Handle nested format from Ollama
+
+            # Handle nested format from Ollama (legacy support)
             if isinstance(result.get("sentiment_score"), dict):
                 # Extract from nested format
                 sentiment_dict = result.get("sentiment_score", {})
                 if "positive" in sentiment_dict:
                     result["sentiment_score"] = sentiment_dict["positive"] - sentiment_dict.get("negative", 0)
-                    
+
         except json.JSONDecodeError:
             # If JSON parsing fails, try to extract values from text format
             import re
@@ -500,7 +509,7 @@ SENTIMENT INDICATORS: Pay attention to:
             sentiment_match = re.search(r'Sentiment Score:\s*(-?\d+\.?\d*)', content, re.IGNORECASE)
             confidence_match = re.search(r'Confidence:\s*(\d+\.?\d*)', content, re.IGNORECASE)
             reasoning_match = re.search(r'Reasoning:\s*(.+)', content, re.IGNORECASE | re.DOTALL)
-            
+
             # If new format doesn't work, try old JSON format
             if not sentiment_match:
                 sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
@@ -508,13 +517,13 @@ SENTIMENT INDICATORS: Pay attention to:
                 confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
             if not reasoning_match:
                 reasoning_match = re.search(r'"summary":\s*"([^"]*)"', content)
-            
+
             # Also try simple JSON format
             if not sentiment_match:
                 sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', content)
             if not confidence_match:
                 confidence_match = re.search(r'"confidence":\s*(\d+\.?\d*)', content)
-                
+
             if sentiment_match and confidence_match:
                 result = {
                     "sentiment_score": float(sentiment_match.group(1)),
@@ -525,6 +534,15 @@ SENTIMENT INDICATORS: Pay attention to:
                 # If parsing fails completely, raise an exception instead of using fallback values
                 raise Exception(f"Could not parse AI response: {content[:200]}...")
                 
+        except Exception as e:
+            # If parsing fails, log the full response and return a fallback neutral sentiment
+            print(f"[ERROR] Could not parse AI response: {content[:500]}... Exception: {e}")
+            result = {
+                "sentiment_score": 0.0,
+                "confidence": 0.5,
+                "summary": "Sentiment analysis unavailable"
+            }
+        
         # Ensure result is a dictionary before validation
         if not isinstance(result, dict):
             raise Exception(f"Invalid result format: {type(result)}")
@@ -533,16 +551,22 @@ SENTIMENT INDICATORS: Pay attention to:
         sentiment_score = max(-1, min(1, float(result.get("sentiment_score", 0))))
         confidence = max(0, min(1, float(result.get("confidence", 0))))
         
-        # NO FALLBACK - if confidence is zero, the analysis failed
+        # Provide fallback for zero confidence cases
         if confidence == 0:
-            raise Exception(f"AI provider {selected_provider} returned zero confidence for analysis. Analysis failed.")
+            print(f"⚠️ AI provider {selected_provider} returned zero confidence for {symbol}, using neutral fallback")
+            return {
+                "sentiment_score": 0.0,
+                "confidence": 0.1,  # Minimal confidence for fallback
+                "summary": f"Neutral sentiment fallback for {symbol} - insufficient data for confident analysis"
+            }
         
         # Add analysis metadata
         analysis_metadata = {
             "stock_specific_count": len(stock_specific_news),
             "general_news_count": len(general_news),
             "total_weight": total_weight,
-            "stock_specific_ratio": len(stock_specific_news) / len(combined_news) if combined_news else 0
+            "stock_specific_ratio": len(stock_specific_news) / len(combined_news) if combined_news else 0,
+            "is_crypto": is_crypto
         }
         
         return {

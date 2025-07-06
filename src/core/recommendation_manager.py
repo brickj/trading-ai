@@ -338,11 +338,11 @@ class RecommendationManager:
         # Action-specific reasoning
         if action == "BUY":
             reasoning_parts.append(
-                "Bullish crypto recommendation - consider long positions or call options"
+                "Bullish crypto recommendation - consider buying the asset"
             )
         elif action == "SELL":
             reasoning_parts.append(
-                "Bearish crypto recommendation - consider short positions or put options"
+                "Bearish crypto recommendation - consider selling the asset"
             )
         else:
             reasoning_parts.append("Neutral recommendation - wait for clearer signals")

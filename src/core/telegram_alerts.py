@@ -200,16 +200,16 @@ class TelegramAlerts:
         stock_recommendations = enhanced_result.get("stock_recommendations", [])
         options_recommendations = enhanced_result.get("options_recommendations", [])
         enhanced_result.get("news_count", 0)
-        # Create alert message
-        message = """
+        # Create alert message with proper string formatting
+        message = f"""
 🚀 <b>ENHANCED ANALYSIS ALERT</b> 🚀
 📊 <b>Symbol:</b> {symbol}
-💰 <b>Price:</b> ${current_price}
-😊 <b>Sentiment:</b> {sentiment_score:+.2f}
-📰 <b>News Articles Analyzed:</b> {news_count}
+💰 <b>Price:</b> ${enhanced_result.get('price_data', {}).get('current_price', 'N/A'):.2f}
+😊 <b>Sentiment:</b> {enhanced_result.get('sentiment_data', {}).get('sentiment_score', 0):+.2f}
+📰 <b>News Articles Analyzed:</b> {enhanced_result.get('news_count', 0)}
 📈 <b>Historical Data:</b> {HISTORICAL_LOOKBACK_DAYS // 365}-year analysis included
 <b>TOP RECOMMENDATION:</b>
-🎯 {recommendation} with {confidence:.1%} confidence
+🎯 {trade_signal.get('action', 'HOLD')} with {trade_signal.get('confidence', 0):.1%} confidence
 <b>STOCK STRATEGIES:</b>
 """
         # Add stock recommendations
@@ -221,11 +221,11 @@ class TelegramAlerts:
             rec.get("time_horizon", "")
             # Add target price and stop loss for stock strategies if available
             target_info = ""
-            if rec.get("target_price"):
-                target_info = " | Target: ${rec.get('target_price'):.2f}"
-            if rec.get("stop_loss_price"):
-                target_info += " | Stop: ${rec.get('stop_loss_price'):.2f}"
-            message += "🟢 <b>{strategy_name}:</b> {rec_action} ({conf:.1%}){target_info}\n"
+            if rec.get("target_price") is not None:
+                target_info = f" | Target: ${float(rec.get('target_price', 0)):.2f}"
+            if rec.get("stop_loss_price") is not None:
+                target_info += f" | Stop: ${float(rec.get('stop_loss_price', 0)):.2f}"
+            message += f"🟢 <b>{rec.get('recommendation_type', 'Strategy')}:</b> {rec.get('action', 'HOLD')} ({rec.get('confidence', 0):.1%}){target_info}\n"
         # Add options recommendations if available
         if options_recommendations:
             message += "\n<b>OPTIONS STRATEGIES:</b>\n"
@@ -241,14 +241,13 @@ class TelegramAlerts:
                 # Add historical stats if available
                 hist_stats = rec.get("historical_stats", {})
                 hist_stats.get("win_rate", 0)
-                message += "🟢 <b>{strategy_name}:</b> {rec_action} ({conf:.1%})\n"
+                message += f"🔵 <b>{rec.get('recommendation_type', 'Options')}:</b> {rec.get('action', 'HOLD')} ({rec.get('confidence', 0):.1%})\n"
         # Add reasoning if available
         reasoning = enhanced_result.get("sentiment_data", {}).get("reasoning", "")
         if reasoning:
-            message += "\n<b>ANALYSIS SUMMARY:</b>\n{reasoning[:250]}{'...' if len(reasoning) > 250 else ''}\n"
-        message += (
-            "\n⏰ <i>Enhanced analysis sent at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"
-        )
+            reasoning_preview = reasoning[:250] + ('...' if len(reasoning) > 250 else '')
+            message += f"\n<b>ANALYSIS SUMMARY:</b>\n{reasoning_preview}\n"
+        message += f"\n⏰ <i>Enhanced analysis sent at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"
         success = self.send_message(message, message_type="enhanced_analysis", symbol=symbol)
         if success:
             self.last_alerts["enhanced_{symbol}"] = datetime.now()

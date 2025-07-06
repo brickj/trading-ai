@@ -7,6 +7,7 @@ from .data_fetcher import DataFetcher
 from ..core.sentiment_analyzer import SentimentAnalyzer
 from ..trading.trading_strategy import TradingStrategy
 from ..core.go_service_client import GoServiceClient
+from src.core.recommendation_manager import recommendation_manager
 
 
 class NewsMonitor:
@@ -160,7 +161,19 @@ class NewsMonitor:
                 ):
                     continue
                 # Generate trading signals
-                signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                # Use crypto-specific recommendations for crypto symbols
+                if is_crypto:
+                    crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
+                        symbol, sentiment_data, price_data
+                    )
+                    signal_data = {
+                        "action": crypto_recommendation.get("action", "HOLD"),
+                        "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
+                        "confidence": crypto_recommendation.get("confidence", 0),
+                        "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
+                    }
+                else:
+                    signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
                 # Generate trade recommendations
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
@@ -212,7 +225,16 @@ class NewsMonitor:
                     else:
                         # Re-raise other types of errors
                         raise e
-                signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                # Use crypto-specific recommendations for crypto symbols
+                crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
+                    symbol, sentiment_data, price_data
+                )
+                signal_data = {
+                    "action": crypto_recommendation.get("action", "HOLD"),
+                    "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
+                    "confidence": crypto_recommendation.get("confidence", 0),
+                    "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
+                }
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
                         symbol, price_data["current_price"], sentiment_data, signal_data
@@ -256,7 +278,16 @@ class NewsMonitor:
                         else:
                             # Re-raise other types of errors
                             raise e
-                    signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                    # Use crypto-specific recommendations for crypto symbols
+                    crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
+                        symbol, sentiment_data, price_data
+                    )
+                    signal_data = {
+                        "action": crypto_recommendation.get("action", "HOLD"),
+                        "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
+                        "confidence": crypto_recommendation.get("confidence", 0),
+                        "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
+                    }
                     if signal_data["action"] != "HOLD":
                         trade_signal = self.trading_strategy.generate_trade_signal(
                             symbol,

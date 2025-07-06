@@ -1,0 +1,105 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - text: Market movers data refreshed successfully!
+  - button
+  - link "  Trading AI":
+    - /url: /
+  - list:
+    - listitem:
+      - link " Dashboard":
+        - /url: /
+    - listitem:
+      - link " S&P 500":
+        - /url: /stocks
+    - listitem:
+      - link " Crypto":
+        - /url: /crypto
+    - listitem:
+      - link " Portfolio":
+        - /url: /portfolio_page
+    - listitem:
+      - link " Backtest":
+        - /url: /backtest_page
+    - listitem:
+      - link " Opportunities":
+        - /url: /opportunities
+    - listitem:
+      - link " Recommendations":
+        - /url: /recommendations
+    - listitem:
+      - link " System Status":
+        - /url: /system_status
+    - listitem:
+      - link " Logs":
+        - /url: /logs
+  - list:
+    - listitem: 
+- heading " S&P 500 Winners & Losers Analysis" [level=1]
+- heading "Enhanced Analysis" [level=5]
+- paragraph: Get comprehensive trading recommendations for today's top 3 winning and bottom 3 losing S&P 500 stocks. Each stock receives full enhanced analysis with stock and options strategies.
+- heading " S&P 500 Winners & Losers Enhanced Analysis  How are recommendations calculated?" [level=1]:
+  - text:  S&P 500 Winners & Losers Enhanced Analysis
+  - button " How are recommendations calculated?"
+- paragraph: Comprehensive trading recommendations for today's top 3 winning and bottom 3 losing S&P 500 stocks. Each stock receives full enhanced analysis including sentiment analysis, historical backtesting, and multiple trading strategies.
+- text: 
+- strong: "What you'll see:"
+- list:
+  - listitem:
+    - strong: "Top 3 Winners:"
+    - text: Stocks with the highest percentage gains today
+  - listitem:
+    - strong: "Bottom 3 Losers:"
+    - text: Stocks with the largest percentage losses today
+  - listitem:
+    - strong: "Enhanced Recommendations:"
+    - text: Stock and options strategies for each symbol
+  - listitem:
+    - strong: "Sentiment Analysis:"
+    - text: AI-powered news sentiment scores
+  - listitem:
+    - strong: "Historical Performance:"
+    - text: Backtested strategy performance
+- button " Refreshing..." [disabled]
+- text: "Last updated: 7/3/2025, 5:15:34 PM (cached)"
+- checkbox "Auto-refresh every 5 minutes"
+- text: Auto-refresh every 5 minutes
+- status: Loading...
+- paragraph: Analyzing S&P 500 winners and losers with enhanced recommendations...
+- heading "5" [level=5]
+- text: Stocks Analyzed
+- heading "0" [level=5]
+- text: Opportunities Found
+- heading "N/A" [level=5]
+- text: Success Rate
+- heading "0" [level=5]
+- text: Errors
+- heading " Top 3 Winners Today" [level=5]
+- status
+- text: Loading winners...
+- heading " Bottom 3 Losers Today" [level=5]
+- status
+- text: Loading losers...
+- heading " Analysis Results" [level=5]
+- table:
+  - rowgroup:
+    - row "Type Symbol Current Price Sentiment Score Confidence Signal Signal Strength News Count Action":
+      - cell "Type"
+      - cell "Symbol"
+      - cell "Current Price"
+      - cell "Sentiment Score"
+      - cell "Confidence"
+      - cell "Signal"
+      - cell "Signal Strength"
+      - cell "News Count"
+      - cell "Action"
+  - rowgroup:
+    - row "Loading data...":
+      - cell "Loading data..."
+- heading " Enhanced Analysis Results" [level=5]
+- contentinfo:
+  - heading "Trading AI Dashboard" [level=6]
+  - paragraph: Advanced sentiment analysis and options trading recommendations powered by AI.
+  - paragraph:  Demo Version - Not Financial Advice
+```

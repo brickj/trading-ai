@@ -144,13 +144,32 @@ class BatchProcessor:
             # Get crypto price
             price_data = self.data_fetcher.get_crypto_price(symbol)
 
-            # Get crypto news (shared across all cryptos for efficiency)
+            # --- Improved news matching ---
+            # Map symbol to common names/tickers
+            symbol_map = {
+                "BTCUSD": ["BTC", "Bitcoin"],
+                "ETHUSD": ["ETH", "Ethereum"],
+                "ADAUSD": ["ADA", "Cardano"],
+                "DOTUSD": ["DOT", "Polkadot"],
+                "LINKUSD": ["LINK", "Chainlink"],
+                "SOLUSD": ["SOL", "Solana"],
+            }
+            names = symbol_map.get(symbol.upper(), [symbol.replace("USD", ""), symbol])
+            
+            # Match news if any name/ticker is in headline or summary
             crypto_news = [
                 news
                 for news in shared_news
-                if symbol.lower() in news.get("headline", "").lower()
-                or symbol.lower() in news.get("summary", "").lower()
+                if any(
+                    name.lower() in news.get("headline", "").lower() or name.lower() in news.get("summary", "").lower()
+                    for name in names
+                )
             ]
+
+            # If no symbol-specific news, use all general crypto news as fallback
+            if not crypto_news:
+                print(f"[INFO] No symbol-specific news for {symbol}, using all general crypto news for sentiment analysis.")
+                crypto_news = shared_news
 
             # Analyze sentiment
             try:
@@ -169,8 +188,21 @@ class BatchProcessor:
                     # Re-raise other types of errors
                     raise e
 
-            # Use crypto-specific recommendation manager
-            signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+            # Import recommendation manager for crypto-specific analysis
+            from src.core.recommendation_manager import recommendation_manager
+            
+            # Use crypto-specific recommendations that return BUY/SELL instead of CALL/PUT
+            crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
+                symbol, sentiment_data, price_data
+            )
+            
+            # Convert crypto recommendation to signal_data format expected by frontend
+            signal_data = {
+                "action": crypto_recommendation.get("action", "HOLD"),
+                "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
+                "confidence": crypto_recommendation.get("confidence", 0),
+                "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
+            }
 
             # Return enhanced result with crypto-specific data
             return {
