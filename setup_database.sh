@@ -42,7 +42,7 @@ echo ""
 echo "🔧 Creating database and user..."
 
 # Connect as postgres superuser to create database and user
-psql -h $DB_HOST -U postgres -d postgres << EOF
+psql -h $DB_HOST -U rick -d postgres << EOF
 -- Create database if it doesn't exist
 SELECT 'CREATE DATABASE $DB_NAME' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$DB_NAME')\gexec
 
@@ -84,7 +84,7 @@ fi
 # Run the Python setup script
 echo ""
 echo "🔧 Running Python database setup..."
-python3 src/utils/setup_postgres.py
+PYTHONPATH=. python3 src/utils/setup_postgres.py
 
 if [ $? -eq 0 ]; then
     echo ""
@@ -197,6 +197,32 @@ CREATE TABLE IF NOT EXISTS app_cache (
     expires_at TIMESTAMP
 );"
 
+# Logs table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE TABLE IF NOT EXISTS logs (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    level VARCHAR(20) NOT NULL,
+    logger VARCHAR(255),
+    module VARCHAR(255),
+    function VARCHAR(255),
+    line INTEGER,
+    message TEXT NOT NULL,
+    exception TEXT,
+    traceback TEXT,
+    extra JSONB,
+    category VARCHAR(100),
+    session_id VARCHAR(100)
+);"
+
+# Preloaded data table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE TABLE IF NOT EXISTS preloaded_data (
+    id SERIAL PRIMARY KEY,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    data JSONB NOT NULL
+);"
+
 # Tier management table
 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
 CREATE TABLE IF NOT EXISTS user_tiers (
@@ -223,63 +249,133 @@ ON CONFLICT (user_id) DO UPDATE SET
     features = EXCLUDED.features,
     updated_at = CURRENT_TIMESTAMP;"
 
-echo "✅ Database setup complete!"
-echo "📊 Tables created:"
-echo "  - historical_data"
-echo "  - sp500_symbols" 
-echo "  - api_cache"
-echo "  - recommendations"
-echo "  - watchlists"
-echo "  - cache"
-echo "  - app_cache"
-echo "  - user_tiers"
+# Create the market_movers table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE TABLE IF NOT EXISTS market_movers (
+    id SERIAL PRIMARY KEY,
+    symbol VARCHAR(10) NOT NULL,
+    type VARCHAR(10) NOT NULL, -- GAINER or LOSER
+    price DECIMAL(10, 4),
+    change_amount DECIMAL(10, 4),
+    change_percent DECIMAL(8, 4),
+    volume BIGINT,
+    analysis_data JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_market_mover UNIQUE (symbol, type, timestamp)
+);"
+
+# Insert initial watchlist data
+echo "🌱 Inserting initial watchlist data..."
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << EOF
+INSERT INTO watchlists (name, symbols) VALUES
+('Tech Giants', ARRAY['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META']),
+('Crypto', ARRAY['BTC', 'ETH', 'SOL', 'DOGE', 'SHIB']),
+('SP500', ARRAY[]),
+('Custom', ARRAY[])
+ON CONFLICT (name) DO NOTHING;
+EOF
+
+# Verify data insertion
+echo "🔍 Verifying initial data..."
+
+STOCK_COUNT=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -c "SELECT array_length(symbols, 1) FROM watchlists WHERE name = 'Tech Giants';")
+CRYPTO_COUNT=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -c "SELECT array_length(symbols, 1) FROM watchlists WHERE name = 'Crypto';")
+
+echo "  - Tech stocks in watchlist: $STOCK_COUNT"
+echo "  - Crypto in watchlist: $CRYPTO_COUNT"
+
+echo "🎉 Database setup completed successfully!"
 echo ""
-echo "🔑 Default user tier: free"
-echo "💳 To upgrade to paid tier, use the tier management API"
+echo "📝 Next steps:"
+echo "   1. Start the Trading AI application: python3 start_app.py"
+echo "   2. Visit http://localhost:5001/system_status to manage watchlists"
+echo "   3. Crypto symbols are now read-only - contact admin to add new ones"
 
-# Populate default watchlist symbols
-echo "📈 Populating default watchlist symbols..."
+# Create indexes for faster lookups
+echo ""
+echo "🔧 Creating indexes for faster lookups..."
 
-# Default stocks
-DEFAULT_STOCKS=(
-    "AAPL" "MSFT" "GOOGL" "AMZN" "TSLA" "META" "NVDA" "JPM"
-    "JNJ" "V" "PG" "UNH" "HD" "MA" "DIS" "PYPL" "BAC" "NFLX"
-)
+# Historical data table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_historical_data_symbol_date ON historical_data(symbol, date);"
 
-# Default crypto
-DEFAULT_CRYPTO=(
-    "BTCUSD" "ETHUSD" "ADAUSD" "SOLUSD" "DOTUSD" "LINKUSD"
-)
+# S&P 500 symbols table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_sp500_symbols_symbol ON sp500_symbols(symbol);"
 
-# Insert stocks
-for stock in "${DEFAULT_STOCKS[@]}"; do
-    psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-        INSERT INTO watchlists (symbol, type) 
-        VALUES ('$stock', 'stock') 
-        ON CONFLICT (symbol, type) DO NOTHING;
-    "
-done
+# API cache table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_api_cache_cache_key ON api_cache(cache_key);"
 
-# Insert crypto
-for crypto in "${DEFAULT_CRYPTO[@]}"; do
-    psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-        INSERT INTO watchlists (symbol, type) 
-        VALUES ('$crypto', 'crypto') 
-        ON CONFLICT (symbol, type) DO NOTHING;
-    "
-done
+# Recommendations table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_recommendations_symbol ON recommendations(symbol);"
 
-echo "✅ Default watchlist symbols populated successfully!"
+# Watchlists table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_watchlists_name ON watchlists(name);"
 
-# Verify the setup
-echo "🔍 Verifying database setup..."
+# Cache table (legacy)
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);"
 
-STOCK_COUNT=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -c "SELECT COUNT(*) FROM watchlists WHERE type = 'stock';")
-CRYPTO_COUNT=$(psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -t -c "SELECT COUNT(*) FROM watchlists WHERE type = 'crypto';")
+# App cache table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_app_cache_cache_key ON app_cache(cache_key);"
 
-echo "📊 Database verification complete:"
-echo "   - Stocks in watchlist: $STOCK_COUNT"
-echo "   - Crypto in watchlist: $CRYPTO_COUNT"
+# Logs table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);"
+
+# Preloaded data table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_preloaded_data_timestamp ON preloaded_data(timestamp);"
+
+echo "✅ Indexes created successfully!"
+echo ""
+
+# Create indexes for faster lookups
+echo ""
+echo "🔧 Creating indexes for faster lookups..."
+
+# Historical data table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_historical_data_symbol_date ON historical_data(symbol, date);"
+
+# S&P 500 symbols table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_sp500_symbols_symbol ON sp500_symbols(symbol);"
+
+# API cache table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_api_cache_cache_key ON api_cache(cache_key);"
+
+# Recommendations table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_recommendations_symbol ON recommendations(symbol);"
+
+# Watchlists table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_watchlists_name ON watchlists(name);"
+
+# Cache table (legacy)
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);"
+
+# App cache table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_app_cache_cache_key ON app_cache(cache_key);"
+
+# Logs table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);"
+
+# Preloaded data table
+psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
+CREATE INDEX IF NOT EXISTS idx_preloaded_data_timestamp ON preloaded_data(timestamp);"
+
+echo "✅ Indexes created successfully!"
+echo ""
 
 echo "🎉 Database setup completed successfully!"
 echo ""

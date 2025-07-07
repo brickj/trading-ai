@@ -1417,6 +1417,12 @@ def system_status_page():
     )
 
 
+@app.route("/logs")
+def logs_page():
+    """Logs viewing page"""
+    return render_template("logs.html")
+
+
 @app.route("/api/system_status")
 def system_status():
     """System status information with comprehensive error handling"""
@@ -2909,6 +2915,90 @@ def load_preloaded_data_from_db():
     except Exception as e:
         log_exception("Failed to load preloaded data from database", e)
         preloaded_data = None
+
+from src.core.database import get_db_connection
+from psycopg2.extras import RealDictCursor
+
+@app.route("/api/logs", methods=["GET"])
+def get_logs():
+    """
+    Retrieve logs from the database with filtering and pagination
+    Query params:
+    - limit: max number of logs to return (default: 100)
+    - level: filter by log level (e.g., ERROR, INFO, etc.)
+    - category: filter by log category
+    - search: text search in log message
+    """
+    try:
+        # Get query parameters
+        limit = min(int(request.args.get('limit', 100)), 1000)  # Max 1000 logs
+        level = request.args.get('level')
+        category = request.args.get('category')
+        search = request.args.get('search')
+        
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Base query
+                query = """
+                    SELECT 
+                        id, 
+                        timestamp, 
+                        level, 
+                        logger, 
+                        module, 
+                        function, 
+                        line, 
+                        message, 
+                        exception,
+                        traceback,
+                        extra,
+                        category,
+                        session_id
+                    FROM logs
+                    WHERE 1=1
+                """
+                params = []
+                
+                # Add filters
+                if level:
+                    query += " AND level = %s"
+                    params.append(level.upper())
+                
+                if category:
+                    query += " AND category = %s"
+                    params.append(category)
+                    
+                if search:
+                    query += " AND (message ILIKE %s OR exception::text ILIKE %s)"
+                    search_term = f"%{search}%"
+                    params.extend([search_term, search_term])
+                
+                # Order and limit
+                query += " ORDER BY timestamp DESC LIMIT %s"
+                params.append(limit)
+                
+                # Execute query
+                cur.execute(query, params)
+                logs = cur.fetchall()
+                
+                # Convert datetime to ISO format for JSON serialization
+                for log in logs:
+                    if 'timestamp' in log and log['timestamp'] is not None:
+                        log['timestamp'] = log['timestamp'].isoformat()
+                
+                return create_api_response({
+                    'logs': logs,
+                    'total': len(logs),
+                    'limit': limit
+                })
+                
+    except Exception as e:
+        log_exception("Error retrieving logs", e)
+        return create_api_response(
+            success=False,
+            error="Failed to retrieve logs",
+            status_code=500
+        )
 
 # At startup, load from database before running preload_stock_data
 print("=== STARTUP: About to load preloaded data from database ===")

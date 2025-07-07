@@ -16,11 +16,11 @@ def create_database_and_user():
     
     # Default connection to postgres database as superuser
     admin_conn_params = {
-        'host': Config.DB_HOST,
-        'port': Config.DB_PORT,
+        'host': Config.DATABASE_CONFIG['host'],
+        'port': Config.DATABASE_CONFIG['port'],
         'database': 'postgres',  # Connect to default postgres database
-        'user': 'postgres',      # Default superuser
-        'password': input("Enter PostgreSQL superuser (postgres) password: ")
+        'user': 'rick',      # Default superuser for local dev
+        'password': '' # Assume no password for local superuser
     }
     
     try:
@@ -29,42 +29,54 @@ def create_database_and_user():
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cur = conn.cursor()
         
-        print(f"📋 Creating database: {Config.DB_NAME}")
+        print(f"📋 Creating database: {Config.DATABASE_CONFIG['database']}")
         
         # Check if database exists
         cur.execute("""
             SELECT 1 FROM pg_database WHERE datname = %s
-        """, (Config.DB_NAME,))
+        """, (Config.DATABASE_CONFIG['database'],))
         
         if cur.fetchone():
-            print(f"⚠️ Database '{Config.DB_NAME}' already exists")
+            print(f"⚠️ Database '{Config.DATABASE_CONFIG['database']}' already exists")
         else:
             # Create database
-            cur.execute(f'CREATE DATABASE {Config.DB_NAME}')
-            print(f"✅ Database '{Config.DB_NAME}' created successfully")
+            cur.execute(f"CREATE DATABASE {Config.DATABASE_CONFIG['database']}")
+            print(f"✅ Database '{Config.DATABASE_CONFIG['database']}' created successfully")
         
         # Check if user exists
         cur.execute("""
             SELECT 1 FROM pg_roles WHERE rolname = %s
-        """, (Config.DB_USER,))
+        """, (Config.DATABASE_CONFIG['user'],))
         
         if cur.fetchone():
-            print(f"⚠️ User '{Config.DB_USER}' already exists")
+            print(f"⚠️ User '{Config.DATABASE_CONFIG['user']}' already exists")
         else:
             # Create user
             cur.execute(f"""
-                CREATE USER {Config.DB_USER} WITH PASSWORD '{Config.DB_PASSWORD}'
+                CREATE USER {Config.DATABASE_CONFIG['user']} WITH PASSWORD '{Config.DATABASE_CONFIG['password']}'
             """)
-            print(f"✅ User '{Config.DB_USER}' created successfully")
+            print(f"✅ User '{Config.DATABASE_CONFIG['user']}' created successfully")
         
         # Grant privileges
-        cur.execute(f'GRANT ALL PRIVILEGES ON DATABASE {Config.DB_NAME} TO {Config.DB_USER}')
-        print(f"✅ Granted all privileges on '{Config.DB_NAME}' to '{Config.DB_USER}'")
+        cur.execute(f"GRANT ALL PRIVILEGES ON DATABASE {Config.DATABASE_CONFIG['database']} TO {Config.DATABASE_CONFIG['user']}")
+        print(f"✅ Granted all privileges on '{Config.DATABASE_CONFIG['database']}' to '{Config.DATABASE_CONFIG['user']}'")
         
-        # Connect to the new database and grant schema privileges
-        cur.execute(f'\\c {Config.DB_NAME}')
-        cur.execute(f'GRANT ALL ON SCHEMA public TO {Config.DB_USER}')
-        print(f"✅ Granted schema privileges to '{Config.DB_USER}'")
+        cur.close()
+        conn.close()
+
+        # Connect to the new database to grant schema privileges
+        conn = psycopg2.connect(
+            host=Config.DATABASE_CONFIG['host'],
+            port=Config.DATABASE_CONFIG['port'],
+            database=Config.DATABASE_CONFIG['database'],
+            user=Config.DATABASE_CONFIG['user'],
+            password=Config.DATABASE_CONFIG['password']
+        )
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cur = conn.cursor()
+
+        cur.execute(f"GRANT ALL ON SCHEMA public TO {Config.DATABASE_CONFIG['user']}")
+        print(f"✅ Granted schema privileges to '{Config.DATABASE_CONFIG['user']}'")
         
         cur.close()
         conn.close()
@@ -75,98 +87,6 @@ def create_database_and_user():
         print(f"❌ Error setting up database: {e}")
         return False
 
-def create_cache_table():
-    """Create the cache table structure."""
-    
-    print(f"📋 Creating cache table: {Config.CACHE_TABLE_NAME}")
-    
-    try:
-        # Connect to the trading database
-        conn = psycopg2.connect(
-            host=Config.DB_HOST,
-            port=Config.DB_PORT,
-            database=Config.DB_NAME,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD
-        )
-        
-        cur = conn.cursor()
-        
-        # Create cache table
-        cur.execute(f'''
-            CREATE TABLE IF NOT EXISTS {Config.CACHE_TABLE_NAME} (
-                cache_key VARCHAR(500) PRIMARY KEY,
-                data JSONB NOT NULL,
-                category VARCHAR(100) DEFAULT 'general',
-                created_at TIMESTAMP DEFAULT NOW(),
-                expires_at TIMESTAMP NOT NULL,
-                access_count INTEGER DEFAULT 1,
-                last_accessed TIMESTAMP DEFAULT NOW()
-            );
-        ''')
-        
-        # Create indexes for performance
-        cur.execute(f'''
-            CREATE INDEX IF NOT EXISTS idx_{Config.CACHE_TABLE_NAME}_expiry 
-            ON {Config.CACHE_TABLE_NAME}(expires_at);
-        ''')
-        
-        cur.execute(f'''
-            CREATE INDEX IF NOT EXISTS idx_{Config.CACHE_TABLE_NAME}_category 
-            ON {Config.CACHE_TABLE_NAME}(category);
-        ''')
-        
-        cur.execute(f'''
-            CREATE INDEX IF NOT EXISTS idx_{Config.CACHE_TABLE_NAME}_created 
-            ON {Config.CACHE_TABLE_NAME}(created_at);
-        ''')
-        
-        conn.commit()
-        print(f"✅ Cache table '{Config.CACHE_TABLE_NAME}' created with indexes")
-        
-        # Test cache functionality
-        print("🧪 Testing cache functionality...")
-        
-        from src.core.cache import get_cache
-        cache = get_cache()
-        
-        # Test cache operations
-        test_key = "setup_test"
-        test_data = {"test": True, "timestamp": "2024-01-01"}
-        
-        # Set test data
-        success = cache.set(test_key, test_data, timeout=60, category="test")
-        if success:
-            print("✅ Cache SET operation successful")
-        else:
-            print("❌ Cache SET operation failed")
-            return False
-        
-        # Get test data
-        retrieved_data = cache.get(test_key)
-        if retrieved_data and retrieved_data.get("test") == True:
-            print("✅ Cache GET operation successful")
-        else:
-            print("❌ Cache GET operation failed")
-            return False
-        
-        # Clean up test data
-        cache.delete(test_key)
-        print("✅ Cache DELETE operation successful")
-        
-        # Get cache stats
-        stats = cache.get_stats()
-        print(f"📊 Cache statistics: {stats}")
-        
-        cur.close()
-        conn.close()
-        
-        return True
-        
-    except Exception as e:
-        print(f"❌ Error creating cache table: {e}")
-        return False
-
 def test_database_connection():
     """Test database connection with the trading user."""
     
@@ -174,24 +94,34 @@ def test_database_connection():
     
     try:
         conn = psycopg2.connect(
-            host=Config.DB_HOST,
-            port=Config.DB_PORT,
-            database=Config.DB_NAME,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD
+            host=Config.DATABASE_CONFIG['host'],
+            port=Config.DATABASE_CONFIG['port'],
+            database=Config.DATABASE_CONFIG['database'],
+            user=Config.DATABASE_CONFIG['user'],
+            password=Config.DATABASE_CONFIG['password']
         )
         
         cur = conn.cursor()
         cur.execute('SELECT version()')
-        version = cur.fetchone()[0]
+        version_row = cur.fetchone()
+        if not version_row:
+            print("❌ Could not determine PostgreSQL version.")
+            return False
+        
+        version = version_row[0]
         print(f"✅ Database connection successful!")
         print(f"📋 PostgreSQL version: {version}")
         
         # Test table access
         cur.execute(f'''
-            SELECT COUNT(*) FROM {Config.CACHE_TABLE_NAME}
+            SELECT COUNT(*) FROM api_cache
         ''')
-        count = cur.fetchone()[0]
+        count_row = cur.fetchone()
+        if count_row is None:
+            print("❌ Could not get count from api_cache table.")
+            return False
+
+        count = count_row[0]
         print(f"📊 Cache table has {count} entries")
         
         cur.close()
@@ -211,11 +141,11 @@ def create_recommendations_table():
     try:
         # Connect to the trading database
         conn = psycopg2.connect(
-            host=Config.DB_HOST,
-            port=Config.DB_PORT,
-            database=Config.DB_NAME,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD
+            host=Config.DATABASE_CONFIG['host'],
+            port=Config.DATABASE_CONFIG['port'],
+            database=Config.DATABASE_CONFIG['database'],
+            user=Config.DATABASE_CONFIG['user'],
+            password=Config.DATABASE_CONFIG['password']
         )
         
         cur = conn.cursor()
@@ -272,47 +202,25 @@ def create_recommendations_table():
         return False
 
 def main():
-    """Main setup routine."""
-    
+    """Main function to run the setup."""
     print("🚀 PostgreSQL Database Setup for Trading AI Platform")
-    print("=" * 60)
-    
-    print(f"📋 Configuration:")
-    print(f"   Host: {Config.DB_HOST}:{Config.DB_PORT}")
-    print(f"   Database: {Config.DB_NAME}")
-    print(f"   User: {Config.DB_USER}")
-    print(f"   Cache Table: {Config.CACHE_TABLE_NAME}")
-    print()
-    
-    # Step 1: Create database and user
-    print("Step 1: Creating database and user...")
+    print("============================================================")
+    print("📋 Configuration:")
+    print(f"   Host: {Config.DATABASE_CONFIG['host']}:{Config.DATABASE_CONFIG['port']}")
+    print(f"   Database: {Config.DATABASE_CONFIG['database']}")
+    print(f"   User: {Config.DATABASE_CONFIG['user']}")
+    print("")
+
     if not create_database_and_user():
-        print("❌ Database setup failed!")
         sys.exit(1)
-    print()
-    
-    # Step 2: Test connection
-    print("Step 2: Testing database connection...")
-    if not test_database_connection():
-        print("❌ Connection test failed!")
-        sys.exit(1)
-    print()
-    
-    # Step 3: Create cache table
-    print("Step 3: Creating cache table and testing...")
-    if not create_cache_table():
-        print("❌ Cache table setup failed!")
-        sys.exit(1)
-    print()
-    
-    # Step 4: Create recommendations table
-    print("Step 4: Creating recommendations table...")
+
     if not create_recommendations_table():
-        print("❌ Recommendations table setup failed!")
         sys.exit(1)
-    print()
-    
-    print("🎉 PostgreSQL setup completed successfully!")
+
+    if not test_database_connection():
+        sys.exit(1)
+
+    print("\n🎉 All database setup steps completed successfully!")
     print()
     print("📋 Next steps:")
     print("1. Start your Trading AI application")

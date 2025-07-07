@@ -180,27 +180,84 @@ function setupEventListeners() {
 }
 
 async function loadLogs() {
+    const logContainer = document.getElementById('logContainer');
+    const refreshBtn = document.getElementById('refreshLogsBtn');
+    const originalText = refreshBtn.innerHTML;
+    
     try {
         // Show loading state
-        const refreshBtn = document.getElementById('refreshLogsBtn');
-        const originalText = refreshBtn.innerHTML;
         refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         refreshBtn.disabled = true;
         
+        // Show loading spinner
+        logContainer.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading logs...</span>
+                </div>
+                <p class="mt-2">Loading application logs...</p>
+            </div>
+        `;
+        
         const logType = document.getElementById('logType').value;
+        const logLevel = document.getElementById('logLevel').value;
         const logLimit = document.getElementById('logLimit').value;
         
-        const response = await fetch(`/api/logs?type=${logType}&limit=${logLimit}`);
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (logType !== 'all') params.append('category', logType);
+        if (logLevel !== 'all') params.append('level', logLevel);
+        params.append('limit', logLimit);
+        
+        const response = await fetch(`/api/logs?${params.toString()}`);
         const data = await response.json();
         
-        if (data.error) {
-            showAlert(data.error, 'danger');
+        if (!response.ok || !data.success) {
+            const errorMessage = data.error || 'Failed to load logs';
+            logContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${escapeHtml(errorMessage)}
+                </div>
+            `;
             return;
         }
         
-        currentLogs = data.logs;
-        displayLogs(data.logs);
-        updateLogStats(data);
+        // Store the logs for filtering/exporting
+        currentLogs = data.data?.logs || [];
+        
+        // Update the display with the logs or a message if no logs found
+        if (currentLogs.length === 0) {
+            logContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="h5">No logs found</p>
+                    <p class="text-muted">Try adjusting your filters or check back later.</p>
+                </div>
+            `;
+        } else {
+            displayLogs(currentLogs);
+        }
+        
+        // Store the logs for filtering/exporting
+        currentLogs = data.data?.logs || [];
+        
+        // Update the display with the logs or a message if no logs found
+        if (currentLogs.length === 0) {
+            logContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                    <p class="h5">No logs found</p>
+                    <p class="text-muted">Try adjusting your filters or check back later.</p>
+                </div>
+            `;
+        } else {
+            displayLogs(currentLogs);
+        }
+        
+        // Update stats if available
+        if (data.data) {
+            updateLogStats(data.data);
+        }
         
         // Reset button
         refreshBtn.innerHTML = originalText;
@@ -244,9 +301,9 @@ function displayLogs(logs) {
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center mb-1">
                             <i class="${levelIcon} me-2"></i>
-                            <span class="badge bg-secondary me-2">${log.level}</span>
+                            <span class="badge bg-secondary me-2 log-level">${log.level}</span>
                             <span class="badge bg-info me-2">${log.category}</span>
-                            <small class="text-muted">${timestamp}</small>
+                            <small class="text-muted log-timestamp">${timestamp}</small>
                         </div>
                         <div class="log-message">
                             ${escapeHtml(log.message)}
@@ -254,7 +311,7 @@ function displayLogs(logs) {
                         ${log.source_file ? `<small class="text-muted">Source: ${log.source_file}</small>` : ''}
                     </div>
                     <div class="log-actions">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="copyLogEntry('${escapeHtml(JSON.stringify(log))}')">
+                        <button class="btn btn-sm btn-outline-secondary copy-log-btn" data-log='${JSON.stringify(log).replace(/'/g, "\\'").replace(/"/g, '&quot;')}'>
                             <i class="fas fa-copy"></i>
                         </button>
                     </div>
@@ -415,14 +472,99 @@ function highlightSearchTerm(text, term) {
 
 function copyLogEntry(logData) {
     try {
-        const log = JSON.parse(logData.replace(/&quot;/g, '"'));
-        const text = `[${log.timestamp}] ${log.level} | ${log.category} | ${log.message}`;
+        // Handle the log data more safely
+        let log;
+        if (typeof logData === 'string') {
+            // Try to parse the JSON string, handling HTML entities
+            const cleanData = logData.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+            log = JSON.parse(cleanData);
+        } else {
+            log = logData;
+        }
         
-        navigator.clipboard.writeText(text).then(() => {
-            showAlert('Log entry copied to clipboard', 'success');
-        });
+        // Format the log entry for copying
+        const timestamp = new Date(log.timestamp).toLocaleString();
+        const text = `[${timestamp}] ${log.level} | ${log.category} | ${log.message}`;
+        
+        // Use modern clipboard API with fallback
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                showCopySuccess();
+            }).catch(() => {
+                // Fallback for clipboard API failure
+                fallbackCopyTextToClipboard(text);
+            });
+        } else {
+            // Fallback for older browsers
+            fallbackCopyTextToClipboard(text);
+        }
     } catch (error) {
+        console.error('Error copying log entry:', error);
+        showCopyError();
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            showCopyError();
+        }
+    } catch (err) {
+        showCopyError();
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Use showAlert if available, otherwise show a simple notification
+    if (typeof showAlert === 'function') {
+        showAlert('Log entry copied to clipboard', 'success');
+    } else {
+        // Simple fallback notification
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-success position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = '<i class="fas fa-check"></i> Log entry copied to clipboard';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    }
+}
+
+function showCopyError() {
+    // Use showAlert if available, otherwise show a simple notification
+    if (typeof showAlert === 'function') {
         showAlert('Error copying log entry', 'danger');
+    } else {
+        // Simple fallback notification
+        const notification = document.createElement('div');
+        notification.className = 'alert alert-danger position-fixed';
+        notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        notification.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error copying log entry';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
     }
 }
 
@@ -443,6 +585,17 @@ document.addEventListener('DOMContentLoaded', function() {
     floatingBtn.setAttribute('data-bs-target', '#logSearchModal');
     
     document.body.appendChild(floatingBtn);
+    
+    // Add event listeners for copy buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.copy-log-btn')) {
+            const button = e.target.closest('.copy-log-btn');
+            const logData = button.getAttribute('data-log');
+            if (logData) {
+                copyLogEntry(logData);
+            }
+        }
+    });
 });
 </script>
 {% endblock %} 
