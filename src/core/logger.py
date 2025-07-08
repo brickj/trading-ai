@@ -78,9 +78,10 @@ class DatabaseHandler(logging.Handler):
                 with conn.cursor() as cur:
                     cur.execute("""
                         INSERT INTO logs 
-                        (level, logger, module, function, line, message, exception, traceback, extra, category, session_id)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        (timestamp, level, logger, module, function, line, message, exception, traceback, extra, category, session_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
+                        datetime.fromtimestamp(record.created),
                         log_data['level'],
                         log_data['logger'],
                         log_data['module'],

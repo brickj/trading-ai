@@ -238,22 +238,6 @@ async function loadLogs() {
             displayLogs(currentLogs);
         }
         
-        // Store the logs for filtering/exporting
-        currentLogs = data.data?.logs || [];
-        
-        // Update the display with the logs or a message if no logs found
-        if (currentLogs.length === 0) {
-            logContainer.innerHTML = `
-                <div class="text-center text-muted py-4">
-                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                    <p class="h5">No logs found</p>
-                    <p class="text-muted">Try adjusting your filters or check back later.</p>
-                </div>
-            `;
-        } else {
-            displayLogs(currentLogs);
-        }
-        
         // Update stats if available
         if (data.data) {
             updateLogStats(data.data);
@@ -272,11 +256,13 @@ async function loadLogs() {
 function displayLogs(logs) {
     const container = document.getElementById('logContainer');
     
+    // If no logs, show a message
     if (!logs || logs.length === 0) {
         container.innerHTML = `
-            <div class="text-center text-muted py-4">
-                <i class="fas fa-file-alt fa-3x mb-3"></i>
-                <p>No logs found matching the current filters</p>
+            <div class="text-center py-4">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="h5">No logs found</p>
+                <p class="text-muted">Try adjusting your filters or check back later.</p>
             </div>
         `;
         return;
@@ -291,33 +277,33 @@ function displayLogs(logs) {
     let html = '';
     
     logs.forEach(log => {
-        const levelClass = getLevelClass(log.level);
-        const levelIcon = getLevelIcon(log.level);
-        const timestamp = new Date(log.timestamp).toLocaleString();
+        // Format the timestamp
+        const timestamp = new Date(log.timestamp).toLocaleString(undefined, {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
         
+        // Build log entry HTML
         html += `
-            <div class="log-entry mb-2 p-2 border rounded ${levelClass}" style="font-family: 'Courier New', monospace; font-size: 0.9em;">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <div class="d-flex align-items-center mb-1">
-                            <i class="${levelIcon} me-2"></i>
-                            <span class="badge bg-secondary me-2 log-level">${log.level}</span>
-                            <span class="badge bg-info me-2">${log.category}</span>
-                            <small class="text-muted log-timestamp">${timestamp}</small>
-                        </div>
-                        <div class="log-message">
-                            ${escapeHtml(log.message)}
-                        </div>
-                        ${log.source_file ? `<small class="text-muted">Source: ${log.source_file}</small>` : ''}
+        <div class="log-entry mb-2 p-2 border rounded ${getLevelClass(log.level)}" style="font-family: 'Courier New', monospace; font-size: 0.9em;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center mb-1">
+                        <i class="${getLevelIcon(log.level)} me-2"></i>
+                        <span class="badge bg-secondary me-2">${log.level}</span>
+                        <span class="badge bg-info me-2">${log.category || 'general'}</span>
+                        <span class="text-primary fw-bold" style="margin-left: 8px;">${timestamp}</span>
                     </div>
-                    <div class="log-actions">
-                        <button class="btn btn-sm btn-outline-secondary copy-log-btn" data-log='${JSON.stringify(log).replace(/'/g, "\\'").replace(/"/g, '&quot;')}'>
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
+                    <div class="log-message">${escapeHtml(log.message)}</div>
+                    ${log.source_file ? `<div class="text-muted small mt-1">Source: ${log.source_file}</div>` : ''}
                 </div>
             </div>
-        `;
+        </div>`;
     });
     
     container.innerHTML = html;
