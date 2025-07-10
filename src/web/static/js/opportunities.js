@@ -1,7 +1,7 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'news';
+let currentMode = 'all';
 let opportunitiesData = [];
 
 // Initialize when DOM is loaded
@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load initial data
     loadOpportunities();
+    
+    // Load watchlist configuration
+    loadWatchlistConfig();
 });
 
 // Switch between different opportunity modes
@@ -45,14 +48,16 @@ function switchMode(mode) {
 
 // Utility: log fetch requests and responses
 async function loggedFetch(url, options = {}) {
-    console.log('🌐 [FETCH] Request:', { url, ...options });
+    if (window.debugPanel) window.debugPanel.setRequest(url);
+    console.log('\ud83c\udf10 [FETCH] Request:', { url, ...options });
     try {
         const response = await fetch(url, options);
         const cloned = response.clone();
         let json;
         try {
             json = await cloned.json();
-            console.log('🌐 [FETCH] Response:', { 
+            if (window.debugPanel) window.debugPanel.setResponse(json);
+            console.log('\ud83c\udf10 [FETCH] Response:', { 
                 url, 
                 status: response.status, 
                 statusText: response.statusText,
@@ -71,7 +76,8 @@ async function loggedFetch(url, options = {}) {
                 fullResponse: json
             });
         } catch (e) {
-            console.log('🌐 [FETCH] Response (non-JSON):', { 
+            if (window.debugPanel) window.debugPanel.setError('Non-JSON response: ' + e.message);
+            console.log('\ud83c\udf10 [FETCH] Response (non-JSON):', { 
                 url, 
                 status: response.status, 
                 statusText: response.statusText,
@@ -81,7 +87,8 @@ async function loggedFetch(url, options = {}) {
         }
         return response;
     } catch (error) {
-        console.error('❌ [FETCH] Network error:', { url, ...options, error: error.message, stack: error.stack });
+        if (window.debugPanel) window.debugPanel.setError(error.message);
+        console.error('\u274c [FETCH] Network error:', { url, ...options, error: error.message, stack: error.stack });
         throw error;
     }
 }
@@ -93,11 +100,11 @@ async function loadOpportunities() {
     document.getElementById('refreshBtn').disabled = true;
     
     try {
-        const endpoints = {
-            'news': '/api/news_opportunities',
-            'watchlist': '/api/watchlist_opportunities',
-            'all': '/api/all_opportunities'
-        };
+            const endpoints = {
+        'news': '/api/news_opportunities',
+        'watchlist': '/api/watchlist_opportunities',
+        'all': '/api/all_opportunities'
+    };
         
         const endpoint = endpoints[currentMode];
         console.log('🌐 [LOAD] Fetching from endpoint:', endpoint);
@@ -130,6 +137,7 @@ async function loadOpportunities() {
             `Last updated: ${new Date().toLocaleString()}`;
         
     } catch (error) {
+        if (window.debugPanel) window.debugPanel.setError(error.message);
         console.error('❌ [LOAD] Error in loadOpportunities:', {
             error: error.message,
             stack: error.stack,
@@ -145,71 +153,176 @@ async function loadOpportunities() {
 
 // Display opportunities in the container
 function displayOpportunities(data) {
-    console.log('🎯 [DISPLAY] Starting displayOpportunities');
-    console.log('🎯 [DISPLAY] Input data:', {
-        dataType: typeof data,
-        isArray: Array.isArray(data),
-        keys: Object.keys(data),
-        fullData: data
-    });
+    // EXTREME LOGGING FOR DIAGNOSIS
+    const logToBackend = (level, message, extra) => {
+        fetch('/api/frontend_logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                level,
+                message,
+                data: { mode: currentMode, timestamp: new Date().toISOString(), ...extra }
+            })
+        });
+    };
+    
+    console.log('[DIAG] [DISPLAY] Starting displayOpportunities', { data });
+    logToBackend('info', '[DIAG] [DISPLAY] Starting displayOpportunities', { data });
     
     const container = document.getElementById('opportunitiesContainer');
     if (!container) {
-        console.error('❌ [DISPLAY] Container not found: opportunitiesContainer');
+        console.error('[DIAG] [DISPLAY] Container not found: opportunitiesContainer');
+        logToBackend('error', '[DIAG] [DISPLAY] Container not found: opportunitiesContainer', {});
         return;
     }
     
-    console.log('🔍 [DISPLAY] Current mode:', currentMode);
+    console.log('[DIAG] [DISPLAY] Current mode:', currentMode);
+    logToBackend('info', '[DIAG] [DISPLAY] Current mode', { currentMode });
+    
+    // Extract opportunities array
+    const responseData = data.data || data;
+    console.log('[DIAG] [DISPLAY] Raw responseData:', responseData);
+    logToBackend('info', '[DIAG] [DISPLAY] Raw responseData', { responseData });
     
     let opportunities = [];
     if (currentMode === 'all') {
-        opportunities = [...(data.news_driven || []), ...(data.watchlist || [])];
-        console.log('🔍 [DISPLAY] All mode - News-driven opportunities:', data.news_driven || []);
-        console.log('🔍 [DISPLAY] All mode - Watchlist opportunities:', data.watchlist || []);
+        opportunities = [...(responseData.news_driven || []), ...(responseData.watchlist || [])];
+        console.log('[DIAG] [DISPLAY] ALL mode - Combined opportunities:', opportunities);
+        logToBackend('info', '[DIAG] [DISPLAY] ALL mode - Combined opportunities', { opportunities });
+    } else if (currentMode === 'news') {
+        opportunities = responseData.news_driven || [];
+        console.log('[DIAG] [DISPLAY] NEWS mode - News opportunities:', opportunities);
+        logToBackend('info', '[DIAG] [DISPLAY] NEWS mode - News opportunities', { opportunities });
+    } else if (currentMode === 'watchlist') {
+        opportunities = responseData.watchlist || [];
+        console.log('[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities:', opportunities);
+        logToBackend('info', '[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities', { opportunities });
     } else {
-        opportunities = data.opportunities || [];
-        console.log('🔍 [DISPLAY] Direct mode - opportunities array:', data.opportunities || []);
+        opportunities = responseData.opportunities || [];
+        console.log('[DIAG] [DISPLAY] FALLBACK mode - Opportunities:', opportunities);
+        logToBackend('info', '[DIAG] [DISPLAY] FALLBACK mode - Opportunities', { opportunities });
     }
     
-    console.log('🔍 [DISPLAY] Total opportunities to display:', opportunities.length);
-    console.log('🔍 [DISPLAY] Opportunities array:', opportunities);
+    console.log('[DIAG] [DISPLAY] Opportunities array length:', opportunities.length);
+    logToBackend('info', '[DIAG] [DISPLAY] Opportunities array length', { length: opportunities.length });
     
     if (opportunities.length === 0) {
-        console.log('⚠️ [DISPLAY] No opportunities found, showing empty state');
+        container.innerHTML = `<div class="text-center text-muted py-4"><i class="fas fa-search fa-3x mb-3"></i><h5>No trading opportunities found</h5><p>Current market conditions don't show clear trading signals.</p><p class="small">Try switching between News-Driven and Watchlist modes, or check back later.</p><div class="mt-3"><button class="btn btn-outline-primary" onclick="loadOpportunities()"><i class="fas fa-sync-alt"></i> Refresh Analysis</button></div></div>`;
+        console.warn('[DIAG] [DISPLAY] No opportunities found - empty state');
+        logToBackend('warn', '[DIAG] [DISPLAY] No opportunities found - empty state', {});
+        return;
+    }
+    
+    // Log each opportunity in detail
+    opportunities.forEach((opp, idx) => {
+        console.log(`[DIAG] [DISPLAY] Opportunity ${idx + 1}:`, opp);
+        logToBackend('info', `[DIAG] [DISPLAY] Opportunity ${idx + 1}`, { opp });
+    });
+    
+    // Continue with normal rendering...
+    // Log to backend the number of opportunities found
+    fetch('/api/frontend_logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            level: 'info',
+            message: '[FRONTEND] Opportunities array length',
+            data: { mode: currentMode, length: opportunities.length, timestamp: new Date().toISOString() }
+        })
+    });
+
+    if (opportunities.length === 0) {
+        fetch('/api/frontend_logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                level: 'warn',
+                message: '[FRONTEND] No opportunities found - empty state',
+                data: { mode: currentMode, timestamp: new Date().toISOString() }
+            })
+        });
+    } else {
+        fetch('/api/frontend_logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                level: 'info',
+                message: '[FRONTEND] Opportunities found - page populated',
+                data: { mode: currentMode, count: opportunities.length, timestamp: new Date().toISOString() }
+            })
+        });
+    }
+
+    console.log('🔍 [DISPLAY] Final opportunities array:', opportunities);
+    console.log('🔍 [DISPLAY] Opportunities array length:', opportunities.length);
+    
+    // Filter out opportunities with no meaningful data
+    const meaningfulOpportunities = opportunities.filter(opp => {
+        const hasPrice = opp.price_data?.current_price > 0;
+        const hasSentiment = opp.sentiment_data?.confidence > 0;
+        const hasSignal = opp.signal_data?.action && opp.signal_data.action !== 'HOLD';
+        const hasNews = opp.news_count > 0;
+        
+        console.log(`🔍 [FILTER] Filtering ${opp.symbol}:`, {
+            hasPrice,
+            hasSentiment,
+            hasSignal,
+            hasNews,
+            isMeaningful: hasPrice || hasSentiment || hasSignal || hasNews,
+            priceValue: opp.price_data?.current_price,
+            sentimentConfidence: opp.sentiment_data?.confidence,
+            signalAction: opp.signal_data?.action,
+            newsCount: opp.news_count
+        });
+        
+        return hasPrice || hasSentiment || hasSignal || hasNews;
+    });
+    
+    console.log('🔍 [DISPLAY] Filtered opportunities:', {
+        total: opportunities.length,
+        meaningful: meaningfulOpportunities.length,
+        filtered: opportunities.length - meaningfulOpportunities.length
+    });
+    
+    if (meaningfulOpportunities.length === 0) {
+        console.log('⚠️ [DISPLAY] No meaningful opportunities found, showing empty state');
         container.innerHTML = `
             <div class="text-center text-muted py-4">
                 <i class="fas fa-search fa-3x mb-3"></i>
-                <h5>No opportunities found</h5>
-                <p>Try refreshing or check back later for new opportunities.</p>
+                <h5>No trading opportunities found</h5>
+                <p>Current market conditions don't show clear trading signals.</p>
+                <p class="small">Try switching between News-Driven and Watchlist modes, or check back later.</p>
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary" onclick="loadOpportunities()">
+                        <i class="fas fa-sync-alt"></i> Refresh Analysis
+                    </button>
+                </div>
             </div>
         `;
         return;
     }
     
-    console.log('🔍 [DISPLAY] Creating opportunity cards for:', opportunities.length, 'opportunities');
-    container.innerHTML = '';
+    console.log('✅ [DISPLAY] Found meaningful opportunities, creating cards...');
     
-    opportunities.forEach((opp, index) => {
+    // Clear container and add opportunities
+    container.innerHTML = '';
+    meaningfulOpportunities.forEach((opp, index) => {
         console.log(`🔍 [DISPLAY] Creating card ${index + 1} for:`, {
             symbol: opp.symbol,
             type: opp.type,
-            trigger: opp.trigger,
-            fullOpportunity: opp
+            action: opp.signal_data?.action
         });
-        try {
-            const card = createOpportunityCard(opp);
+        
+        const card = createOpportunityCard(opp);
+        if (card) {
             container.appendChild(card);
             console.log(`✅ [DISPLAY] Card ${index + 1} added to container successfully`);
-        } catch (error) {
-            console.error(`❌ [DISPLAY] Error creating card for ${opp.symbol}:`, {
-                error: error.message,
-                stack: error.stack,
-                opportunity: opp
-            });
+        } else {
+            console.error(`❌ [DISPLAY] Failed to create card ${index + 1} for ${opp.symbol}`);
         }
     });
     
-    console.log('✅ [DISPLAY] displayOpportunities completed');
+    console.log('✅ [DISPLAY] displayOpportunities completed successfully');
 }
 
 // Create opportunity card
@@ -222,7 +335,7 @@ function createOpportunityCard(opp) {
     });
     
     const card = document.createElement('div');
-    card.className = 'card mb-3';
+    card.className = 'card mb-3 opportunity-card';
     
     // Safely access nested properties with fallbacks
     const symbol = opp.symbol || 'UNKNOWN';
@@ -255,7 +368,9 @@ function createOpportunityCard(opp) {
     
     const actionBadge = action === 'CALL' ? 
         '<span class="badge bg-success">CALL</span>' : 
-        '<span class="badge bg-danger">PUT</span>';
+        action === 'PUT' ? '<span class="badge bg-danger">PUT</span>' :
+        action === 'SELL' ? '<span class="badge bg-danger">SELL</span>' :
+        '<span class="badge bg-secondary">HOLD</span>';
     
     const sentimentClass = getSentimentClass(sentimentScore);
     
@@ -286,21 +401,21 @@ function createOpportunityCard(opp) {
             <div class="row">
                 <div class="col-md-3">
                     <h6>Price Info</h6>
-                    <p><strong>Current:</strong> ${formatCurrency(currentPrice)}</p>
-                    <p><strong>Strike:</strong> ${formatCurrency(strikePrice)}</p>
-                    <p><strong>Option Price:</strong> ${formatCurrency(optionPrice)}</p>
+                    <p><strong>Current:</strong> ${currentPrice > 0 ? formatCurrency(currentPrice) : '<span class="text-muted">N/A</span>'}</p>
+                    <p><strong>Strike:</strong> ${strikePrice > 0 ? formatCurrency(strikePrice) : '<span class="text-muted">N/A</span>'}</p>
+                    <p><strong>Option Price:</strong> ${optionPrice > 0 ? formatCurrency(optionPrice) : '<span class="text-muted">N/A</span>'}</p>
                 </div>
                 <div class="col-md-3">
                     <h6>Sentiment</h6>
                     <p><strong>Score:</strong> <span class="${sentimentClass}">${sentimentScore.toFixed(3)}</span></p>
-                    <p><strong>Confidence:</strong> ${(confidence * 100).toFixed(1)}%</p>
+                    <p><strong>Confidence:</strong> ${confidence > 0 ? (confidence * 100).toFixed(1) + '%' : '<span class="text-muted">N/A</span>'}</p>
                     <p><strong>News Count:</strong> ${newsCount}</p>
                 </div>
                 <div class="col-md-3">
                     <h6>Trade Details</h6>
                     <p><strong>Position Size:</strong> ${positionSize} contracts</p>
-                    <p><strong>Total Cost:</strong> ${formatCurrency(optionPrice * positionSize)}</p>
-                    <p><strong>Signal Strength:</strong> ${signalStrength.toFixed(3)}</p>
+                    <p><strong>Total Cost:</strong> ${optionPrice > 0 ? formatCurrency(optionPrice * positionSize) : '<span class="text-muted">N/A</span>'}</p>
+                    <p><strong>Signal Strength:</strong> ${signalStrength > 0 ? signalStrength.toFixed(3) : '<span class="text-muted">N/A</span>'}</p>
                 </div>
                 <div class="col-md-3">
                     <h6>Strategy</h6>
@@ -360,4 +475,103 @@ setInterval(() => {
     if (document.visibilityState === 'visible') {
         loadOpportunities();
     }
-}, 5 * 60 * 1000); 
+}, 5 * 60 * 1000);
+
+// Load watchlist configuration from API
+async function loadWatchlistConfig() {
+    try {
+        console.log('🔧 [CONFIG] Loading watchlist configuration...');
+        const response = await fetch('/api/watchlist/config');
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load watchlist configuration');
+        }
+        
+        const configContainer = document.getElementById('watchlistConfig');
+        if (!configContainer) {
+            console.error('❌ [CONFIG] Watchlist config container not found');
+            return;
+        }
+        
+        // Format stocks for display (no crypto)
+        const stocks = data.data.stocks || [];
+        const stockSymbols = stocks.map(item => item.symbol).join(', ');
+        
+        configContainer.innerHTML = `
+            <p><small><strong>Watchlist Stocks:</strong> ${stockSymbols || 'None configured'}</small></p>
+            <p><small><strong>Total Symbols:</strong> ${stocks.length}</small></p>
+        `;
+        
+        console.log('✅ [CONFIG] Watchlist configuration loaded successfully:', {
+            stocks: stocks.length,
+            total: stocks.length
+        });
+        
+    } catch (error) {
+        console.error('❌ [CONFIG] Error loading watchlist configuration:', error);
+        const configContainer = document.getElementById('watchlistConfig');
+        if (configContainer) {
+            configContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <small><i class="fas fa-exclamation-triangle"></i> Failed to load watchlist configuration</small>
+                </div>
+            `;
+        }
+    }
+}
+
+// Utility functions
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined || isNaN(amount)) {
+        return '$0.00';
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount);
+}
+
+function getSentimentClass(score) {
+    if (score >= 0.6) return 'text-success';
+    if (score >= 0.3) return 'text-warning';
+    if (score >= -0.3) return 'text-muted';
+    if (score >= -0.6) return 'text-warning';
+    return 'text-danger';
+}
+
+function showAlert(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the page
+    const container = document.querySelector('.container') || document.body;
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+function showLoading(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'block';
+    }
+}
+
+function hideLoading(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'none';
+    }
+} 

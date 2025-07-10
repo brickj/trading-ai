@@ -84,7 +84,7 @@ class GoServiceClient:
         data = {
             "hours_back": hours_back,
             "watchlist_stocks": Config.WATCHLIST_STOCKS,
-            "watchlist_crypto": Config.WATCHLIST_CRYPTO,
+            "watchlist_crypto": [],  # No crypto support
             "categories": Config.NEWS_CATEGORIES,
         }
         result = self._make_request("news", "/api/v1/news/trending", data)

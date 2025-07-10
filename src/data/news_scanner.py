@@ -114,7 +114,7 @@ class NewsScanner:
             + len(results.get("watchlist", [])),
             "config": {
                 "watchlist_stocks": watchlist_manager.get_stocks(),
-                "watchlist_crypto": watchlist_manager.get_cryptos(),
+                "watchlist_crypto": [],  # No crypto support
                 "sentiment_threshold": Config.SENTIMENT_THRESHOLD,
                 "news_sentiment_threshold": NEWS_SENTIMENT_THRESHOLD,
             },
@@ -186,7 +186,6 @@ Examples:
     if not args.quiet:
         print("🚀 Options Trading News Scanner")
         print("📋 Watchlist Stocks: {len(watchlist_manager.get_stocks())} symbols")
-        print("₿  Watchlist Crypto: {len(watchlist_manager.get_cryptos())} symbols")
         print("🎯 Sentiment Threshold: {Config.SENTIMENT_THRESHOLD}")
         print("📰 News Sentiment Threshold: {NEWS_SENTIMENT_THRESHOLD}")
     # Run scanner

@@ -56,7 +56,7 @@ class Config:
     CACHE_TTL = 3600
 
     # Analysis Configuration
-    BULK_ANALYSIS_NEWS_DAYS = 7
+    BULK_ANALYSIS_NEWS_DAYS = 2
     BULK_ANALYSIS_SP500_LIMIT = 6  # 60% of SP500_STOCKS length for performance
     BULK_ANALYSIS_CRYPTO_LIMIT = 3  # 70% of CRYPTO_SYMBOLS length for performance
     ENHANCED_ANALYSIS_TIMEOUT = 300

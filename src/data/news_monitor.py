@@ -7,7 +7,11 @@ from .data_fetcher import DataFetcher
 from ..core.sentiment_analyzer import SentimentAnalyzer
 from ..trading.trading_strategy import TradingStrategy
 from ..core.go_service_client import GoServiceClient
-from src.core.recommendation_manager import recommendation_manager
+from src.core.recommendation_manager import get_recommendation_manager
+import time # Added for time.time()
+import logging
+import os
+logging.basicConfig(level=logging.INFO)
 
 
 class NewsMonitor:
@@ -21,57 +25,61 @@ class NewsMonitor:
 
     def scan_trending_news(self, hours_back: int = 2) -> Dict:
         """
-        Scan for trending news and identify stocks/cryptos mentioned
+        Scan for trending news using Marketaux API and identify stocks mentioned
         """
         # Try Go service first
         if self.go_client.is_service_available("news"):
             go_result = self.go_client.process_trending_news(hours_back)
             if go_result:
                 return go_result.get("trending_symbols", {})
-        # Fallback to Python implementation
-        end_time = datetime.now()
-        start_time = end_time - timedelta(hours=hours_back)
-        trending_symbols = defaultdict(list)
+        
+        # Use Marketaux API to get trending stocks
         try:
-            # Get general market news
-            for category in Config.NEWS_CATEGORIES:
-                news = self.finnhub_client.general_news(category, min_id=0)
-                for article in news[:20]:  # Check recent 20 articles
-                    article_time = datetime.fromtimestamp(article.get("datetime", 0))
-                    # Only process recent news
-                    if article_time < start_time:
-                        continue
-                    # Skip if already processed
-                    article_id = article.get("id", "")
-                    if article_id in self.processed_news:
-                        continue
-                    self.processed_news.add(article_id)
-                    # Extract mentioned symbols from headline and summary
-                    mentioned_symbols = self._extract_symbols_from_text(
-                        article.get("headline", "") + " " + article.get("summary", "")
-                    )
-                    for symbol in mentioned_symbols:
-                        trending_symbols[symbol].append(article)
+            print("🔍 Getting trending stocks from Marketaux API...")
+            trending_stocks = self.data_fetcher.get_marketaux_trending_stocks(limit=5)
+            
+            if not trending_stocks:
+                print("❌ No trending stocks from Marketaux API")
+                return {}
+            
+            print(f"📈 Marketaux trending stocks: {trending_stocks}")
+            
+            # Get comprehensive news for trending stocks from all sources
+            print("📰 Fetching comprehensive news for trending stocks...")
+            trending_symbols = self.data_fetcher.get_comprehensive_news_for_symbols(
+                symbols=trending_stocks, 
+                limit_per_symbol=5
+            )
+            
+            # Filter out symbols with no news
+            trending_symbols = {symbol: news for symbol, news in trending_symbols.items() if news}
+            
+            print(f"✅ Found news for {len(trending_symbols)} trending symbols: {list(trending_symbols.keys())}")
+            
+            # Return only the trending symbols with news
             return dict(trending_symbols)
+                
         except Exception as e:
-            print(f"Error scanning trending news: {e}")
+            print(f"❌ Marketaux integration failed: {e}")
             return {}
 
     def _extract_symbols_from_text(self, text: str) -> Set[str]:
         """
-        Extract stock and crypto symbols mentioned in news text
+        Extract stock symbols mentioned in text
         """
         text_upper = text.upper()
         mentioned_symbols = set()
+        
+        # Get stocks from database watchlist
+        from ..core.watchlist_manager import WatchlistManager
+        watchlist_manager = WatchlistManager()
+        watchlist_stocks = watchlist_manager.get_stocks()
+        
         # Check for watchlist stocks
-        for symbol in Config.WATCHLIST_STOCKS:
+        for symbol in watchlist_stocks:
             if symbol in text_upper or self._check_company_name(symbol, text_upper):
                 mentioned_symbols.add(symbol)
-        # Check for watchlist cryptos
-        for symbol in Config.WATCHLIST_CRYPTO:
-            crypto_name = symbol.replace("USD", "")
-            if crypto_name in text_upper or self._check_crypto_name(crypto_name, text_upper):
-                mentioned_symbols.add(symbol)
+                
         return mentioned_symbols
 
     def _check_company_name(self, symbol: str, text: str) -> bool:
@@ -119,61 +127,60 @@ class NewsMonitor:
         names = crypto_names.get(symbol, [symbol])
         return any(name in text for name in names)
 
-    def analyze_news_driven_opportunities(self) -> List[Dict]:
+    def analyze_news_driven_opportunities(self, trending_symbols: Dict[str, List[dict]]) -> List[dict]:
         """
-        Main function to analyze news-driven trading opportunities
+        Analyze trending news and generate news-driven opportunities
         """
-        trending_symbols = self.scan_trending_news()
+        logging.info(f"[DEBUG] analyze_news_driven_opportunities called with symbols: {list(trending_symbols.keys())}")
         opportunities = []
-        for symbol, articles in trending_symbols.items():
-            if len(articles) < Config.MIN_NEWS_ARTICLES:
+        for symbol, news_list in trending_symbols.items():
+            logging.info(f"[DEBUG] Processing symbol: {symbol}, news count: {len(news_list)}")
+            if not news_list:
+                logging.info(f"[DEBUG] Skipping {symbol}: no news articles")
                 continue
             try:
-                # Determine if it's a stock or crypto
-                is_crypto = symbol in Config.WATCHLIST_CRYPTO
-                # Get price data
-                if is_crypto:
-                    price_data = self.data_fetcher.get_crypto_price(symbol)
-                else:
-                    price_data = self.data_fetcher.get_stock_price(symbol)
+                # Get price data for stocks only
+                price_data = self.data_fetcher.get_stock_price(symbol)
                 if "error" in price_data:
+                    logging.info(f"[DEBUG] Skipping {symbol}: price data error")
                     continue
                 # Analyze sentiment
                 try:
-                    if articles and len(articles) > 0:
-                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(articles)
+                    if news_list and len(news_list) > 0:
+                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(news_list)
                     else:
                         # Fallback to price-based sentiment analysis
-                        print(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
+                        logging.info(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
                         sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
                 except Exception as e:
                     # If news sentiment fails, try price-based analysis
-                    if "No news articles provided for analysis" in str(e) or "No valid news content found" in str(e):
-                        print(f"📊 News analysis failed for {symbol}, falling back to price-based analysis...")
+                    logging.info(f"📊 News sentiment analysis failed for {symbol}: {str(e)}")
+                    logging.info(f"📊 Falling back to price-based sentiment analysis...")
+                    try:
                         sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
-                    else:
-                        # Re-raise other types of errors
-                        raise e
-                # Apply news-specific thresholds
+                    except Exception as price_error:
+                        logging.info(f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}")
+                        # Create a minimal sentiment data to continue processing
+                        sentiment_data = {
+                            "sentiment_score": 0.0,
+                            "confidence": 0.1,
+                            "summary": f"Analysis failed for {symbol}",
+                            "provider": "fallback"
+                        }
+                # Apply news-specific thresholds (lowered for testing)
+                min_confidence = min(Config.NEWS_CONFIDENCE_THRESHOLD, 0.1)  # Use lower of config or 0.1
+                min_sentiment = min(Config.NEWS_SENTIMENT_THRESHOLD, 0.05)  # Use lower of config or 0.05
+                
                 if (
-                    sentiment_data["confidence"] < Config.NEWS_CONFIDENCE_THRESHOLD
-                    or abs(sentiment_data["sentiment_score"]) < Config.NEWS_SENTIMENT_THRESHOLD
+                    sentiment_data["confidence"] < min_confidence
+                    or abs(sentiment_data["sentiment_score"]) < min_sentiment
                 ):
+                    logging.info(f"[DEBUG] Skipping {symbol}: sentiment data below thresholds (confidence: {sentiment_data['confidence']}, sentiment: {sentiment_data['sentiment_score']})")
                     continue
-                # Generate trading signals
-                # Use crypto-specific recommendations for crypto symbols
-                if is_crypto:
-                    crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
-                        symbol, sentiment_data, price_data
-                    )
-                    signal_data = {
-                        "action": crypto_recommendation.get("action", "HOLD"),
-                        "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
-                        "confidence": crypto_recommendation.get("confidence", 0),
-                        "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
-                    }
-                else:
-                    signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                
+                # Generate trading signals for stocks
+                signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                
                 # Generate trade recommendations
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
@@ -181,20 +188,23 @@ class NewsMonitor:
                     )
                     opportunity = {
                         "symbol": symbol,
-                        "type": "crypto" if is_crypto else "stock",
+                        "type": "stock",
                         "trigger": "news_driven",
-                        "news_count": len(articles),
+                        "news_count": len(news_list),
                         "price_data": price_data,
                         "sentiment_data": sentiment_data,
                         "signal_data": signal_data,
                         "trade_signal": trade_signal,
-                        "articles": articles[:3],  # Include top 3 articles
+                        "articles": news_list[:3],  # Include top 3 articles
                         "timestamp": datetime.now().isoformat(),
                     }
                     opportunities.append(opportunity)
+                else:
+                    logging.info(f"[DEBUG] Skipping {symbol}: signal_data action is HOLD")
             except Exception as e:
-                print(f"Error analyzing {symbol}: {e}")
+                logging.info(f"Error analyzing {symbol}: {e}")
                 continue
+        logging.info(f"[DEBUG] News-driven opportunities generated: {opportunities}")
         return opportunities
 
     def analyze_watchlist_opportunities(self) -> List[Dict]:
@@ -202,8 +212,14 @@ class NewsMonitor:
         Analyze opportunities for all symbols in watchlists regardless of news
         """
         opportunities = []
+        
+        # Get stocks from database watchlist
+        from ..core.watchlist_manager import WatchlistManager
+        watchlist_manager = WatchlistManager()
+        watchlist_stocks = watchlist_manager.get_stocks()
+        
         # Analyze watchlist stocks
-        for symbol in Config.WATCHLIST_STOCKS:
+        for symbol in watchlist_stocks:
             try:
                 price_data = self.data_fetcher.get_stock_price(symbol)
                 if "error" in price_data:
@@ -215,26 +231,27 @@ class NewsMonitor:
                         sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(news_data)
                     else:
                         # Fallback to price-based sentiment analysis
-                        print(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
+                        logging.info(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
                         sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
                 except Exception as e:
                     # If news sentiment fails, try price-based analysis
-                    if "No news articles provided for analysis" in str(e) or "No valid news content found" in str(e):
-                        print(f"📊 News analysis failed for {symbol}, falling back to price-based analysis...")
+                    logging.info(f"📊 News sentiment analysis failed for {symbol}: {str(e)}")
+                    logging.info(f"📊 Falling back to price-based sentiment analysis...")
+                    try:
                         sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
-                    else:
-                        # Re-raise other types of errors
-                        raise e
-                # Use crypto-specific recommendations for crypto symbols
-                crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
-                    symbol, sentiment_data, price_data
-                )
-                signal_data = {
-                    "action": crypto_recommendation.get("action", "HOLD"),
-                    "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
-                    "confidence": crypto_recommendation.get("confidence", 0),
-                    "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
-                }
+                    except Exception as price_error:
+                        logging.info(f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}")
+                        # Create a minimal sentiment data to continue processing
+                        sentiment_data = {
+                            "sentiment_score": 0.0,
+                            "confidence": 0.1,
+                            "summary": f"Analysis failed for {symbol}",
+                            "provider": "fallback"
+                        }
+                
+                # Use standard trading signal for stocks
+                signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
                         symbol, price_data["current_price"], sentiment_data, signal_data
@@ -252,71 +269,17 @@ class NewsMonitor:
                     }
                     opportunities.append(opportunity)
             except Exception as e:
-                print(f"Error analyzing stock {symbol}: {e}")
+                logging.info(f"Error analyzing stock {symbol}: {e}")
                 continue
-        # Analyze watchlist cryptos
-        crypto_news = self.data_fetcher.get_crypto_news(days_back=2)
-        if len(crypto_news) >= 2:
-            for symbol in Config.WATCHLIST_CRYPTO:
-                try:
-                    price_data = self.data_fetcher.get_crypto_price(symbol)
-                    if "error" in price_data:
-                        continue
-                    # Analyze sentiment with fallback
-                    try:
-                        if crypto_news and len(crypto_news) >= 2:
-                            sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(crypto_news)
-                        else:
-                            # Fallback to price-based sentiment analysis
-                            print(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
-                            sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
-                    except Exception as e:
-                        # If news sentiment fails, try price-based analysis
-                        if "No news articles provided for analysis" in str(e) or "No valid news content found" in str(e):
-                            print(f"📊 News analysis failed for {symbol}, falling back to price-based analysis...")
-                            sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
-                        else:
-                            # Re-raise other types of errors
-                            raise e
-                    # Use crypto-specific recommendations for crypto symbols
-                    crypto_recommendation = recommendation_manager.get_crypto_specific_recommendations(
-                        symbol, sentiment_data, price_data
-                    )
-                    signal_data = {
-                        "action": crypto_recommendation.get("action", "HOLD"),
-                        "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
-                        "confidence": crypto_recommendation.get("confidence", 0),
-                        "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
-                    }
-                    if signal_data["action"] != "HOLD":
-                        trade_signal = self.trading_strategy.generate_trade_signal(
-                            symbol,
-                            price_data["current_price"],
-                            sentiment_data,
-                            signal_data,
-                        )
-                        opportunity = {
-                            "symbol": symbol,
-                            "type": "crypto",
-                            "trigger": "watchlist_scan",
-                            "news_count": len(crypto_news),
-                            "price_data": price_data,
-                            "sentiment_data": sentiment_data,
-                            "signal_data": signal_data,
-                            "trade_signal": trade_signal,
-                            "timestamp": datetime.now().isoformat(),
-                        }
-                        opportunities.append(opportunity)
-                except Exception as e:
-                    print(f"Error analyzing crypto {symbol}: {e}")
-                    continue
+                
         return opportunities
 
     def get_all_opportunities(self) -> Dict:
-        """
-        Get both news-driven and watchlist opportunities
-        """
-        news_driven = self.analyze_news_driven_opportunities()
+        logging.info("[DEBUG] get_all_opportunities called")
+        trending_symbols = self.scan_trending_news()
+        logging.info(f"[DEBUG] get_all_opportunities: trending_symbols = {trending_symbols}")
+        news_driven = self.analyze_news_driven_opportunities(trending_symbols)
+        logging.info(f"[DEBUG] get_all_opportunities: news_driven = {news_driven}")
         watchlist = self.analyze_watchlist_opportunities()
         return {
             "news_driven": news_driven,

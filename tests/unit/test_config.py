@@ -105,21 +105,17 @@ class ConfigTest(unittest.TestCase):
         self.assertLessEqual(Config.TELEGRAM_ALERT_THRESHOLD, 1.0)
         self.assertGreater(Config.TELEGRAM_ALERT_COOLDOWN, 0)
 
-    def test_watchlist_configuration(self):
-        """Test watchlist configuration."""
+    def test_watchlist_stocks(self):
+        """Test that watchlist stocks are properly configured"""
         self.assertIsInstance(Config.WATCHLIST_STOCKS, list)
-        self.assertIsInstance(Config.WATCHLIST_CRYPTO, list)
-
-        # Verify stock symbols format
+        self.assertGreater(len(Config.WATCHLIST_STOCKS), 0)
+        
+        # Check that all symbols are valid stock symbols (no crypto)
         for symbol in Config.WATCHLIST_STOCKS:
             self.assertIsInstance(symbol, str)
             self.assertGreater(len(symbol), 0)
-            self.assertEqual(symbol, symbol.upper())
-
-        # Verify crypto symbols format
-        for symbol in Config.WATCHLIST_CRYPTO:
-            self.assertIsInstance(symbol, str)
-            self.assertGreater(len(symbol), 0)
+            # Ensure no crypto symbols (should not contain USD suffix)
+            self.assertFalse(symbol.endswith('USD'))
 
     def test_trading_parameters(self):
         """Test trading parameters configuration."""

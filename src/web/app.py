@@ -4,7 +4,7 @@ Trading AI Flask Web Application
 Enhanced with comprehensive logging and monitoring
 """
 import logging
-from flask import Flask, render_template, request, jsonify, send_file, redirect, flash
+from flask import Flask, render_template, request, jsonify, send_file, redirect, flash, make_response
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -17,12 +17,13 @@ from src.core.config import Config
 from src.core.telegram_alerts import telegram_alerter
 from src.core.cache import get_cached_result, cache_result, get_cache_stats, clear_cache
 from src.core.batch_processor import (
-    batch_processor,
+    batch_processor_instance,
     create_crypto_analysis_tasks,
     create_watchlist_tasks,
 )
 import requests
 import time
+import json
 from src.trading.enhanced_trading_strategy import EnhancedTradingStrategy
 import sys
 import psutil
@@ -728,7 +729,7 @@ def crypto_analysis():
             )
 
         # Process batch with real-time progress
-        batch_result = batch_processor.process_batch_sync(tasks, progress_callback)
+        batch_result = batch_processor_instance.process_batch_sync(tasks, progress_callback)
 
         # Convert batch results to expected format
         opportunities = []
@@ -1159,241 +1160,229 @@ def backtest_page():
     )
 
 
+@app.route("/opportunities")
+def opportunities_page():
+    """Trading opportunities page"""
+    try:
+        from flask import request
+        trading_logger.api_logger.info("[DEBUG] Entering opportunities_page route handler")
+        
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        ip = request.remote_addr or 'unknown'
+        
+        trading_logger.api_logger.info(f"[DEBUG] opportunities_page request | IP: {ip} | UA: {user_agent}")
+        
+        # Check if any opportunity data is available (for logging purposes)
+        try:
+            # Quick check if news monitor is working
+            trending_symbols = news_monitor.scan_trending_news()
+            trending_count = len(trending_symbols) if trending_symbols else 0
+            trading_logger.api_logger.info(f"[DEBUG] Opportunities page - trending symbols available: {trending_count}")
+        except Exception as e:
+            trading_logger.error_logger.error(f"[DEBUG] Error checking trending symbols: {str(e)}")
+        
+        trading_logger.api_logger.info("[DEBUG] Rendering opportunities.html template")
+        return render_template(
+            "opportunities.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
+        )
+    except Exception as e:
+        trading_logger.error_logger.error(f"[CRITICAL] Error rendering opportunities page: {str(e)}")
+        # Return a simple error page instead of crashing
+        return f"<html><body><h1>Error loading opportunities page</h1><p>Please try again later. Error: {str(e)}</p></body></html>", 500
+
+
 @app.route("/api/news_opportunities")
 def news_opportunities():
     """Get news-driven trading opportunities"""
+    trading_logger.api_logger.info("[DEBUG] Entered news_opportunities endpoint")
     try:
-        opportunities = news_monitor.analyze_news_driven_opportunities()
+        from flask import request
+        ip = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        
+        trading_logger.api_logger.info(f"[DEBUG] news_opportunities request | IP: {ip} | UA: {user_agent}")
+        
+        # Temporarily lower thresholds for testing
+        original_news_confidence = Config.NEWS_CONFIDENCE_THRESHOLD
+        original_news_sentiment = Config.NEWS_SENTIMENT_THRESHOLD
+        
+        # Set lower thresholds for testing
+        Config.NEWS_CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
+        Config.NEWS_SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
+        
+        try:
+            trading_logger.api_logger.info("[DEBUG] Scanning trending news for opportunities...")
+            trending_symbols = news_monitor.scan_trending_news()
+            trending_count = len(trending_symbols) if trending_symbols else 0
+            trading_logger.api_logger.info(f"[DEBUG] Found {trending_count} trending symbols")
+            
+            trading_logger.api_logger.info("[DEBUG] Analyzing news-driven opportunities...")
+            opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
+            opp_count = len(opportunities) if opportunities else 0
+            
+            # Log sample of opportunities
+            sample_opps = opportunities[:2] if opportunities else []
+            trading_logger.api_logger.info(f"[DEBUG] news_opportunities result: {opp_count} opportunities found")
+            trading_logger.api_logger.debug(f"[DEBUG] news_opportunities sample: {sample_opps}")
+            
+            if opp_count == 0:
+                trading_logger.api_logger.warning("[DEBUG] news_opportunities returned EMPTY result!")
+        finally:
+            # Restore original thresholds
+            Config.NEWS_CONFIDENCE_THRESHOLD = original_news_confidence
+            Config.NEWS_SENTIMENT_THRESHOLD = original_news_sentiment
+        
         return create_api_response(
             data={"opportunities": opportunities, "count": len(opportunities)}
         )
     except Exception as e:
+        trading_logger.error_logger.error(f"[ERROR] Error in news_opportunities endpoint: {str(e)}")
         log_exception("News opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
 
 
 @app.route("/api/watchlist_opportunities")
 def watchlist_opportunities():
-    """Get trading opportunities for watchlist stocks with smart batching and real-time progress"""
+    """Get trading opportunities for watchlist symbols"""
+    trading_logger.api_logger.info("[DEBUG] Entered watchlist_opportunities endpoint")
     try:
-        # Check cache first
-        cache_key = f"watchlist_opportunities_{int(datetime.now().timestamp())}"
-        cached_result = get_cached_result(cache_key)
-        if cached_result:
-            # Ensure cached_result is a dictionary, not a string
-            if isinstance(cached_result, dict):
-                # Modify cached result to indicate it came from cache
-                cached_result["cached"] = True
-                cached_result["cache_timestamp"] = datetime.now().isoformat()
-                # Still emit cached progress for UI consistency
-                socketio.emit(
-                    "watchlist_progress",
-                    {
-                        "current": cached_result.get("total_analyzed", 0),
-                        "total": cached_result.get("total_analyzed", 0),
-                        "symbol": "CACHED",
-                        "status": "completed",
-                        "cached": True,
-                    },
-                )
-                return create_api_response(data=cached_result)
-            else:
-                # If cached result is not a dict (e.g., string), clear cache and proceed
-                print(f"⚠️ Invalid winners_losers data type: {type(cached_result)}")
-                cached_result = None
+        from flask import request
+        ip = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', 'unknown')
         
-        if cached_result:
-            # Still emit cached progress for UI consistency
-            socketio.emit(
-                "watchlist_progress",
-                {
-                    "current": cached_result.get("total_analyzed", 0),
-                    "total": cached_result.get("total_analyzed", 0),
-                    "symbol": "CACHED",
-                    "status": "completed",
-                    "cached": True,
-                },
-            )
-            return create_api_response(data=cached_result)
+        trading_logger.api_logger.info(f"[DEBUG] watchlist_opportunities request | IP: {ip} | UA: {user_agent}")
         
-        # Get watchlist stocks from database (no fallback to config)
-        watchlist_stocks = watchlist_manager.get_stocks()
-        if not watchlist_stocks:
-            # No stocks in watchlist - return helpful message
-            return create_api_response(
-                data={
-                    "opportunities": [],
-                    "errors": [],
-                    "timestamp": datetime.now().isoformat(),
-                    "total_analyzed": 0,
-                    "opportunities_found": 0,
-                    "errors_count": 0,
-                    "batch_stats": {
-                        "total_tasks": 0,
-                        "successful": 0,
-                        "failed": 0,
-                        "time_taken": 0,
-                        "avg_time_per_task": 0,
-                    },
-                    "note": "No stocks in watchlist. Go to System Status page to add stocks for analysis.",
-                    "message": "Please add stocks to your watchlist using the System Status page to get trading opportunities.",
-                }
-            )
-
-        log_info(f"🚀 Starting fresh watchlist opportunities analysis with smart batching...")
-        log_info(f"🚀 Processing {len(watchlist_stocks)} watchlist stocks concurrently")
-
-        # Create tasks for batch processing
-        tasks = create_watchlist_tasks(watchlist_stocks, Config.BULK_ANALYSIS_NEWS_DAYS)
-        print(f"🚀 Processing {len(tasks)} watchlist stocks concurrently")
-
-        # Progress callback for WebSocket updates
-
+        # Use the task creation function to define what to run
+        from ..core.watchlist_manager import WatchlistManager
+        watchlist_manager = WatchlistManager()
+        watchlist_symbols = watchlist_manager.get_stocks()  # Only stocks, no crypto
+        trading_logger.api_logger.info(f"[DEBUG] Processing watchlist symbols: {watchlist_symbols}")
+        
+        tasks = create_watchlist_tasks(watchlist_symbols)
+        
+        # progress_callback can be simplified or removed if not used by frontend
         def progress_callback(symbol, completed, total, result):
+            # This is where you would emit a SocketIO event for real-time progress
             socketio.emit(
                 "watchlist_progress",
-                {
-                    "current": completed,
-                    "total": total,
-                    "symbol": symbol,
-                    "status": "completed" if completed == total else "processing",
-                    "has_error": "error" in result if result else False,
-                    "is_opportunity": (
-                        result is not None and "error" not in result if result else False
-                    ),
-                    "cached": False,
-                },
+                {"symbol": symbol, "completed": completed, "total": total, "status": "processing"},
             )
 
-        # Process batch with real-time progress
-        batch_result = batch_processor.process_batch_sync(tasks, progress_callback)
+        # Execute the batch analysis
+        trading_logger.api_logger.info("[DEBUG] Starting batch analysis for watchlist opportunities...")
+        batch_result = batch_processor_instance.process_batch_sync(tasks, progress_callback)
+        
+        # Filter out None results and errors for the final opportunities list
+        opportunities = [
+            result
+            for result in batch_result["results"].values()
+            if result and "error" not in result
+        ]
+        
+        # Log any errors that occurred during the batch run
+        errors = [
+            result
+            for result in batch_result["results"].values()
+            if result and "error" in result
+        ]
+        
+        opp_count = len(opportunities)
+        error_count = len(errors)
+        
+        trading_logger.api_logger.info(f"[DEBUG] watchlist_opportunities result: {opp_count} opportunities, {error_count} errors")
+        
+        # Log sample of opportunities
+        sample_opps = opportunities[:2] if opportunities else []
+        trading_logger.api_logger.debug(f"[DEBUG] watchlist_opportunities sample: {sample_opps}")
+        
+        if opp_count == 0:
+            trading_logger.api_logger.warning("[DEBUG] watchlist_opportunities returned EMPTY result!")
+            
+        if errors:
+            log_error("Watchlist analysis completed with errors", f"{error_count} symbols failed.")
 
-        # Convert batch results to expected format (only opportunities)
-        opportunities = []
-        errors = []
-        for symbol, result in batch_result["results"].items():
-            if result and "error" not in result:
-                # Transform the result to match frontend expectations
-                opportunity = {
-                    "symbol": result.get("symbol", symbol),
-                    "type": "stock",  # Watchlist stocks are always stocks
-                    "trigger": "watchlist_scan",
-                    "news_count": result.get("news_count", 0),
-                    "price_data": {
-                        "current_price": result.get("current_price", 0),
-                        # Fallback
-                        "previous_close": result.get("current_price", 0),
-                        "change": 0,  # Not available in batch results
-                        "change_percent": 0,  # Not available in batch results
-                    },
-                    "sentiment_data": {
-                        "sentiment_score": result.get("sentiment_score", 0),
-                        "confidence": result.get("confidence", 0),
-                        "sentiment_label": (
-                            "Positive"
-                            if result.get("sentiment_score", 0) > 0
-                            else ("Negative" if result.get("sentiment_score", 0) < 0 else "Neutral")
-                        ),
-                    },
-                    "signal_data": {
-                        "action": result.get("action", "HOLD"),
-                        "signal_strength": result.get("signal_strength", "LOW"),
-                        "reasoning": f"Based on sentiment analysis of {result.get('news_count', 0)} recent news articles",
-                    },
-                    "trade_signal": {
-                        # Use current price as strike
-                        "strike_price": result.get("current_price", 0),
-                        "option_price": 0.01,  # Default option price
-                        "position_size": 1,  # Default position size
-                        "expiration": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),  # 30 days from now
-                    },
-                    "opportunity_type": result.get("opportunity_type", "Unknown"),
-                    "timestamp": datetime.now().isoformat(),
-                }
-                opportunities.append(opportunity)
-                print(f"✅ Found opportunity: {symbol} - {result.get('action', 'UNKNOWN')}")
-            elif result and "error" in result:
-                if "401" in str(result.get("error")):
-                    errors.append(
-                        {
-                            "symbol": symbol,
-                            "error": "API access restricted - requires premium subscription",
-                        }
-                    )
-                    print(f"⚠️ {symbol} - API access restricted (requires premium)")
-                else:
-                    errors.append(
-                        {
-                            "symbol": symbol,
-                            "error": result.get("error", "unknown error"),
-                        }
-                    )
-                    print(f"❌ Error analyzing {symbol}: {result.get('error', 'unknown error')}")
-            else:
-                print(f"⚪ {symbol} - No strong signal found")
-
-        result_data = {
-            "opportunities": opportunities,
-            "errors": errors,
-            "timestamp": datetime.now().isoformat(),
-            "total_analyzed": len(watchlist_stocks),
-            "opportunities_found": len(opportunities),
-            "errors_count": len(errors),
-            "cached": False,
-            "batch_stats": batch_result["stats"],
-            "performance": {
-                "time_taken": batch_result["stats"]["time_taken"],
-                "avg_time_per_stock": batch_result["stats"]["avg_time_per_task"],
-                "success_rate": f"{(batch_result['stats']['successful'] / batch_result['stats']['total_tasks'] * 100):.1f}%",
-                "opportunity_rate": f"{(len(opportunities) / len(watchlist_stocks) * 100):.1f}%",
-            },
-            "note": f"Analyzed {len(watchlist_stocks)} of {len(Config.WATCHLIST_STOCKS)} total watchlist stocks with smart batching",
-        }
-
-        # Cache the result
-        cache_result(cache_key, result_data)
-
-        # Emit completion
-        socketio.emit(
-            "watchlist_progress",
-            {
-                "current": len(watchlist_stocks),
-                "total": len(tasks),
-                "symbol": "COMPLETED",
-                "status": "completed",
+        return create_api_response(
+            data={
+                "opportunities": opportunities,
                 "opportunities_found": len(opportunities),
+                "total_analyzed": batch_result["stats"]["total_tasks"],
                 "errors_count": len(errors),
-                "batch_stats": batch_result["stats"],
-                "cached": False,
-            },
+                "errors": errors,
+                "performance": {
+                    "time_taken": batch_result["stats"]["time_taken"],
+                    "avg_time_per_stock": batch_result["stats"]["avg_time_per_task"],
+                },
+                "cached": False, # Batch results are typically not cached this way
+                "timestamp": datetime.now().isoformat(),
+            }
         )
 
-        return create_api_response(data=result_data)
     except Exception as e:
-        # Emit error
-        socketio.emit("watchlist_progress", {"status": "error", "error": str(e)})
-        traceback.print_exc()
-        log_error(f"watchlist_opportunities error: {e}\n" + traceback.format_exc())
+        trading_logger.error_logger.error(f"[ERROR] Error in watchlist_opportunities endpoint: {str(e)}")
+        log_exception("Watchlist opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
 
 
 @app.route("/api/all_opportunities")
 def all_opportunities():
     """Get all trading opportunities (news-driven + watchlist)"""
+    trading_logger.api_logger.info("[DEBUG] Entered all_opportunities endpoint")
     try:
-        all_opps = news_monitor.get_all_opportunities()
+        from flask import request
+        ip = request.remote_addr or 'unknown'
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        
+        trading_logger.api_logger.info(f"[DEBUG] all_opportunities request | IP: {ip} | UA: {user_agent}")
+        
+        # Temporarily lower thresholds for testing
+        original_news_confidence = Config.NEWS_CONFIDENCE_THRESHOLD
+        original_news_sentiment = Config.NEWS_SENTIMENT_THRESHOLD
+        original_confidence = Config.CONFIDENCE_THRESHOLD
+        original_sentiment = Config.SENTIMENT_THRESHOLD
+        # Set lower thresholds for testing
+        Config.NEWS_CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
+        Config.NEWS_SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
+        Config.CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
+        Config.SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
+        try:
+            trading_logger.api_logger.info("[DEBUG] Getting all opportunities from news monitor...")
+            all_opps = news_monitor.get_all_opportunities()
+            news_count = len(all_opps.get('news_driven', []))
+            watchlist_count = len(all_opps.get('watchlist', []))
+            total_count = all_opps.get('total_opportunities', 0)
+            
+            # Log a sample of the data (first 2 from each)
+            news_sample = all_opps.get('news_driven', [])[:2]
+            watchlist_sample = all_opps.get('watchlist', [])[:2]
+            
+            trading_logger.api_logger.info(f"[DEBUG] all_opportunities result: news_driven={news_count}, watchlist={watchlist_count}, total={total_count}")
+            trading_logger.api_logger.debug(f"[DEBUG] all_opportunities news_driven sample: {news_sample}")
+            trading_logger.api_logger.debug(f"[DEBUG] all_opportunities watchlist sample: {watchlist_sample}")
+            
+            if total_count == 0:
+                trading_logger.api_logger.warning("[DEBUG] all_opportunities returned EMPTY result!")
+                
+            # Also log to the general logger for consistency
+            log_info(f"[API] /api/all_opportunities | IP: {ip} | UA: {user_agent} | news_driven={news_count}, watchlist={watchlist_count}, total={total_count}")
+            log_debug(f"[API] /api/all_opportunities sample news_driven: {news_sample}")
+            log_debug(f"[API] /api/all_opportunities sample watchlist: {watchlist_sample}")
+            if total_count == 0:
+                log_warning(f"[API] /api/all_opportunities returned EMPTY result! news_driven={news_count}, watchlist={watchlist_count}")
+        except Exception as e:
+            trading_logger.error_logger.error(f"[ERROR] Error getting all opportunities: {str(e)}")
+            log_exception("All opportunities endpoint - get_all_opportunities", e)
+            raise
+        finally:
+            # Restore original thresholds
+            Config.NEWS_CONFIDENCE_THRESHOLD = original_news_confidence
+            Config.NEWS_SENTIMENT_THRESHOLD = original_news_sentiment
+            Config.CONFIDENCE_THRESHOLD = original_confidence
+            Config.SENTIMENT_THRESHOLD = original_sentiment
         return create_api_response(data=all_opps)
     except Exception as e:
+        trading_logger.error_logger.error(f"[ERROR] Error in all_opportunities endpoint: {str(e)}")
         log_exception("All opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
-@app.route("/opportunities")
-def opportunities_page():
-    """Trading opportunities page"""
-    return render_template(
-        "opportunities.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-    )
 
 
 @app.route("/api/go_services/health")
@@ -3000,10 +2989,374 @@ def get_logs():
             status_code=500
         )
 
+@app.route("/api/watchlist/config", methods=["GET", "POST"])
+def watchlist_config():
+    """Get or update watchlist configuration"""
+    try:
+        if request.method == "GET":
+            # Get current watchlist configuration (stocks only)
+            stocks = watchlist_manager.get_stocks()
+            
+            # Format data for frontend
+            stock_data = [{"symbol": symbol, "notes": ""} for symbol in stocks]
+            
+            return create_api_response({
+                "stocks": stock_data,
+                "stock_limit": Config.BULK_ANALYSIS_WATCHLIST_LIMIT if hasattr(Config, 'BULK_ANALYSIS_WATCHLIST_LIMIT') else 50,
+                "news_days": Config.BULK_ANALYSIS_NEWS_DAYS if hasattr(Config, 'BULK_ANALYSIS_NEWS_DAYS') else 2,
+                "stats": {
+                    "stocks": {"active": len(stocks)}
+                },
+                "message": f"Watchlist contains {len(stocks)} stocks"
+            })
+        
+        elif request.method == "POST":
+            # Update watchlist configuration (stocks only)
+            data = request.get_json()
+            action = data.get("action")
+            symbol = data.get("symbol", "").upper().strip()
+            symbol_type = data.get("type", "stock")  # Default to stock
+            
+            if not action or not symbol:
+                return create_api_response(
+                    success=False,
+                    error="Missing required fields: action, symbol",
+                    status_code=400
+                )
+            
+            # Only allow stock operations
+            if symbol_type != "stock":
+                return create_api_response(
+                    success=False,
+                    error="Only stock symbols are supported",
+                    status_code=400
+                )
+            
+            if action == "add":
+                success = watchlist_manager.add_stock(symbol)
+                if success:
+                    return create_api_response({
+                        "message": f"Added {symbol} to stock watchlist",
+                        "symbol": symbol,
+                        "type": "stock"
+                    })
+                else:
+                    return create_api_response(
+                        success=False,
+                        error=f"Failed to add {symbol} to watchlist",
+                        status_code=500
+                    )
+            
+            elif action == "remove":
+                success = watchlist_manager.remove_stock(symbol)
+                if success:
+                    return create_api_response({
+                        "message": f"Removed {symbol} from stock watchlist",
+                        "symbol": symbol,
+                        "type": "stock"
+                    })
+                else:
+                    return create_api_response(
+                        success=False,
+                        error=f"Failed to remove {symbol} from watchlist",
+                        status_code=500
+                    )
+            
+            else:
+                return create_api_response(
+                    success=False,
+                    error="Invalid action. Must be 'add' or 'remove'",
+                    status_code=400
+                )
+    
+    except Exception as e:
+        log_exception("Error in watchlist config", e)
+        return create_api_response(
+            success=False,
+            error="Failed to manage watchlist configuration",
+            status_code=500
+        )
+
+
+@app.route("/api/logs/export", methods=["GET"])
+def export_logs():
+    """
+    Export logs as JSON or CSV file
+    Query params:
+    - format: 'json' or 'csv' (default: 'json')
+    - limit: max number of logs to export (default: 1000)
+    - level: filter by log level
+    - category: filter by log category
+    - type: filter by log type (alias for category)
+    """
+    try:
+        import csv
+        import io
+        from datetime import datetime
+        
+        # Get query parameters
+        export_format = request.args.get('format', 'json').lower()
+        limit = min(int(request.args.get('limit', 1000)), 10000)  # Max 10,000 logs
+        level = request.args.get('level')
+        category = request.args.get('category') or request.args.get('type')  # Support both 'category' and 'type'
+        
+        if export_format not in ['json', 'csv']:
+            return create_api_response(
+                success=False,
+                error="Invalid format. Use 'json' or 'csv'",
+                status_code=400
+            )
+        
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Base query (same as get_logs)
+                query = """
+                    SELECT 
+                        id, 
+                        timestamp, 
+                        level, 
+                        logger, 
+                        module, 
+                        function, 
+                        line, 
+                        message, 
+                        exception,
+                        traceback,
+                        extra,
+                        category,
+                        session_id
+                    FROM logs
+                    WHERE 1=1
+                """
+                params = []
+                
+                # Add filters
+                if level:
+                    query += " AND level = %s"
+                    params.append(level.upper())
+                
+                if category:
+                    query += " AND category = %s"
+                    params.append(category)
+                
+                # Order and limit
+                query += " ORDER BY timestamp DESC LIMIT %s"
+                params.append(limit)
+                
+                # Execute query
+                cur.execute(query, params)
+                logs = cur.fetchall()
+                
+                # Convert datetime to ISO format for JSON serialization
+                for log in logs:
+                    if 'timestamp' in log and log['timestamp'] is not None:
+                        log['timestamp'] = log['timestamp'].isoformat()
+                
+                # Generate filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"logs_export_{timestamp}"
+                
+                if export_format == 'json':
+                    # Export as JSON
+                    import json
+                    response_data = {
+                        'export_info': {
+                            'format': 'json',
+                            'timestamp': datetime.now().isoformat(),
+                            'total_logs': len(logs),
+                            'filters': {
+                                'level': level,
+                                'category': category,
+                                'limit': limit
+                            }
+                        },
+                        'logs': logs
+                    }
+                    
+                    response = make_response(json.dumps(response_data, indent=2))
+                    response.headers['Content-Type'] = 'application/json'
+                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.json"'
+                    return response
+                    
+                elif export_format == 'csv':
+                    # Export as CSV
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    
+                    # Write header
+                    if logs:
+                        headers = list(logs[0].keys())
+                        writer.writerow(headers)
+                        
+                        # Write data rows
+                        for log in logs:
+                            row = []
+                            for header in headers:
+                                value = log.get(header, '')
+                                # Convert complex objects to string
+                                if isinstance(value, (dict, list)):
+                                    value = json.dumps(value)
+                                row.append(str(value))
+                            writer.writerow(row)
+                    
+                    response = make_response(output.getvalue())
+                    response.headers['Content-Type'] = 'text/csv'
+                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+                    return response
+                    
+    except Exception as e:
+        log_exception("Log export endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
 # At startup, load from database before running preload_stock_data
 print("=== STARTUP: About to load preloaded data from database ===")
 load_preloaded_data_from_db()
 print("=== STARTUP: Finished loading preloaded data from database ===")
+
+@app.route("/api/mock_opportunities")
+def mock_opportunities():
+    """Get mock opportunities for testing the frontend"""
+    try:
+        mock_data = [
+            {
+                "symbol": "AAPL",
+                "type": "stock",
+                "trigger": "news_driven",
+                "news_count": 15,
+                "price_data": {
+                    "current_price": 185.50,
+                    "change": 2.30,
+                    "change_percent": 1.26,
+                    "previous_close": 183.20
+                },
+                "sentiment_data": {
+                    "sentiment_score": 0.75,
+                    "confidence": 0.85,
+                    "sentiment_label": "Positive"
+                },
+                "signal_data": {
+                    "action": "CALL",
+                    "signal_strength": 0.82,
+                    "confidence": 0.85,
+                    "reasoning": "Strong positive sentiment from recent earnings news and AI announcements"
+                },
+                "trade_signal": {
+                    "strike_price": 190.00,
+                    "option_price": 3.50,
+                    "position_size": 2,
+                    "expiration": "2025-08-08"
+                },
+                "timestamp": "2025-07-09T13:30:00.000000"
+            },
+            {
+                "symbol": "NVDA",
+                "type": "stock", 
+                "trigger": "watchlist_scan",
+                "news_count": 8,
+                "price_data": {
+                    "current_price": 1250.75,
+                    "change": -15.25,
+                    "change_percent": -1.20,
+                    "previous_close": 1266.00
+                },
+                "sentiment_data": {
+                    "sentiment_score": -0.35,
+                    "confidence": 0.72,
+                    "sentiment_label": "Negative"
+                },
+                "signal_data": {
+                    "action": "PUT",
+                    "signal_strength": 0.68,
+                    "confidence": 0.72,
+                    "reasoning": "Market concerns about AI chip demand and regulatory scrutiny"
+                },
+                "trade_signal": {
+                    "strike_price": 1200.00,
+                    "option_price": 45.00,
+                    "position_size": 1,
+                    "expiration": "2025-08-08"
+                },
+                "timestamp": "2025-07-09T13:30:00.000000"
+            },
+            {
+                "symbol": "BTCUSD",
+                "type": "crypto",
+                "trigger": "news_driven", 
+                "news_count": 12,
+                "price_data": {
+                    "current_price": 67500.00,
+                    "change": 1250.00,
+                    "change_percent": 1.89,
+                    "previous_close": 66250.00
+                },
+                "sentiment_data": {
+                    "sentiment_score": 0.45,
+                    "confidence": 0.78,
+                    "sentiment_label": "Positive"
+                },
+                "signal_data": {
+                    "action": "CALL",
+                    "signal_strength": 0.71,
+                    "confidence": 0.78,
+                    "reasoning": "Positive sentiment from institutional adoption news and ETF inflows"
+                },
+                "trade_signal": {
+                    "strike_price": 70000.00,
+                    "option_price": 2500.00,
+                    "position_size": 1,
+                    "expiration": "2025-08-08"
+                },
+                "timestamp": "2025-07-09T13:30:00.000000"
+            }
+        ]
+        
+        return create_api_response(
+            data={
+                "opportunities": mock_data,
+                "count": len(mock_data),
+                "timestamp": datetime.now().isoformat(),
+                "note": "Mock data for testing frontend display"
+            }
+        )
+    except Exception as e:
+        log_exception("Mock opportunities endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
+@app.route("/api/test/opportunities", methods=["GET"])
+def test_opportunities():
+    """Provides a predictable, mock opportunity for reliable frontend testing."""
+    mock_opportunity = {
+        "symbol": "MOCK",
+        "type": "stock",
+        "trigger": "test_case",
+        "news_count": 42,
+        "price_data": {
+            "current_price": 150.75,
+            "change": 2.50,
+            "change_percent": 1.68,
+            "previous_close": 148.25
+        },
+        "sentiment_data": {
+            "sentiment_score": 0.85,
+            "confidence": 0.95,
+            "sentiment_label": "Very Positive"
+        },
+        "signal_data": {
+            "action": "CALL",
+            "signal_strength": 0.9,
+            "reasoning": "This is a mock opportunity generated for a Playwright test."
+        },
+        "trade_signal": {
+            "strike_price": 155.0,
+            "option_price": 3.45,
+            "position_size": 10,
+            "expiration": (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
+        },
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # The frontend expects the data to be nested under an 'opportunities' key
+    return create_api_response(data={"opportunities": [mock_opportunity]})
 
 if __name__ == "__main__":
     create_app()

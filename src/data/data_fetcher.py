@@ -165,6 +165,9 @@ class DataFetcher:
                 headline = article.get("headline", article.get("title", "")).lower()
                 summary = article.get("summary", article.get("description", "")).lower()
                 symbol_lower = symbol.lower()
+                # Always include fallback news
+                if article.get("source", "").lower() in ["market analysis", "performance review", "alpha vantage"]:
+                    return True
                 # Check for symbol in headline or summary
                 if symbol_lower in headline or symbol_lower in summary:
                     return True
@@ -200,37 +203,11 @@ class DataFetcher:
             filtered_news = [a for a in unique_news if is_stock_specific(a, symbol)]
             print(f"[DEBUG] Filtered {len(filtered_news)} stock-specific news articles for {symbol} (from {len(unique_news)} total)")
             unique_news = filtered_news
-            
-            # Sort by datetime (most recent first) - handle mixed types
-            def get_sortable_datetime(article):
-                dt = article.get("datetime", "")
-                if isinstance(dt, (int, float)):
-                    return dt
-                elif isinstance(dt, str):
-                    try:
-                        # Try to parse as timestamp
-                        return float(dt)
-                    except (ValueError, TypeError):
-                        # If it's a date string, use current time
-                        return time.time()
-                else:
-                    return time.time()
-            
-            unique_news.sort(key=get_sortable_datetime, reverse=True)
-            
-            # Print news source counts
-            source_counts = {}
-            for article in unique_news:
-                if isinstance(article, dict):
-                    source = article.get("source", "Unknown")
-                    source_counts[source] = source_counts.get(source, 0) + 1
-            
-            print(f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
-            
-            # If no news was found from any source, provide fallback news
-            if not unique_news:
-                print(f"⚠️ No news found for {symbol}, providing fallback news")
-                unique_news = [
+
+            # If after filtering, not enough news, add fallback news
+            if len(unique_news) < 2:
+                print(f"⚠️ Not enough news for {symbol} after filtering, adding fallback news")
+                fallback_news = [
                     {
                         "headline": f"{symbol} Market Analysis",
                         "summary": f"Latest market analysis and insights for {symbol} stock based on technical indicators and market trends.",
@@ -248,7 +225,32 @@ class DataFetcher:
                         "category": "analysis"
                     }
                 ]
-            
+                # Only add fallback news if not already present
+                fallback_headlines = {a["headline"] for a in fallback_news}
+                unique_news += [a for a in fallback_news if a["headline"] not in {n["headline"] for n in unique_news}]
+
+            # Sort by datetime (most recent first) - handle mixed types
+            def get_sortable_datetime(article):
+                dt = article.get("datetime", "")
+                if isinstance(dt, (int, float)):
+                    return dt
+                elif isinstance(dt, str):
+                    try:
+                        # Try to parse as timestamp
+                        return float(dt)
+                    except (ValueError, TypeError):
+                        # If it's a date string, use current time
+                        return time.time()
+                else:
+                    return time.time()
+            unique_news.sort(key=get_sortable_datetime, reverse=True)
+            # Print news source counts
+            source_counts = {}
+            for article in unique_news:
+                if isinstance(article, dict):
+                    source = article.get("source", "Unknown")
+                    source_counts[source] = source_counts.get(source, 0) + 1
+            print(f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
             return unique_news[:20]  # Limit to 20 most recent articles
             
         except Exception as e:
@@ -1167,6 +1169,82 @@ class DataFetcher:
         except Exception as e:
             log_error(f"get_yahoo_finance_news error for {symbol}: {e}")
             return []
+
+    def get_marketaux_trending_stocks(self, limit: int = 5) -> List[str]:
+        """
+        Get trending US stocks from Marketaux API
+        Args:
+            limit: Number of trending stocks to return (max 5)
+        Returns:
+            List of trending stock symbols
+        """
+        try:
+            url = 'https://api.marketaux.com/v1/news/all'
+            params = {
+                'api_token': Config.MARKETAUX_API_KEY,
+                'limit': min(limit * 2, 10),  # Get more articles to extract more symbols
+                'language': 'en',
+                'countries': 'us'  # Filter to U.S. stocks only
+            }
+            
+            response = self.session.get(url, params=params, timeout=Config.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            
+            data = response.json()
+            trending_stocks = []
+            
+            if 'data' in data:
+                for article in data['data']:
+                    if 'entities' in article:
+                        for entity in article['entities']:
+                            if 'symbol' in entity and entity['symbol']:
+                                # Extract just the symbol (remove any suffixes like .DE, .MX, .L)
+                                symbol = entity['symbol'].split('.')[0]  # Remove .US, .TO, etc.
+                                # Only include US stocks (no .DE, .MX, .L suffixes)
+                                if '.' not in entity['symbol'] and symbol not in trending_stocks:
+                                    trending_stocks.append(symbol)
+                                    if len(trending_stocks) >= limit:
+                                        break
+                        if len(trending_stocks) >= limit:
+                            break
+            
+            print(f"✅ Marketaux trending stocks: {trending_stocks}")
+            return trending_stocks[:limit]
+            
+        except Exception as e:
+            print(f"❌ Marketaux API error: {e}")
+            # Fallback to major stocks if API fails
+            fallback_stocks = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
+            return fallback_stocks[:limit]
+
+    def get_comprehensive_news_for_symbols(self, symbols: List[str], limit_per_symbol: int = 5) -> Dict[str, List[dict]]:
+        """
+        Get comprehensive news for multiple symbols from all available sources
+        Args:
+            symbols: List of stock symbols
+            limit_per_symbol: Maximum news articles per symbol
+        Returns:
+            Dictionary mapping symbols to their news articles
+        """
+        symbol_news = {}
+        
+        for symbol in symbols:
+            try:
+                print(f"📰 Fetching news for {symbol}...")
+                news_articles = self.get_company_news(symbol, days_back=7)
+                
+                # Limit the number of articles per symbol
+                symbol_news[symbol] = news_articles[:limit_per_symbol]
+                print(f"✅ Got {len(symbol_news[symbol])} news articles for {symbol}")
+                
+                # Add small delay to avoid rate limiting
+                time.sleep(0.5)
+                
+            except Exception as e:
+                print(f"❌ Error fetching news for {symbol}: {e}")
+                symbol_news[symbol] = []
+        
+        return symbol_news
 
     def get_top_gainers_losers(self, limit: int = 5) -> Dict[str, List[str]]:
         """

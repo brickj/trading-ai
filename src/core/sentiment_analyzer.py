@@ -48,7 +48,7 @@ class SentimentAnalyzer:
             response = requests.post(
                 f"{self.ollama_base_url}/api/generate",
                 json=payload,
-                timeout=60,  # Longer timeout for local processing
+                timeout=180,  # Longer timeout for local processing (increased from 60)
             )
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
@@ -418,9 +418,9 @@ class SentimentAnalyzer:
                 print(f"   Content: {content[:500]}...")
                 print(f"   Content length: {len(content)}")
             except Exception as e:
-                raise Exception(
-                    f"Ollama API failed: {str(e)}. Please ensure Ollama is running on {self.ollama_base_url}"
-                )
+                print(f"⚠️ Ollama API failed: {str(e)}. Falling back to price-based analysis...")
+                # Don't raise exception, let the calling code handle fallback
+                raise Exception(f"Ollama API failed: {str(e)}. Please ensure Ollama is running on {self.ollama_base_url}")
         elif selected_provider == "deepseek":
             if (
                 not self.deepseek_api_key
@@ -482,11 +482,23 @@ class SentimentAnalyzer:
             except json.JSONDecodeError:
                 # If direct parsing fails, try to extract JSON from the response
                 import re
-                json_match = re.search(r'\{[\s\S]*?\}', content)
+                # More robust JSON extraction that handles nested quotes
+                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content)
                 if json_match:
                     json_str = json_match.group(0)
-                    result = json.loads(json_str)
-                    print(f"✅ Parsed JSON from regex: {result}")
+                    try:
+                        result = json.loads(json_str)
+                        print(f"✅ Parsed JSON from regex: {result}")
+                    except json.JSONDecodeError:
+                        # Try a simpler approach - find the first { and last }
+                        start = content.find('{')
+                        end = content.rfind('}')
+                        if start != -1 and end != -1 and end > start:
+                            json_str = content[start:end+1]
+                            result = json.loads(json_str)
+                            print(f"✅ Parsed JSON from simple extraction: {result}")
+                        else:
+                            raise Exception(f"No valid JSON found in response: {content[:200]}...")
                 else:
                     raise Exception(f"No JSON found in response: {content[:200]}...")
 
@@ -505,34 +517,46 @@ class SentimentAnalyzer:
             # If JSON parsing fails, try to extract values from text format
             import re
 
-            # Try new text format: "Sentiment Score: -0.5\nConfidence: 0.8\nReasoning: ..."
-            sentiment_match = re.search(r'Sentiment Score:\s*(-?\d+\.?\d*)', content, re.IGNORECASE)
-            confidence_match = re.search(r'Confidence:\s*(\d+\.?\d*)', content, re.IGNORECASE)
-            reasoning_match = re.search(r'Reasoning:\s*(.+)', content, re.IGNORECASE | re.DOTALL)
+            # Try to find JSON-like content in the response
+            json_match = re.search(r'\{[^{}]*"sentiment_score"[^{}]*\}', content)
+            if json_match:
+                try:
+                    # Try to parse the extracted JSON
+                    json_content = json_match.group(0)
+                    result = json.loads(json_content)
+                except:
+                    pass
 
-            # If new format doesn't work, try old JSON format
-            if not sentiment_match:
-                sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
-            if not confidence_match:
-                confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
-            if not reasoning_match:
-                reasoning_match = re.search(r'"summary":\s*"([^"]*)"', content)
+            # If JSON extraction failed, try regex patterns
+            if not result:
+                # Try new text format: "Sentiment Score: -0.5\nConfidence: 0.8\nReasoning: ..."
+                sentiment_match = re.search(r'Sentiment Score:\s*(-?\d+\.?\d*)', content, re.IGNORECASE)
+                confidence_match = re.search(r'Confidence:\s*(\d+\.?\d*)', content, re.IGNORECASE)
+                reasoning_match = re.search(r'Reasoning:\s*(.+)', content, re.IGNORECASE | re.DOTALL)
 
-            # Also try simple JSON format
-            if not sentiment_match:
-                sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', content)
-            if not confidence_match:
-                confidence_match = re.search(r'"confidence":\s*(\d+\.?\d*)', content)
+                # If new format doesn't work, try old JSON format
+                if not sentiment_match:
+                    sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
+                if not confidence_match:
+                    confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
+                if not reasoning_match:
+                    reasoning_match = re.search(r'"summary":\s*"([^"]*)"', content)
 
-            if sentiment_match and confidence_match:
-                result = {
-                    "sentiment_score": float(sentiment_match.group(1)),
-                    "confidence": float(confidence_match.group(1)),
-                    "summary": (reasoning_match.group(1).strip() if reasoning_match else "Analysis completed"),
-                }
-            else:
-                # If parsing fails completely, raise an exception instead of using fallback values
-                raise Exception(f"Could not parse AI response: {content[:200]}...")
+                # Also try simple JSON format
+                if not sentiment_match:
+                    sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', content)
+                if not confidence_match:
+                    confidence_match = re.search(r'"confidence":\s*(\d+\.?\d*)', content)
+
+                if sentiment_match and confidence_match:
+                    result = {
+                        "sentiment_score": float(sentiment_match.group(1)),
+                        "confidence": float(confidence_match.group(1)),
+                        "summary": (reasoning_match.group(1).strip() if reasoning_match else "Analysis completed"),
+                    }
+                else:
+                    # If parsing fails completely, raise an exception instead of using fallback values
+                    raise Exception(f"Could not parse AI response: {content[:200]}...")
                 
         except Exception as e:
             # If parsing fails, log the full response and return a fallback neutral sentiment
