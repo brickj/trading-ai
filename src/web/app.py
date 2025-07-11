@@ -17,9 +17,9 @@ from src.core.config import Config
 from src.core.telegram_alerts import telegram_alerter
 from src.core.cache import get_cached_result, cache_result, get_cache_stats, clear_cache
 from src.core.batch_processor import (
-    batch_processor_instance,
     create_crypto_analysis_tasks,
     create_watchlist_tasks,
+    batch_processor_instance,
 )
 import requests
 import time
@@ -704,7 +704,8 @@ def crypto_analysis():
             )
 
         # Use smart batching for concurrent processing
-        limited_cryptos = crypto_symbols[: Config.BULK_ANALYSIS_CRYPTO_LIMIT]
+        # No limit - use all cryptos from the database
+        limited_cryptos = crypto_symbols
 
         # Create batch tasks (with shared crypto news for efficiency)
         tasks = create_crypto_analysis_tasks(limited_cryptos, Config.BULK_ANALYSIS_NEWS_DAYS)
@@ -1172,14 +1173,20 @@ def opportunities_page():
         
         trading_logger.api_logger.info(f"[DEBUG] opportunities_page request | IP: {ip} | UA: {user_agent}")
         
-        # Check if any opportunity data is available (for logging purposes)
+        # Check if preloaded opportunity data is available (for logging purposes)
         try:
-            # Quick check if news monitor is working
-            trending_symbols = news_monitor.scan_trending_news()
-            trending_count = len(trending_symbols) if trending_symbols else 0
-            trading_logger.api_logger.info(f"[DEBUG] Opportunities page - trending symbols available: {trending_count}")
+            from src.data.preload_news_opportunities import get_latest_preloaded_news_opportunities
+            from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
+            
+            news_opps = get_latest_preloaded_news_opportunities()
+            watchlist_opps = get_latest_preloaded_watchlist_opportunities()
+            
+            news_count = len(news_opps.get("opportunities", [])) if news_opps else 0
+            watchlist_count = len(watchlist_opps.get("opportunities", [])) if watchlist_opps else 0
+            
+            trading_logger.api_logger.info(f"[DEBUG] Opportunities page - preloaded data available: {news_count} news, {watchlist_count} watchlist opportunities")
         except Exception as e:
-            trading_logger.error_logger.error(f"[DEBUG] Error checking trending symbols: {str(e)}")
+            trading_logger.error_logger.error(f"[DEBUG] Error checking preloaded opportunities: {str(e)}")
         
         trading_logger.api_logger.info("[DEBUG] Rendering opportunities.html template")
         return render_template(
@@ -1193,47 +1200,65 @@ def opportunities_page():
 
 @app.route("/api/news_opportunities")
 def news_opportunities():
-    """Get news-driven trading opportunities"""
-    trading_logger.api_logger.info("[DEBUG] Entered news_opportunities endpoint")
+    """Get news-driven trading opportunities from preloaded data (fast)."""
+    trading_logger.api_logger.info("[DEBUG] Entered news_opportunities endpoint (preloaded mode)")
     try:
         from flask import request
         ip = request.remote_addr or 'unknown'
         user_agent = request.headers.get('User-Agent', 'unknown')
-        
         trading_logger.api_logger.info(f"[DEBUG] news_opportunities request | IP: {ip} | UA: {user_agent}")
+
+        # Optionally allow force refresh (manual re-analysis)
+        refresh = request.args.get('refresh', default=0, type=int)
+        if not refresh:
+            # Serve preloaded data from DB
+            from src.data.preload_news_opportunities import get_latest_preloaded_news_opportunities
+            preloaded = get_latest_preloaded_news_opportunities()
+            if preloaded and preloaded.get("opportunities") is not None:
+                trading_logger.api_logger.info(f"[DEBUG] Returning preloaded news opportunities (count={len(preloaded['opportunities'])})")
+                return create_api_response(
+                    data={
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "cached": True,
+                        "cache_timestamp": preloaded["timestamp"]
+                    }
+                )
+            else:
+                trading_logger.api_logger.warning("[DEBUG] No preloaded news opportunities found in DB!")
+
+        # If refresh=1 or no preloaded data, run a fresh analysis and update cache
+        trading_logger.api_logger.info("[DEBUG] Running fresh news opportunities analysis and updating cache...")
+        if refresh:
+            # Refresh requested - run preload function to update database
+            trading_logger.api_logger.info("[DEBUG] Refresh requested - running preload to update database")
+            from src.data.preload_news_opportunities import preload_news_opportunities
+            preload_news_opportunities()
+            # Get the newly cached data
+            from src.data.preload_news_opportunities import get_latest_preloaded_news_opportunities
+            preloaded = get_latest_preloaded_news_opportunities()
+            if preloaded and preloaded.get("opportunities") is not None:
+                return create_api_response(
+                    data={
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "cached": True,
+                        "refreshed": True,
+                        "cache_timestamp": preloaded["timestamp"]
+                    }
+                )
         
-        # Temporarily lower thresholds for testing
-        original_news_confidence = Config.NEWS_CONFIDENCE_THRESHOLD
-        original_news_sentiment = Config.NEWS_SENTIMENT_THRESHOLD
-        
-        # Set lower thresholds for testing
-        Config.NEWS_CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
-        Config.NEWS_SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
-        
-        try:
-            trading_logger.api_logger.info("[DEBUG] Scanning trending news for opportunities...")
-            trending_symbols = news_monitor.scan_trending_news()
-            trending_count = len(trending_symbols) if trending_symbols else 0
-            trading_logger.api_logger.info(f"[DEBUG] Found {trending_count} trending symbols")
-            
-            trading_logger.api_logger.info("[DEBUG] Analyzing news-driven opportunities...")
-            opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
-            opp_count = len(opportunities) if opportunities else 0
-            
-            # Log sample of opportunities
-            sample_opps = opportunities[:2] if opportunities else []
-            trading_logger.api_logger.info(f"[DEBUG] news_opportunities result: {opp_count} opportunities found")
-            trading_logger.api_logger.debug(f"[DEBUG] news_opportunities sample: {sample_opps}")
-            
-            if opp_count == 0:
-                trading_logger.api_logger.warning("[DEBUG] news_opportunities returned EMPTY result!")
-        finally:
-            # Restore original thresholds
-            Config.NEWS_CONFIDENCE_THRESHOLD = original_news_confidence
-            Config.NEWS_SENTIMENT_THRESHOLD = original_news_sentiment
-        
+        # Fallback: direct analysis (no database update)
+        trading_logger.api_logger.info("[DEBUG] Running fallback real-time news opportunities analysis (slow)")
+        trending_symbols = news_monitor.scan_trending_news()
+        opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
         return create_api_response(
-            data={"opportunities": opportunities, "count": len(opportunities)}
+            data={
+                "opportunities": opportunities,
+                "count": len(opportunities),
+                "cached": False,
+                "cache_timestamp": datetime.now().isoformat()
+            }
         )
     except Exception as e:
         trading_logger.error_logger.error(f"[ERROR] Error in news_opportunities endpoint: {str(e)}")
@@ -1243,8 +1268,8 @@ def news_opportunities():
 
 @app.route("/api/watchlist_opportunities")
 def watchlist_opportunities():
-    """Get trading opportunities for watchlist symbols"""
-    trading_logger.api_logger.info("[DEBUG] Entered watchlist_opportunities endpoint")
+    """Get watchlist-based trading opportunities from preloaded data (fast)."""
+    trading_logger.api_logger.info("[DEBUG] Entered watchlist_opportunities endpoint (preloaded mode)")
     try:
         from flask import request
         ip = request.remote_addr or 'unknown'
@@ -1252,48 +1277,157 @@ def watchlist_opportunities():
         
         trading_logger.api_logger.info(f"[DEBUG] watchlist_opportunities request | IP: {ip} | UA: {user_agent}")
         
-        # Use the task creation function to define what to run
-        from ..core.watchlist_manager import WatchlistManager
-        watchlist_manager = WatchlistManager()
-        watchlist_symbols = watchlist_manager.get_stocks()  # Only stocks, no crypto
+        # Check if refresh is requested (force real-time analysis)
+        refresh = request.args.get('refresh', default=0, type=int)
+        
+        if not refresh:
+            # Serve preloaded data from DB
+            from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
+            preloaded = get_latest_preloaded_watchlist_opportunities()
+            
+            if preloaded and preloaded.get("opportunities") is not None:
+                trading_logger.api_logger.info(f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})")
+                return create_api_response(
+                    data={
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "opportunities_found": len(preloaded["opportunities"]),
+                        "total_analyzed": preloaded.get("symbols_analyzed", 0),
+                        "errors_count": preloaded.get("errors_count", 0),
+                        "cached": True,
+                        "cache_timestamp": preloaded["timestamp"],
+                        "timestamp": datetime.now().isoformat()
+                    }
+                )
+            else:
+                trading_logger.api_logger.warning("[DEBUG] No preloaded watchlist opportunities found in DB!")
+        
+        # If refresh=1 or no preloaded data, run fresh analysis and update cache
+        if refresh:
+            # Refresh requested - run preload function to update database
+            trading_logger.api_logger.info("[DEBUG] Refresh requested - running watchlist preload to update database")
+            from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
+            preload_watchlist_opportunities()
+            # Get the newly cached data
+            from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
+            preloaded = get_latest_preloaded_watchlist_opportunities()
+            if preloaded and preloaded.get("opportunities") is not None:
+                trading_logger.api_logger.info(f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})")
+                return create_api_response(
+                    data={
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "opportunities_found": len(preloaded["opportunities"]),
+                        "total_analyzed": preloaded.get("symbols_analyzed", 0),
+                        "errors_count": preloaded.get("errors_count", 0),
+                        "cached": True,
+                        "cache_timestamp": preloaded["timestamp"],
+                        "timestamp": datetime.now().isoformat()
+                    }
+                )
+        
+        # Fallback: direct analysis without database update
+        trading_logger.api_logger.info("[DEBUG] Running fallback real-time watchlist opportunities analysis (slow)")
+        
+        # Get watchlist symbols (stocks only, no crypto)
+        watchlist_symbols = watchlist_manager.get_stocks()
         trading_logger.api_logger.info(f"[DEBUG] Processing watchlist symbols: {watchlist_symbols}")
         
+        if not watchlist_symbols:
+            return create_api_response(
+                data={
+                    "opportunities": [],
+                    "count": 0,
+                    "opportunities_found": 0,
+                    "total_analyzed": 0,
+                    "errors_count": 0,
+                    "cached": False,
+                    "message": "No watchlist symbols configured"
+                }
+            )
+        
+        # Create tasks and process
         tasks = create_watchlist_tasks(watchlist_symbols)
         
-        # progress_callback can be simplified or removed if not used by frontend
+        # Progress callback for real-time updates
         def progress_callback(symbol, completed, total, result):
-            # This is where you would emit a SocketIO event for real-time progress
             socketio.emit(
                 "watchlist_progress",
                 {"symbol": symbol, "completed": completed, "total": total, "status": "processing"},
             )
 
         # Execute the batch analysis
-        trading_logger.api_logger.info("[DEBUG] Starting batch analysis for watchlist opportunities...")
+        trading_logger.api_logger.info("[DEBUG] Starting real-time batch analysis for watchlist opportunities...")
         batch_result = batch_processor_instance.process_batch_sync(tasks, progress_callback)
         
-        # Filter out None results and errors for the final opportunities list
+        # Filter out successful opportunities
         opportunities = [
             result
             for result in batch_result["results"].values()
             if result and "error" not in result
         ]
         
-        # Log any errors that occurred during the batch run
+        # Get errors
         errors = [
             result
             for result in batch_result["results"].values()
             if result and "error" in result
         ]
         
-        opp_count = len(opportunities)
-        error_count = len(errors)
+        # Normalize the data structure to match frontend expectations
+        normalized_opportunities = []
+        for opp in opportunities:
+            normalized_opp = {
+                "type": "stock",
+                "symbol": opp.get("symbol"),
+                "trigger": "watchlist",
+                "timestamp": datetime.now().isoformat(),
+                "news_count": opp.get("news_count", 0),
+                "price_data": {
+                    "current_price": opp.get("current_price", 0),
+                    "change": 0,
+                    "volume": 0,
+                    "change_percent": "0%"
+                },
+                "signal_data": {
+                    "action": opp.get("action", "HOLD"),
+                    "reasoning": opp.get("reasoning", "No reasoning provided"),
+                    "confidence": opp.get("confidence", 0),
+                    "signal_strength": opp.get("signal_strength", 0)
+                },
+                "trade_signal": {
+                    "action": opp.get("action", "HOLD"),
+                    "option_price": 0,
+                    "strike_price": 0,
+                    "position_size": 1
+                },
+                "sentiment_data": {
+                    "summary": "Watchlist analysis",
+                    "confidence": opp.get("confidence", 0),
+                    "sentiment_score": opp.get("sentiment_score", 0)
+                }
+            }
+            normalized_opportunities.append(normalized_opp)
         
-        trading_logger.api_logger.info(f"[DEBUG] watchlist_opportunities result: {opp_count} opportunities, {error_count} errors")
+        trading_logger.api_logger.info(f"[DEBUG] Real-time watchlist_opportunities result: {len(normalized_opportunities)} opportunities, {len(errors)} errors")
         
-        # Log sample of opportunities
-        sample_opps = opportunities[:2] if opportunities else []
-        trading_logger.api_logger.debug(f"[DEBUG] watchlist_opportunities sample: {sample_opps}")
+        return create_api_response(
+            data={
+                "opportunities": normalized_opportunities,
+                "count": len(normalized_opportunities),
+                "opportunities_found": len(normalized_opportunities),
+                "total_analyzed": len(watchlist_symbols),
+                "errors_count": len(errors),
+                "errors": errors[:5],  # Limit error details
+                "cached": False,
+                "timestamp": datetime.now().isoformat()
+            }
+        )
+        
+    except Exception as e:
+        trading_logger.error_logger.error(f"[ERROR] Error in watchlist_opportunities endpoint: {str(e)}")
+        log_exception("Watchlist opportunities endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
         
         if opp_count == 0:
             trading_logger.api_logger.warning("[DEBUG] watchlist_opportunities returned EMPTY result!")
@@ -1301,88 +1435,43 @@ def watchlist_opportunities():
         if errors:
             log_error("Watchlist analysis completed with errors", f"{error_count} symbols failed.")
 
-        return create_api_response(
-            data={
-                "opportunities": opportunities,
-                "opportunities_found": len(opportunities),
-                "total_analyzed": batch_result["stats"]["total_tasks"],
-                "errors_count": len(errors),
-                "errors": errors,
-                "performance": {
-                    "time_taken": batch_result["stats"]["time_taken"],
-                    "avg_time_per_stock": batch_result["stats"]["avg_time_per_task"],
-                },
-                "cached": False, # Batch results are typically not cached this way
-                "timestamp": datetime.now().isoformat(),
-            }
-        )
+        # Prepare response data
+        response_data = {
+            "opportunities": opportunities,
+            "opportunities_found": len(opportunities),
+            "total_analyzed": batch_result["stats"]["total_tasks"],
+            "errors_count": len(errors),
+            "errors": errors,
+            "performance": {
+                "time_taken": batch_result["stats"]["time_taken"],
+                "avg_time_per_stock": batch_result["stats"]["avg_time_per_task"],
+            },
+            "cached": False,
+            "timestamp": datetime.now().isoformat(),
+        }
+        
+        # Cache the result
+        cache_data = {
+            "opportunities": opportunities,
+            "opportunities_found": len(opportunities),
+            "total_analyzed": batch_result["stats"]["total_tasks"],
+            "errors_count": len(errors),
+            "errors": errors,
+            "performance": {
+                "time_taken": batch_result["stats"]["time_taken"],
+                "avg_time_per_stock": batch_result["stats"]["avg_time_per_task"],
+            },
+            "cache_timestamp": datetime.now().isoformat()
+        }
+        cache_result(cache_key, cache_data, ttl=900)  # 15 minutes
+
+        return create_api_response(data=response_data)
 
     except Exception as e:
         trading_logger.error_logger.error(f"[ERROR] Error in watchlist_opportunities endpoint: {str(e)}")
         log_exception("Watchlist opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
 
-
-@app.route("/api/all_opportunities")
-def all_opportunities():
-    """Get all trading opportunities (news-driven + watchlist)"""
-    trading_logger.api_logger.info("[DEBUG] Entered all_opportunities endpoint")
-    try:
-        from flask import request
-        ip = request.remote_addr or 'unknown'
-        user_agent = request.headers.get('User-Agent', 'unknown')
-        
-        trading_logger.api_logger.info(f"[DEBUG] all_opportunities request | IP: {ip} | UA: {user_agent}")
-        
-        # Temporarily lower thresholds for testing
-        original_news_confidence = Config.NEWS_CONFIDENCE_THRESHOLD
-        original_news_sentiment = Config.NEWS_SENTIMENT_THRESHOLD
-        original_confidence = Config.CONFIDENCE_THRESHOLD
-        original_sentiment = Config.SENTIMENT_THRESHOLD
-        # Set lower thresholds for testing
-        Config.NEWS_CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
-        Config.NEWS_SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
-        Config.CONFIDENCE_THRESHOLD = 0.1  # Lower from 0.3
-        Config.SENTIMENT_THRESHOLD = 0.05  # Lower from 0.1
-        try:
-            trading_logger.api_logger.info("[DEBUG] Getting all opportunities from news monitor...")
-            all_opps = news_monitor.get_all_opportunities()
-            news_count = len(all_opps.get('news_driven', []))
-            watchlist_count = len(all_opps.get('watchlist', []))
-            total_count = all_opps.get('total_opportunities', 0)
-            
-            # Log a sample of the data (first 2 from each)
-            news_sample = all_opps.get('news_driven', [])[:2]
-            watchlist_sample = all_opps.get('watchlist', [])[:2]
-            
-            trading_logger.api_logger.info(f"[DEBUG] all_opportunities result: news_driven={news_count}, watchlist={watchlist_count}, total={total_count}")
-            trading_logger.api_logger.debug(f"[DEBUG] all_opportunities news_driven sample: {news_sample}")
-            trading_logger.api_logger.debug(f"[DEBUG] all_opportunities watchlist sample: {watchlist_sample}")
-            
-            if total_count == 0:
-                trading_logger.api_logger.warning("[DEBUG] all_opportunities returned EMPTY result!")
-                
-            # Also log to the general logger for consistency
-            log_info(f"[API] /api/all_opportunities | IP: {ip} | UA: {user_agent} | news_driven={news_count}, watchlist={watchlist_count}, total={total_count}")
-            log_debug(f"[API] /api/all_opportunities sample news_driven: {news_sample}")
-            log_debug(f"[API] /api/all_opportunities sample watchlist: {watchlist_sample}")
-            if total_count == 0:
-                log_warning(f"[API] /api/all_opportunities returned EMPTY result! news_driven={news_count}, watchlist={watchlist_count}")
-        except Exception as e:
-            trading_logger.error_logger.error(f"[ERROR] Error getting all opportunities: {str(e)}")
-            log_exception("All opportunities endpoint - get_all_opportunities", e)
-            raise
-        finally:
-            # Restore original thresholds
-            Config.NEWS_CONFIDENCE_THRESHOLD = original_news_confidence
-            Config.NEWS_SENTIMENT_THRESHOLD = original_news_sentiment
-            Config.CONFIDENCE_THRESHOLD = original_confidence
-            Config.SENTIMENT_THRESHOLD = original_sentiment
-        return create_api_response(data=all_opps)
-    except Exception as e:
-        trading_logger.error_logger.error(f"[ERROR] Error in all_opportunities endpoint: {str(e)}")
-        log_exception("All opportunities endpoint", e)
-        return create_api_response(error=str(e), status_code=500)
 
 
 @app.route("/api/go_services/health")
@@ -2364,14 +2453,28 @@ def preload_stock_data():
 
 # Schedule the preload task
 scheduler = BackgroundScheduler()
-# Run at 9:35 AM on trading days
+# Run at 9:35 AM on trading days for S&P 500
 scheduler.add_job(preload_stock_data, 'cron', day_of_week='mon-fri', hour=9, minute=35, timezone='America/New_York')
+# Run at 9:40 AM on trading days for news-driven opportunities
+from src.data.preload_news_opportunities import preload_news_opportunities
+scheduler.add_job(preload_news_opportunities, 'cron', day_of_week='mon-fri', hour=9, minute=40, timezone='America/New_York')
+
+# Run at 9:45 AM on trading days for watchlist opportunities
+from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
+scheduler.add_job(preload_watchlist_opportunities, 'cron', day_of_week='mon-fri', hour=9, minute=45, timezone='America/New_York')
+
 scheduler.start()
 
 # Preload data in a background thread on startup (do NOT block main thread)
 def start_preload_in_background():
     preload_thread = threading.Thread(target=preload_stock_data, daemon=True)
     preload_thread.start()
+    # Also preload news-driven opportunities
+    preload_news_thread = threading.Thread(target=preload_news_opportunities, daemon=True)
+    preload_news_thread.start()
+    # Also preload watchlist opportunities
+    preload_watchlist_thread = threading.Thread(target=preload_watchlist_opportunities, daemon=True)
+    preload_watchlist_thread.start()
 
 start_preload_in_background()
 
@@ -2993,25 +3096,29 @@ def get_logs():
 def watchlist_config():
     """Get or update watchlist configuration"""
     try:
+        log_info(f"[WATCHLIST_CONFIG] Incoming {request.method} request from {request.remote_addr}")
         if request.method == "GET":
-            # Get current watchlist configuration (stocks only)
+            # Get current watchlist configuration (stocks only, no crypto)
             stocks = watchlist_manager.get_stocks()
-            
-            # Format data for frontend
+            log_info(f"[WATCHLIST_CONFIG] Stocks: {stocks}")
+
+            # Format data for frontend (stocks only)
             stock_data = [{"symbol": symbol, "notes": ""} for symbol in stocks]
-            
-            return create_api_response({
+            response_data = {
                 "stocks": stock_data,
                 "stock_limit": Config.BULK_ANALYSIS_WATCHLIST_LIMIT if hasattr(Config, 'BULK_ANALYSIS_WATCHLIST_LIMIT') else 50,
                 "news_days": Config.BULK_ANALYSIS_NEWS_DAYS if hasattr(Config, 'BULK_ANALYSIS_NEWS_DAYS') else 2,
                 "stats": {
-                    "stocks": {"active": len(stocks)}
+                    "stocks": stocks
                 },
                 "message": f"Watchlist contains {len(stocks)} stocks"
-            })
+            }
+            log_info(f"[WATCHLIST_CONFIG] Response: {response_data}")
+            return create_api_response(response_data)
+
         
         elif request.method == "POST":
-            # Update watchlist configuration (stocks only)
+            # Update watchlist configuration (stocks and crypto)
             data = request.get_json()
             action = data.get("action")
             symbol = data.get("symbol", "").upper().strip()
@@ -3024,48 +3131,80 @@ def watchlist_config():
                     status_code=400
                 )
             
-            # Only allow stock operations
-            if symbol_type != "stock":
-                return create_api_response(
-                    success=False,
-                    error="Only stock symbols are supported",
-                    status_code=400
-                )
-            
-            if action == "add":
-                success = watchlist_manager.add_stock(symbol)
-                if success:
-                    return create_api_response({
-                        "message": f"Added {symbol} to stock watchlist",
-                        "symbol": symbol,
-                        "type": "stock"
-                    })
+            if symbol_type == "stock":
+                if action == "add":
+                    success = watchlist_manager.add_stock(symbol)
+                    if success:
+                        return create_api_response({
+                            "message": f"Added {symbol} to stock watchlist",
+                            "symbol": symbol,
+                            "type": "stock"
+                        })
+                    else:
+                        return create_api_response(
+                            success=False,
+                            error=f"Failed to add {symbol} to watchlist",
+                            status_code=500
+                        )
+                elif action == "remove":
+                    success = watchlist_manager.remove_stock(symbol)
+                    if success:
+                        return create_api_response({
+                            "message": f"Removed {symbol} from stock watchlist",
+                            "symbol": symbol,
+                            "type": "stock"
+                        })
+                    else:
+                        return create_api_response(
+                            success=False,
+                            error=f"Failed to remove {symbol} from watchlist",
+                            status_code=500
+                        )
                 else:
                     return create_api_response(
                         success=False,
-                        error=f"Failed to add {symbol} to watchlist",
-                        status_code=500
+                        error="Invalid action. Must be 'add' or 'remove'",
+                        status_code=400
                     )
-            
-            elif action == "remove":
-                success = watchlist_manager.remove_stock(symbol)
-                if success:
-                    return create_api_response({
-                        "message": f"Removed {symbol} from stock watchlist",
-                        "symbol": symbol,
-                        "type": "stock"
-                    })
+            elif symbol_type == "crypto":
+                if action == "add":
+                    success = watchlist_manager.add_crypto(symbol)
+                    if success:
+                        return create_api_response({
+                            "message": f"Added {symbol} to crypto watchlist",
+                            "symbol": symbol,
+                            "type": "crypto"
+                        })
+                    else:
+                        return create_api_response(
+                            success=False,
+                            error=f"Failed to add {symbol} to crypto watchlist",
+                            status_code=500
+                        )
+                elif action == "remove":
+                    success = watchlist_manager.remove_crypto(symbol)
+                    if success:
+                        return create_api_response({
+                            "message": f"Removed {symbol} from crypto watchlist",
+                            "symbol": symbol,
+                            "type": "crypto"
+                        })
+                    else:
+                        return create_api_response(
+                            success=False,
+                            error=f"Failed to remove {symbol} from crypto watchlist",
+                            status_code=500
+                        )
                 else:
                     return create_api_response(
                         success=False,
-                        error=f"Failed to remove {symbol} from watchlist",
-                        status_code=500
+                        error="Invalid action. Must be 'add' or 'remove'",
+                        status_code=400
                     )
-            
             else:
                 return create_api_response(
                     success=False,
-                    error="Invalid action. Must be 'add' or 'remove'",
+                    error="Only stock or crypto symbols are supported",
                     status_code=400
                 )
     

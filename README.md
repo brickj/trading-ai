@@ -65,11 +65,26 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configure API Keys
-Create a `.env` file in the project root:
-```env
-FINNHUB_API_KEY=your_finnhub_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here  # Optional if using Ollama
+**⚠️ IMPORTANT: Copy and configure the config file before starting:**
+
+```bash
+# Copy the template configuration
+cp src/core/config.template.py src/core/config.py
+
+# Edit the config file with your API keys
+nano src/core/config.py  # or use your preferred editor
 ```
+
+**Required API Keys:**
+- **Finnhub**: Free at [finnhub.io](https://finnhub.io) (required)
+- **Alpha Vantage**: Free at [alphavantage.co](https://alphavantage.co) (optional)
+
+**Optional API Keys:**
+- **OpenAI**: At [platform.openai.com](https://platform.openai.com) (optional if using Ollama)
+- **News API**: At [newsapi.org](https://newsapi.org) (optional)
+- **Telegram**: Create bot at [@BotFather](https://t.me/botfather) (optional)
+
+**Note:** The config file contains sensitive API keys and is excluded from the repository for security.
 
 ### 4. One-Click Startup
 ```bash
@@ -588,14 +603,48 @@ You should run these tools before committing code to ensure consistency and code
 
 Advanced trading platform with enhanced analysis capabilities.
 
-## Files Not in GitHub
+## 🔐 Configuration Setup
 
-The following files contain sensitive information and are not included in the repository:
+**⚠️ IMPORTANT: The configuration file contains sensitive API keys and is not included in the repository.**
 
-1. `src/core/config.py` - Contains API keys and configuration settings
-2. `docs/NOTES.txt` - Contains AWS credentials
-3. `git_manager.py` - Contains GitHub token
+### Required Setup Steps:
 
-To set up the project:
-1. Copy `src/core/config.template.py` to `src/core/config.py`
-2. Update the API keys and settings in `config.py` with your own values
+1. **Copy the template configuration:**
+   ```bash
+   cp src/core/config.template.py src/core/config.py
+   ```
+
+2. **Update API keys in `src/core/config.py`:**
+   ```python
+   # Required API Keys
+   ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_api_key_here"
+   FINNHUB_API_KEY = "your_finnhub_api_key_here"
+   NEWS_API_KEY = "your_news_api_key_here"
+   OPENAI_API_KEY = "your_openai_api_key_here"
+   
+   # Optional API Keys
+   TELEGRAM_API_KEY = "your_telegram_api_key_here"
+   REDDIT_CLIENT_ID = "your_reddit_client_id_here"
+   REDDIT_SECRET_KEY = "your_reddit_secret_key_here"
+   DEEPSEEK_API_KEY = "your_deepseek_api_key_here"
+   ```
+
+3. **Get your API keys:**
+   - **Finnhub**: Free at [finnhub.io](https://finnhub.io) (required)
+   - **Alpha Vantage**: Free at [alphavantage.co](https://alphavantage.co) (optional)
+   - **OpenAI**: At [platform.openai.com](https://platform.openai.com) (optional if using Ollama)
+   - **News API**: At [newsapi.org](https://newsapi.org) (optional)
+   - **Telegram**: Create bot at [@BotFather](https://t.me/botfather) (optional)
+
+### Files Not in GitHub
+
+The following files contain sensitive information and are excluded from the repository:
+
+- `src/core/config.py` - Contains API keys and configuration settings
+- `.env` - Environment variables (if used)
+- `docs/NOTES.txt` - Contains AWS credentials  
+- `git_manager.py` - Contains GitHub token
+
+**Note:** The `src/core/config.template.py` file is included as a template for easy setup.
+
+**Security:** All sensitive files are properly excluded via `.gitignore` to prevent accidental commits of API keys and credentials.

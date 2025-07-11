@@ -166,8 +166,8 @@ class BatchProcessor:
 
     def analyze_stock(self, symbol: str, days_back: Optional[int] = None):
         """
-        New simplified and robust stock analysis function for batch processing.
-        Returns an opportunity dict or None.
+        New robust stock analysis function for batch processing.
+        Returns a nested opportunity dict matching the news-driven structure.
         """
         try:
             days_back = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
@@ -178,7 +178,9 @@ class BatchProcessor:
                 return {"symbol": symbol, "error": "Missing critical price data"}
 
             news = self.data_fetcher.get_company_news(symbol, days_back)
-            
+            articles = news[:3] if news else []
+            news_count = len(news) if news else 0
+
             sentiment_data = None
             try:
                 if news and len(news) > 0:
@@ -197,21 +199,27 @@ class BatchProcessor:
                 return {"symbol": symbol, "error": "Sentiment analysis returned no data"}
 
             signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
-            
+            from ..trading.trading_strategy import TradingStrategy
+            trading_strategy = TradingStrategy()
+            trade_signal = trading_strategy.generate_trade_signal(
+                symbol, price_data["current_price"], sentiment_data, signal_data
+            ) if signal_data and signal_data.get("action") != "HOLD" else {}
+
             if signal_data and signal_data.get("action") != "HOLD":
                 return {
                     "symbol": symbol,
-                    "current_price": price_data.get("current_price", 0),
-                    "news_count": len(news),
-                    "sentiment_score": sentiment_data.get("sentiment_score", 0),
-                    "confidence": sentiment_data.get("confidence", 0),
-                    "action": signal_data.get("action", "HOLD"),
-                    "signal_strength": signal_data.get("signal_strength", 0),
-                    "reasoning": signal_data.get("reasoning", "N/A"),
+                    "type": "stock",
+                    "trigger": "watchlist_scan",
+                    "news_count": news_count,
+                    "price_data": price_data,
+                    "sentiment_data": sentiment_data,
+                    "signal_data": signal_data,
+                    "trade_signal": trade_signal,
+                    "articles": articles,
+                    "timestamp": datetime.now().isoformat(),
                 }
-            
+
             return None
-            
         except Exception as e:
             log_error(f"Unexpected error in analyze_stock for {symbol}", str(e))
             return {"symbol": symbol, "error": f"Unexpected error: {e}"}
@@ -225,6 +233,10 @@ class BatchProcessor:
         except Exception as e:
             log_error(f"Unexpected error in analyze_crypto for {symbol}", str(e))
             return {"symbol": symbol, "error": f"Unexpected crypto error: {e}"}
+
+
+# Singleton instance of the BatchProcessor
+batch_processor_instance = BatchProcessor()
 
 
 def create_crypto_analysis_tasks(crypto_symbols: List[str], days_back: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -252,7 +264,4 @@ def create_watchlist_tasks(symbols: List[str], days_back: Optional[int] = None) 
             "args": [symbol, days_back],
         }
         for symbol in symbols
-    ]
-
-# Singleton instance of the BatchProcessor
-batch_processor_instance = BatchProcessor() 
+    ] 

@@ -274,16 +274,4 @@ class NewsMonitor:
                 
         return opportunities
 
-    def get_all_opportunities(self) -> Dict:
-        logging.info("[DEBUG] get_all_opportunities called")
-        trending_symbols = self.scan_trending_news()
-        logging.info(f"[DEBUG] get_all_opportunities: trending_symbols = {trending_symbols}")
-        news_driven = self.analyze_news_driven_opportunities(trending_symbols)
-        logging.info(f"[DEBUG] get_all_opportunities: news_driven = {news_driven}")
-        watchlist = self.analyze_watchlist_opportunities()
-        return {
-            "news_driven": news_driven,
-            "watchlist": watchlist,
-            "total_opportunities": len(news_driven) + len(watchlist),
-            "timestamp": datetime.now().isoformat(),
-        }
+

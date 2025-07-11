@@ -72,27 +72,31 @@ class OpportunitiesPagePlaywrightTest:
                 opportunity_cards = await page.locator(".card.mb-3").count()
                 empty_state = await page.locator("text=No trading opportunities found").count()
                 
-                if opportunity_cards > 0:
-                    print(f"✅ Found {opportunity_cards} opportunity cards")
+                # FULLY POPULATED CHECK: Require at least 2 opportunity cards
+                if opportunity_cards >= 2:
+                    print(f"✅ Found {opportunity_cards} opportunity cards (fully populated)")
                     
-                    # Validate first opportunity card structure
-                    first_card = page.locator(".card.mb-3").first
-                    symbol = await first_card.locator("strong").text_content()
-                    print(f"✅ First opportunity symbol: {symbol}")
+                    # Validate first 2 opportunity card structures
+                    for i in range(min(2, opportunity_cards)):
+                        card = page.locator(".card.mb-3").nth(i)
+                        symbol = await card.locator("strong").first.text_content()
+                        print(f"✅ Opportunity card {i+1} symbol: {symbol}")
+                        
+                        # Check card has required sections
+                        price_section = await card.locator("text=Price Info").count()
+                        sentiment_section = await card.locator("text=Sentiment").count()
+                        trade_section = await card.locator("text=Trade Details").count()
+                        strategy_section = await card.locator("text=Strategy").count()
+                        
+                        assert price_section > 0, f"Price Info section should be present in card {i+1}"
+                        assert sentiment_section > 0, f"Sentiment section should be present in card {i+1}"
+                        assert trade_section > 0, f"Trade Details section should be present in card {i+1}"
+                        assert strategy_section > 0, f"Strategy section should be present in card {i+1}"
+                        print(f"✅ Opportunity card {i+1} structure validated")
                     
-                    # Check card has required sections
-                    price_section = await first_card.locator("text=Price Info").count()
-                    sentiment_section = await first_card.locator("text=Sentiment").count()
-                    trade_section = await first_card.locator("text=Trade Details").count()
-                    strategy_section = await first_card.locator("text=Strategy").count()
-                    
-                    assert price_section > 0, "Price Info section should be present"
-                    assert sentiment_section > 0, "Sentiment section should be present"
-                    assert trade_section > 0, "Trade Details section should be present"
-                    assert strategy_section > 0, "Strategy section should be present"
-                    
-                    print("✅ Opportunity card structure validated")
-                    
+                elif opportunity_cards > 0:
+                    print(f"⚠️ Only found {opportunity_cards} opportunity cards (not fully populated)")
+                    raise AssertionError(f"Should display at least 2 opportunity cards, found {opportunity_cards}")
                 elif empty_state > 0:
                     print("✅ Empty state displayed correctly")
                     
@@ -125,7 +129,6 @@ class OpportunitiesPagePlaywrightTest:
                 # Check watchlist configuration is populated
                 config_text = await page.locator("#watchlistConfig").text_content()
                 assert config_text and "Watchlist Stocks:" in config_text, "Watchlist stocks should be displayed"
-                assert config_text and "Watchlist Crypto:" in config_text, "Watchlist crypto should be displayed"
                 print("✅ Watchlist configuration populated")
                 
                 # Check for system status link
@@ -150,15 +153,6 @@ class OpportunitiesPagePlaywrightTest:
                 classes = await watchlist_btn.get_attribute("class")
                 assert classes and "active" in classes, "Watchlist button should be active after click"
                 print("✅ Switched to Watchlist mode")
-                
-                # Switch to All mode
-                await page.locator("#allBtn").click()
-                await page.wait_for_timeout(1000)
-                
-                all_btn = page.locator("#allBtn")
-                classes = await all_btn.get_attribute("class")
-                assert classes and "active" in classes, "All button should be active after click"
-                print("✅ Switched to All mode")
                 
                 # Switch back to News mode
                 await page.locator("#newsBtn").click()

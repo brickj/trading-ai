@@ -1,19 +1,19 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'all';
+let currentMode = 'news';
 let opportunitiesData = [];
+let isRefreshing = false;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners
     document.getElementById('newsBtn').addEventListener('click', () => switchMode('news'));
     document.getElementById('watchlistBtn').addEventListener('click', () => switchMode('watchlist'));
-    document.getElementById('allBtn').addEventListener('click', () => switchMode('all'));
-    document.getElementById('refreshBtn').addEventListener('click', loadOpportunities);
+    document.getElementById('refreshBtn').addEventListener('click', () => loadOpportunities(true)); // Force refresh
     
-    // Load initial data
-    loadOpportunities();
+    // Load initial data (from cache)
+    loadOpportunities(false);
     
     // Load watchlist configuration
     loadWatchlistConfig();
@@ -29,7 +29,7 @@ function switchMode(mode) {
         btn.classList.add('btn-outline-primary');
     });
     
-    const activeBtn = mode === 'news' ? 'newsBtn' : mode === 'watchlist' ? 'watchlistBtn' : 'allBtn';
+    const activeBtn = mode === 'news' ? 'newsBtn' : 'watchlistBtn';
     const btn = document.getElementById(activeBtn);
     btn.classList.remove('btn-outline-primary');
     btn.classList.add('btn-primary', 'active');
@@ -37,13 +37,12 @@ function switchMode(mode) {
     // Update title
     const titles = {
         'news': 'News-Driven Opportunities',
-        'watchlist': 'Watchlist Opportunities', 
-        'all': 'All Trading Opportunities'
+        'watchlist': 'Watchlist Opportunities'
     };
     document.getElementById('opportunitiesTitle').textContent = titles[mode];
     
-    // Load data for current mode
-    loadOpportunities();
+    // Load data for current mode (use cached data)
+    loadOpportunities(false);
 }
 
 // Utility: log fetch requests and responses
@@ -94,19 +93,33 @@ async function loggedFetch(url, options = {}) {
 }
 
 // Load opportunities data
-async function loadOpportunities() {
-    console.log('🚀 [LOAD] Starting loadOpportunities for mode:', currentMode);
+async function loadOpportunities(forceRefresh = false) {
+    console.log('🚀 [LOAD] Starting loadOpportunities for mode:', currentMode, 'forceRefresh:', forceRefresh);
     showLoading('loadingSpinner');
     document.getElementById('refreshBtn').disabled = true;
     
+    // Update button text if refreshing
+    const refreshBtn = document.getElementById('refreshBtn');
+    const originalText = refreshBtn.innerHTML;
+    if (forceRefresh) {
+        isRefreshing = true;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    }
+    
     try {
-            const endpoints = {
-        'news': '/api/news_opportunities',
-        'watchlist': '/api/watchlist_opportunities',
-        'all': '/api/all_opportunities'
-    };
+        const endpoints = {
+            'news': '/api/news_opportunities',
+            'watchlist': '/api/watchlist_opportunities'
+        };
         
-        const endpoint = endpoints[currentMode];
+        let endpoint = endpoints[currentMode];
+        
+        // Add refresh parameter if force refresh is requested
+        if (forceRefresh) {
+            endpoint += '?refresh=1';
+            console.log('🔄 [LOAD] Force refresh requested');
+        }
+        
         console.log('🌐 [LOAD] Fetching from endpoint:', endpoint);
         
         const response = await loggedFetch(endpoint);
@@ -146,7 +159,15 @@ async function loadOpportunities() {
         showAlert('Error loading opportunities: ' + error.message, 'danger');
     } finally {
         hideLoading('loadingSpinner');
-        document.getElementById('refreshBtn').disabled = false;
+        
+        // Reset refresh button
+        const refreshBtn = document.getElementById('refreshBtn');
+        refreshBtn.disabled = false;
+        if (isRefreshing) {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            isRefreshing = false;
+        }
+        
         console.log('🏁 [LOAD] loadOpportunities completed');
     }
 }
@@ -185,16 +206,12 @@ function displayOpportunities(data) {
     logToBackend('info', '[DIAG] [DISPLAY] Raw responseData', { responseData });
     
     let opportunities = [];
-    if (currentMode === 'all') {
-        opportunities = [...(responseData.news_driven || []), ...(responseData.watchlist || [])];
-        console.log('[DIAG] [DISPLAY] ALL mode - Combined opportunities:', opportunities);
-        logToBackend('info', '[DIAG] [DISPLAY] ALL mode - Combined opportunities', { opportunities });
-    } else if (currentMode === 'news') {
-        opportunities = responseData.news_driven || [];
+    if (currentMode === 'news') {
+        opportunities = responseData.opportunities || responseData.news_driven || [];
         console.log('[DIAG] [DISPLAY] NEWS mode - News opportunities:', opportunities);
         logToBackend('info', '[DIAG] [DISPLAY] NEWS mode - News opportunities', { opportunities });
     } else if (currentMode === 'watchlist') {
-        opportunities = responseData.watchlist || [];
+        opportunities = responseData.opportunities || responseData.watchlist || [];
         console.log('[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities:', opportunities);
         logToBackend('info', '[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities', { opportunities });
     } else {
@@ -362,9 +379,7 @@ function createOpportunityCard(opp) {
         '<span class="badge bg-info">News-Driven</span>' : 
         '<span class="badge bg-warning">Watchlist</span>';
     
-    const typeBadge = type === 'crypto' ? 
-        '<span class="badge bg-warning">Crypto</span>' : 
-        '<span class="badge bg-primary">Stock</span>';
+    const typeBadge = '<span class="badge bg-primary">Stock</span>';
     
     const actionBadge = action === 'CALL' ? 
         '<span class="badge bg-success">CALL</span>' : 
@@ -376,7 +391,7 @@ function createOpportunityCard(opp) {
     
     console.log('🔍 [CARD] Generated badges:', {
         triggerBadge: triggerBadge.includes('News-Driven') ? 'News-Driven' : 'Watchlist',
-        typeBadge: typeBadge.includes('Crypto') ? 'Crypto' : 'Stock',
+        typeBadge: 'Stock',
         actionBadge: actionBadge.includes('CALL') ? 'CALL' : 'PUT',
         sentimentClass
     });

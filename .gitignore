@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pyc
 
 # Virtual Environment
 .env
@@ -36,44 +37,23 @@ ENV/
 # Logs
 logs/
 *.log
+app.log
+flask.log
+server.log
+populate_market_movers.py.log
 
 # Local development
 .DS_Store
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
-*.pyc
-__pycache__
-.DS_Store
-*.log
-venv/
-env/
-.env
+.env.production.local
 *.secret
 node_modules/
-.vscode/
-.idea/
-*.pyc
-__pycache__
-.DS_Store
-*.log
-venv/
-env/
-.env
-*.secret
-node_modules/
-.vscode/
-.idea/
-*.pyc
-__pycache__
-.DS_Store
-*.log
-venv/
-env/
-.env
-*.secret
-node_modules/
-.vscode/
-.idea/
+
+# Sensitive configuration files
 src/core/config.py
+
+# Test artifacts
+.pytest_cache/
+test-artifacts/

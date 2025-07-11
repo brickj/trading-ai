@@ -49,13 +49,22 @@ class NewsScanner:
             print("=" * 60)
         try:
             if mode == "news":
-                opportunities = self.monitor.analyze_news_driven_opportunities()
+                trending_symbols = self.monitor.scan_trending_news()
+                opportunities = self.monitor.analyze_news_driven_opportunities(trending_symbols)
                 results = {"news_driven": opportunities, "watchlist": []}
             elif mode == "watchlist":
                 opportunities = self.monitor.analyze_watchlist_opportunities()
                 results = {"news_driven": [], "watchlist": opportunities}
-            else:  # all
-                results = self.monitor.get_all_opportunities()
+            else:  # all - combine both manually
+                trending_symbols = self.monitor.scan_trending_news()
+                news_opportunities = self.monitor.analyze_news_driven_opportunities(trending_symbols)
+                watchlist_opportunities = self.monitor.analyze_watchlist_opportunities()
+                results = {
+                    "news_driven": news_opportunities,
+                    "watchlist": watchlist_opportunities,
+                    "total_opportunities": len(news_opportunities) + len(watchlist_opportunities),
+                    "timestamp": datetime.now().isoformat(),
+                }
             if verbose:
                 self._print_results(results, mode)
             if save_file:

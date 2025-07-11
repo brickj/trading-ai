@@ -5,6 +5,7 @@ import json
 from .config import Config
 import numpy as np
 from datetime import datetime, timedelta
+import re # Added for regex fallback
 
 
 class SentimentAnalyzer:
@@ -27,7 +28,7 @@ class SentimentAnalyzer:
         # provider)
         self.preferred_provider = getattr(Config, "PREFERRED_AI_PROVIDER", "ollama")
 
-    def _call_ollama_api(self, messages: List[Dict], max_tokens: int = 200) -> Dict:
+    def _call_ollama_api(self, messages: List[Dict], max_tokens: int = 500) -> Dict:
         """
         Call Ollama local API for sentiment analysis
         """
@@ -48,7 +49,7 @@ class SentimentAnalyzer:
             response = requests.post(
                 f"{self.ollama_base_url}/api/generate",
                 json=payload,
-                timeout=180,  # Longer timeout for local processing (increased from 60)
+                timeout=300,  # 5 minutes timeout for local processing
             )
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
@@ -334,53 +335,57 @@ class SentimentAnalyzer:
             for _ in range(repeat_count):
                 news_text += f"Headline: {article['headline']}\nSummary: {article['summary']}\n\n"
         
+        # Limit text length to prevent Ollama timeouts (max 8000 characters)
+        max_text_length = 8000
+        if len(news_text) > max_text_length:
+            print(f"⚠️  Truncating news text from {len(news_text)} to {max_text_length} characters to prevent timeout")
+            news_text = news_text[:max_text_length] + "\n\n[Content truncated due to length limits]"
+        
         # Determine if this is crypto analysis
         is_crypto = symbol and any(crypto in symbol.upper() for crypto in ["BTC", "ETH", "ADA", "DOT", "SOL", "LINK", "USD"])
         
         # Add context-specific prompt
         if is_crypto:
-            # Use the exact System Message Style prompt that works for cryptos
-            system_prompt = (
-                "You are a financial sentiment analyzer. You must respond with ONLY a JSON object containing "
-                "sentiment_score (-1 to 1), confidence (0 to 1), and summary."
-            )
-            user_prompt = (
-                f"Analyze the sentiment of this crypto news for {symbol}:\n\n{news_text}\n\n"
-                "Respond with ONLY this JSON format:\n"
-                '{\n    "sentiment_score": 0.0,\n    "confidence": 0.0,\n    "summary": ""\n}'
-            )
-            
-            # For Ollama, use the exact format that worked in our test
-            if selected_provider == "ollama":
-                # Convert to the exact format that worked: <|system|>...</s><|user|>...</s><|assistant|>
-                ollama_prompt = f"<|system|>\n{system_prompt}\n</s>\n<|user|>\n{user_prompt}\n</s>\n<|assistant|>"
-                messages = [{"role": "user", "content": ollama_prompt}]
-            else:
-                # For other providers, use the standard format
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ]
+            # Use the same format as stock prompt for consistency
+            prompt = f"""
+You are a financial news sentiment analysis engine. Analyze the following crypto news content and return ONLY a JSON object.
+
+CRITICAL: Return ONLY valid JSON. No code, no explanations, no markdown, no extra text.
+
+Crypto news content for {symbol}:
+{news_text}
+
+Return this exact JSON format (replace the values):
+{{
+    "sentiment_score": 0.0,
+    "confidence": 0.0,
+    "summary": "Brief sentiment summary"
+}}
+"""
+            messages = [
+                {
+                    "role": "system",
+                    "content": f"You are a crypto news sentiment analyzer. Your job is to analyze crypto news content and provide sentiment scores. Focus on news related to {symbol}.",
+                },
+                {"role": "user", "content": prompt},
+            ]
         else:
             # Stock prompt remains unchanged
             prompt = f"""
-        You are a financial news sentiment analysis engine. Your ONLY task is to analyze the following news content and return a single JSON object with the following fields:
-        - sentiment_score (float, -1 to 1)
-        - confidence (float, 0 to 1)
-        - summary (string, 1-2 sentences)
-        
-        CRITICAL: You MUST respond with ONLY a valid JSON object. Do NOT include any explanations, markdown, or extra text. If you do, the system will break.
-        
-        News content:
-        {news_text}
-        
-        Respond with ONLY this JSON format:
-        {{
-            "sentiment_score": 0.0,
-            "confidence": 0.0,
-            "summary": ""
-        }}
-        """
+You are a financial news sentiment analysis engine. Analyze the following news content and return ONLY a JSON object.
+
+CRITICAL: Return ONLY valid JSON. No code, no explanations, no markdown, no extra text.
+
+News content:
+{news_text}
+
+Return this exact JSON format (replace the values):
+{{
+    "sentiment_score": 0.0,
+    "confidence": 0.0,
+    "summary": "Brief sentiment summary"
+}}
+"""
             messages = [
                 {
                     "role": "system",
@@ -392,6 +397,12 @@ class SentimentAnalyzer:
         # Use only the selected provider - no fallback to mock data
         if selected_provider == "ollama":
             print("🔍 Using Ollama (local) for sentiment analysis...")
+            # Log the full Ollama response before any parsing
+            ollama_response = self._call_ollama_api(messages)
+            content = ollama_response["choices"][0]["message"]["content"]
+            print(f"[OLLAMA RAW RESPONSE] symbol={symbol} content=\n{content}\n---END---")
+            # Continue with the rest of the logic using 'content' as before
+            # (The rest of the function should use 'content' instead of calling _call_ollama_api again)
             print(f"📝 News content being analyzed:")
             print(f"   Stock-specific news: {len(stock_specific_news)} articles")
             print(f"   General news: {len(general_news)} articles")
@@ -415,7 +426,7 @@ class SentimentAnalyzer:
                 
                 # Log the Ollama response for debugging
                 print(f"🔍 Ollama response for sentiment analysis:")
-                print(f"   Content: {content[:500]}...")
+                print(f"   Content: {content}")
                 print(f"   Content length: {len(content)}")
             except Exception as e:
                 print(f"⚠️ Ollama API failed: {str(e)}. Falling back to price-based analysis...")
@@ -471,93 +482,86 @@ class SentimentAnalyzer:
         
         # Parse the JSON response
         try:
-            # First, ensure content is a string
-            if not isinstance(content, str):
-                raise Exception(f"AI response content is not a string: {type(content)}")
-
-            # Try to parse as JSON directly first (for clean JSON responses)
+            # Clean the content - remove any leading/trailing whitespace and normalize newlines
+            content = content.strip()
+            # Log the full content before parsing
+            print(f"[LOG] Full AI response content before parsing: {content}")
+            
+            # Try direct JSON parsing first
             try:
                 result = json.loads(content)
                 print(f"✅ Parsed JSON directly: {result}")
-            except json.JSONDecodeError:
-                # If direct parsing fails, try to extract JSON from the response
-                import re
-                # More robust JSON extraction that handles nested quotes
-                json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', content)
-                if json_match:
-                    json_str = json_match.group(0)
-                    try:
-                        result = json.loads(json_str)
-                        print(f"✅ Parsed JSON from regex: {result}")
-                    except json.JSONDecodeError:
-                        # Try a simpler approach - find the first { and last }
-                        start = content.find('{')
-                        end = content.rfind('}')
-                        if start != -1 and end != -1 and end > start:
-                            json_str = content[start:end+1]
-                            result = json.loads(json_str)
-                            print(f"✅ Parsed JSON from simple extraction: {result}")
-                        else:
-                            raise Exception(f"No valid JSON found in response: {content[:200]}...")
-                else:
-                    raise Exception(f"No JSON found in response: {content[:200]}...")
-
-            # Ensure result is a dictionary
-            if not isinstance(result, dict):
-                raise json.JSONDecodeError("Result is not a dictionary", content, 0)
-
-            # Handle nested format from Ollama (legacy support)
-            if isinstance(result.get("sentiment_score"), dict):
-                # Extract from nested format
-                sentiment_dict = result.get("sentiment_score", {})
-                if "positive" in sentiment_dict:
-                    result["sentiment_score"] = sentiment_dict["positive"] - sentiment_dict.get("negative", 0)
-
-        except json.JSONDecodeError:
-            # If JSON parsing fails, try to extract values from text format
-            import re
-
-            # Try to find JSON-like content in the response
-            json_match = re.search(r'\{[^{}]*"sentiment_score"[^{}]*\}', content)
-            if json_match:
+                return result
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Direct JSON parsing failed: {e}")
+            
+            # Extract JSON substring - find the first { and last }
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            
+            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+                json_string = content[start_idx:end_idx + 1]
+                print(f"[LOG] Extracted JSON string: {json_string}")
+                
                 try:
-                    # Try to parse the extracted JSON
-                    json_content = json_match.group(0)
-                    result = json.loads(json_content)
-                except:
-                    pass
-
-            # If JSON extraction failed, try regex patterns
-            if not result:
-                # Try new text format: "Sentiment Score: -0.5\nConfidence: 0.8\nReasoning: ..."
-                sentiment_match = re.search(r'Sentiment Score:\s*(-?\d+\.?\d*)', content, re.IGNORECASE)
-                confidence_match = re.search(r'Confidence:\s*(\d+\.?\d*)', content, re.IGNORECASE)
-                reasoning_match = re.search(r'Reasoning:\s*(.+)', content, re.IGNORECASE | re.DOTALL)
-
-                # If new format doesn't work, try old JSON format
-                if not sentiment_match:
-                    sentiment_match = re.search(r'"positive":\s*(\d+\.?\d*)', content)
-                if not confidence_match:
-                    confidence_match = re.search(r'"high":\s*(\d+\.?\d*)', content)
-                if not reasoning_match:
-                    reasoning_match = re.search(r'"summary":\s*"([^"]*)"', content)
-
-                # Also try simple JSON format
-                if not sentiment_match:
-                    sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', content)
-                if not confidence_match:
-                    confidence_match = re.search(r'"confidence":\s*(\d+\.?\d*)', content)
-
-                if sentiment_match and confidence_match:
-                    result = {
-                        "sentiment_score": float(sentiment_match.group(1)),
-                        "confidence": float(confidence_match.group(1)),
-                        "summary": (reasoning_match.group(1).strip() if reasoning_match else "Analysis completed"),
+                    result = json.loads(json_string)
+                    print(f"✅ Parsed JSON from extraction: {result}")
+                    return result
+                except json.JSONDecodeError as e:
+                    print(f"❌ JSON parsing failed for extracted string: {e}")
+                    
+                    # Check if the JSON is truncated (missing closing brace)
+                    if not json_string.endswith('}'):
+                        # Try to complete the JSON by adding missing closing brace
+                        if '"summary":' in json_string and not json_string.endswith('"}'):
+                            # Find the last quote and add closing brace
+                            last_quote = json_string.rfind('"')
+                            if last_quote != -1:
+                                completed_json = json_string[:last_quote + 1] + '}'
+                                try:
+                                    result = json.loads(completed_json)
+                                    print(f"✅ Parsed JSON from completion: {result}")
+                                    return result
+                                except json.JSONDecodeError:
+                                    print(f"❌ JSON completion failed")
+                    
+                    # Try regex fallback as last resort
+                    sentiment_match = re.search(r'"sentiment_score":\s*(-?\d+\.?\d*)', json_string)
+                    confidence_match = re.search(r'"confidence":\s*(\d+\.?\d*)', json_string)
+                    summary_match = re.search(r'"summary":\s*"([^"]*(?:"[^"]*"[^"]*)*)"', json_string)
+                    
+                    if sentiment_match and confidence_match:
+                        result = {
+                            'sentiment_score': float(sentiment_match.group(1)),
+                            'confidence': float(confidence_match.group(1)),
+                            'summary': summary_match.group(1) if summary_match else "Summary unavailable"
+                        }
+                        print(f"✅ Parsed JSON from regex fallback: {result}")
+                        return result
+                    else:
+                        print(f"❌ Regex fallback also failed for: {json_string}")
+                        return {
+                            'sentiment_score': 0.0,
+                            'confidence': 0.0,
+                            'summary': 'Sentiment analysis unavailable - parsing failed'
+                        }
+            else:
+                print(f"❌ No JSON brackets found in response: {content}")
+                # Check if Ollama returned code instead of JSON
+                if "import" in content or "def" in content or "print" in content:
+                    print(f"⚠️ Ollama returned code instead of JSON. Using fallback sentiment.")
+                    return {
+                        'sentiment_score': 0.0,
+                        'confidence': 0.1,
+                        'summary': 'Sentiment analysis unavailable - AI returned code instead of JSON'
                     }
                 else:
-                    # If parsing fails completely, raise an exception instead of using fallback values
-                    raise Exception(f"Could not parse AI response: {content[:200]}...")
-                
+                    return {
+                        'sentiment_score': 0.0,
+                        'confidence': 0.0,
+                        'summary': 'Sentiment analysis unavailable - no valid JSON found'
+                    }
+
         except Exception as e:
             # If parsing fails, log the full response and return a fallback neutral sentiment
             print(f"[ERROR] Could not parse AI response: {content[:500]}... Exception: {e}")

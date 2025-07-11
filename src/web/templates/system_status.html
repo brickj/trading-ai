@@ -333,8 +333,11 @@
                             <div id="watchlistCryptoConfig">
                                 <div class="text-center text-muted py-3">Loading crypto watchlist...</div>
                             </div>
-                            <div class="alert alert-info mt-3">
-                                <small><i class="fas fa-info-circle"></i> Crypto symbols are managed by the system administrator</small>
+                            <div class="input-group mt-3">
+                                <input type="text" class="form-control" id="newCryptoSymbol" placeholder="Add crypto symbol (e.g., BTC)">
+                                <button class="btn btn-outline-primary" type="button" onclick="addWatchlistSymbol('crypto')">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -800,6 +803,9 @@ async function loadWatchlistConfig() {
                         <div class="d-flex align-items-center">
                             <span class="badge bg-warning me-2">${crypto.symbol}</span>
                             <small class="text-muted">${crypto.notes || ''}</small>
+                            <button class="btn btn-outline-danger btn-sm ms-auto" onclick="removeWatchlistSymbol('${crypto.symbol}', 'crypto')">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -823,26 +829,28 @@ async function loadWatchlistConfig() {
         // Update analysis settings
         const analysisSettings = document.getElementById('watchlistAnalysisSettings');
         if (data.data.stats) {
-            const stats = data.data.stats;
-            analysisSettings.innerHTML = `
-                <div class="row">
-                    <div class="col-6">
-                        <small><strong>Stocks:</strong> ${stats.stocks.active} active</small>
-                    </div>
-                    <div class="col-6">
-                        <small><strong>Crypto:</strong> ${stats.crypto.active} active</small>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-6">
-                        <small><strong>Analysis Limit:</strong> ${data.data.stock_limit}</small>
-                    </div>
-                    <div class="col-6">
-                        <small><strong>News Days:</strong> ${data.data.news_days}</small>
-                    </div>
-                </div>
-            `;
-        }
+    const stats = data.data.stats;
+    const stocksActive = stats.stocks?.length ?? 0;
+    const cryptoActive = stats.crypto?.length ?? 0;
+    analysisSettings.innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <small><strong>Stocks:</strong> ${stats.stocks?.length ?? 0} active</small>
+            </div>
+            <div class="col-6">
+                <small><strong>Crypto:</strong> ${stats.crypto?.length ?? 0} active</small>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-6">
+                <small><strong>Analysis Limit:</strong> ${data.data.stock_limit}</small>
+            </div>
+            <div class="col-6">
+                <small><strong>News Days:</strong> ${data.data.news_days}</small>
+            </div>
+        </div>
+    `;
+}
         
     } catch (error) {
         console.error('Error loading watchlist configuration:', error);
@@ -851,12 +859,6 @@ async function loadWatchlistConfig() {
 }
 
 async function addWatchlistSymbol(type) {
-    // Prevent adding crypto symbols - they are managed by administrator
-    if (type === 'crypto') {
-        showAlert('Crypto symbols are managed by the system administrator. Please contact admin@tradingai.com to add new crypto symbols.', 'warning');
-        return;
-    }
-    
     const symbolInput = document.getElementById(type === 'stock' ? 'newStockSymbol' : 'newCryptoSymbol');
     const symbol = symbolInput.value.trim().toUpperCase();
     
@@ -901,12 +903,6 @@ async function addWatchlistSymbol(type) {
 }
 
 async function removeWatchlistSymbol(symbol, type) {
-    // Prevent removing crypto symbols - they are managed by administrator
-    if (type === 'crypto') {
-        showAlert('Crypto symbols are managed by the system administrator. Please contact admin@tradingai.com to remove crypto symbols.', 'warning');
-        return;
-    }
-    
     if (!confirm(`Are you sure you want to remove ${symbol} from the watchlist?`)) {
         return;
     }
