@@ -316,6 +316,15 @@
 
 <script>
     $(document).ready(function() {
+        console.log('Document ready, jQuery version:', $.fn.jquery);
+        alert('JavaScript is working!');
+        
+        // Initialize variables at the top to avoid hoisting issues
+        let typeChart = null;
+        let performanceChart = null;
+        let currentPage = 1;
+        let hasMore = true;
+        
         // Load initial data
         loadRecommendationStats();
         loadRecommendations();
@@ -339,14 +348,6 @@
         $('#load-more').click(function() {
             loadMoreRecommendations();
         });
-        
-        // Initialize charts
-        let typeChart = null;
-        let performanceChart = null;
-        
-        // Track pagination
-        let currentPage = 1;
-        let hasMore = true;
         
         function loadRecommendationStats() {
             $.ajax({
@@ -603,6 +604,7 @@
         }
         
         function loadRecommendations(reset = false) {
+            console.log('loadRecommendations called, reset:', reset);
             if (reset) {
                 currentPage = 1;
                 hasMore = true;
@@ -614,6 +616,7 @@
             const actionFilter = $('#action-filter').val();
             const outcomeFilter = $('#outcome-filter').val();
             
+            console.log('Making AJAX request to /api/recommendations');
             // Show loading
             $('#recommendations-table-body').html('<tr><td colspan="9" class="text-center">Loading recommendations...</td></tr>');
             
@@ -628,6 +631,7 @@
                     outcome: outcomeFilter
                 },
                 success: function(response) {
+                    console.log('AJAX success, response:', response);
                     updateRecommendationsTable(response, reset);
                 },
                 error: function(xhr) {
@@ -674,9 +678,11 @@
         }
         
         function updateRecommendationsTable(data, reset) {
+            console.log('updateRecommendationsTable called, data:', data, 'reset:', reset);
             const recommendations = data.recommendations || [];
             const totalCount = data.total_count || 0;
             hasMore = data.has_more || false;
+            console.log('Parsed data - recommendations count:', recommendations.length, 'total_count:', totalCount, 'has_more:', hasMore);
             
             let html = '';
             

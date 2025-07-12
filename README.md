@@ -648,3 +648,29 @@ The following files contain sensitive information and are excluded from the repo
 **Note:** The `src/core/config.template.py` file is included as a template for easy setup.
 
 **Security:** All sensitive files are properly excluded via `.gitignore` to prevent accidental commits of API keys and credentials.
+
+# Scheduled Data Update Jobs
+
+The following pages have scheduled background jobs to keep their data fresh:
+
+- [x] **S&P 500 Analysis (stocks page)**: Preloads at **9:35 AM** on trading days (Mon-Fri)
+- [x] **News-Driven Opportunities**: Preloads at **9:40 AM** on trading days (Mon-Fri)
+- [x] **Watchlist Opportunities**: Preloads at **9:45 AM** on trading days (Mon-Fri)
+- [x] **Recommendations Outcomes**: Evaluates and updates outcomes at **10:00 AM** on trading days (Mon-Fri)
+
+---
+
+## TODO: Pages to Add Scheduled Updates
+
+The following pages or features would benefit from scheduled background jobs (to be implemented):
+
+- [ ] **Crypto Analysis**: Consider daily or hourly refresh for crypto opportunities
+- [ ] **Portfolio Page**: Schedule portfolio value and performance refresh
+- [ ] **System Status/Logs**: Automated daily health checks and log archiving
+- [ ] **Any new analytics or dashboard pages**: Review for scheduling needs as new features are added
+
+---
+
+**Note:**
+- Scheduled jobs are managed using APScheduler in `src/web/app.py`.
+- For each new data-driven page, consider if a scheduled job would improve user experience and data freshness.
