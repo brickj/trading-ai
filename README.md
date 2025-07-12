@@ -649,28 +649,122 @@ The following files contain sensitive information and are excluded from the repo
 
 **Security:** All sensitive files are properly excluded via `.gitignore` to prevent accidental commits of API keys and credentials.
 
-# Scheduled Data Update Jobs
+# 🕐 Run Schedules & Automated Jobs
 
-The following pages have scheduled background jobs to keep their data fresh:
+The Trading AI Platform uses APScheduler to automatically run data updates and analysis jobs on trading days (Monday-Friday). All times are in Eastern Time (ET).
 
-- [x] **S&P 500 Analysis (stocks page)**: Preloads at **9:35 AM** on trading days (Mon-Fri)
-- [x] **News-Driven Opportunities**: Preloads at **9:40 AM** on trading days (Mon-Fri)
-- [x] **Watchlist Opportunities**: Preloads at **9:45 AM** on trading days (Mon-Fri)
-- [x] **Recommendations Outcomes**: Evaluates and updates outcomes at **10:00 AM** on trading days (Mon-Fri)
+## 📅 Daily Trading Day Schedule
+
+### Morning Market Analysis (9:35 AM - 10:00 AM)
+| Time | Job | Description | Status |
+|------|-----|-------------|---------|
+| **9:35 AM** | S&P 500 Preload | Analyzes top gainers/losers from S&P 500 | ✅ Active |
+| **9:40 AM** | News-Driven Opportunities | Scans for news-based trading opportunities | ✅ Active |
+| **9:45 AM** | Watchlist Opportunities | Analyzes user watchlist stocks | ✅ Active |
+| **9:55 AM** | Scalping Analysis | Identifies scalping opportunities | ✅ Active |
+| **10:00 AM** | Recommendations Outcomes | Evaluates and updates trading recommendations | ✅ Active |
+
+### Job Details
+
+#### 🏢 S&P 500 Analysis (9:35 AM)
+- **Purpose**: Preloads market movers data for the stocks page
+- **Data Source**: Alpha Vantage TOP_GAINERS_LOSERS API
+- **Output**: Enhanced analysis stored in `market_movers` table
+- **Access**: Available at `/stocks` page
+
+#### 📰 News-Driven Opportunities (9:40 AM)
+- **Purpose**: Identifies trading opportunities based on news sentiment
+- **Data Source**: Multiple news APIs (Finnhub, Reddit, Yahoo Finance)
+- **Output**: News-based opportunities stored in database
+- **Access**: Available at `/opportunities` page
+
+#### 👀 Watchlist Opportunities (9:45 AM)
+- **Purpose**: Analyzes user's watchlist stocks for opportunities
+- **Data Source**: User watchlist + market data APIs
+- **Output**: Personalized opportunities for each user
+- **Access**: Available at `/opportunities` page
+
+#### ⚡ Scalping Analysis (9:55 AM)
+- **Purpose**: Identifies short-term scalping opportunities
+- **Criteria**: High volume, price momentum, sentiment alignment
+- **Output**: Scalping signals stored in `scalping_signals` table
+- **Access**: Available at `/scalping_signals` page
+
+#### 📊 Recommendations Outcomes (10:00 AM)
+- **Purpose**: Evaluates performance of previous recommendations
+- **Data Source**: Historical recommendation data
+- **Output**: Updated recommendation outcomes and statistics
+- **Access**: Available at `/recommendations` page
+
+## 🔧 Technical Implementation
+
+### Scheduler Configuration
+- **Framework**: APScheduler with cron triggers
+- **Timezone**: America/New_York (Eastern Time)
+- **Days**: Monday-Friday (trading days only)
+- **Location**: `src/web/app.py` (lines 2476-2490)
+
+### Background Threads
+All jobs also run on application startup in background threads:
+```python
+def start_preload_in_background():
+    # S&P 500 preload thread
+    # News opportunities thread  
+    # Watchlist opportunities thread
+    # Scalping analysis thread
+```
+
+### Error Handling
+- Each job has comprehensive error handling
+- Failed jobs are logged but don't stop other jobs
+- Jobs can be manually triggered via API endpoints
+
+## 🚀 Manual Execution
+
+### Individual Jobs
+```bash
+# Run scalping analysis manually
+python3 run_scalping_analysis.py
+
+# Trigger S&P 500 refresh via API
+curl -X POST http://localhost:5000/api/refresh_market_movers
+
+# Run news opportunities manually
+python3 -c "from src.data.preload_news_opportunities import preload_news_opportunities; preload_news_opportunities()"
+```
+
+### API Endpoints
+- `POST /api/refresh_market_movers` - Refresh S&P 500 data
+- `POST /api/scalping/run_analysis` - Run scalping analysis
+- `GET /api/scalping/opportunities` - Get current scalping opportunities
+
+## 📈 Monitoring & Logs
+
+### Log Locations
+- **Application Logs**: Standard Flask logging
+- **Scalping Logs**: `logs/scalping_analysis.log`
+- **Scheduler Logs**: Integrated with main application logs
+
+### Health Checks
+- **System Status**: `/system_status` page
+- **API Health**: `/api/system_status` endpoint
+- **Database Status**: `/api/test_db` endpoint
+
+## 🔮 Future Enhancements
+
+### Planned Scheduled Jobs
+- [ ] **Crypto Analysis**: Hourly refresh for crypto opportunities
+- [ ] **Portfolio Updates**: Real-time portfolio value updates
+- [ ] **System Health**: Automated daily health checks
+- [ ] **Log Archiving**: Automated log rotation and archiving
+- [ ] **Performance Metrics**: Daily performance analytics
+
+### Optimization Opportunities
+- **Parallel Processing**: Run independent jobs simultaneously
+- **Smart Scheduling**: Adjust timing based on market conditions
+- **Resource Management**: Optimize CPU/memory usage during peak times
+- **Failover**: Automatic retry mechanisms for failed jobs
 
 ---
 
-## TODO: Pages to Add Scheduled Updates
-
-The following pages or features would benefit from scheduled background jobs (to be implemented):
-
-- [ ] **Crypto Analysis**: Consider daily or hourly refresh for crypto opportunities
-- [ ] **Portfolio Page**: Schedule portfolio value and performance refresh
-- [ ] **System Status/Logs**: Automated daily health checks and log archiving
-- [ ] **Any new analytics or dashboard pages**: Review for scheduling needs as new features are added
-
----
-
-**Note:**
-- Scheduled jobs are managed using APScheduler in `src/web/app.py`.
-- For each new data-driven page, consider if a scheduled job would improve user experience and data freshness.
+**Note**: All scheduled jobs are designed to run efficiently without impacting user experience. Jobs use background threads and proper error handling to ensure system stability.

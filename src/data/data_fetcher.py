@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from src.core.config import Config
 from src.core.logger import log_error, log_debug
 from src.core.cache import cache
+from src.core.watchlist_manager import WatchlistManager
 
 # Optional import for web scraping
 try:
@@ -386,6 +387,45 @@ class DataFetcher:
 
         return {"symbol": symbol, "current_price": 0, "error": "Failed to fetch price"}
 
+    def get_coingecko_status_updates(self, coin_id: str, days_back: int = 7) -> list:
+        """
+        Fetch project status updates from CoinGecko for a given coin_id (e.g., 'bitcoin').
+        Returns a list of news-like dicts (headline, summary, url, datetime, source, category).
+        """
+        try:
+            url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/status_updates"
+            response = self.session.get(url, timeout=Config.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            data = response.json()
+            updates = []
+            for item in data.get("status_updates", []):
+                created_at = item.get("created_at")
+                if created_at:
+                    try:
+                        dt = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    except Exception:
+                        try:
+                            dt = datetime.strptime(created_at, "%Y-%m-%dT%H:%M:%SZ")
+                        except Exception:
+                            dt = datetime.utcnow()
+                    if (datetime.utcnow() - dt).days > days_back:
+                        continue
+                else:
+                    dt = datetime.utcnow()
+                updates.append({
+                    "headline": item.get("title", "Project Update"),
+                    "summary": item.get("description", ""),
+                    "url": item.get("url", f"https://coingecko.com/en/coins/{coin_id}"),
+                    "datetime": dt.isoformat(),
+                    "source": f"CoinGecko Status: {coin_id}",
+                    "category": "project_update"
+                })
+            print(f"✅ Got {len(updates)} CoinGecko status updates for {coin_id}")
+            return updates
+        except Exception as e:
+            print(f"❌ CoinGecko status_updates failed for {coin_id}: {e}")
+            return []
+
     def get_crypto_news(self, days_back: int = 7) -> list:
         """
         Fetch real crypto news for major cryptocurrencies using multiple APIs.
@@ -409,7 +449,6 @@ class DataFetcher:
                     # Only include recent news (within days_back)
                     published_at = item.get("published_at")
                     if published_at:
-                        # Convert to timestamp
                         try:
                             dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%S.%fZ")
                         except Exception:
@@ -434,6 +473,56 @@ class DataFetcher:
                 rate_limit_delay()
             except Exception as e:
                 print(f"❌ CoinGecko news failed: {e}")
+
+            # 1b. CoinGecko status_updates for crypto coins from database
+            try:
+                # Get crypto symbols from database watchlist
+                watchlist_manager = WatchlistManager()
+                db_crypto_symbols = watchlist_manager.get_cryptos()
+                
+                # Map USD symbols to CoinGecko IDs
+                symbol_to_coin_id = {
+                    "BTCUSD": "bitcoin",
+                    "ETHUSD": "ethereum", 
+                    "ADAUSD": "cardano",
+                    "DOTUSD": "polkadot",
+                    "LINKUSD": "chainlink",
+                    "SOLUSD": "solana",
+                    "MATICUSD": "matic-network",
+                    "AVAXUSD": "avalanche-2",
+                    "UNIUSD": "uniswap",
+                    "LTCUSD": "litecoin",
+                    "ATOMUSD": "cosmos",
+                    "ALGOUSD": "algorand",
+                    "XRPUSD": "ripple",
+                    "DOGEUSD": "dogecoin",
+                    "SHIBUSD": "shiba-inu",
+                    "USDTUSD": "tether",
+                    "USDCUSD": "usd-coin",
+                    "DAIUSD": "dai",
+                    "BUSDUSD": "binance-usd"
+                }
+                
+                # Only process if we have crypto symbols in the database
+                if db_crypto_symbols:
+                    major_coins = []
+                    for symbol in db_crypto_symbols:
+                        coin_id = symbol_to_coin_id.get(symbol, symbol.replace("USD", "").lower())
+                        major_coins.append((coin_id, symbol.replace("USD", "")))
+                    print(f"📊 Using {len(major_coins)} crypto symbols from database watchlist")
+                    
+                    for coin_id, symbol in major_coins:
+                        updates = self.get_coingecko_status_updates(coin_id, days_back=days_back)
+                        for update in updates:
+                            update["headline"] = f"[{symbol}] {update['headline']}"
+                        all_news.extend(updates)
+                        if updates:
+                            rate_limit_delay()
+                else:
+                    print("📊 No crypto symbols found in database watchlist - skipping CoinGecko status updates")
+                        
+            except Exception as e:
+                print(f"❌ CoinGecko status_updates failed: {e}")
             
             # 2. CryptoPanic API (if API key is configured)
             if hasattr(Config, 'CRYPTOPANIC_API_KEY') and Config.CRYPTOPANIC_API_KEY and Config.CRYPTOPANIC_API_KEY != "your_cryptopanic_api_key_here":

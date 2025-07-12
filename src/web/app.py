@@ -47,6 +47,7 @@ from src.core.database import get_db_connection, save_backtest_result, get_lates
 import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
+from src.web.scalping_signals import scalping_signals_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
 from psycopg2.extras import Json, RealDictCursor
@@ -57,6 +58,8 @@ import os
 print(f"[DEBUG] Running app.py from: {os.getcwd()} | __file__={__file__}")
 
 app = Flask(__name__)
+# Register scalping_signals blueprint
+app.register_blueprint(scalping_signals_bp)
 # Enable CORS for all routes
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
@@ -2481,6 +2484,19 @@ scheduler.add_job(preload_news_opportunities, 'cron', day_of_week='mon-fri', hou
 from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
 scheduler.add_job(preload_watchlist_opportunities, 'cron', day_of_week='mon-fri', hour=9, minute=45, timezone='America/New_York')
 
+# Run at 9:55 AM on trading days for scalping analysis
+from src.core.scalping_analyzer import scalping_analyzer
+def run_scalping_analysis_job():
+    """Scheduled job to run scalping analysis"""
+    try:
+        print("[INFO] Starting scheduled scalping analysis...")
+        opportunities = scalping_analyzer.run_morning_scalping_analysis()
+        print(f"[INFO] Scalping analysis completed. Found {len(opportunities)} opportunities.")
+    except Exception as e:
+        print(f"[ERROR] Scheduled scalping analysis failed: {e}")
+
+scheduler.add_job(run_scalping_analysis_job, 'cron', day_of_week='mon-fri', hour=9, minute=55, timezone='America/New_York')
+
 scheduler.start()
 
 # Preload data in a background thread on startup (do NOT block main thread)
@@ -2493,6 +2509,9 @@ def start_preload_in_background():
     # Also preload watchlist opportunities
     preload_watchlist_thread = threading.Thread(target=preload_watchlist_opportunities, daemon=True)
     preload_watchlist_thread.start()
+    # Also run initial scalping analysis
+    scalping_thread = threading.Thread(target=run_scalping_analysis_job, daemon=True)
+    scalping_thread.start()
 
 start_preload_in_background()
 
@@ -3116,20 +3135,25 @@ def watchlist_config():
     try:
         log_info(f"[WATCHLIST_CONFIG] Incoming {request.method} request from {request.remote_addr}")
         if request.method == "GET":
-            # Get current watchlist configuration (stocks only, no crypto)
+            # Get current watchlist configuration (stocks and crypto)
             stocks = watchlist_manager.get_stocks()
+            cryptos = watchlist_manager.get_cryptos()
             log_info(f"[WATCHLIST_CONFIG] Stocks: {stocks}")
+            log_info(f"[WATCHLIST_CONFIG] Cryptos: {cryptos}")
 
-            # Format data for frontend (stocks only)
+            # Format data for frontend (stocks and crypto)
             stock_data = [{"symbol": symbol, "notes": ""} for symbol in stocks]
+            crypto_data = [{"symbol": symbol, "notes": ""} for symbol in cryptos]
             response_data = {
                 "stocks": stock_data,
+                "crypto": crypto_data,
                 "stock_limit": Config.BULK_ANALYSIS_WATCHLIST_LIMIT if hasattr(Config, 'BULK_ANALYSIS_WATCHLIST_LIMIT') else 50,
                 "news_days": Config.BULK_ANALYSIS_NEWS_DAYS if hasattr(Config, 'BULK_ANALYSIS_NEWS_DAYS') else 2,
                 "stats": {
-                    "stocks": stocks
+                    "stocks": stocks,
+                    "crypto": cryptos
                 },
-                "message": f"Watchlist contains {len(stocks)} stocks"
+                "message": f"Watchlist contains {len(stocks)} stocks and {len(cryptos)} cryptos"
             }
             log_info(f"[WATCHLIST_CONFIG] Response: {response_data}")
             return create_api_response(response_data)

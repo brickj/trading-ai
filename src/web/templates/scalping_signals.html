@@ -1,0 +1,811 @@
+{% extends "base.html" %}
+
+{% block title %}Scalping Signals - Trading AI{% endblock %}
+
+{% block content %}
+    <style>
+        .opportunity-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #007bff;
+        }
+        .opportunity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .long-opportunity {
+            border-left-color: #28a745;
+        }
+        .short-opportunity {
+            border-left-color: #dc3545;
+        }
+        .high-momentum {
+            border-left-color: #ffc107;
+        }
+        .sentiment-bullish {
+            color: #28a745;
+        }
+        .sentiment-bearish {
+            color: #dc3545;
+        }
+        .sentiment-neutral {
+            color: #6c757d;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .headline-item {
+            font-size: 0.9em;
+            padding: 8px;
+            margin: 4px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+        }
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .opportunity-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .opportunity-card .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .opportunity-card .btn-group {
+            margin-top: auto;
+        }
+        .group-summary-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid #dee2e6;
+        }
+        .headline-item {
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .headline-item:hover {
+            white-space: normal;
+            max-height: none;
+            overflow: visible;
+        }
+        .modern-container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .modern-summary-pill {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+            color: #fff;
+            border-radius: 2rem;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(80,140,255,0.08);
+        }
+        .modern-summary-pill i {
+            margin-right: 0.7rem;
+            font-size: 1.3rem;
+        }
+        .modern-summary-pill .pill-stat {
+            margin-right: 2.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .modern-summary-pill .pill-stat:last-child {
+            margin-right: 0;
+        }
+        .modern-summary-pill .pill-label {
+            font-size: 0.95rem;
+            font-weight: 400;
+            margin-left: 0.4rem;
+        }
+        .modern-card {
+            border-radius: 1.2rem;
+            box-shadow: 0 4px 16px rgba(80,140,255,0.10);
+            background: linear-gradient(135deg, #fafdff 0%, #e9f3ff 100%);
+            border: none;
+            transition: box-shadow 0.2s, transform 0.2s;
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeInCard 0.7s forwards;
+        }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modern-card:hover {
+            box-shadow: 0 8px 32px rgba(80,140,255,0.18);
+            transform: translateY(-4px) scale(1.02);
+        }
+        .modern-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.2rem 0.5rem 1.2rem;
+        }
+        .modern-badge {
+            border-radius: 1rem;
+            padding: 0.3rem 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+            display: flex;
+            align-items: center;
+        }
+        .modern-badge.crypto {
+            background: linear-gradient(90deg, #ffb347 0%, #ffcc80 100%);
+            color: #333;
+        }
+        .modern-badge i {
+            margin-right: 0.5rem;
+        }
+        .modern-card-body {
+            padding: 0.5rem 1.2rem 0.5rem 1.2rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .modern-card-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        .modern-card-row .label {
+            font-size: 0.93rem;
+            color: #7a8ca3;
+        }
+        .modern-card-row .value {
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        .modern-card-row .value.positive { color: #28a745; }
+        .modern-card-row .value.negative { color: #dc3545; }
+        .modern-card-row .value.neutral { color: #6c757d; }
+        .modern-card-row .value.crypto { color: #ff9800; }
+        .modern-card-row .value.stock { color: #4f8cff; }
+        .modern-card-row .sentiment {
+            display: flex;
+            align-items: center;
+        }
+        .modern-card-row .sentiment i {
+            margin-right: 0.4rem;
+        }
+        .modern-card-row .recommendation {
+            font-weight: 600;
+            color: #4f8cff;
+        }
+        .modern-card-row .recommendation.short {
+            color: #dc3545;
+        }
+        .modern-card-row .recommendation.momentum {
+            color: #ffc107;
+        }
+        .modern-headlines {
+            margin-top: 0.5rem;
+        }
+        .modern-headlines .headline-item {
+            background: #f3f7fa;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.8rem;
+            margin-bottom: 0.3rem;
+            font-size: 0.97rem;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .modern-headlines .headline-item:hover {
+            background: #e0eaf6;
+        }
+        .modern-headlines .show-more {
+            color: #4f8cff;
+            cursor: pointer;
+            font-size: 0.95rem;
+            margin-top: 0.2rem;
+        }
+        .modern-card-footer {
+            background: linear-gradient(90deg, #fafdff 0%, #e9f3ff 100%);
+            border-top: 1px solid #e3eaf3;
+            border-radius: 0 0 1.2rem 1.2rem;
+            padding: 0.7rem 1.2rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.7rem;
+        }
+        .modern-card-footer button {
+            border: none;
+            background: none;
+            color: #4f8cff;
+            font-size: 1.2rem;
+            border-radius: 50%;
+            width: 2.2rem;
+            height: 2.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        .modern-card-footer button:hover {
+            background: #e0eaf6;
+            color: #1a5fd7;
+        }
+        .modern-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+        }
+        .modern-grid .modern-card-wrapper {
+            flex: 1 1 320px;
+            max-width: 350px;
+            min-width: 300px;
+            display: flex;
+        }
+        @media (max-width: 900px) {
+            .modern-grid {
+                gap: 1.2rem;
+            }
+            .modern-card-wrapper {
+                min-width: 90vw;
+                max-width: 98vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row bg-primary text-white p-3 mb-4">
+            <div class="col">
+                <h1><i class="fas fa-chart-line"></i> Scalping Signals</h1>
+                <p class="mb-0">Real-time scalping opportunities for stocks and cryptocurrencies</p>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4" id="statsCards">
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-signal"></i> Total Signals</h5>
+                        <h3 id="totalSignals">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-rocket"></i> Opportunities</h5>
+                        <h3 id="totalOpportunities">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-chart-bar"></i> Stocks</h5>
+                        <h3 id="stockCount">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-coins"></i> Cryptos</h5>
+                        <h3 id="cryptoCount">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="filter-buttons">
+                    <button class="btn btn-outline-primary filter-btn active" data-filter="all">
+                        <i class="fas fa-list"></i> All
+                    </button>
+                    <button class="btn btn-outline-success filter-btn" data-filter="long">
+                        <i class="fas fa-arrow-up"></i> Long Opportunities
+                    </button>
+                    <button class="btn btn-outline-danger filter-btn" data-filter="short">
+                        <i class="fas fa-arrow-down"></i> Short Opportunities
+                    </button>
+                    <button class="btn btn-outline-warning filter-btn" data-filter="momentum">
+                        <i class="fas fa-fire"></i> High Momentum
+                    </button>
+                    <button class="btn btn-outline-info filter-btn" data-filter="stocks">
+                        <i class="fas fa-chart-bar"></i> Stocks Only
+                    </button>
+                    <button class="btn btn-outline-secondary filter-btn" data-filter="crypto">
+                        <i class="fas fa-coins"></i> Crypto Only
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <div class="d-flex justify-content-end align-items-center">
+                    <div class="form-check form-switch me-3">
+                        <input class="form-check-input" type="checkbox" id="autoRefreshToggle">
+                        <label class="form-check-label" for="autoRefreshToggle">
+                            <i class="fas fa-sync-alt"></i> Auto-refresh (30min)
+                        </label>
+                    </div>
+                    <button class="btn btn-success me-2" onclick="runAnalysis()">
+                        <i class="fas fa-play"></i> Run Analysis
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="row">
+            <div class="col text-center">
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing scalping opportunities...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="row" id="errorMessage" style="display: none;">
+            <div class="col text-center">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <span id="errorText">An error occurred while loading data.</span>
+                    <button class="btn btn-outline-danger btn-sm ms-2" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Retry
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opportunities Grid -->
+        <div class="modern-container">
+            <!-- Modern Summary Pill -->
+            <div id="stockSummaryPill"></div>
+            <div id="cryptoSummaryPill"></div>
+            <!-- Modern Grid for Opportunities -->
+            <div class="modern-grid" id="opportunitiesGrid"></div>
+        </div>
+
+        <!-- No Data Message -->
+        <div class="row" id="noDataMessage" style="display: none;">
+            <div class="col text-center">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No scalping opportunities found. 
+                    Click "Run Analysis" to scan for new opportunities.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Refresh Button -->
+    <button class="btn btn-primary btn-lg refresh-btn" onclick="refreshData()" title="Refresh Data">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/logger.js"></script>
+<script>
+        let currentFilter = 'all';
+        let opportunitiesData = [];
+        let autoRefreshInterval = null; // To store the interval ID for auto-refresh
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            frontendLogger.info('Scalping signals page DOMContentLoaded', 'scalping');
+            loadStats();
+            loadOpportunities();
+            setupFilterButtons();
+            setupAutoRefreshToggle();
+        });
+
+        function setupFilterButtons() {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    frontendLogger.logUserAction('Filter button clicked', this, {filter: this.dataset.filter});
+                    // Remove active class from all buttons
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    currentFilter = this.dataset.filter;
+                    filterOpportunities();
+                });
+            });
+        }
+
+        function setupAutoRefreshToggle() {
+            const toggle = document.getElementById('autoRefreshToggle');
+            if (toggle) {
+                toggle.addEventListener('change', function() {
+                    if (this.checked) {
+                        frontendLogger.logUserAction('Auto-refresh enabled', 'scalping');
+                        startAutoRefresh();
+                    } else {
+                        frontendLogger.logUserAction('Auto-refresh disabled', 'scalping');
+                        stopAutoRefresh();
+                    }
+                });
+                // Initial state based on localStorage or default to off
+                const isAutoRefreshEnabled = localStorage.getItem('autoRefreshEnabled') === 'true';
+                toggle.checked = isAutoRefreshEnabled;
+                if (isAutoRefreshEnabled) {
+                    startAutoRefresh();
+                }
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            autoRefreshInterval = setInterval(() => {
+                frontendLogger.info('Auto-refresh triggered', 'scalping');
+                refreshData();
+            }, 30 * 60 * 1000); // 30 minutes
+            localStorage.setItem('autoRefreshEnabled', 'true');
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            localStorage.setItem('autoRefreshEnabled', 'false');
+        }
+
+        function showLoading() {
+            frontendLogger.debug('Show loading spinner', 'scalping');
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('opportunitiesGrid').style.display = 'none';
+            document.getElementById('noDataMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function hideLoading() {
+            frontendLogger.debug('Hide loading spinner', 'scalping');
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('opportunitiesGrid').style.display = 'block';
+        }
+
+        async function loadStats() {
+            const start = performance.now();
+            try {
+                frontendLogger.info('Loading scalping stats...', 'scalping');
+                const response = await fetch('/api/scalping/stats');
+                const data = await response.json();
+                frontendLogger.logApiCall('GET', '/api/scalping/stats', response.status, performance.now() - start, data);
+                if (data.success && data.today) {
+                    document.getElementById('totalSignals').textContent = data.today.total_signals || 0;
+                    document.getElementById('totalOpportunities').textContent = data.today.opportunities || 0;
+                    document.getElementById('stockCount').textContent = data.today.stocks || 0;
+                    document.getElementById('cryptoCount').textContent = data.today.cryptos || 0;
+                    frontendLogger.debug('Stats loaded: ' + JSON.stringify(data.today), 'scalping');
+                } else {
+                    frontendLogger.warn('Stats API returned no data or error', 'scalping');
+                }
+            } catch (error) {
+                frontendLogger.error('Error loading stats: ' + error, 'scalping');
+            }
+        }
+
+        async function loadOpportunities() {
+            showLoading();
+            const start = performance.now();
+            try {
+                frontendLogger.info('Loading scalping opportunities...', 'scalping');
+                const response = await fetch('/api/scalping/opportunities');
+                const data = await response.json();
+                frontendLogger.logApiCall('GET', '/api/scalping/opportunities', response.status, performance.now() - start, data);
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} - ${data.error || 'Unknown error'}`);
+                }
+                
+                if (data.data && Array.isArray(data.data)) {
+                    opportunitiesData = data.data;
+                    frontendLogger.debug('Loaded opportunities: ' + opportunitiesData.length, 'scalping');
+                    filterOpportunities();
+                } else {
+                    frontendLogger.warn('No opportunities data returned from API', 'scalping');
+                    showNoDataMessage();
+                }
+            } catch (error) {
+                frontendLogger.error('Error loading opportunities: ' + error, 'scalping');
+                showErrorMessage(error.message || 'Failed to load opportunities');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function filterOpportunities() {
+            frontendLogger.info('Filtering opportunities with filter: ' + currentFilter, 'scalping');
+            let filteredData = opportunitiesData;
+            // Apply filters
+            switch (currentFilter) {
+                case 'long':
+                    filteredData = opportunitiesData.filter(opp => 
+                        opp.recommendation === 'Long Scalping Opportunity'
+                    );
+                    break;
+                case 'short':
+                    filteredData = opportunitiesData.filter(opp => 
+                        opp.recommendation === 'Short Scalping Opportunity'
+                    );
+                    break;
+                case 'momentum':
+                    filteredData = opportunitiesData.filter(opp => 
+                        opp.recommendation === 'High Momentum - Monitor Sentiment'
+                    );
+                    break;
+                case 'stocks':
+                    filteredData = opportunitiesData.filter(opp => 
+                        opp.asset_type === 'stock'
+                    );
+                    break;
+                case 'crypto':
+                    filteredData = opportunitiesData.filter(opp => 
+                        opp.asset_type === 'crypto'
+                    );
+                    break;
+                default:
+                    // 'all' - no filtering
+                    break;
+            }
+            frontendLogger.debug('Filtered opportunities count: ' + filteredData.length, 'scalping');
+            renderOpportunities(filteredData);
+        }
+
+        function renderOpportunities(opportunities) {
+            frontendLogger.info('Rendering ' + (opportunities ? opportunities.length : 0) + ' opportunity cards', 'scalping');
+            const grid = document.getElementById('opportunitiesGrid');
+            if (!opportunities || opportunities.length === 0) {
+                frontendLogger.warn('No opportunities to render', 'scalping');
+                showNoDataMessage();
+                return;
+            }
+            document.getElementById('noDataMessage').style.display = 'none';
+
+            // --- Group by asset_type ---
+            const stocks = opportunities.filter(opp => opp.asset_type === 'stock');
+            const cryptos = opportunities.filter(opp => opp.asset_type === 'crypto');
+
+            // --- Helper to render a group ---
+            function renderGroup(group, groupLabel, iconClass, summaryPillId) {
+                if (!group.length) {
+                    document.getElementById(summaryPillId).innerHTML = '';
+                    return '';
+                }
+                // Calculate group statistics
+                const avgVolumeRatio = group.reduce((sum, opp) => sum + (opp.volume_ratio || 0), 0) / group.length;
+                const avgPriceChange = group.reduce((sum, opp) => sum + (opp.price_change_pct || 0), 0) / group.length;
+                const longOpportunities = group.filter(opp => opp.recommendation === 'Long Scalping Opportunity').length;
+                const shortOpportunities = group.filter(opp => opp.recommendation === 'Short Scalping Opportunity').length;
+                // Modern summary pill
+                document.getElementById(summaryPillId).innerHTML = `
+                    <div class="modern-summary-pill">
+                        <i class="fas ${iconClass}"></i> ${groupLabel}
+                        <span class="pill-stat ms-4"><i class="fas fa-signal"></i> <span>${group.length}</span> <span class="pill-label">Signals</span></span>
+                        <span class="pill-stat"><i class="fas fa-chart-line"></i> <span>${avgVolumeRatio.toFixed(2)}x</span> <span class="pill-label">Avg Vol</span></span>
+                        <span class="pill-stat"><i class="fas fa-percentage"></i> <span>${avgPriceChange.toFixed(2)}%</span> <span class="pill-label">Avg Change</span></span>
+                        <span class="pill-stat"><i class="fas fa-arrow-up text-success"></i> <span>${longOpportunities}</span> <span class="pill-label">Long</span></span>
+                        <span class="pill-stat"><i class="fas fa-arrow-down text-danger"></i> <span>${shortOpportunities}</span> <span class="pill-label">Short</span></span>
+                    </div>
+                `;
+                // Modern grid of cards
+                return group.map(opp => `<div class="modern-card-wrapper">${renderOpportunityCard(opp)}</div>`).join('');
+            }
+            function renderOpportunityCard(opp) {
+                // Asset badge
+                const badgeClass = opp.asset_type === 'crypto' ? 'modern-badge crypto' : 'modern-badge';
+                const badgeIcon = opp.asset_type === 'crypto' ? 'fa-coins' : 'fa-chart-bar';
+                // Sentiment icon
+                let sentimentIcon = 'fa-minus';
+                if (opp.sentiment?.toLowerCase() === 'bullish') sentimentIcon = 'fa-arrow-up';
+                else if (opp.sentiment?.toLowerCase() === 'bearish') sentimentIcon = 'fa-arrow-down';
+                // Recommendation class
+                let recClass = 'recommendation';
+                if (opp.recommendation === 'Short Scalping Opportunity') recClass += ' short';
+                if (opp.recommendation === 'High Momentum - Monitor Sentiment') recClass += ' momentum';
+                // Headlines (collapsible)
+                let headlinesHtml = '';
+                if (opp.top_headlines && opp.top_headlines.length > 0) {
+                    const allHeadlines = opp.top_headlines.map(h => `<div class='headline-item'>${h.title}</div>`).join('');
+                    headlinesHtml = `<div class='modern-headlines'>` +
+                        opp.top_headlines.slice(0, 1).map(h => `<div class='headline-item'>${h.title}</div>`).join('') +
+                        (opp.top_headlines.length > 1 ? `<div class='show-more' onclick='this.parentNode.innerHTML = \`${allHeadlines}\`'>Show More</div>` : '') +
+                        `</div>`;
+                }
+                return `
+                    <div class="modern-card">
+                        <div class="modern-card-header">
+                            <span class="fw-bold">${opp.ticker}</span>
+                            <span class="${badgeClass}"><i class="fas ${badgeIcon}"></i>${opp.asset_type}</span>
+                        </div>
+                        <div class="modern-card-body">
+                            <div class="modern-card-row">
+                                <span class="label">Price Open</span>
+                                <span class="value">$${opp.price_open?.toFixed(2) || 'N/A'}</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Current Price</span>
+                                <span class="value">$${opp.price_now?.toFixed(2) || 'N/A'}</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Volume Ratio</span>
+                                <span class="value ${opp.volume_ratio >= 2 ? 'positive' : 'neutral'}">${opp.volume_ratio?.toFixed(2) || 'N/A'}x</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Price Change</span>
+                                <span class="value ${opp.price_change_pct > 0 ? 'positive' : opp.price_change_pct < 0 ? 'negative' : 'neutral'}">${opp.price_change_pct?.toFixed(2) || 'N/A'}%</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Sentiment</span>
+                                <span class="sentiment"><i class="fas ${sentimentIcon}"></i>${opp.sentiment || 'Neutral'}</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Recommendation</span>
+                                <span class="${recClass}">${opp.recommendation || 'No Strong Edge'}</span>
+                            </div>
+                            ${headlinesHtml}
+                        </div>
+                        <div class="modern-card-footer">
+                            <button title="View Details" onclick="viewDetails('${opp.ticker}')"><i class="fas fa-eye"></i></button>
+                            <button title="Add to Watchlist" onclick="addToWatchlist('${opp.ticker}')"><i class="fas fa-plus"></i></button>
+                            <button title="Set Alert" onclick="setAlert('${opp.ticker}')"><i class="fas fa-bell"></i></button>
+                        </div>
+                    </div>
+                `;
+            }
+            // --- Render both groups in the modern grid ---
+            function renderAllOpportunities(stocks, cryptos) {
+                const grid = document.getElementById('opportunitiesGrid');
+                grid.innerHTML =
+                    renderGroup(stocks, 'Stock Opportunities', 'fa-chart-bar', 'stockSummaryPill') +
+                    renderGroup(cryptos, 'Crypto Opportunities', 'fa-coins', 'cryptoSummaryPill');
+            }
+            renderAllOpportunities(stocks, cryptos);
+        }
+
+        function getOpportunityClass(recommendation) {
+            if (recommendation === 'Long Scalping Opportunity') return 'long-opportunity';
+            if (recommendation === 'Short Scalping Opportunity') return 'short-opportunity';
+            if (recommendation === 'High Momentum - Monitor Sentiment') return 'high-momentum';
+            return '';
+        }
+
+        function getSentimentIcon(sentiment) {
+            switch (sentiment?.toLowerCase()) {
+                case 'bullish': return 'fa-arrow-up';
+                case 'bearish': return 'fa-arrow-down';
+                default: return 'fa-minus';
+            }
+        }
+
+        function showNoDataMessage() {
+            frontendLogger.warn('No data message shown (no opportunities)', 'scalping');
+            document.getElementById('opportunitiesGrid').innerHTML = '';
+            document.getElementById('noDataMessage').style.display = 'block';
+        }
+
+        function showErrorMessage(message) {
+            frontendLogger.warn('Show error message: ' + message, 'scalping');
+            document.getElementById('opportunitiesGrid').innerHTML = '';
+            document.getElementById('noDataMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorText').textContent = message;
+        }
+
+        async function runAnalysis() {
+            frontendLogger.logUserAction('Run Analysis button clicked', 'runAnalysis');
+            showLoading();
+            const start = performance.now();
+            try {
+                const response = await fetch('/api/scalping/run_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                frontendLogger.logApiCall('POST', '/api/scalping/run_analysis', response.status, performance.now() - start, data);
+                if (data.success) {
+                    frontendLogger.info('Analysis completed successfully', 'scalping');
+                    // Reload data after analysis
+                    await loadStats();
+                    await loadOpportunities();
+                    // Show success message
+                    showAlert('Analysis completed successfully!', 'success');
+                } else {
+                    frontendLogger.error('Analysis failed: ' + (data.error || 'Unknown error'), 'scalping');
+                    showAlert('Analysis failed: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            } catch (error) {
+                frontendLogger.error('Error running analysis: ' + error, 'scalping');
+                showAlert('Error running analysis: ' + error.message, 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function refreshData() {
+            frontendLogger.logUserAction('Refresh button clicked', 'refreshData');
+            await loadStats();
+            await loadOpportunities();
+        }
+
+        function showAlert(message, type) {
+            frontendLogger.info('Show alert: ' + message, 'scalping');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Auto-refresh every 5 minutes
+        // setInterval(() => {
+        //     frontendLogger.info('Auto-refresh triggered', 'scalping');
+        //     refreshData();
+        // }, 5 * 60 * 1000);
+
+        // Quick action functions
+        function viewDetails(ticker) {
+            frontendLogger.logUserAction('View details clicked', 'viewDetails', {ticker: ticker});
+            // Navigate to stock analysis page
+            window.open(`/?symbol=${ticker}`, '_blank');
+        }
+
+        function addToWatchlist(ticker) {
+            frontendLogger.logUserAction('Add to watchlist clicked', 'addToWatchlist', {ticker: ticker});
+            // TODO: Implement add to watchlist functionality
+            showAlert(`${ticker} added to watchlist!`, 'success');
+        }
+
+        function setAlert(ticker) {
+            frontendLogger.logUserAction('Set alert clicked', 'setAlert', {ticker: ticker});
+            // TODO: Implement alert functionality
+            showAlert(`Alert set for ${ticker}!`, 'info');
+        }
+</script>
+{% endblock %}
