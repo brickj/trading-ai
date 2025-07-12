@@ -41,7 +41,8 @@
                         <i class="fas fa-play"></i> Run Backtest
                     </button>
                     
-                    <div id="backtestLoading" class="loading mt-3">
+                    <!-- Spinner: hidden by default -->
+                    <div id="backtestLoading" class="loading mt-3" style="display: none;">
                         <div class="text-center">
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Loading...</span>
@@ -306,6 +307,9 @@ document.getElementById('backtestForm').addEventListener('submit', async functio
     
     showLoading('backtestLoading');
     document.getElementById('resultsSection').style.display = 'none';
+    // Disable the button
+    const runBtn = this.querySelector('button[type="submit"]');
+    if (runBtn) runBtn.disabled = true;
     
     try {
         const response = await fetch('/api/backtest', {
@@ -336,6 +340,7 @@ document.getElementById('backtestForm').addEventListener('submit', async functio
         showAlert('Error running backtest: ' + error.message, 'danger');
     } finally {
         hideLoading('backtestLoading');
+        if (runBtn) runBtn.disabled = false;
     }
 });
 

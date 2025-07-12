@@ -1156,3 +1156,10 @@ This file contains critical recommendation logic used throughout the application
 **Last Updated**: June 12, 2025
 **System Status**: OPERATIONAL (Ollama AI + performance optimizations, see below)
 **Performance Status**: ✅ Phase 1 Complete - Timeouts resolved 
+
+🚨 **VERY IMPORTANT: BACKTEST DATA IS SIMULATED** 🚨
+
+- Right now: The table has simulated backtest results.
+- For real data: You’d need to ingest and use real historical sentiment (and optionally, real trade logs), and update the backtest logic to use that data.
+
+--- 
