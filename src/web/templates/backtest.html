@@ -239,7 +239,62 @@
 
 {% block scripts %}
 <script>
+function showLoading(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+}
+function hideLoading(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+}
 let performanceChart = null;
+
+// Helper function to get sentiment class for styling
+function getSentimentClass(sentiment) {
+    const value = parseFloat(sentiment || 0);
+    if (value > 0.3) return 'text-success';
+    if (value < -0.3) return 'text-danger';
+    return 'text-warning';
+}
+
+// Load saved results on page load
+async function loadSavedResults() {
+    const defaultSymbol = 'AAPL';
+    const defaultPeriod = 730;
+    showLoading('backtestLoading');
+    try {
+        const response = await fetch('/api/backtest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                symbol: defaultSymbol,
+                days_back: defaultPeriod
+            })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.log('No saved results found:', result.error);
+            hideLoading('backtestLoading');
+            return;
+        }
+        // Extract data from the API response structure
+        const data = result.data || result;
+        // Pre-populate the form
+        document.getElementById('symbol').value = defaultSymbol;
+        document.getElementById('daysBack').value = defaultPeriod;
+        // Display the results
+        displayBacktestResults(data);
+    } catch (error) {
+        console.log('Error loading saved results:', error);
+    } finally {
+        hideLoading('backtestLoading');
+    }
+}
+
+// Load saved results when page loads
+document.addEventListener('DOMContentLoaded', loadSavedResults);
 
 document.getElementById('backtestForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -260,16 +315,20 @@ document.getElementById('backtestForm').addEventListener('submit', async functio
             },
             body: JSON.stringify({ 
                 symbol: symbol,
-                days_back: daysBack
+                days_back: daysBack,
+                force_rerun: true
             })
         });
         
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.error) {
-            showAlert(data.error, 'danger');
+        if (result.error) {
+            showAlert(result.error, 'danger');
             return;
         }
+        
+        // Extract data from the API response structure
+        const data = result.data || result;
         
         displayBacktestResults(data);
         
@@ -281,68 +340,94 @@ document.getElementById('backtestForm').addEventListener('submit', async functio
 });
 
 function displayBacktestResults(data) {
+    console.log('Displaying backtest results:', data);
+    
+    // Ensure data has required properties
+    if (!data) {
+        console.error('No data provided to displayBacktestResults');
+        return;
+    }
+    
+    // Helper to check if a value is a valid number
+    function validNum(val) {
+        return typeof val === 'number' && !isNaN(val);
+    }
     // Update summary cards
-    document.getElementById('initialCapital').textContent = formatCurrency(data.initial_capital);
-    document.getElementById('finalCapital').textContent = formatCurrency(data.final_capital);
+    document.getElementById('initialCapital').textContent = validNum(Number(data.initial_capital)) ? formatCurrency(Number(data.initial_capital)) : 'N/A';
+    document.getElementById('finalCapital').textContent = validNum(Number(data.final_capital)) ? formatCurrency(Number(data.final_capital)) : 'N/A';
     
     const returnElement = document.getElementById('totalReturn');
-    returnElement.textContent = data.total_return + '%';
-    returnElement.className = data.total_return >= 0 ? 'text-success' : 'text-danger';
+    const totalReturn = Number(data.total_return);
+    returnElement.textContent = validNum(totalReturn) ? totalReturn + '%' : 'N/A';
+    returnElement.className = validNum(totalReturn) && totalReturn >= 0 ? 'text-success' : 'text-danger';
     
-    document.getElementById('winRate').textContent = data.win_rate + '%';
+    document.getElementById('winRate').textContent = validNum(Number(data.win_rate)) ? data.win_rate + '%' : 'N/A';
     
     // Update strategy statistics
-    document.getElementById('totalTrades').textContent = data.total_trades;
+    document.getElementById('totalTrades').textContent = validNum(Number(data.total_trades)) ? data.total_trades : 'N/A';
     
-    const winningTrades = data.trades.filter(t => t.profit > 0).length;
-    const losingTrades = data.trades.filter(t => t.profit <= 0).length;
+    // Ensure trades is an array
+    const trades = Array.isArray(data.trades) ? data.trades : [];
+    console.log('Trades array:', trades);
     
-    document.getElementById('winningTrades').textContent = winningTrades;
-    document.getElementById('losingTrades').textContent = losingTrades;
+    const winningTrades = trades.filter(t => t.profit > 0).length;
+    const losingTrades = trades.filter(t => t.profit <= 0).length;
     
-    if (data.trades.length > 0) {
-        const avgTrade = data.trades.reduce((sum, t) => sum + t.profit, 0) / data.trades.length;
-        const bestTrade = Math.max(...data.trades.map(t => t.profit));
-        const worstTrade = Math.min(...data.trades.map(t => t.profit));
+    document.getElementById('winningTrades').textContent = validNum(winningTrades) ? winningTrades : 'N/A';
+    document.getElementById('losingTrades').textContent = validNum(losingTrades) ? losingTrades : 'N/A';
+    
+    if (trades.length > 0) {
+        const avgTrade = trades.reduce((sum, t) => sum + (t.profit || 0), 0) / trades.length;
+        const bestTrade = Math.max(...trades.map(t => t.profit || 0));
+        const worstTrade = Math.min(...trades.map(t => t.profit || 0));
         
-        document.getElementById('avgTrade').textContent = formatCurrency(avgTrade);
-        document.getElementById('bestTrade').textContent = formatCurrency(bestTrade);
-        document.getElementById('worstTrade').textContent = formatCurrency(worstTrade);
+        document.getElementById('avgTrade').textContent = validNum(avgTrade) ? formatCurrency(avgTrade) : 'N/A';
+        document.getElementById('bestTrade').textContent = validNum(bestTrade) ? formatCurrency(bestTrade) : 'N/A';
+        document.getElementById('worstTrade').textContent = validNum(worstTrade) ? formatCurrency(worstTrade) : 'N/A';
+    } else {
+        document.getElementById('avgTrade').textContent = 'N/A';
+        document.getElementById('bestTrade').textContent = 'N/A';
+        document.getElementById('worstTrade').textContent = 'N/A';
     }
     
     // Display trades table
-    displayTradesTable(data.trades);
+    displayTradesTable(trades);
     
     // Create performance chart
     createPerformanceChart(data);
     
     document.getElementById('resultsSection').style.display = 'block';
+    hideLoading('backtestLoading'); // Always hide spinner after showing results
 }
 
 function displayTradesTable(trades) {
     const tbody = document.getElementById('tradesTableBody');
     tbody.innerHTML = '';
     
-    if (trades.length === 0) {
+    // Ensure trades is an array
+    if (!Array.isArray(trades) || trades.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No trades executed</td></tr>';
         return;
     }
     
-    trades.forEach(trade => {
+    // Show only the last 10 trades
+    const recentTrades = trades.slice(-10);
+    
+    recentTrades.forEach(trade => {
         const row = document.createElement('tr');
-        const profitClass = trade.profit >= 0 ? 'text-success' : 'text-danger';
+        const profitClass = (trade.profit || 0) >= 0 ? 'text-success' : 'text-danger';
         
         row.innerHTML = `
-            <td>${trade.date}</td>
-            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action}</span></td>
-            <td>${formatCurrency(trade.entry_price)}</td>
-            <td>${formatCurrency(trade.strike_price)}</td>
-            <td>${formatCurrency(trade.option_price)}</td>
-            <td>${trade.position_size}</td>
-            <td>${formatCurrency(trade.cost)}</td>
-            <td>${formatCurrency(trade.exit_price)}</td>
-            <td class="${profitClass}">${formatCurrency(trade.profit)}</td>
-            <td class="${getSentimentClass(trade.sentiment)}">${trade.sentiment.toFixed(3)}</td>
+            <td>${trade.date || 'N/A'}</td>
+            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action || 'N/A'}</span></td>
+            <td>${formatCurrency(trade.entry_price || 0)}</td>
+            <td>${formatCurrency(trade.strike_price || 0)}</td>
+            <td>${formatCurrency(trade.option_price || 0)}</td>
+            <td>${trade.position_size || 0}</td>
+            <td>${formatCurrency(trade.cost || 0)}</td>
+            <td>${formatCurrency(trade.exit_price || 0)}</td>
+            <td class="${profitClass}">${formatCurrency(trade.profit || 0)}</td>
+            <td class="${getSentimentClass(trade.sentiment || 0)}">${(trade.sentiment || 0).toFixed(3)}</td>
         `;
         tbody.appendChild(row);
     });
@@ -353,18 +438,23 @@ function createPerformanceChart(data) {
         performanceChart.destroy();
     }
     
+    // Ensure trades is an array
+    const trades = Array.isArray(data.trades) ? data.trades : [];
+    
     // Calculate cumulative returns
-    let cumulativeCapital = data.initial_capital;
+    let cumulativeCapital = parseFloat(data.initial_capital || 0);
     const capitalHistory = [cumulativeCapital];
     const labels = ['Start'];
     
-    data.trades.forEach((trade, index) => {
-        cumulativeCapital += trade.profit;
+    trades.forEach((trade, index) => {
+        cumulativeCapital += parseFloat(trade.profit || 0);
         capitalHistory.push(cumulativeCapital);
         labels.push(`Trade ${index + 1}`);
     });
     
     const ctx = document.getElementById('performanceChart').getContext('2d');
+    const totalReturn = parseFloat(data.total_return || 0);
+    
     performanceChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -372,8 +462,8 @@ function createPerformanceChart(data) {
             datasets: [{
                 label: 'Portfolio Value',
                 data: capitalHistory,
-                borderColor: data.total_return >= 0 ? '#28a745' : '#dc3545',
-                backgroundColor: data.total_return >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                borderColor: totalReturn >= 0 ? '#28a745' : '#dc3545',
+                backgroundColor: totalReturn >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
                 borderWidth: 2,
                 fill: true
             }]

@@ -1,0 +1,238 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - link "  Trading AI":
+    - /url: /
+  - list:
+    - listitem:
+      - link " Dashboard":
+        - /url: /
+    - listitem:
+      - link " S&P 500":
+        - /url: /stocks
+    - listitem:
+      - link " Crypto":
+        - /url: /crypto
+    - listitem:
+      - link " Portfolio":
+        - /url: /portfolio_page
+    - listitem:
+      - link " Backtest":
+        - /url: /backtest_page
+    - listitem:
+      - link " Opportunities":
+        - /url: /opportunities
+    - listitem:
+      - link " Recommendations":
+        - /url: /recommendations
+    - listitem:
+      - link " System Status":
+        - /url: /system_status
+    - listitem:
+      - link " Logs":
+        - /url: /logs
+  - list:
+    - listitem: 
+- heading " Strategy Backtesting" [level=1]
+- paragraph: Test your sentiment-based options trading strategy on historical data
+- heading " Backtest Configuration" [level=5]
+- text: Stock Symbol
+- textbox "Stock Symbol": AAPL
+- text: Backtest Period (Days)
+- combobox "Backtest Period (Days)":
+  - option "30 Days"
+  - option "60 Days"
+  - option "180 Days"
+  - option "730 Days (2 Years)" [selected]
+- button " Run Backtest"
+- status: Loading...
+- paragraph: Running backtest simulation...
+- heading " Backtest Information" [level=5]
+- heading "How Backtesting Works:" [level=6]
+- list:
+  - listitem: Fetches historical price data for the selected period
+  - listitem: Simulates sentiment scores based on price movements
+  - listitem: Generates trading signals using our strategy
+  - listitem: Calculates option prices and executes simulated trades
+  - listitem: Tracks performance and calculates returns
+- heading " Important Notes:" [level=6]
+- list:
+  - listitem: This uses simulated sentiment data, not actual historical news
+  - listitem: Option pricing is simplified and may not reflect real market conditions
+  - listitem: Results are for educational purposes only
+  - listitem: Past performance does not guarantee future results
+- heading " Backtest Results" [level=5]
+- heading "Initial Capital" [level=6]
+- heading "N/A" [level=4]
+- heading "Final Capital" [level=6]
+- heading "N/A" [level=4]
+- heading "Total Return" [level=6]
+- heading "-90.31%" [level=4]
+- heading "Win Rate" [level=6]
+- heading "14.23%" [level=4]
+- heading " Performance Chart" [level=6]
+- heading " Strategy Statistics" [level=6]
+- paragraph:
+  - strong: "Total Trades:"
+  - text: "246"
+- paragraph:
+  - strong: "Winning Trades:"
+  - text: "1"
+- paragraph:
+  - strong: "Losing Trades:"
+  - text: "9"
+- paragraph:
+  - strong: "Average Trade:"
+  - text: "-$39.29"
+- paragraph:
+  - strong: "Best Trade:"
+  - text: $9.63
+- paragraph:
+  - strong: "Worst Trade:"
+  - text: "-$57.11"
+- heading " Recent Trades (Last 10)" [level=6]
+- table:
+  - rowgroup:
+    - row "Date Action Entry Price Strike Price Option Price Position Size Cost Exit Price Profit/Loss Sentiment":
+      - cell "Date"
+      - cell "Action"
+      - cell "Entry Price"
+      - cell "Strike Price"
+      - cell "Option Price"
+      - cell "Position Size"
+      - cell "Cost"
+      - cell "Exit Price"
+      - cell "Profit/Loss"
+      - cell "Sentiment"
+  - rowgroup:
+    - row "2025-06-12 PUT $199.20 $195.22 $5.71 10 $57.11 $201.00 -$57.11 -0.287":
+      - cell "2025-06-12"
+      - cell "PUT"
+      - cell "$199.20"
+      - cell "$195.22"
+      - cell "$5.71"
+      - cell "10"
+      - cell "$57.11"
+      - cell "$201.00"
+      - cell "-$57.11"
+      - cell "-0.287"
+    - row "2025-06-13 PUT $196.45 $192.52 $5.63 10 $56.32 $201.50 -$56.32 -0.482":
+      - cell "2025-06-13"
+      - cell "PUT"
+      - cell "$196.45"
+      - cell "$192.52"
+      - cell "$5.63"
+      - cell "10"
+      - cell "$56.32"
+      - cell "$201.50"
+      - cell "-$56.32"
+      - cell "-0.482"
+    - row "2025-06-17 PUT $195.64 $191.73 $5.61 10 $56.09 $201.56 -$56.09 -0.227":
+      - cell "2025-06-17"
+      - cell "PUT"
+      - cell "$195.64"
+      - cell "$191.73"
+      - cell "$5.61"
+      - cell "10"
+      - cell "$56.09"
+      - cell "$201.56"
+      - cell "-$56.09"
+      - cell "-0.227"
+    - row "2025-06-18 PUT $196.58 $192.65 $5.64 10 $56.36 $201.00 -$56.36 -0.427":
+      - cell "2025-06-18"
+      - cell "PUT"
+      - cell "$196.58"
+      - cell "$192.65"
+      - cell "$5.64"
+      - cell "10"
+      - cell "$56.36"
+      - cell "$201.00"
+      - cell "-$56.36"
+      - cell "-0.427"
+    - row "2025-06-23 PUT $201.50 $197.47 $5.78 9 $51.99 $205.17 -$51.99 -0.324":
+      - cell "2025-06-23"
+      - cell "PUT"
+      - cell "$201.50"
+      - cell "$197.47"
+      - cell "$5.78"
+      - cell "9"
+      - cell "$51.99"
+      - cell "$205.17"
+      - cell "-$51.99"
+      - cell "-0.324"
+    - row "2025-06-24 CALL $200.30 $204.31 $5.74 9 $51.68 $207.82 -$20.06 0.506":
+      - cell "2025-06-24"
+      - cell "CALL"
+      - cell "$200.30"
+      - cell "$204.31"
+      - cell "$5.74"
+      - cell "9"
+      - cell "$51.68"
+      - cell "$207.82"
+      - cell "-$20.06"
+      - cell "0.506"
+    - row "2025-06-25 CALL $201.56 $205.59 $5.78 9 $52.01 $212.44 $9.63 0.264":
+      - cell "2025-06-25"
+      - cell "CALL"
+      - cell "$201.56"
+      - cell "$205.59"
+      - cell "$5.78"
+      - cell "9"
+      - cell "$52.01"
+      - cell "$212.44"
+      - cell "$9.63"
+      - cell "0.264"
+    - row "2025-06-27 CALL $201.08 $205.10 $5.76 9 $51.88 $209.95 -$8.25 0.444":
+      - cell "2025-06-27"
+      - cell "CALL"
+      - cell "$201.08"
+      - cell "$205.10"
+      - cell "$5.76"
+      - cell "9"
+      - cell "$51.88"
+      - cell "$209.95"
+      - cell "-$8.25"
+      - cell "0.444"
+    - row "2025-07-01 PUT $207.82 $203.66 $5.96 8 $47.66 $211.14 -$47.66 -0.258":
+      - cell "2025-07-01"
+      - cell "PUT"
+      - cell "$207.82"
+      - cell "$203.66"
+      - cell "$5.96"
+      - cell "8"
+      - cell "$47.66"
+      - cell "$211.14"
+      - cell "-$47.66"
+      - cell "-0.258"
+    - row "2025-07-02 CALL $212.44 $216.69 $6.09 8 $48.72 $212.41 -$48.72 0.457":
+      - cell "2025-07-02"
+      - cell "CALL"
+      - cell "$212.44"
+      - cell "$216.69"
+      - cell "$6.09"
+      - cell "8"
+      - cell "$48.72"
+      - cell "$212.41"
+      - cell "-$48.72"
+      - cell "0.457"
+- heading " Strategy Optimization Tips" [level=5]
+- heading "Improving Performance:" [level=6]
+- list:
+  - listitem: Adjust sentiment thresholds in config.py
+  - listitem: Modify position sizing rules
+  - listitem: Implement stop-loss mechanisms
+  - listitem: Consider different option expiry periods
+  - listitem: Add volatility-based position sizing
+- heading "Risk Management:" [level=6]
+- list:
+  - listitem: Never risk more than 2-5% per trade
+  - listitem: Diversify across multiple stocks
+  - listitem: Monitor correlation between positions
+  - listitem: Set maximum portfolio exposure limits
+  - listitem: Regular strategy performance reviews
+- contentinfo:
+  - heading "Trading AI Dashboard" [level=6]
+  - paragraph: Advanced sentiment analysis and options trading recommendations powered by AI.
+  - paragraph:  Demo Version - Not Financial Advice
+```

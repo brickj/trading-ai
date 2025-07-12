@@ -10,8 +10,30 @@ import logging
 from contextlib import contextmanager
 from .config import Config
 from typing import Dict, Any, Optional
+import json
+import numpy as np
 
 logger = logging.getLogger(__name__)
+
+def convert_numpy_values(value):
+    """Convert numpy values to Python native types for database storage"""
+    if isinstance(value, (np.integer, np.floating)):
+        return float(value)
+    elif isinstance(value, np.ndarray):
+        return value.tolist()
+    elif value is None:
+        return None
+    else:
+        return value
+
+def convert_numpy_in_dict(data):
+    """Convert all numpy types in a nested dictionary structure"""
+    if isinstance(data, dict):
+        return {key: convert_numpy_in_dict(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [convert_numpy_in_dict(item) for item in data]
+    else:
+        return convert_numpy_values(data)
 
 @contextmanager
 def get_db_connection():
@@ -126,7 +148,7 @@ def execute_query(query, params=None, fetch_all=True):
                 cur.execute(query, params or ())
                 
                 # For non-SELECT queries (INSERT, UPDATE, DELETE), commit and return None
-                if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE')):
+                if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP')):
                     conn.commit()
                     return None
                 
@@ -174,12 +196,12 @@ def get_database_stats() -> Dict[str, Any]:
             # Get PostgreSQL version
             cur.execute("SELECT version()")
             version_info = cur.fetchone()
-            stats["version"] = version_info["version"] if version_info else "Unknown"
+            stats["version"] = version_info.get("version") if version_info and isinstance(version_info, dict) else "Unknown"
             
             # Get database size
             cur.execute("SELECT pg_size_pretty(pg_database_size(current_database()))")
             size_info = cur.fetchone()
-            stats["size"] = size_info["pg_size_pretty"] if size_info else "0 bytes"
+            stats["size"] = size_info.get("pg_size_pretty") if size_info and isinstance(size_info, dict) else "0 bytes"
             
             # Get table information
             cur.execute("""
@@ -196,7 +218,7 @@ def get_database_stats() -> Dict[str, Any]:
             try:
                 cur.execute("SELECT COUNT(*) as count FROM cache")
                 cache_info = cur.fetchone()
-                stats["cache_entries"] = cache_info["count"] if cache_info else 0
+                stats["cache_entries"] = cache_info.get("count") if cache_info and isinstance(cache_info, dict) else 0
             except:
                 stats["cache_entries"] = 0
                 
@@ -249,3 +271,49 @@ def set_system_flag(flag_name: str, flag_value: str, description: Optional[str] 
                 conn.commit()
     except Exception as e:
         logger.error(f"Error setting system flag '{flag_name}': {e}") 
+
+def save_backtest_result(result_dict):
+    """
+    Save a backtest result to the backtest_results table.
+    """
+    query = """
+        INSERT INTO backtest_results (
+            stock_symbol, period_days, timestamp, initial_capital, final_capital, total_return, win_rate, total_trades, trades
+        ) VALUES (%s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+    """
+    params = (
+        result_dict.get("symbol"),
+        result_dict.get("period_days", 730),
+        convert_numpy_values(result_dict.get("initial_capital")),
+        convert_numpy_values(result_dict.get("final_capital")),
+        convert_numpy_values(result_dict.get("total_return")),
+        convert_numpy_values(result_dict.get("win_rate")),
+        convert_numpy_values(result_dict.get("total_trades")),
+        json.dumps(convert_numpy_in_dict(result_dict.get("trades", []))),
+    )
+    execute_query(query, params, fetch_all=False)
+
+
+def get_latest_backtest(symbol, period_days):
+    """
+    Fetch the most recent backtest result for a given symbol and period_days.
+    """
+    query = """
+        SELECT * FROM backtest_results
+        WHERE stock_symbol = %s AND period_days = %s
+        ORDER BY timestamp DESC
+        LIMIT 1
+    """
+    params = (symbol, period_days)
+    result = execute_query(query, params, fetch_all=False)
+    if result and isinstance(result, dict):
+        trades_val = result.get("trades")
+        if isinstance(trades_val, str):
+            try:
+                trades_json = json.loads(trades_val)
+            except Exception:
+                trades_json = []
+            # Use .update() to avoid direct item assignment
+            result.update({"trades": trades_json})
+        return result
+    return None 

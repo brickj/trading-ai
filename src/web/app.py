@@ -4,7 +4,7 @@ Trading AI Flask Web Application
 Enhanced with comprehensive logging and monitoring
 """
 import logging
-from flask import Flask, render_template, request, jsonify, send_file, redirect, flash, make_response
+from flask import Flask, render_template, request, jsonify, send_file, redirect, flash, make_response, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from datetime import datetime, timedelta
@@ -43,7 +43,7 @@ from src.core.logger import (
     log_user_actions,
 )
 from src.core.recommendation_manager import get_recommendation_manager, RecommendationManager
-from src.core.database import get_db_connection
+from src.core.database import get_db_connection, save_backtest_result, get_latest_backtest
 import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
@@ -873,12 +873,22 @@ def execute_trade():
 
 @app.route("/api/backtest", methods=["POST"])
 def backtest():
-    """Run backtest for a symbol"""
+    """Run backtest for a symbol, with DB persistence and prepopulation."""
     try:
         data = request.get_json()
         symbol = data.get("symbol", "").upper()
-        days_back = data.get("days_back", 30)
+        days_back = int(data.get("days_back", 730))
+        # Try to load the latest result from DB
+        latest = get_latest_backtest(symbol, days_back)
+        if latest and not data.get("force_rerun"):
+            # Return the latest saved result
+            return create_api_response(data=latest)
+        # Run new backtest
         backtest_results = trading_strategy.backtest_strategy(symbol, days_back)
+        # Add period_days for DB
+        backtest_results["period_days"] = days_back
+        # Save to DB
+        save_backtest_result(backtest_results)
         return create_api_response(data=backtest_results)
     except Exception as e:
         log_exception("Backtest endpoint", e)
@@ -1162,6 +1172,11 @@ def backtest_page():
     return render_template(
         "backtest.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
     )
+
+@app.route("/test_backtest_frontend_debug.html")
+def test_backtest_frontend_debug():
+    """Debug page for testing backtest frontend"""
+    return render_template("test_backtest_frontend_debug.html")
 
 
 @app.route("/opportunities")
