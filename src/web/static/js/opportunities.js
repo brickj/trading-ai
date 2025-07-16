@@ -1,7 +1,7 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'news';
+let currentMode = 'watchlist'; // Changed default to watchlist
 let opportunitiesData = [];
 let isRefreshing = false;
 
@@ -10,9 +10,27 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners
     document.getElementById('newsBtn').addEventListener('click', () => switchMode('news'));
     document.getElementById('watchlistBtn').addEventListener('click', () => switchMode('watchlist'));
-    document.getElementById('refreshBtn').addEventListener('click', () => loadOpportunities(true)); // Force refresh
+    document.getElementById('refreshBtn').addEventListener('click', () => {
+        // Context-aware refresh based on current mode
+        console.log('🔄 [REFRESH] Refresh button clicked for mode:', currentMode);
+        loadOpportunities(true); // Force refresh for current mode
+    });
     
-    // Load initial data (from cache)
+    // Set initial UI state for watchlist mode
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('btn-primary', 'active');
+        btn.classList.add('btn-outline-primary');
+    });
+    
+    // Set watchlist button as active
+    const watchlistBtn = document.getElementById('watchlistBtn');
+    watchlistBtn.classList.remove('btn-outline-primary');
+    watchlistBtn.classList.add('btn-primary', 'active');
+    
+    // Set initial title
+    document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
+    
+    // Load initial data (from cache) - will load watchlist data
     loadOpportunities(false);
     
     // Load watchlist configuration
@@ -200,22 +218,24 @@ function displayOpportunities(data) {
     console.log('[DIAG] [DISPLAY] Current mode:', currentMode);
     logToBackend('info', '[DIAG] [DISPLAY] Current mode', { currentMode });
     
-    // Extract opportunities array
+    // Extract opportunities array - handle both direct and nested data structures
     const responseData = data.data || data;
     console.log('[DIAG] [DISPLAY] Raw responseData:', responseData);
     logToBackend('info', '[DIAG] [DISPLAY] Raw responseData', { responseData });
     
     let opportunities = [];
     if (currentMode === 'news') {
-        opportunities = responseData.opportunities || responseData.news_driven || [];
+        // Try multiple possible data structures for news opportunities
+        opportunities = responseData.opportunities || responseData.news_driven || data.opportunities || [];
         console.log('[DIAG] [DISPLAY] NEWS mode - News opportunities:', opportunities);
         logToBackend('info', '[DIAG] [DISPLAY] NEWS mode - News opportunities', { opportunities });
     } else if (currentMode === 'watchlist') {
-        opportunities = responseData.opportunities || responseData.watchlist || [];
+        // Try multiple possible data structures for watchlist opportunities
+        opportunities = responseData.opportunities || responseData.watchlist || data.opportunities || [];
         console.log('[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities:', opportunities);
         logToBackend('info', '[DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities', { opportunities });
     } else {
-        opportunities = responseData.opportunities || [];
+        opportunities = responseData.opportunities || data.opportunities || [];
         console.log('[DIAG] [DISPLAY] FALLBACK mode - Opportunities:', opportunities);
         logToBackend('info', '[DIAG] [DISPLAY] FALLBACK mode - Opportunities', { opportunities });
     }
@@ -273,26 +293,35 @@ function displayOpportunities(data) {
     console.log('🔍 [DISPLAY] Final opportunities array:', opportunities);
     console.log('🔍 [DISPLAY] Opportunities array length:', opportunities.length);
     
-    // Filter out opportunities with no meaningful data
+    // Filter out opportunities with no meaningful data (less strict filtering)
     const meaningfulOpportunities = opportunities.filter(opp => {
+        // Check if opportunity has basic required fields
+        const hasSymbol = opp.symbol && opp.symbol.trim() !== '';
         const hasPrice = opp.price_data?.current_price > 0;
         const hasSentiment = opp.sentiment_data?.confidence > 0;
         const hasSignal = opp.signal_data?.action && opp.signal_data.action !== 'HOLD';
         const hasNews = opp.news_count > 0;
+        const hasTradeSignal = opp.trade_signal?.action;
+        
+        // More lenient filtering - include if it has symbol and at least one other meaningful field
+        const isMeaningful = hasSymbol && (hasPrice || hasSentiment || hasSignal || hasNews || hasTradeSignal);
         
         console.log(`🔍 [FILTER] Filtering ${opp.symbol}:`, {
+            hasSymbol,
             hasPrice,
             hasSentiment,
             hasSignal,
             hasNews,
-            isMeaningful: hasPrice || hasSentiment || hasSignal || hasNews,
+            hasTradeSignal,
+            isMeaningful,
             priceValue: opp.price_data?.current_price,
             sentimentConfidence: opp.sentiment_data?.confidence,
             signalAction: opp.signal_data?.action,
-            newsCount: opp.news_count
+            newsCount: opp.news_count,
+            tradeSignalAction: opp.trade_signal?.action
         });
         
-        return hasPrice || hasSentiment || hasSignal || hasNews;
+        return isMeaningful;
     });
     
     console.log('🔍 [DISPLAY] Filtered opportunities:', {

@@ -169,25 +169,57 @@ def get_latest_preloaded_watchlist_opportunities():
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute(f"""
-                    SELECT timestamp, opportunities::text, symbols_analyzed, errors_count
-                    FROM {WATCHLIST_OPPORTUNITIES_TABLE}
+                # Use a more explicit query with proper column selection
+                cur.execute("""
+                    SELECT 
+                        timestamp,
+                        opportunities,
+                        symbols_analyzed,
+                        errors_count
+                    FROM preloaded_watchlist_opportunities
                     ORDER BY timestamp DESC
                     LIMIT 1
                 """)
-                row = cur.fetchone()
                 
-                if row:
-                    timestamp, opportunities, symbols_analyzed, errors_count = row
+                result = cur.fetchone()
+                
+                if result:
+                    # Since we're using RealDictCursor, result is a dict with column names as keys
+                    timestamp = result.get('timestamp')
+                    opportunities = result.get('opportunities')
+                    symbols_analyzed = result.get('symbols_analyzed')
+                    errors_count = result.get('errors_count')
                     
-                    # Handle opportunities data - it might be a string or already parsed
-                    if isinstance(opportunities, str):
+                    # Debug logging
+                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw timestamp: {timestamp} (type: {type(timestamp)})")
+                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw opportunities: {opportunities} (type: {type(opportunities)})")
+                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw symbols_analyzed: {symbols_analyzed} (type: {type(symbols_analyzed)})")
+                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw errors_count: {errors_count} (type: {type(errors_count)})")
+                    
+                    # Handle opportunities data - JSONB should come back as a Python object
+                    if opportunities is None:
+                        opportunities = []
+                    elif isinstance(opportunities, str):
+                        # If it's a string, try to parse it as JSON
                         import json
                         try:
                             opportunities = json.loads(opportunities)
                         except json.JSONDecodeError:
                             logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to parse opportunities JSON: {opportunities[:100]}")
                             opportunities = []
+                    elif not isinstance(opportunities, list):
+                        # If it's not a list, something is wrong
+                        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Unexpected opportunities type: {type(opportunities)}")
+                        opportunities = []
+                    
+                    # Ensure symbols_analyzed and errors_count are integers
+                    try:
+                        symbols_analyzed = int(symbols_analyzed) if symbols_analyzed is not None else 0
+                        errors_count = int(errors_count) if errors_count is not None else 0
+                    except (ValueError, TypeError):
+                        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to convert counts to int: {symbols_analyzed}, {errors_count}")
+                        symbols_analyzed = 0
+                        errors_count = 0
                     
                     return {
                         "timestamp": timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
@@ -202,4 +234,6 @@ def get_latest_preloaded_watchlist_opportunities():
                     
     except Exception as e:
         logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to retrieve preloaded watchlist opportunities: {e}")
+        import traceback
+        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Traceback: {traceback.format_exc()}")
         return None

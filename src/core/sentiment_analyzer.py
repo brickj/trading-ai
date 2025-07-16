@@ -346,20 +346,41 @@ class SentimentAnalyzer:
         
         # Add context-specific prompt
         if is_crypto:
-            # Use the same format as stock prompt for consistency
+            # Enhanced crypto prompt with detailed guidance
             prompt = f"""
-You are a financial news sentiment analysis engine. Analyze the following crypto news content and return ONLY a JSON object.
+You are an expert cryptocurrency news sentiment analyzer for trading. Your job is to analyze crypto news content and determine how it affects {symbol} sentiment.
 
-CRITICAL: Return ONLY valid JSON. No code, no explanations, no markdown, no extra text.
+SENTIMENT SCORE GUIDELINES:
+- -1.0 to -0.7: Very negative (hack, regulatory ban, major exchange failure, network attack)
+- -0.7 to -0.3: Negative (regulatory crackdown, whale selling, technical issues, bearish market)
+- -0.3 to -0.1: Slightly negative (minor delays, cautious adoption, market uncertainty)
+- -0.1 to 0.1: Neutral (routine updates, mixed signals, no clear direction)
+- 0.1 to 0.3: Slightly positive (minor partnerships, stable performance, small upgrades)
+- 0.3 to 0.7: Positive (major adoption, institutional investment, technical breakthroughs)
+- 0.7 to 1.0: Very positive (mass adoption, major partnership, regulatory approval, huge gains)
+
+CONFIDENCE GUIDELINES:
+- 0.9-1.0: Very high confidence (clear, specific crypto news with direct impact)
+- 0.7-0.8: High confidence (strong evidence, multiple sources agree)
+- 0.5-0.6: Medium confidence (some evidence, mixed signals)
+- 0.3-0.4: Low confidence (weak evidence, unclear impact)
+- 0.1-0.2: Very low confidence (speculation, rumors, minimal data)
+
+CRYPTO-SPECIFIC FACTORS:
+1. Regulatory news (bans, approvals, new laws)
+2. Institutional adoption (companies, banks, governments)
+3. Technical developments (upgrades, new features, security)
+4. Market dynamics (whale movements, exchange issues)
+5. Network activity (transactions, adoption, developer activity)
 
 Crypto news content for {symbol}:
 {news_text}
 
-Return this exact JSON format (replace the values):
+Return ONLY valid JSON in this exact format:
 {{
-    "sentiment_score": 0.0,
-    "confidence": 0.0,
-    "summary": "Brief sentiment summary"
+    "sentiment_score": [score between -1.0 and 1.0],
+    "confidence": [confidence between 0.0 and 1.0],
+    "summary": "[2-3 sentence summary explaining the sentiment and key crypto factors]"
 }}
 """
             messages = [
@@ -370,20 +391,41 @@ Return this exact JSON format (replace the values):
                 {"role": "user", "content": prompt},
             ]
         else:
-            # Stock prompt remains unchanged
+            # Enhanced stock prompt with detailed guidance
             prompt = f"""
-You are a financial news sentiment analysis engine. Analyze the following news content and return ONLY a JSON object.
+You are an expert financial news sentiment analyzer for stock trading. Your job is to analyze news content and determine how it affects stock sentiment.
 
-CRITICAL: Return ONLY valid JSON. No code, no explanations, no markdown, no extra text.
+SENTIMENT SCORE GUIDELINES:
+- -1.0 to -0.7: Very negative (earnings miss, scandal, bankruptcy, major losses)
+- -0.7 to -0.3: Negative (downgrades, layoffs, regulatory issues, declining sales)
+- -0.3 to -0.1: Slightly negative (minor setbacks, delays, cautious outlook)
+- -0.1 to 0.1: Neutral (mixed news, no clear direction, routine announcements)
+- 0.1 to 0.3: Slightly positive (minor wins, stable performance, small upgrades)
+- 0.3 to 0.7: Positive (earnings beat, new products, partnerships, growth)
+- 0.7 to 1.0: Very positive (major breakthrough, acquisition, huge earnings beat)
 
-News content:
+CONFIDENCE GUIDELINES:
+- 0.9-1.0: Very high confidence (clear, specific news with direct impact)
+- 0.7-0.8: High confidence (strong evidence, multiple sources agree)
+- 0.5-0.6: Medium confidence (some evidence, mixed signals)
+- 0.3-0.4: Low confidence (weak evidence, unclear impact)
+- 0.1-0.2: Very low confidence (speculation, rumors, minimal data)
+
+ANALYSIS PROCESS:
+1. Identify the main news events and their impact on the company
+2. Consider the magnitude and timing of the news
+3. Evaluate the reliability of the news sources
+4. Assess how this affects future stock performance
+5. Determine sentiment score and confidence level
+
+News content for {symbol if symbol else 'stock'}:
 {news_text}
 
-Return this exact JSON format (replace the values):
+Return ONLY valid JSON in this exact format:
 {{
-    "sentiment_score": 0.0,
-    "confidence": 0.0,
-    "summary": "Brief sentiment summary"
+    "sentiment_score": [score between -1.0 and 1.0],
+    "confidence": [confidence between 0.0 and 1.0],
+    "summary": "[2-3 sentence summary explaining the sentiment and key factors]"
 }}
 """
             messages = [
@@ -540,6 +582,23 @@ Return this exact JSON format (replace the values):
                         return result
                     else:
                         print(f"❌ Regex fallback also failed for: {json_string}")
+                        # Try to extract any numeric values that might be sentiment scores
+                        any_number_match = re.search(r'(-?\d+\.?\d*)', json_string)
+                        if any_number_match:
+                            try:
+                                potential_score = float(any_number_match.group(1))
+                                # Clamp to valid range
+                                sentiment_score = max(-1.0, min(1.0, potential_score))
+                                result = {
+                                    'sentiment_score': sentiment_score,
+                                    'confidence': 0.3,  # Low confidence since parsing failed
+                                    'summary': 'Sentiment analysis completed with fallback parsing'
+                                }
+                                print(f"✅ Parsed sentiment score from fallback: {result}")
+                                return result
+                            except ValueError:
+                                pass
+                        
                         return {
                             'sentiment_score': 0.0,
                             'confidence': 0.0,
