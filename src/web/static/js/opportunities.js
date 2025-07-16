@@ -1,7 +1,7 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'watchlist'; // Changed default to watchlist
+let currentMode = 'news'; // Changed default to news
 let opportunitiesData = [];
 let isRefreshing = false;
 
@@ -16,21 +16,21 @@ document.addEventListener('DOMContentLoaded', function() {
         loadOpportunities(true); // Force refresh for current mode
     });
     
-    // Set initial UI state for watchlist mode
+    // Set initial UI state for news mode
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
         btn.classList.remove('btn-primary', 'active');
         btn.classList.add('btn-outline-primary');
     });
     
-    // Set watchlist button as active
-    const watchlistBtn = document.getElementById('watchlistBtn');
-    watchlistBtn.classList.remove('btn-outline-primary');
-    watchlistBtn.classList.add('btn-primary', 'active');
+    // Set news button as active
+    const newsBtn = document.getElementById('newsBtn');
+    newsBtn.classList.remove('btn-outline-primary');
+    newsBtn.classList.add('btn-primary', 'active');
     
     // Set initial title
-    document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
+    document.getElementById('opportunitiesTitle').textContent = 'News-Driven Opportunities';
     
-    // Load initial data (from cache) - will load watchlist data
+    // Load initial data (from cache) - will load news data
     loadOpportunities(false);
     
     // Load watchlist configuration

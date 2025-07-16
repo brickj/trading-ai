@@ -311,6 +311,52 @@ def start_app():
 
     return True
 
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import traceback
+
+def run_scheduled_jobs():
+    """Load job schedules from DB and schedule them with APScheduler."""
+    from src.data.preload_news_opportunities import preload_news_opportunities
+    from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
+    from src.core.database import get_db_connection
+    scheduler = BackgroundScheduler()
+    job_map = {
+        'preload_news_opportunities': preload_news_opportunities,
+        'preload_watchlist_opportunities': preload_watchlist_opportunities
+    }
+    def update_last_run(job_id):
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('UPDATE job_schedules SET last_run = NOW() WHERE id = %s', (job_id,))
+                conn.commit()
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT id, job_name, run_time, enabled FROM job_schedules WHERE enabled = TRUE')
+                for row in cur.fetchall():
+                    job_id, job_name, run_time, enabled = row
+                    if job_name in job_map:
+                        hour, minute, *_ = str(run_time).split(':')
+                        def job_wrapper(jid=job_id, jname=job_name):
+                            try:
+                                job_map[jname]()
+                                update_last_run(jid)
+                            except Exception as e:
+                                print(f"[SCHEDULER ERROR] Job {jname} failed: {e}\n{traceback.format_exc()}")
+                        scheduler.add_job(
+                            job_wrapper,
+                            CronTrigger(hour=int(hour), minute=int(minute)),
+                            id=f"job_{job_id}",
+                            name=job_name,
+                            replace_existing=True
+                        )
+                        print(f"[SCHEDULER] Scheduled {job_name} at {hour}:{minute}")
+        scheduler.start()
+        print("[SCHEDULER] All enabled jobs scheduled.")
+    except Exception as e:
+        print(f"[SCHEDULER ERROR] Failed to schedule jobs: {e}\n{traceback.format_exc()}")
+
 def main():
     """Main function"""
     from src.core.startup import run_startup_checks
@@ -350,6 +396,9 @@ def main():
 
     # Print application information
     print_app_info()
+
+    # Start the job scheduler
+    run_scheduled_jobs()
 
     # Start the application (web server)
     if not start_app():

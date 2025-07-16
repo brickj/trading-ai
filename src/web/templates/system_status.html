@@ -357,6 +357,57 @@
             </div>
         </div>
     </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-clock"></i> Backend Job Scheduler</h5>
+                </div>
+                <div class="card-body">
+                    <div id="jobSchedulesSection">
+                        <div class="mb-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="loadJobSchedules()">
+                                <i class="fas fa-sync-alt"></i> Refresh Schedules
+                            </button>
+                        </div>
+                        <table class="table table-bordered table-sm" id="jobSchedulesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Job Name</th>
+                                    <th>Run Time</th>
+                                    <th>Enabled</th>
+                                    <th>Last Run</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobSchedulesTableBody">
+                                <tr><td colspan="5" class="text-center text-muted">Loading schedules...</td></tr>
+                            </tbody>
+                        </table>
+                        <form id="addJobScheduleForm" class="row g-2 align-items-end mt-3">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="newJobName" placeholder="Job Name (e.g. preload_news_opportunities)" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="time" class="form-control" id="newJobTime" required>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" id="newJobEnabled">
+                                    <option value="true" selected>Enabled</option>
+                                    <option value="false">Disabled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-plus"></i> Add/Update Job
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
@@ -396,6 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load telegram status
     loadTelegramStatus();
+    loadJobSchedules(); // Load job schedules on page load
 });
 
 function toggleAutoRefresh() {
@@ -980,6 +1032,110 @@ async function testWatchlistOpportunities() {
         button.disabled = false;
     }
 }
+
+async function loadJobSchedules() {
+    const tbody = document.getElementById('jobSchedulesTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Loading schedules...</td></tr>';
+    try {
+        const response = await fetch('/api/job_schedules');
+        const data = await response.json();
+        if (data.error) {
+            tbody.innerHTML = `<tr><td colspan='5' class='text-danger'>${data.error}</td></tr>`;
+            return;
+        }
+        if (!data.schedules || data.schedules.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No job schedules found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = '';
+        data.schedules.forEach(sch => {
+            tbody.innerHTML += `
+                <tr data-id="${sch.id}">
+                    <td>${sch.job_name}</td>
+                    <td><input type="time" value="${sch.run_time}" onchange="updateJobScheduleTime(${sch.id}, this.value)"></td>
+                    <td>
+                        <input type="checkbox" ${sch.enabled ? 'checked' : ''} onchange="toggleJobSchedule(${sch.id}, this.checked)">
+                    </td>
+                    <td>${sch.last_run ? sch.last_run.replace('T', ' ').slice(0, 19) : '-'}</td>
+                    <td>
+                        <button class="btn btn-outline-primary btn-sm" onclick="updateJobScheduleTime(${sch.id}, document.querySelector('#jobSchedulesTableBody tr[data-id=\'${sch.id}\'] input[type=time]').value)"><i class="fas fa-save"></i> Save</button>
+                    </td>
+                </tr>
+            `;
+        });
+    } catch (error) {
+        tbody.innerHTML = `<tr><td colspan='5' class='text-danger'>${error.message}</td></tr>`;
+    }
+}
+
+async function updateJobScheduleTime(id, time) {
+    try {
+        const row = document.querySelector(`#jobSchedulesTableBody tr[data-id='${id}']`);
+        const jobName = row ? row.children[0].textContent : '';
+        const enabled = row ? row.children[2].querySelector('input[type=checkbox]').checked : true;
+        const response = await fetch('/api/job_schedules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_name: jobName, run_time: time, enabled })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showAlert('Job schedule updated', 'success');
+            loadJobSchedules();
+        } else {
+            showAlert('Error updating job: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error updating job: ' + error.message, 'danger');
+    }
+}
+
+async function toggleJobSchedule(id, enabled) {
+    try {
+        const response = await fetch(`/api/job_schedules/${id}/enable`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showAlert('Job schedule updated', 'success');
+            loadJobSchedules();
+        } else {
+            showAlert('Error updating job: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error updating job: ' + error.message, 'danger');
+    }
+}
+
+document.getElementById('addJobScheduleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const jobName = document.getElementById('newJobName').value.trim();
+    const runTime = document.getElementById('newJobTime').value;
+    const enabled = document.getElementById('newJobEnabled').value === 'true';
+    if (!jobName || !runTime) {
+        showAlert('Please enter job name and time', 'warning');
+        return;
+    }
+    try {
+        const response = await fetch('/api/job_schedules', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_name: jobName, run_time: runTime, enabled })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showAlert('Job schedule added/updated', 'success');
+            document.getElementById('addJobScheduleForm').reset();
+            loadJobSchedules();
+        } else {
+            showAlert('Error: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error: ' + error.message, 'danger');
+    }
+});
 
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');

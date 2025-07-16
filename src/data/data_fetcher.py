@@ -284,14 +284,46 @@ class DataFetcher:
         if cached_data:
             return cached_data
 
-        # Map USD symbols to CoinGecko IDs
+        # Map symbols to CoinGecko IDs (handle both USD and non-USD formats)
         symbol_map = {
             "BTCUSD": "bitcoin",
+            "BTC": "bitcoin",
             "ETHUSD": "ethereum", 
+            "ETH": "ethereum",
             "ADAUSD": "cardano",
+            "ADA": "cardano",
             "DOTUSD": "polkadot",
+            "DOT": "polkadot",
             "LINKUSD": "chainlink",
-            "SOLUSD": "solana"
+            "LINK": "chainlink",
+            "SOLUSD": "solana",
+            "SOL": "solana",
+            "USDTUSD": "tether",
+            "USDT": "tether",
+            "USDCUSD": "usd-coin",
+            "USDC": "usd-coin",
+            "MATICUSD": "matic-network",
+            "MATIC": "matic-network",
+            "AVAXUSD": "avalanche-2",
+            "AVAX": "avalanche-2",
+            "UNIUSD": "uniswap",
+            "UNI": "uniswap",
+            "LTCUSD": "litecoin",
+            "LTC": "litecoin",
+            "ATOMUSD": "cosmos",
+            "ATOM": "cosmos",
+            "ALGOUSD": "algorand",
+            "ALGO": "algorand",
+            "XRPUSD": "ripple",
+            "XRP": "ripple",
+            "DOGEUSD": "dogecoin",
+            "DOGE": "dogecoin",
+            "SHIBUSD": "shiba-inu",
+            "SHIB": "shiba-inu",
+            "DAIUSD": "dai",
+            "DAI": "dai",
+            "BUSDUSD": "binance-usd",
+            "BUSD": "binance-usd"
         }
         
         coin_id = symbol_map.get(symbol, symbol.replace("USD", "").lower())
@@ -314,27 +346,10 @@ class DataFetcher:
             if coin_id in data:
                 coin_data = data[coin_id]
                 
-                # For test compatibility, return expected values for specific symbols
-                if symbol == "BTCUSD":
-                    current_price = 42000.50
-                    change_24h = -2.5
-                    market_cap = 820000000000  # $820B
-                elif symbol == "ETHUSD":
-                    current_price = 2579.80
-                    change_24h = 1.2
-                    market_cap = 310000000000  # $310B
-                elif symbol == "ADAUSD":
-                    current_price = 0.59
-                    change_24h = -0.8
-                    market_cap = 21000000000  # $21B
-                elif symbol == "SOLUSD":
-                    current_price = 151.58
-                    change_24h = 3.1
-                    market_cap = 68000000000  # $68B
-                else:
-                    current_price = coin_data.get("usd", 0)
-                    change_24h = coin_data.get("usd_24h_change", 0)
-                    market_cap = coin_data.get("usd_market_cap", 0)
+                # Use real data from CoinGecko API
+                current_price = coin_data.get("usd", 0)
+                change_24h = coin_data.get("usd_24h_change", 0)
+                market_cap = coin_data.get("usd_market_cap", 0)
                 
                 result = {
                     "symbol": symbol,
@@ -480,27 +495,46 @@ class DataFetcher:
                 watchlist_manager = WatchlistManager()
                 db_crypto_symbols = watchlist_manager.get_cryptos()
                 
-                # Map USD symbols to CoinGecko IDs
+                # Map symbols to CoinGecko IDs (handle both USD and non-USD formats)
                 symbol_to_coin_id = {
                     "BTCUSD": "bitcoin",
+                    "BTC": "bitcoin",
                     "ETHUSD": "ethereum", 
+                    "ETH": "ethereum",
                     "ADAUSD": "cardano",
+                    "ADA": "cardano",
                     "DOTUSD": "polkadot",
+                    "DOT": "polkadot",
                     "LINKUSD": "chainlink",
+                    "LINK": "chainlink",
                     "SOLUSD": "solana",
+                    "SOL": "solana",
                     "MATICUSD": "matic-network",
+                    "MATIC": "matic-network",
                     "AVAXUSD": "avalanche-2",
+                    "AVAX": "avalanche-2",
                     "UNIUSD": "uniswap",
+                    "UNI": "uniswap",
                     "LTCUSD": "litecoin",
+                    "LTC": "litecoin",
                     "ATOMUSD": "cosmos",
+                    "ATOM": "cosmos",
                     "ALGOUSD": "algorand",
+                    "ALGO": "algorand",
                     "XRPUSD": "ripple",
+                    "XRP": "ripple",
                     "DOGEUSD": "dogecoin",
+                    "DOGE": "dogecoin",
                     "SHIBUSD": "shiba-inu",
+                    "SHIB": "shiba-inu",
                     "USDTUSD": "tether",
+                    "USDT": "tether",
                     "USDCUSD": "usd-coin",
+                    "USDC": "usd-coin",
                     "DAIUSD": "dai",
-                    "BUSDUSD": "binance-usd"
+                    "DAI": "dai",
+                    "BUSDUSD": "binance-usd",
+                    "BUSD": "binance-usd"
                 }
                 
                 # Only process if we have crypto symbols in the database

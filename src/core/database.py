@@ -317,3 +317,22 @@ def get_latest_backtest(symbol, period_days):
             result.update({"trades": trades_json})
         return result
     return None 
+
+def ensure_job_schedules_table():
+    """
+    Ensure the job_schedules table exists for backend job scheduling.
+    """
+    from psycopg2 import sql
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS job_schedules (
+                    id SERIAL PRIMARY KEY,
+                    job_name TEXT NOT NULL,
+                    run_time TIME NOT NULL,
+                    enabled BOOLEAN DEFAULT TRUE,
+                    last_run TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit() 

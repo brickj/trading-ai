@@ -43,7 +43,7 @@ from src.core.logger import (
     log_user_actions,
 )
 from src.core.recommendation_manager import get_recommendation_manager, RecommendationManager
-from src.core.database import get_db_connection, save_backtest_result, get_latest_backtest
+from src.core.database import get_db_connection, save_backtest_result, get_latest_backtest, ensure_job_schedules_table
 import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
@@ -54,6 +54,7 @@ from psycopg2.extras import Json, RealDictCursor
 import threading
 from src.core.database import get_db_connection
 import os
+from src.core.market_movers import MarketMoversManager
 
 print(f"[DEBUG] Running app.py from: {os.getcwd()} | __file__={__file__}")
 
@@ -2336,135 +2337,56 @@ def preload_stock_data():
         
         # Get top 3 gainers and losers from Alpha Vantage
         market_movers = data_fetcher.get_top_gainers_losers(limit=3)
-        test_symbols = market_movers.get('gainers', []) + market_movers.get('losers', [])
+        gainers = market_movers.get('gainers', [])
+        if not isinstance(gainers, list):
+            gainers = []
+        losers = market_movers.get('losers', [])
+        if not isinstance(losers, list):
+            losers = []
         print(f'[DEBUG] Found market movers: {market_movers}')
         
+        # Convert string symbols to proper dict format if needed
+        def convert_to_dict(item):
+            if isinstance(item, str):
+                return {
+                    'symbol': item,
+                    'type': 'GAINER',
+                    'price': 0,
+                    'change_amount': 0,
+                    'change_percent': 0,
+                    'volume': 0,
+                    'timestamp': datetime.now(),
+                    'analysis_data': {}
+                }
+            elif isinstance(item, dict):
+                # Ensure all required fields exist
+                return {
+                    'symbol': item.get('symbol', ''),
+                    'type': item.get('type', 'GAINER'),
+                    'price': item.get('price', 0),
+                    'change_amount': item.get('change_amount', 0),
+                    'change_percent': item.get('change_percent', 0),
+                    'volume': item.get('volume', 0),
+                    'timestamp': item.get('timestamp', datetime.now()),
+                    'analysis_data': item.get('analysis_data', {})
+                }
+            return item
+        
+        # Convert gainers and losers to proper format
+        gainers = [convert_to_dict(g) for g in gainers]
+        losers = [convert_to_dict(l) for l in losers]
+        
         # Fallback to test symbols if no market movers found
-        if not test_symbols:
+        if not gainers and not losers:
             test_symbols = ['AAPL', 'MSFT', 'GOOGL']
             print('[DEBUG] Using fallback test symbols')
+            gainers = [convert_to_dict(g) for g in test_symbols]
+            losers = []
         
-        # Analyze each stock using a simplified analysis
-        enhanced_analysis = []
-        
-        for i, symbol in enumerate(test_symbols):
-            stock_info = {
-                'symbol': symbol,
-                'price': 0,
-                'change': 0,
-                'change_percent': 0,
-                'timestamp': datetime.now().isoformat(),
-                'sources_used': [],
-                'sources_skipped': []
-            }
-            
-            try:
-                print(f'🔍 Analyzing {symbol} ({i+1}/{len(test_symbols)})...')
-                
-                # Get basic stock data
-                try:
-                    stock_data = data_fetcher.get_market_data(symbol)
-                    if stock_data and 'price' in stock_data:
-                        stock_info.update({
-                            'price': stock_data.get('price', 0),
-                            'change': stock_data.get('change', 0),
-                            'change_percent': stock_data.get('change_percent', 0)
-                        })
-                        stock_info['sources_used'].append('market_data')
-                        print(f'✅ Got market data for {symbol}')
-                    else:
-                        stock_info['sources_skipped'].append('market_data')
-                        print(f'⚠️ No market data available for {symbol}')
-                except Exception as e:
-                    stock_info['sources_skipped'].append('market_data')
-                    print(f'⚠️ Error getting market data for {symbol}: {str(e)}')
-                
-                # Always try to get news, even if some sources are rate limited
-                try:
-                    # Get news data with error handling
-                    news = data_fetcher.get_company_news(symbol)
-                    if news and isinstance(news, list):
-                        # Filter out any None or invalid news items
-                        valid_news = [n for n in news if n and isinstance(n, dict)]
-                        if valid_news:
-                            stock_info['news'] = valid_news[:3]  # Limit to 3 news items
-                            stock_info['sources_used'].append('news')
-                            print(f'✅ Added {len(valid_news[:3])} news items for {symbol} from {len(set(n.get("source", "") for n in valid_news))} sources')
-                        else:
-                            stock_info['sources_skipped'].append('news')
-                            print(f'⚠️ No valid news items found for {symbol}')
-                    else:
-                        stock_info['sources_skipped'].append('news')
-                        print(f'⚠️ No news data available for {symbol}')
-                except Exception as news_err:
-                    stock_info['sources_skipped'].append('news')
-                    print(f'⚠️ Error getting news for {symbol}: {str(news_err)}')
-                
-                enhanced_analysis.append(stock_info)
-                
-            except Exception as e:
-                print(f'[ERROR] Failed to process {symbol}: {str(e)}')
-                # Add basic info even if there was an error
-                enhanced_analysis.append(stock_info)
-        
-        # Prepare the final data structure
-        status_msg = 'Analysis complete'
-        
-        # Check which sources were used and which were skipped
-        all_sources_used = set()
-        all_sources_skipped = set()
-        for analysis in enhanced_analysis:
-            all_sources_used.update(analysis.get('sources_used', []))
-            all_sources_skipped.update(analysis.get('sources_skipped', []))
-        
-        if all_sources_skipped:
-            status_msg += f' (Some sources unavailable: {sorted(all_sources_skipped)})'
-        
-        preloaded_data = {
-            'enhanced_analysis': enhanced_analysis,
-            'total_analyzed': len(enhanced_analysis),
-            'opportunities_found': len([s for s in enhanced_analysis if s.get('change_percent', 0) > 0]),
-            'timestamp': datetime.now().isoformat(),
-            'cache_duration': time.time() - start_time,
-            'status': 'success',
-            'sources_used': sorted(all_sources_used),
-            'sources_skipped': sorted(all_sources_skipped),
-            'message': status_msg,
-            'version': '1.0',
-            'data_sources': sorted(all_sources_used),
-            'cache_timestamp': int(time.time())
-        }
-        preload_timestamp = datetime.now()
-        
-        # Save to database
-        save_preloaded_data_to_db(preloaded_data)
-        
-        # Clean up old entries, keeping only the most recent 6 entries (3 winners + 3 losers)
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    # Get the IDs of all entries
-                    cur.execute("""
-                        SELECT id FROM preloaded_data 
-                        ORDER BY timestamp DESC
-                    """)
-                    all_ids = [row[0] for row in cur.fetchall()]
-                    
-                    # If we have more than 6 entries, delete the oldest ones
-                    if len(all_ids) > 6:
-                        # Keep only the 6 most recent entries
-                        ids_to_keep = all_ids[:6]
-                        # Delete all other entries
-                        cur.execute("""
-                            DELETE FROM preloaded_data 
-                            WHERE id != ALL(%s)
-                        """, (ids_to_keep,))
-                        conn.commit()
-                        print(f'[DEBUG] Cleaned up {len(all_ids) - 6} old entries from preloaded_data table')
-        except Exception as e:
-            print(f'[WARNING] Error cleaning up old entries: {e}')
-        
-        print(f'[DEBUG] Successfully preloaded {len(enhanced_analysis)} stock analyses in {time.time() - start_time:.2f} seconds')
+        # Save to market_movers table using the app's standard logic
+        MarketMoversManager.save_market_movers(gainers, losers)
+        print(f'[DEBUG] Saved {len(gainers)} gainers and {len(losers)} losers to market_movers table')
+        print(f'[DEBUG] Successfully preloaded stock data in {time.time() - start_time:.2f} seconds')
         
     except Exception as e:
         print(f'[ERROR] Exception in preload_stock_data: {str(e)}')
@@ -2672,7 +2594,8 @@ def refresh_market_movers():
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) as count FROM market_movers")
-                count = cur.fetchone()['count']
+                count_result = cur.fetchone()
+                count = count_result['count'] if count_result else 0
         
         if count > 0:
             print(f"[INFO] Market movers data refreshed successfully - {count} records in database")
@@ -2709,312 +2632,6 @@ def load_preloaded_data_from_db():
                 """)
                 row = cur.fetchone()
                 
-                if row:
-                    timestamp = row['timestamp']
-                    
-                    # Get all market movers, ordered by type (gainers first) and change_percent (desc)
-                    cur.execute("""
-                        SELECT symbol, type, price, change_amount, change_percent, volume, analysis_data 
-                        FROM market_movers
-                        ORDER BY 
-                            CASE WHEN type = 'GAINER' THEN 0 ELSE 1 END,
-                            ABS(change_percent) DESC
-                    """)
-                    
-                    rows = cur.fetchall()
-                    enhanced_analysis = []
-                    
-                    for row in rows:
-                        symbol = row['symbol']
-                        type_val = row['type']
-                        price = row['price']
-                        change_amount = row['change_amount']
-                        change_percent = row['change_percent']
-                        volume = row['volume']
-                        analysis_data = row['analysis_data']
-                        # Make sure the analysis_data has the correct price and change values
-                        if analysis_data and isinstance(analysis_data, dict):
-                            analysis_data['price'] = price
-                            analysis_data['change'] = change_amount
-                            analysis_data['change_percent'] = change_percent
-                            analysis_data['volume'] = volume
-                            enhanced_analysis.append(analysis_data)
-                    
-                    opportunities_found = len([s for s in enhanced_analysis if s.get('change_percent', 0) > 0])
-                    
-                    response_data = {
-                        'enhanced_analysis': enhanced_analysis,
-                        'total_analyzed': len(enhanced_analysis),
-                        'opportunities_found': opportunities_found,
-                        'timestamp': timestamp.isoformat(),
-                        'cache_status': 'database_fresh'
-                    }
-                    
-                    return create_api_response(
-                        data=response_data,
-                        message=f"Successfully loaded {len(enhanced_analysis)} market movers from database"
-                    )
-                else:
-                    return create_api_response(
-                        data={
-                            'enhanced_analysis': [],
-                            'total_analyzed': 0,
-                            'opportunities_found': 0,
-                            'timestamp': datetime.now().isoformat(),
-                            'fallback': True
-                        },
-                        message="No market movers found in database",
-                        success=False
-                    )
-                    
-    except Exception as e:
-        print(f'[ERROR] Failed to load market movers from database: {str(e)}')
-        return create_api_response(
-            data={
-                'enhanced_analysis': [],
-                'total_analyzed': 0,
-                'opportunities_found': 0,
-                'timestamp': datetime.now().isoformat(),
-                'error': str(e),
-                'fallback': True
-            },
-            message="Error loading market movers from database",
-            success=False,
-            error=str(e)
-        )
-
-@app.route("/api/frontend_logs", methods=["POST"])
-def frontend_logs():
-    """Endpoint to receive frontend logs"""
-    try:
-        data = request.get_json()
-        if not data:
-            return create_api_response(error="No log data provided", status_code=400)
-        
-        # Extract log information
-        level = data.get('level', 'INFO')
-        message = data.get('message', '')
-        timestamp = data.get('timestamp', datetime.now().isoformat())
-        session_id = data.get('sessionId', 'unknown')
-        
-        # Log the frontend message
-        log_message = f"[FRONTEND] [{session_id}] {message}"
-        
-        if level == 'ERROR':
-            log_error(log_message, "frontend")
-        elif level == 'WARN':
-            log_warning(log_message, "frontend")
-        elif level == 'DEBUG':
-            log_debug(log_message, "frontend")
-        else:
-            log_info(log_message, "frontend")
-        
-        return create_api_response(message="Log received successfully")
-        
-    except Exception as e:
-        log_exception("Frontend logs endpoint", e)
-        return create_api_response(error=str(e), status_code=500)
-
-def save_preloaded_data_to_db(data_to_save=None):
-    global preloaded_data
-    try:
-        # Use provided data or fall back to global preloaded_data
-        data = data_to_save if data_to_save is not None else preloaded_data
-        if not data or 'enhanced_analysis' not in data:
-            print('[WARNING] No valid data provided to save_preloaded_data_to_db')
-            return False
-        
-        from src.data.data_fetcher import DataFetcher
-        from src.core.sentiment_analyzer import SentimentAnalyzer
-        from src.trading.trading_strategy import TradingStrategy
-        data_fetcher = DataFetcher()
-        sentiment_analyzer = SentimentAnalyzer()
-        trading_strategy = TradingStrategy()
-        
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                # First clear existing entries
-                cur.execute("TRUNCATE TABLE market_movers")
-                
-                # Track successful saves to ensure we get 3 winners and 3 losers
-                saved_gainers = 0
-                saved_losers = 0
-                max_gainers = 3
-                max_losers = 3
-                
-                # Get fresh market movers data to ensure we have enough valid symbols
-                market_movers = data_fetcher.get_top_gainers_losers(limit=10)  # Get more to have backup
-                all_gainers = market_movers.get('gainers', [])
-                all_losers = market_movers.get('losers', [])
-                
-                print(f"[DEBUG] Available gainers: {all_gainers}")
-                print(f"[DEBUG] Available losers: {all_losers}")
-                
-                # Process gainers first
-                gainer_index = 0
-                while saved_gainers < max_gainers and gainer_index < len(all_gainers):
-                    symbol = all_gainers[gainer_index]
-                    gainer_index += 1
-                    
-                    print(f"🔍 Processing gainer {symbol} ({saved_gainers + 1}/{max_gainers})...")
-                    
-                    # Fetch fresh price data
-                    try:
-                        price_data = data_fetcher.get_stock_price(symbol)
-                        if not price_data or not price_data.get('current_price') or price_data.get('current_price') == 0:
-                            print(f"[SKIP] No valid price for {symbol}")
-                            continue
-                    except Exception as e:
-                        print(f"[SKIP] Failed to fetch price for {symbol}: {e}")
-                        continue
-                        
-                    # Verify it's actually a gainer
-                    change_percent_str = str(price_data.get('change_percent', 0)).replace('%', '')
-                    if float(change_percent_str) <= 0:
-                        print(f"[SKIP] {symbol} is not actually a gainer ({change_percent_str}%)")
-                        continue
-                    
-                    # Fetch sentiment data
-                    try:
-                        news_data = data_fetcher.get_company_news(symbol)
-                        sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider='ollama', symbol=symbol)
-                        if not sentiment_data or 'sentiment_score' not in sentiment_data:
-                            print(f"[SKIP] No valid sentiment for {symbol}")
-                            continue
-                    except Exception as e:
-                        print(f"[SKIP] Failed to fetch sentiment for {symbol}: {e}")
-                        continue
-                        
-                    # Generate signal data
-                    try:
-                        signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
-                    except Exception as e:
-                        print(f"[SKIP] Failed to get signal for {symbol}: {e}")
-                        continue
-                        
-                    # Compose analysis_data
-                    analysis_data = {
-                        'symbol': symbol,
-                        'price_data': price_data,
-                        'sentiment_data': sentiment_data,
-                        'signal_data': signal_data,
-                        'news_count': len(news_data) if news_data else 0
-                    }
-                    
-                    # Insert into database
-                    cur.execute("""
-                        INSERT INTO market_movers 
-                        (symbol, type, price, change_amount, change_percent, 
-                         volume, timestamp, analysis_data)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        symbol,
-                        'GAINER',
-                        float(price_data.get('current_price', 0)),
-                        float(price_data.get('change', 0)),
-                        float(str(price_data.get('change_percent', 0)).replace('%', '')),
-                        int(price_data.get('volume', 0)),
-                        datetime.now(),
-                        Json(analysis_data)
-                    ))
-                    
-                    saved_gainers += 1
-                    print(f"✅ Saved gainer {symbol} ({saved_gainers}/{max_gainers})")
-                
-                # Process losers
-                loser_index = 0
-                while saved_losers < max_losers and loser_index < len(all_losers):
-                    symbol = all_losers[loser_index]
-                    loser_index += 1
-                    
-                    print(f"🔍 Processing loser {symbol} ({saved_losers + 1}/{max_losers})...")
-                    
-                    # Fetch fresh price data
-                    try:
-                        price_data = data_fetcher.get_stock_price(symbol)
-                        if not price_data or not price_data.get('current_price') or price_data.get('current_price') == 0:
-                            print(f"[SKIP] No valid price for {symbol}")
-                            continue
-                    except Exception as e:
-                        print(f"[SKIP] Failed to fetch price for {symbol}: {e}")
-                        continue
-                        
-                    # Verify it's actually a loser
-                    change_percent_str = str(price_data.get('change_percent', 0)).replace('%', '')
-                    if float(change_percent_str) >= 0:
-                        print(f"[SKIP] {symbol} is not actually a loser ({change_percent_str}%)")
-                        continue
-                    
-                    # Fetch sentiment data
-                    try:
-                        news_data = data_fetcher.get_company_news(symbol)
-                        sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider='ollama', symbol=symbol)
-                        if not sentiment_data or 'sentiment_score' not in sentiment_data:
-                            print(f"[SKIP] No valid sentiment for {symbol}")
-                            continue
-                    except Exception as e:
-                        print(f"[SKIP] Failed to fetch sentiment for {symbol}: {e}")
-                        continue
-                        
-                    # Generate signal data
-                    try:
-                        signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
-                    except Exception as e:
-                        print(f"[SKIP] Failed to get signal for {symbol}: {e}")
-                        continue
-                        
-                    # Compose analysis_data
-                    analysis_data = {
-                        'symbol': symbol,
-                        'price_data': price_data,
-                        'sentiment_data': sentiment_data,
-                        'signal_data': signal_data,
-                        'news_count': len(news_data) if news_data else 0
-                    }
-                    
-                    # Insert into database
-                    cur.execute("""
-                        INSERT INTO market_movers 
-                        (symbol, type, price, change_amount, change_percent, 
-                         volume, timestamp, analysis_data)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        symbol,
-                        'LOSER',
-                        float(price_data.get('current_price', 0)),
-                        float(price_data.get('change', 0)),
-                        float(str(price_data.get('change_percent', 0)).replace('%', '')),
-                        int(price_data.get('volume', 0)),
-                        datetime.now(),
-                        Json(analysis_data)
-                    ))
-                    
-                    saved_losers += 1
-                    print(f"✅ Saved loser {symbol} ({saved_losers}/{max_losers})")
-                        
-                conn.commit()
-        print(f'[DEBUG] Saved market movers to database: {saved_gainers} gainers, {saved_losers} losers')
-        return True
-    except Exception as e:
-        print(f'[ERROR] Failed to save market movers to database: {e}')
-        return False
-
-def load_preloaded_data_from_db():
-    global preloaded_data, preload_timestamp
-    try:
-        # Use proper logging instead of print statements
-        from src.core.logger import log_info, log_exception
-        log_info("Loading preloaded data from database at startup", "system")
-        
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
-                # Get the most recent timestamp
-                cur.execute("""
-                    SELECT timestamp FROM market_movers 
-                    ORDER BY timestamp DESC 
-                    LIMIT 1
-                """)
-                row = cur.fetchone()
                 if row:
                     preload_timestamp = row['timestamp']
                     
@@ -3115,19 +2732,66 @@ def get_logs():
                     if 'timestamp' in log and log['timestamp'] is not None:
                         log['timestamp'] = log['timestamp'].isoformat()
                 
-                return create_api_response({
-                    'logs': logs,
-                    'total': len(logs),
-                    'limit': limit
-                })
+                # Generate filename
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"logs_export_{timestamp}"
                 
+                if export_format == 'json':
+                    # Export as JSON
+                    import json
+                    response_data = {
+                        'export_info': {
+                            'format': 'json',
+                            'timestamp': datetime.now().isoformat(),
+                            'total_logs': len(logs),
+                            'filters': {
+                                'level': level,
+                                'category': category,
+                                'limit': limit
+                            }
+                        },
+                        'logs': logs
+                    }
+                    
+                    response = make_response(json.dumps(response_data, indent=2))
+                    response.headers['Content-Type'] = 'application/json'
+                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.json"'
+                    return response
+                    
+                elif export_format == 'csv':
+                    # Export as CSV
+                    output = io.StringIO()
+                    writer = csv.writer(output)
+                    
+                    # Write header
+                    if logs:
+                        headers = list(logs[0].keys())
+                        writer.writerow(headers)
+                        
+                        # Write data rows
+                        for log in logs:
+                            row = []
+                            for header in headers:
+                                value = log.get(header, '')
+                                # Convert complex objects to string
+                                if isinstance(value, (dict, list)):
+                                    value = json.dumps(value)
+                                row.append(str(value))
+                            writer.writerow(row)
+                    
+                    response = make_response(output.getvalue())
+                    response.headers['Content-Type'] = 'text/csv'
+                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
+                    return response
+                    
     except Exception as e:
-        log_exception("Error retrieving logs", e)
-        return create_api_response(
-            success=False,
-            error="Failed to retrieve logs",
-            status_code=500
-        )
+        log_exception("Log export endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
+# At startup, load from database before running preload_stock_data
+print("=== STARTUP: About to load preloaded data from database ===")
+load_preloaded_data_from_db()
+print("=== STARTUP: Finished loading preloaded data from database ===")
 
 @app.route("/api/watchlist/config", methods=["GET", "POST"])
 def watchlist_config():
@@ -3393,151 +3057,6 @@ def export_logs():
 print("=== STARTUP: About to load preloaded data from database ===")
 load_preloaded_data_from_db()
 print("=== STARTUP: Finished loading preloaded data from database ===")
-
-@app.route("/api/mock_opportunities")
-def mock_opportunities():
-    """Get mock opportunities for testing the frontend"""
-    try:
-        mock_data = [
-            {
-                "symbol": "AAPL",
-                "type": "stock",
-                "trigger": "news_driven",
-                "news_count": 15,
-                "price_data": {
-                    "current_price": 185.50,
-                    "change": 2.30,
-                    "change_percent": 1.26,
-                    "previous_close": 183.20
-                },
-                "sentiment_data": {
-                    "sentiment_score": 0.75,
-                    "confidence": 0.85,
-                    "sentiment_label": "Positive"
-                },
-                "signal_data": {
-                    "action": "CALL",
-                    "signal_strength": 0.82,
-                    "confidence": 0.85,
-                    "reasoning": "Strong positive sentiment from recent earnings news and AI announcements"
-                },
-                "trade_signal": {
-                    "strike_price": 190.00,
-                    "option_price": 3.50,
-                    "position_size": 2,
-                    "expiration": "2025-08-08"
-                },
-                "timestamp": "2025-07-09T13:30:00.000000"
-            },
-            {
-                "symbol": "NVDA",
-                "type": "stock", 
-                "trigger": "watchlist_scan",
-                "news_count": 8,
-                "price_data": {
-                    "current_price": 1250.75,
-                    "change": -15.25,
-                    "change_percent": -1.20,
-                    "previous_close": 1266.00
-                },
-                "sentiment_data": {
-                    "sentiment_score": -0.35,
-                    "confidence": 0.72,
-                    "sentiment_label": "Negative"
-                },
-                "signal_data": {
-                    "action": "PUT",
-                    "signal_strength": 0.68,
-                    "confidence": 0.72,
-                    "reasoning": "Market concerns about AI chip demand and regulatory scrutiny"
-                },
-                "trade_signal": {
-                    "strike_price": 1200.00,
-                    "option_price": 45.00,
-                    "position_size": 1,
-                    "expiration": "2025-08-08"
-                },
-                "timestamp": "2025-07-09T13:30:00.000000"
-            },
-            {
-                "symbol": "BTCUSD",
-                "type": "crypto",
-                "trigger": "news_driven", 
-                "news_count": 12,
-                "price_data": {
-                    "current_price": 67500.00,
-                    "change": 1250.00,
-                    "change_percent": 1.89,
-                    "previous_close": 66250.00
-                },
-                "sentiment_data": {
-                    "sentiment_score": 0.45,
-                    "confidence": 0.78,
-                    "sentiment_label": "Positive"
-                },
-                "signal_data": {
-                    "action": "CALL",
-                    "signal_strength": 0.71,
-                    "confidence": 0.78,
-                    "reasoning": "Positive sentiment from institutional adoption news and ETF inflows"
-                },
-                "trade_signal": {
-                    "strike_price": 70000.00,
-                    "option_price": 2500.00,
-                    "position_size": 1,
-                    "expiration": "2025-08-08"
-                },
-                "timestamp": "2025-07-09T13:30:00.000000"
-            }
-        ]
-        
-        return create_api_response(
-            data={
-                "opportunities": mock_data,
-                "count": len(mock_data),
-                "timestamp": datetime.now().isoformat(),
-                "note": "Mock data for testing frontend display"
-            }
-        )
-    except Exception as e:
-        log_exception("Mock opportunities endpoint", e)
-        return create_api_response(error=str(e), status_code=500)
-
-@app.route("/api/test/opportunities", methods=["GET"])
-def test_opportunities():
-    """Provides a predictable, mock opportunity for reliable frontend testing."""
-    mock_opportunity = {
-        "symbol": "MOCK",
-        "type": "stock",
-        "trigger": "test_case",
-        "news_count": 42,
-        "price_data": {
-            "current_price": 150.75,
-            "change": 2.50,
-            "change_percent": 1.68,
-            "previous_close": 148.25
-        },
-        "sentiment_data": {
-            "sentiment_score": 0.85,
-            "confidence": 0.95,
-            "sentiment_label": "Very Positive"
-        },
-        "signal_data": {
-            "action": "CALL",
-            "signal_strength": 0.9,
-            "reasoning": "This is a mock opportunity generated for a Playwright test."
-        },
-        "trade_signal": {
-            "strike_price": 155.0,
-            "option_price": 3.45,
-            "position_size": 10,
-            "expiration": (datetime.now() + timedelta(days=14)).strftime("%Y-%m-%d")
-        },
-        "timestamp": datetime.now().isoformat()
-    }
-    
-    # The frontend expects the data to be nested under an 'opportunities' key
-    return create_api_response(data={"opportunities": [mock_opportunity]})
 
 @app.route("/recommendations")
 def recommendations_page():
@@ -3811,6 +3330,111 @@ def api_recommendations_metrics():
         "top_symbols": top_symbols,
         "top_types": top_types
     })
+
+# Ensure the job_schedules table exists at startup
+ensure_job_schedules_table()
+
+@app.route('/api/job_schedules', methods=['GET'])
+def get_job_schedules():
+    """Return all job schedules."""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT id, job_name, run_time, enabled, last_run, created_at FROM job_schedules ORDER BY job_name')
+                rows = cur.fetchall()
+                schedules = [
+                    {
+                        'id': row[0],
+                        'job_name': row[1],
+                        'run_time': str(row[2]),
+                        'enabled': row[3],
+                        'last_run': row[4].isoformat() if row[4] else None,
+                        'created_at': row[5].isoformat() if row[5] else None
+                    }
+                    for row in rows
+                ]
+        return jsonify({'schedules': schedules})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/job_schedules', methods=['POST'])
+def set_job_schedule():
+    """Add or update a job schedule."""
+    try:
+        data = request.get_json()
+        job_name = data['job_name']
+        run_time = data['run_time']
+        enabled = data.get('enabled', True)
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Upsert by job_name
+                cur.execute('''
+                    INSERT INTO job_schedules (job_name, run_time, enabled)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (job_name) DO UPDATE SET run_time = EXCLUDED.run_time, enabled = EXCLUDED.enabled
+                ''', (job_name, run_time, enabled))
+                conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/job_schedules/<int:schedule_id>/enable', methods=['POST'])
+def enable_job_schedule(schedule_id):
+    """Enable or disable a job schedule."""
+    try:
+        data = request.get_json()
+        enabled = data['enabled']
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('UPDATE job_schedules SET enabled = %s WHERE id = %s', (enabled, schedule_id))
+                conn.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def save_preloaded_data_to_db(preloaded_data):
+    """
+    Save the preloaded stock analysis data to the preloaded_data table.
+    """
+    from src.core.database import get_db_connection
+    import datetime
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Create table if it doesn't exist
+                cur.execute('''
+                    CREATE TABLE IF NOT EXISTS preloaded_data (
+                        id SERIAL PRIMARY KEY,
+                        timestamp TIMESTAMP NOT NULL,
+                        enhanced_analysis JSONB NOT NULL,
+                        total_analyzed INTEGER DEFAULT 0,
+                        opportunities_found INTEGER DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                # Insert new data
+                cur.execute('''
+                    INSERT INTO preloaded_data (timestamp, enhanced_analysis, total_analyzed, opportunities_found)
+                    VALUES (%s, %s, %s, %s)
+                ''', (
+                    datetime.datetime.now(),
+                    Json(preloaded_data.get('enhanced_analysis', [])),
+                    preloaded_data.get('total_analyzed', 0),
+                    preloaded_data.get('opportunities_found', 0)
+                ))
+                # Clean up old entries (keep only last 10)
+                cur.execute('''
+                    DELETE FROM preloaded_data
+                    WHERE id NOT IN (
+                        SELECT id FROM preloaded_data
+                        ORDER BY timestamp DESC
+                        LIMIT 10
+                    )
+                ''')
+                conn.commit()
+        print(f"[DEBUG] Saved preloaded_data to DB: {preloaded_data.get('total_analyzed', 0)} analyzed, {preloaded_data.get('opportunities_found', 0)} found")
+    except Exception as e:
+        print(f"[ERROR] Failed to save preloaded_data to DB: {e}")
 
 if __name__ == "__main__":
     create_app()
