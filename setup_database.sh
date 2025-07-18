@@ -215,13 +215,7 @@ CREATE TABLE IF NOT EXISTS logs (
     session_id VARCHAR(100)
 );"
 
-# Preloaded data table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE TABLE IF NOT EXISTS preloaded_data (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    data JSONB NOT NULL
-);"
+# Preloaded data table - REMOVED (migrated to market_movers table)
 
 # Tier management table
 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
@@ -327,52 +321,7 @@ CREATE INDEX IF NOT EXISTS idx_app_cache_cache_key ON app_cache(cache_key);"
 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
 CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);"
 
-# Preloaded data table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_preloaded_data_timestamp ON preloaded_data(timestamp);"
-
-echo "✅ Indexes created successfully!"
-echo ""
-
-# Create indexes for faster lookups
-echo ""
-echo "🔧 Creating indexes for faster lookups..."
-
-# Historical data table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_historical_data_symbol_date ON historical_data(symbol, date);"
-
-# S&P 500 symbols table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_sp500_symbols_symbol ON sp500_symbols(symbol);"
-
-# API cache table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_api_cache_cache_key ON api_cache(cache_key);"
-
-# Recommendations table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_recommendations_symbol ON recommendations(symbol);"
-
-# Watchlists table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_watchlists_name ON watchlists(name);"
-
-# Cache table (legacy)
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);"
-
-# App cache table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_app_cache_cache_key ON app_cache(cache_key);"
-
-# Logs table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp);"
-
-# Preloaded data table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE INDEX IF NOT EXISTS idx_preloaded_data_timestamp ON preloaded_data(timestamp);"
+# Preloaded data table - REMOVED (migrated to market_movers table)
 
 echo "✅ Indexes created successfully!"
 echo ""

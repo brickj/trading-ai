@@ -1,0 +1,872 @@
+<!DOCTYPE html><html lang="en" data-theme="dark"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Opportunities - Options Trading AI</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/min/moment.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <!-- Include Navigation -->
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <span class="fa-stack fa-sm">
+                <i class="fas fa-globe-americas fa-stack-2x"></i>
+                <i class="fas fa-robot fa-stack-1x"></i>
+            </span>
+            Trading AI
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/stocks">
+                        <i class="fas fa-chart-bar"></i> S&amp;P 500
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/crypto">
+                        <i class="fab fa-bitcoin"></i> Crypto
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/portfolio_page">
+                        <i class="fas fa-briefcase"></i> Portfolio
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/backtest_page">
+                        <i class="fas fa-history"></i> Backtest
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/opportunities">
+                        <i class="fas fa-bell"></i> Opportunities
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/scalping_signals">
+                        <i class="fas fa-chart-line"></i> Scalping
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/recommendations">
+                        <i class="fas fa-check-circle"></i> Recommendations
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/system_status">
+                        <i class="fas fa-server"></i> System Status
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logs">
+                        <i class="fas fa-file-alt"></i> Logs
+                    </a>
+                </li>
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <span class="nav-link theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav> 
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        
+<!-- Opportunities Section - Required for tests -->
+<div id="opportunitiesSection">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-bell"></i> Trading Opportunities
+            </h1>
+            <p class="lead">Real-time opportunities based on news analysis and watchlist monitoring</p>
+        </div>
+    </div>
+
+    <!-- Find Button - Required for tests -->
+    <div id="findButton" class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        <button id="newsBtn" class="btn btn-primary">
+                            <i class="fas fa-newspaper"></i> News-Driven
+                        </button>
+                        <button id="watchlistBtn" class="btn btn-outline-primary active">
+                            <i class="fas fa-list"></i> Watchlist Scan
+                        </button>
+
+                    </div>
+                    
+                    <button id="refreshBtn" class="btn btn-success ms-3" disabled="">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    
+                    <span class="ms-3 text-muted" id="lastUpdated">
+                        
+                    </span>
+                    
+                    <div id="loadingSpinner" class="loading mt-3" style="display: block;">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Scanning for opportunities...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> <span id="opportunitiesTitle">Watchlist Opportunities</span></h5>
+                <small class="text-muted">Opportunities with actionable trading signals</small>
+            </div>
+            <div class="card-body">
+                <div id="opportunitiesContainer"><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('AAPL')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $196.58</p>
+                    <p><strong>Strike:</strong> $197.56</p>
+                    <p><strong>Option Price:</strong> $1.97</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.600</span></p>
+                    <p><strong>Confidence:</strong> 85.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $1.97</p>
+                    <p><strong>Signal Strength:</strong> 0.510</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.60) with high confidence (0.85)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Why i hold UNH while reducing positions on other stocks</li><li>Pre-market overview for 14 July 2025</li><li>EU issues tough warning of countermeasures if US-EU trade talks break down - will markets falter?</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('AMZN')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $223.19</p>
+                    <p><strong>Strike:</strong> $224.31</p>
+                    <p><strong>Option Price:</strong> $2.23</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.800</span></p>
+                    <p><strong>Confidence:</strong> 95.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $2.23</p>
+                    <p><strong>Signal Strength:</strong> 0.760</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.80) with high confidence (0.95)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Retailers raked in $7.9 billion in online sales during the first 24 hours of Prime Day, an increase of nearly 10% year over year, according</li><li>Will Trump's tariff delay spark a short-term stock market rally?</li><li>Prime Day 2025 U.S. retailers drove $24.1 billion in online spend, up 30.3% from 2024, according to new data from Adobe</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>DIS</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('DIS')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $119.81</p>
+                    <p><strong>Strike:</strong> $120.41</p>
+                    <p><strong>Option Price:</strong> $1.20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.600</span></p>
+                    <p><strong>Confidence:</strong> 85.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $1.20</p>
+                    <p><strong>Signal Strength:</strong> 0.510</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.60) with high confidence (0.85)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>(05/7) Interesting Stocks Today- China Market Stimulus!</li><li>U.S. stocks close Dow at new 3-month high Tesla surges more than 5% as VIX continues to fall</li><li>Peter Lynch Investing by looking at my bills</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('GOOGL')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $182.97</p>
+                    <p><strong>Strike:</strong> $182.06</p>
+                    <p><strong>Option Price:</strong> $1.83</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-danger">-0.800</span></p>
+                    <p><strong>Confidence:</strong> 100.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $1.83</p>
+                    <p><strong>Signal Strength:</strong> 0.800</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Negative sentiment (-0.80) with high confidence (1.00)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>AI is overvalued</li><li>The future of film. Netflix or some other company?</li><li>Expanding the Mag7 to the MagDozen</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>META</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('META')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $702.91</p>
+                    <p><strong>Strike:</strong> $699.40</p>
+                    <p><strong>Option Price:</strong> $7.03</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-muted">-0.200</span></p>
+                    <p><strong>Confidence:</strong> 45.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $7.03</p>
+                    <p><strong>Signal Strength:</strong> 0.090</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Negative sentiment (-0.20) with high confidence (0.45)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Apple Loses Top AI Models Executive to Meta’s Hiring Spree</li><li>20k and where to put it</li><li>Nvidia didn’t just win with tech  it won with customers</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>MSFT</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('MSFT')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $505.62</p>
+                    <p><strong>Strike:</strong> $508.15</p>
+                    <p><strong>Option Price:</strong> $5.06</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.850</span></p>
+                    <p><strong>Confidence:</strong> 92.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $5.06</p>
+                    <p><strong>Signal Strength:</strong> 0.782</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.85) with high confidence (0.92)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Nvidia didn’t just win with tech  it won with customers</li><li>Expanding the Mag7 to the MagDozen</li><li>Trump posted: ‘The stock market is at an all-time high and interest rates should be cut immediately’!</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>NFLX</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('NFLX')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $1,250.31</p>
+                    <p><strong>Strike:</strong> $1,244.06</p>
+                    <p><strong>Option Price:</strong> $12.50</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-danger">-0.700</span></p>
+                    <p><strong>Confidence:</strong> 95.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $12.50</p>
+                    <p><strong>Signal Strength:</strong> 0.665</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Negative sentiment (-0.70) with high confidence (0.95)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Got the biggest kick to my psyche's nuts in perhaps my entire life</li><li>SPMO (Invesco S&amp;P 500 Momentum ETF) Hits New 52-Week High Today</li><li>TSLA has been a terrible buy and hold</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>NVDA</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('NVDA')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $171.37</p>
+                    <p><strong>Strike:</strong> $172.23</p>
+                    <p><strong>Option Price:</strong> $1.71</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.850</span></p>
+                    <p><strong>Confidence:</strong> 92.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $1.71</p>
+                    <p><strong>Signal Strength:</strong> 0.782</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.85) with high confidence (0.92)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Expanding the Mag7 to the MagDozen</li><li>NVDA eyes fresh highs as China sales may resume</li><li>(07/15) Chip Restrictions Lifted?! - Interesting Stocks Today</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>PLTR</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('PLTR')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $150.91</p>
+                    <p><strong>Strike:</strong> $150.16</p>
+                    <p><strong>Option Price:</strong> $1.51</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-muted">-0.200</span></p>
+                    <p><strong>Confidence:</strong> 45.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $1.51</p>
+                    <p><strong>Signal Strength:</strong> 0.090</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Negative sentiment (-0.20) with high confidence (0.45)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>"Boring" stocks with tech-like returns</li><li>What's the next RKLB or PLTR to buy right now?</li><li>What are some Stocks your looking to hold till 2030+?</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div><div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>TSLA</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="executeOpportunity('TSLA')">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <h6>Price Info</h6>
+                    <p><strong>Current:</strong> $321.67</p>
+                    <p><strong>Strike:</strong> $323.28</p>
+                    <p><strong>Option Price:</strong> $3.22</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Sentiment</h6>
+                    <p><strong>Score:</strong> <span class="text-success">0.700</span></p>
+                    <p><strong>Confidence:</strong> 95.0%</p>
+                    <p><strong>News Count:</strong> 20</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Trade Details</h6>
+                    <p><strong>Position Size:</strong> 1 contracts</p>
+                    <p><strong>Total Cost:</strong> $3.22</p>
+                    <p><strong>Signal Strength:</strong> 0.665</p>
+                </div>
+                <div class="col-md-3">
+                    <h6>Strategy</h6>
+                    <p class="small">Positive sentiment (0.70) with high confidence (0.95)</p>
+                    <p class="small text-muted">Based on 3 recent articles</p>
+                </div>
+            </div>
+            
+            
+            <div class="mt-3">
+                <h6>Recent News Headlines:</h6>
+                <ul class="small">
+                    <li>Why i hold UNH while reducing positions on other stocks</li><li>Stocks Rise, Trump Speaks Out, Cryptocurrencies Surge - What Happened Today?
+Folks, it's been another restless Monday.</li><li>Pre-market overview for 14 July 2025</li>
+                </ul>
+            </div>
+            
+        </div>
+    </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-newspaper"></i> News-Driven Strategy</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>How it works:</strong></p>
+                <ul class="small">
+                    <li>Gets trending stocks from Marketaux API</li>
+                    <li>Fetches news from multiple sources (Alpha Vantage, Reddit, Finnhub, Yahoo Finance)</li>
+                    <li>Analyzes sentiment using Ollama AI</li>
+                    <li>Generates trading signals for trending assets</li>
+                    <li>Higher confidence threshold (60%)</li>
+                </ul>
+                <div class="alert alert-info">
+                    <small><strong>Best for:</strong> Capturing momentum from trending stocks in the news</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h6><i class="fas fa-list"></i> Watchlist Strategy</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>How it works:</strong></p>
+                <ul class="small">
+                    <li>Monitors predefined watchlist symbols</li>
+                    <li>Analyzes recent news for each symbol</li>
+                    <li>Generates signals based on sentiment</li>
+                    <li>Regular scanning regardless of news volume</li>
+                    <li>Standard confidence threshold (50%)</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <small><strong>Best for:</strong> Systematic analysis of favorite stocks</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6><i class="fas fa-cog"></i> Configuration</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Current Settings:</strong></p>
+                <div id="watchlistConfig">
+            <p><small><strong>Watchlist Stocks:</strong> AAPL, AMZN, DIS, GOOGL, META, MSFT, NFLX, NVDA, PLTR, TSLA</small></p>
+            <p><small><strong>Total Symbols:</strong> 10</small></p>
+        </div>
+                <div class="alert alert-success">
+                    <small><strong>Edit:</strong> Manage watchlists in <a href="/system_status" class="alert-link">System Status</a> page</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DEBUG PANEL -->
+<div id="debugPanel" class="mt-4" style="background:#222; color:#fff; padding:16px; border-radius:8px; font-size:0.95em;">
+    <h5 style="color:#ffb300;">Debug Panel</h5>
+    <div><strong>Last API Request:</strong> <span id="debugApiRequest">/api/news_opportunities</span></div>
+    <div><strong>Last API Response:</strong></div>
+    <pre id="debugApiResponse" style="background:#111; color:#b2ffb2; padding:8px; border-radius:4px; max-height:200px; overflow:auto;"></pre>
+    <div><strong>Last Error:</strong> <span id="debugApiError" style="color:#ff6666;">(none)</span></div>
+</div>
+
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Trading AI Dashboard</h6>
+                    <p class="text-muted small">Advanced sentiment analysis and options trading recommendations powered by AI.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted small">
+                        <i class="fas fa-shield-alt"></i> Demo Version - Not Financial Advice
+                    </p>
+                        </div>
+                    </div>
+                </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    <!-- Frontend Logger (MUST BE FIRST) -->
+    <script src="/static/js/logger.js"></script>
+    
+    <!-- Base JavaScript Functions -->
+    <script src="/static/js/base.js"></script>
+
+    
+<script src="/static/js/opportunities.js"></script>
+<script>
+// Debug panel logic
+window.debugPanel = {
+    setRequest: function(url) {
+        document.getElementById('debugApiRequest').textContent = url;
+    },
+    setResponse: function(json) {
+        document.getElementById('debugApiResponse').textContent = JSON.stringify(json, null, 2);
+    },
+    setError: function(msg) {
+        document.getElementById('debugApiError').textContent = msg;
+    }
+};
+
+// Initialize page with server-side preloaded data
+document.addEventListener('DOMContentLoaded', function() {
+    // Store preloaded data globally for JavaScript to use
+    window.preloadedData = {
+        news_opportunities: [],
+        watchlist_opportunities: [{"articles": [{"category": "discussion", "datetime": "2025-07-14T08:23:34Z", "headline": "Why i hold UNH while reducing positions on other stocks", "source": "Reddit", "summary": "From April to July 2025, institutions were quietly accumulating **UnitedHealth (UNH)** adding **\\~12 million shares** and increasing portfolio allocation by **\\~34%**.\n\nWe\u0027re talking **Vanguard (+8M)** and **BlackRock (+2.3M)**\n\nAt the same time, due to market uncertainty, filings show many funds were trimming **TSLA, NVDA, and even AAPL**, yet UNH got more love.\n\nThen in June? A **$6.2M LEAPS call sweep** (Dec 2025, $290 strike). This isn\u2019t retail peasants like us trading daddies money.   \nThat\u2019s smart money making a long-dated, high-conviction bet.\n\n# Here\u0027s where it gets juicy:\n\n* End of June: Short interest spiked, price dipped below support\n* Early July: Price reversed hard \u2192 shorts got nuked\n* Classic bear trap setup + quiet accumulation by institutions\n\n#  What to Expect\n\n* Late July = potential breakout trigger from earnings or on the run up to earnings.\n* **Fake dip likely** \u2192 don\u2019t get shaken\n* If fundamentals hold, holding firm may outperform chasing \n\nInstitutions are already positioned they don\u2019t need perfect timing, they need long-term upside\n\nIf earnings later this month show:\n\n* Stable cost ratios\n* Good Medicare enrollment\n* No DOJ bombshells ... then the accumulation zone around $290\u2013305 may end up being the best entry range", "url": "https://www.reddit.com/r/stocks/comments/1lzgx86/why_i_hold_unh_while_reducing_positions_on_other/"}, {"category": "discussion", "datetime": "2025-07-14T13:26:44Z", "headline": "Pre-market overview for 14 July 2025", "source": "Reddit", "summary": "Markets are weak this morning with Dow futures down over 100 points after Trump announced reciprocal 30% tariffs on the EU and Mexico. Sentiment is somewhat volatile ahead of second quarter earnings and tomorrow CPI data\n\nHowever some stocks are showing relative strength despite headline pressure\n\nTSLA +1.3% premarket \n\nMusk teased an epic reveal before the end of the year after leaving Tesla design studio typical Elon spark The stock has been trying to hold onto its recent breakout area today push looks like a continuation of the momentum. But watch out for the $290-295 area - many short-term traders are pouring in\n\n BA  +1.2% premarket \n\nBoeing breathed a rare sigh of relief after the Air India Authority said no mechanical or maintenance issues were found in the recent crash There may finally be some room for a relief rally  but fundamentals still need to be cleare of a lot of noise the $190 level will be key\n\n Cryptocurrency stocks attracting buying\n\nMSTR +3\n\nBitcoin breaks above $120,000\n\nSQNS +15% after announcing it bought 683 BTC for $79M\n\nCryptocurrency stocks are hot again.MSTR continues to trade as a pure Bitcoin proxy and today volume looks real SQNS move to venture in BTC Treasuries is bold  and could spark sympathy\n\nChina EV/Tech Roundup\n\nNIO +5.7%  Preorders for the new Onvobranded L90 begin. Prices look competitive and market sentiment is improving. Nonetheless, supply remains high.\n\nLI +1.6% - The first all-electric SUV i8 will go on sale on 29 July. Focus on sales trends - Uncertain\n\nBABA +0.9%  Flash sales data solid, but still rangebound KWEB down on the day despite the BABA bump  Chinese tech still struggling for sustained flows\n\nCommodities \u0026amp; FXBrent and WTI both up 1% but still stuck in a chop range\n\nBrent and WTI both up \\~1%, but still stuck in a chop range\n\nGold gave up intraday highs, now near $3351 after briefly tagging $3370\n\nGold gave up intraday highs, now near $3351 after briefly tagging $3370\n\nUSD Index nudged back above 98  nothing dramatic, but worth watching into CPI\n\nUSD Index nudged back above 98  nothing dramatic, but worth watching into CPI\n\nTakeaways of pockets of strength, but not a broad-based risk-on environment Big cap teh is mixed AAPL red on Mistral AI headlines and indexes still feel vulnerable to macro shocks.CPI tomorrow is the real test\n\nLots of pockets of strength but not a broadbased rison environment Big cap tech is mixed AAPL red on Mistral AI headlines and indexes still feel vulnerable to macro shocks CPI tomorrow is the real test.\n\nI\u2019m staying selective  letting existing positions work while scanning for asymmetric setups Not every green premarket print is a reason to chase\n\n", "url": "https://www.reddit.com/r/stocks/comments/1lzmd3r/premarket_overview_for_14_july_2025/"}, {"category": "discussion", "datetime": "2025-07-14T13:53:10Z", "headline": "EU issues tough warning of countermeasures if US-EU trade talks break down - will markets falter?", "source": "Reddit", "summary": "Background Sorting: \n\nTrade tensions between the US and Europe have heated up again over the past two weeks. Despite the departure of the Biden administration, Trump reinstated some of the tariffs on Europe prior to his campaign, particularly related to automobiles, precision manufacturing equipment and green energy products.\n\nToday, EU Vice-President Sefcovic made it clear that if negotiations fail, the EU will not hesitate to take reciprocal countermeasures, including imposing tariffs or limits on U.S. high-tech products, cloud services and chip equipment.\n\nShort-term market judgment: \n\nIf the US-EU talks continue to stall, it will weigh on large-cap tech stocks in the short- to medium-term, especially for companies with high international revenue share (e.g., NVDA, AAPL, AMD).\n\nHowever, if positive signals of progress in negotiations can be released later this week, the market will repair quickly.\n\nThe current rise in volatility expectations for August in the options market suggests that institutions are already hedging their bets against conflicting risks.\n\nMy strategy (not a recommendation): \n\nLightly hold tech ETFs (e.g. QQQ) and closely monitor the EU response meeting on 7/16 \n\nIf conflict escalates, plan to buy short-term defensive ETFs (e.g. XLU / SH) if the VIX breaks 15+ \n\nWatch for shifts in international stances during the Biden and Trump campaigns, as the policy set-ups will influence the direction of capital allocation in Sept.\n\nWhat do our Reddit friends think?\n\nDo you think the EU will really do something to counter it, or is it just a bargaining chip?\n\nHow will the escalation of the U.S.-EU trade war affect your holdings (especially tech stocks)?\n\nHow do you plan to hedge your bets if things continue to deteriorate?", "url": "https://www.reddit.com/r/stocks/comments/1lzmzfo/eu_issues_tough_warning_of_countermeasures_if/"}], "news_count": 20, "price_data": {"change": 0.49, "change_percent": "0.2349%", "current_price": 196.58, "symbol": "AAPL", "timestamp": "2025-07-16T17:57:04.787381", "volume": 42296339}, "sentiment_data": {"confidence": 0.85, "sentiment_score": 0.6, "summary": "The news highlights a positive sentiment towards UnitedHealth (UNH), with institutions increasing their allocation and accumulating shares. Despite market uncertainty, UNH has shown resilience and is expected to continue its strong performance based on favorable earnings and fundamentals. The summary also mentions some relative strength in other stocks like Tesla (TSLA) and Boeing (BA), but the overall sentiment leans towards positive due to the accumulation of UNH."}, "signal_data": {"action": "CALL", "confidence": 0.85, "reasoning": "Positive sentiment (0.60) with high confidence (0.85)", "signal_strength": 0.51}, "symbol": "AAPL", "timestamp": "2025-07-16T17:57:14.884014", "trade_signal": {"action": "CALL", "confidence": 0.85, "current_price": 196.58, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\udcca Moderate conviction - wait for technical confirmation", "\ud83c\udfaf Stick to planned exit levels", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "Look for volume spike or technical confirmation", "method": "Limit order at mid-price or better", "timing": "Wait for 5-15 minute confirmation of price direction", "volume_check": "Check option chain liquidity before entry"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 25% gain or better", "stop_loss": "Hard stop at 12% loss", "time_stop": "Exit before 15-60 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "15-60 minutes", "option_price": 1.97, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 30, "potential_gain": 14.74, "potential_loss": 7.08, "risk_amount": 58.97, "risk_percent": 2.9, "risk_reward_ratio": 2.08, "stop_price": 1.73, "target_price": 2.46, "total_cost": 58.97}}, "position_size": 1, "reasoning": "Positive sentiment (0.60) with high confidence (0.85)", "sentiment_score": 0.6, "signal_strength": 0.51, "stop_loss_percent": 12.0, "strategy_type": "Day Trade", "strike_price": 197.56, "symbol": "AAPL", "target_gain_percent": 25.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-09T19:17:17Z", "headline": "Retailers raked in $7.9 billion in online sales during the first 24 hours of Prime Day, an increase of nearly 10% year over year, according", "source": "Reddit", "summary": "U.S. online sales jumped 9.9% year over year to $7.9 billion on Tuesday, the kickoff of\u00a0[Amazon](https://www.cnbc.com/quotes/AMZN/)\u2019s Prime Day megasale, according to Adobe Analytics.\n\nAt that level, it marks the \u201csingle biggest e-commerce day so far this year,\u201d Adobe said. It also eclipsed total online spending during Thanksgiving last year, when sales on the holiday reached\u00a0[$6.1 billion](https://business.adobe.com/resources/holiday-shopping-report.html).\n\n[https://www.cnbc.com/2025/07/09/prime-day-sales.html](https://www.cnbc.com/2025/07/09/prime-day-sales.html)", "url": "https://www.reddit.com/r/stocks/comments/1lvrljw/retailers_raked_in_79_billion_in_online_sales/"}, {"category": "discussion", "datetime": "2025-07-07T18:16:28Z", "headline": "Will Trump\u0027s tariff delay spark a short-term stock market rally?", "source": "Reddit", "summary": "Trump to delay tariff deadline, sends trade letter to 12 countries. This may sound like run-of-the-mill political news, but given the current macro backdrop, there may be more to this than meets the eye.\n\nThe Trump administration\u0027s new round of tariffs, which were set to begin this month, have now been postponed.\n\nLetters have reportedly been sent to 12 countries that could involve renegotiating or easing trade restrictions.\n\nThe timing is very sensitive - CPI is due out soon (July 10th) and markets are now betting on a Fed rate cut in September.\n\nWhat I think the impact will be: \n\nEasing Trade Tensions = Risk Appetite Rebound \n\nHistorically, whenever there is an easing of trade protectionism, market risk appetite improves, particularly favoring the following sectors: tech hardware (e.g., chips, Apple supply chain) export-oriented industrials (e.g., Caterpillar, Boeing) retailers with large exposure to the global market (e.g., Nike, Costco) The SPX Index, affected by the news Futures were up +0.6% in pre-market, but it\u0027s hard to say if that will last.\n\n Possible Dollar Weakness?\n\nIf the market interprets this tariff delay as Trump \u201csoftening his stance\u201d for the election, then the dollar could pull back. This is usually good for: commodities, emerging markets, large multinational exporters.\n\nMy view: \n\nI think this news is a positive sign for the markets, especially as it adds fuel to the already bearish sentiment. Currently, the market also has the following: Q2 earnings season is about to kick off (with low benchmark expectations favoring \u201cover-expectations\u201d), the Fed has been dovish in recent statements, global manufacturing data is stabilizing, and the Fed will continue to be a major player in the global economy.\n\nIf the CPI data on July 10th is modest and trade news becomes clearer, we could see a positive market, but there are some potential risks: if the news is just \u201cpolitical posturing\u201d without any real progress, the market could quickly overreact and retrace its gains.\n\nWhat I\u0027m watching: \n\nNVDA / AVGO - High beta tech stocks benefiting from global demand for semiconductors and rebound in market sentiment \n\n XLI - Industrial sector ETF with Boeing (BA), United Technologies (UTX), 3M and other components sensitive to global trade and exports \n\n AAPL / AMZN - Globalized, tariff-sensitive giants where policy direction has a significant impact on valuation \n\nWelcome to the discussion: \n\nDo you think this tariff delay is a material positive? Or is it political maneuvering before the election?\n\n Is it a \u201cbull trap\u201d waiting for everyone to get cut during earnings season?", "url": "https://www.reddit.com/r/stocks/comments/1lu1mcq/will_trumps_tariff_delay_spark_a_shortterm_stock/"}, {"category": "discussion", "datetime": "2025-07-14T00:11:10Z", "headline": "Prime Day 2025 U.S. retailers drove $24.1 billion in online spend, up 30.3% from 2024, according to new data from Adobe", "source": "Reddit", "summary": "July 12 (Reuters) - Online spending soared $24.1 billion across U.S. retailers during the stretch from July 8 to 11 \u2013 dubbed \"Black Friday in Summer\", outpacing Adobe Analytics\u0027 prior forecast, as eager shoppers rushed to snap up deep discounts on back-to-school essentials.  \n  \nRetailers recorded online sales growth of 30.3% during events that included Amazon Prime Day, Adobe said on Saturday, compared with\u00a0[its projections of\u00a0](https://www.reuters.com/business/retail-consumer/amazon-prime-day-set-lift-us-online-sales-238-billion-adobe-estimates-2025-07-07/)28.4%.\n\nOnline retail sales in the U.S. rose 11% to\u00a0[$14.2 billion a year ago](https://www.reuters.com/business/retail-consumer/amazon-prime-day-boosts-us-online-sales-142-bln-adobe-says-2024-07-18/).The Prime Day event has also been cemented as a \"back-to-school\" shopping moment, as consumers jumped on early deals to stock up on essentials and get ahead of the back-to-school rush, Adobe said.\n\nSeveral major retailers including e-commerce giant [Amazon.com](http://Amazon.com)\u00a0[(AMZN.O), opens new tab](https://www.reuters.com/markets/companies/AMZN.O), Walmart\u00a0[(WMT.N), opens new tab](https://www.reuters.com/markets/companies/WMT.N), Target\u00a0[(TGT.N), opens new tab](https://www.reuters.com/markets/companies/TGT.N)\u00a0as well as Best Buy\u00a0[(BBY.N), opens new tab](https://www.reuters.com/markets/companies/BBY.N)\u00a0have been launching deal events with strong discounts, encouraging shoppers to trade up on expensive items they might normally pass on.\n\n[Amazon.com](http://Amazon.com) extended its sales window to 96 hours, up from the typical 48, featuring aggressive promotions on categories ranging from apparel to electronics.\n\nA wave of enticing deals comes at a time when heightened trade tensions amid the Trump administration\u0027s volatile tariff policies have rattled consumers and businesses, and as the new August 1 deadline for countries to renegotiate trade agreements with the United States looms.\n\nAccording to the report, shopping on mobile was the dominant transaction channel during the Prime Day event, driving 53.2% of online sales, above Adobe\u0027s forecast of 52.5%.\n\nAccording to Adobe, overall discounts across U.S. retailers were between 11% and 24%, compared with the prior forecast range of 10% to 24%.Apparel had the biggest deals at 24%, compared with 20% last year, while electronics were at 23%, similar to last year.\n\n[https://www.reuters.com/business/retail-consumer/us-online-spending-surges-241-billion-steep-discounts-boost-sales-adobe-says-2025-07-12/](https://www.reuters.com/business/retail-consumer/us-online-spending-surges-241-billion-steep-discounts-boost-sales-adobe-says-2025-07-12/)", "url": "https://www.reddit.com/r/stocks/comments/1lz81rw/prime_day_2025_us_retailers_drove_241_billion_in/"}], "news_count": 20, "price_data": {"change": -3.16, "change_percent": "-1.3961%", "current_price": 223.19, "symbol": "AMZN", "timestamp": "2025-07-16T17:57:14.962232", "volume": 39441987}, "sentiment_data": {"confidence": 0.95, "sentiment_score": 0.8, "summary": "The news highlights a significant increase in online sales during Amazon\u0027s Prime Day, which is seen as positive for the company and the broader e-commerce sector. The delay of tariffs by Trump administration also adds to market optimism, particularly benefiting sectors like tech hardware, export-oriented industries, and retailers with global exposure. Despite some potential risks, the overall sentiment leans towards a bullish outlook."}, "signal_data": {"action": "CALL", "confidence": 0.95, "reasoning": "Positive sentiment (0.80) with high confidence (0.95)", "signal_strength": 0.76}, "symbol": "AMZN", "timestamp": "2025-07-16T17:57:23.971629", "trade_signal": {"action": "CALL", "confidence": 0.95, "current_price": 223.19, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 30% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 2.23, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 44, "potential_gain": 29.46, "potential_loss": 14.73, "risk_amount": 98.2, "risk_percent": 4.9, "risk_reward_ratio": 2.0, "stop_price": 1.9, "target_price": 2.9, "total_cost": 98.2}}, "position_size": 1, "reasoning": "Positive sentiment (0.80) with high confidence (0.95)", "sentiment_score": 0.8, "signal_strength": 0.76, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 224.31, "symbol": "AMZN", "target_gain_percent": 30.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-05-07T13:14:53Z", "headline": "(05/7) Interesting Stocks Today- China Market Stimulus!", "source": "Reddit", "summary": "Hi! I am an ex-prop shop equity trader. This is a daily watchlist for short-term trading: I might trade all/none of the stocks listed, and even stocks not listed! I am targeting potentially good candidates for short-term trading; I have no opinion on them as investments. The potential of the stock moving today is what makes it interesting, everything else is secondary.\n\nNews: [Xi Fortifies China\u0027s Economy Before First Talks On Trade With Us](https://www.bloomberg.com/news/articles/2025-05-07/xi-fortifies-china-s-economy-before-first-talks-on-trade-with-us)\n\n[**AMD (Advanced Micro Devices)**](https://finviz.com/quote.ashx?t=AMD\u0026amp;p=d)\\- Reported Q1 earnings with EPS of $0.62 vs. $0.61 expected and revenue of $5.47B vs. $5.46B expected. AMD mentioned a $1.5B revenue hit due to U.S. chip export restrictions to China, with $800M in costs linked to AI chip curbs. Overall pretty mixed results, stock spiked AH but gave back most of the gains, currently only up 1%. No particular level I\u0027m watching. Overall I see less risk in this (and the other semis) now that most of the major chip companies (ARM reports today) have defined their losses due to the chip restriction- and we have clear defined numbers as to how much a stock will move if they\u0027re lifted. Obviously another bad catalyst would be completely stopping all exports, but that seems unlikely at this point.\n\n[**DIS (Disney)**](https://finviz.com/quote.ashx?t=DIS\u0026amp;p=d)\\- Reported Q2 EPS of $1.45 vs. $1.21 expected and revenue of $23.6B vs. $23.34B exp. Raised full-year EPS outlook to $5.75, +16% vs. prior guidance. Parks revenue grew 6% to $8.9B. Disney+ added 1.4M subs, hitting $336M in operating profit. I looked into the earnings and interestingly, I think profitability over raw subscriber growth was the spotlight in Disney+. Overall great earnings, which they capped off with softening international parks revenue, then followed it up with a park in Abu Dhabi (lol). Disneyworld generates roughly $10M a day in revenue, so it\u0027ll be interesting to see how much a park in Abu Dhabi will cost (10 times more?? /s)\n\n[**SMCI (Super Micro Computer)**](https://finviz.com/quote.ashx?t=SMCI\u0026amp;p=d)\\- Issued weak guidance post-earnings, citing \u201ceconomic uncertainty and tariff impacts.\u201d EPS of 0.31 vs .50 exp, revenue of $4.60B vs. $5.42B expected. Ever since the spike back in February, this stock has essentially been (relatively) non-volatile, still watching $30 level. SMCI\u0027s server business is essentially linked to AI/data center build-outs- but this stock hasn\u0027t been moving that much with tech companies announcing greater AI spend. Accounting issues could return (highly unlikely), tariffs get worse, etc.\n\n[**PLTR (Palantir Technologies)**](https://finviz.com/quote.ashx?t=PLTR\u0026amp;p=d)\\- Currently holding a short position due to the stock\u0027s massive run up to 125. Stop set at 115 (near yesterday\u2019s high), earnings were released on Monday. I kind of see a similar pattern that came when NVDA was trading near $140 in this stock: (NVDA obviously has better fundamentals than PLTR) but we had a massive run up, earnings that were excellent but still couldn\u0027t live up to the hype, and a subsequent selloff. For now, nothing has really changed my mind about covering my short unless we have a massive turn. Government spending cuts are the main risk for the company.", "url": "https://www.reddit.com/r/stocks/comments/1kgx2ai/057_interesting_stocks_today_china_market_stimulus/"}, {"category": "discussion", "datetime": "2025-06-10T23:41:23Z", "headline": "U.S. stocks close Dow at new 3-month high Tesla surges more than 5% as VIX continues to fall", "source": "Reddit", "summary": "U.S. stocks closed higher across the board \n\nThe Dow Jones rose 0.25 per cent to a three-month high\n\nS\u0026amp;P 500 up 0.55 per cent\n\nNasdaq up 0.63 per cent\n\nHeavyweight Individual Stock Highlights\n\nTSLA +5.67% closed at $326.09\n\nNVDA+7.95% Strong rebound\n\nCZR +5.72 per cent\n\nNKE +3.17% Leads the Dow higher\n\nDIS+2.65% Hitting a new one-year high\n\nDragging down the market\n\nSJM 15.60% At a new low\n\nNRG Energy 4.11%\n\nGE 3.74 per cent\n\nBroad-based performance\n\n\n\nVIX panic index continued to fall 1.22% to 16.95\n\nGold futures down slightly Crude oil both down\n\nUS Dollar Index rose slightly to 99.04\n\nNasdaq Divergence:\n\nCLRO surges over 1296 per cent\n\nBBLG +637 per cent\n\nCARM +389 per cent\n\n \n\nIs today rise in anticipation of optimism or main baiting as CPI data is about to be released?\n\nAre Tesla and Intel leading the way suggesting a return to growth styles?\n\nDo you think CLRO BBLG surge is a sentiment trade or fundamentally supported?\n\nDoes the VIX falling below 17 signal a continued rise in market risk appetite?", "url": "https://www.reddit.com/r/stocks/comments/1l8e1ug/us_stocks_close_dow_at_new_3month_high_tesla/"}, {"category": "discussion", "datetime": "2025-05-29T08:01:07Z", "headline": "Peter Lynch Investing by looking at my bills", "source": "Reddit", "summary": "I took my 18 month credit card and bank statements, stuffed them into ChatGPT and out came what I spend my money on.\n\nThen I took everything I spend money and built a basket of stocks that I would own to protect myself from their cost increasing.\n\nHow poor of an idea is this? Or how awesome?\n\nHere is the list\n\n1. Waste Management (Trash)\n2. Travelers (Home insurance)\n3. Amazon (Kindle, Audible, Prime)\n4. Google (YouTube Premium, YouTube TV, Google One)\n5. Tesla Car + Tesla Premium Connectivity\n6. Ford Car\n7. Costco (Stuff + Gas)\n8. Walmart (Groceries + Stuff)\n9. TMobile (Cell)\n10. Comcast (Internet)\n11. AT\u0026amp;T (Backup Internet)\n12. Cinemark (Movies)\n13. Spotify\n14. Apple TV\n15. WBD (Hbo Max)\n16. Netflix\n17. Chase (Credit Card Fee)\n18. Bank Of America (Bank - $500 so I can use Zelle)\n19. American Express (Credit Card Fee)\n20. Capital One (Credit Card Fee)\n21. RobinHood (DeGen Stuff)\n22. Schwab (Brokerage Fees etc.)\n23. Morgan Stanley (Work place account fees, etc.)\n24. Avis (Car Rental)\n25. Hyatt (Hotels)\n26. Delta (flights)\n27. Uber Eats\n\nBasically all of my discretionary income goes into the last 3 companies because I like to travel a lot.\n\nEDIT: Added Uber, only big expense not covered is child care, child education and child 529 which is Fidelity).\n\nEDIT 2: One offs, CCL, BROS, CART, LLY, HIMS, SOFI, ULTA, DPZ, YUM, CAVA, BBY, TJX, ROST, SBUX, CMG, SG, COIN, KR, DHI, DXCM, GEHC, KBH,  NKE, LULU, DASH, UPS, FDX, CVS, HD, PG, JNJ, V, MA, BRK.B, META, KO, UNH, MCD, DIS, PEP, AMD, BKNG", "url": "https://www.reddit.com/r/stocks/comments/1ky55mq/peter_lynch_investing_by_looking_at_my_bills/"}], "news_count": 20, "price_data": {"change": 0.83, "change_percent": "0.6976%", "current_price": 119.81, "symbol": "DIS", "timestamp": "2025-07-16T17:57:24.040520", "volume": 6746597}, "sentiment_data": {"confidence": 0.85, "sentiment_score": 0.6, "summary": "The news contains a mix of positive and neutral sentiments with some hints of caution. The earnings reports for AMD and Disney show mixed results, but the overall tone is cautiously optimistic. The mention of China\u0027s economic stimulus adds a positive note to the report. There are no significant negative sentiments expressed in this summary."}, "signal_data": {"action": "CALL", "confidence": 0.85, "reasoning": "Positive sentiment (0.60) with high confidence (0.85)", "signal_strength": 0.51}, "symbol": "DIS", "timestamp": "2025-07-16T17:57:33.856421", "trade_signal": {"action": "CALL", "confidence": 0.85, "current_price": 119.81, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\udcca Moderate conviction - wait for technical confirmation", "\ud83c\udfaf Stick to planned exit levels", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "Look for volume spike or technical confirmation", "method": "Limit order at mid-price or better", "timing": "Wait for 5-15 minute confirmation of price direction", "volume_check": "Check option chain liquidity before entry"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 25% gain or better", "stop_loss": "Hard stop at 12% loss", "time_stop": "Exit before 15-60 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "15-60 minutes", "option_price": 1.2, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 50, "potential_gain": 14.98, "potential_loss": 7.19, "risk_amount": 59.91, "risk_percent": 3.0, "risk_reward_ratio": 2.08, "stop_price": 1.05, "target_price": 1.5, "total_cost": 59.91}}, "position_size": 1, "reasoning": "Positive sentiment (0.60) with high confidence (0.85)", "sentiment_score": 0.6, "signal_strength": 0.51, "stop_loss_percent": 12.0, "strategy_type": "Day Trade", "strike_price": 120.41, "symbol": "DIS", "target_gain_percent": 25.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-14T15:05:41Z", "headline": "AI is overvalued", "source": "Reddit", "summary": "I am going to preface this with the fact I have worked in the AI field with some big companies for about 10 years now and understand everything about AI and how it works. \n\nI think a AI bubble is here, we are overvalueing every company that seems to use AI for the sole reason that it uses AI. We are creating a bubble of artificial valuation. AI has many uses and I do believe we will continue using it in the future, but that does not mean it is now the most powerful market indicator. The value of AI companies should be based on the integration value. Why does every AI company hit huge numbers shortly after the launch. It makes no sense. The whole point of valuation is how much shareholder value can they provide and with many of these new companies that number is real low. We are throwing money at these useless AI companies for absolutely no reason. We can look at a example of OpenAI. They are at the cutting edge of LLM  technology. It is never going to become the next \"Google\" and while I do think it is amazing what they do and I use Chatgpt often, why does everyone say they are undervalued. It isn\u0027t a trillion dollar company. That is just one dumb example though. The real overvaluation is the 75% of AI companies that are truly useless. We will always use AI in the future as a society, but it won\u0027t be a million companies, it will be the best of the best that we use for everything. \n\nThere are countless AI companies that all think because they use AI they are the future, and we do fall for it. I think that in the near future there will be a AI burst. The bubble will finally collapse, it will hit everyone harder than we would ever expect. I have no idea when its going to happen, could be this year, could be next, and could be in 5 years. The overvaluation of AI is at least 50% artificial. \n\nShorting AI might sound stupid, and it could be I am totally wrong, but what if I am right. \n\nEdit: I am not talking about the big hitters in the AI industry. The OpenAI, Palantir, Nvidia are all huge and extremely impactful. I am solely saying these are the companies that will survive. They are so ahead of everyone else that in 1 day they can teach a model to do virtually anything. Other companies will be forced to die out. This is just my prediction for the future of AI. ", "url": "https://www.reddit.com/r/stocks/comments/1lzou4i/ai_is_overvalued/"}, {"category": "discussion", "datetime": "2025-07-14T14:26:54Z", "headline": "The future of film. Netflix or some other company?", "source": "Reddit", "summary": "Netflix has announced that they will begin showing AI generated ads in 2026. It\u0027s pretty clear what happens from there. What starts as 15-30 second AI-generated advertisements shown in the middle of your favorite TV series eventually evolves into 40-50 minute AI-generated episodes that *become* your new favorite TV series.\n\nAt some point in the not too distant future, and perhaps sooner than you think, the major streaming platforms will start rolling out feature-length films and TV series created entirely with AI. Over time, the quality will improve to be indistinguishable from real life.\n\nThe future of film is not in big budget productions with a cast of A-list stars. The future of film is in AI-generated content, created for pennies on the dollar and with very few human actors. Movies and series will be produced not over several months or years on set at some studio in Hollywood but in a few days or hours from who knows where. Like Bibles with the introduction of the printing press, they\u0027ll be produced in the thousands.\n\nAnd companies can limit their exposure to risk by shifting to an On Demand model. Sure, there will be established franchises like Marvel and Star Wars and others they\u0027ll keep dishing out, but long gone will be the days when a studio drops $150M on a movie that flops.\n\nBecause the future of film won\u0027t be just Netflix Original content (or another company\u0027s), much of it will be *your* content. You\u0027ll have the power of Gen AI at your fingertips.\n\nIt won\u0027t be long until you can log into Netflix or another platform, and with a simple prompt or a choice of a few options, generate an entire film or TV series that you can watch that day and share with your friends. User content will be circulated and rated like your aunt\u0027s potato salad recipe on Allrecipes.com.\n\nMovies are inherently procedural. Every story, at least a decent one, has:\n\n* Structure (Freytag\u0027s pyramid, Three-act Play, The Hero\u0027s Journey, etc)\n* Plot (Rags to Riches, Overcoming the Monster, Comedy, Tragedy, and Rebirth, etc)\n* Theme (Love, Good vs Evil, Coming of Age, etc)\n* Tone (Serious, Uplifting, Bleak, etc)\n* Conflict (Man vs Man, Man vs Society, Man vs Nature, etc)\n* Characters (Humans, Elves, Demons, Robots, Zombies, etc)\n* Setting (Present Day, Apocalyptic, Alternate Dimension, Mars, etc)\n\nYou\u0027ll be able mix and match all of these elements and generate a prompt. BOOM - you have a new film or TV series that you\u0027ll be the first to view. Give it a thumbs up if you enjoyed it and Netflix will learn from your prompt and produce better recipes tailored just for you. You\u0027ll be able to share it with your friends on Netflix too. Top rated user content will be owned by Netflix who can sell it or rent it. Maybe they\u0027ll give you a percentage of the profit.\n\nIf you want a franchise with 20 movies, you\u0027ll have it. If you want TV series with 50 seasons, you\u0027ll have it.\n\nSo, what could the future look like?\n\nNetflix has a current market cap of $529B with subscriptions priced between $7.99 and $24.99/mo. It\u0027s not unrealistic to double, triple, or even quadruple these costs to provide what I just described. As a millennial, I remember paying $70ish for cable 10-15 years ago. You have to believe people will be willing to pay a similar cost for On Demand film.\n\nIs it unrealistic to forecast Netflix with a market cap of $2T?\n\nPerhaps it\u0027s Google (Alphabet), not Netflix who will capitalize on this - and they won\u0027t just stick to movies and series. They\u0027ll evolve YouTube into a Generative AI hub. Create film, series, vlogs, and more. Veo3 is impressive. How much more capable will it be in 10 years?\n\nIf Nvidia is building \"AI factories\" to produce off-the-shelf AI models, then on-demand AI film is not so far fetched.\n\nThey say Tom Cruise saved Hollywood with Top Gun 2. I believe he only bought them a bit of extra time.", "url": "https://www.reddit.com/r/stocks/comments/1lzntu4/the_future_of_film_netflix_or_some_other_company/"}, {"category": "discussion", "datetime": "2025-07-15T04:01:07Z", "headline": "Expanding the Mag7 to the MagDozen", "source": "Reddit", "summary": "If the mag7 was expanded to the magdozen, who would be your additions?\n\n1) NVDA\n\n2) MSFT\n\n3) AAPL\n\n4) AMZN\n\n5) GOOGL\n\n6) META\n\n7) TSLA\n_____________\n\n8) AVGO\n\n9) UBER\n\n10) NFLX\n\n11) CRM\n\n12) PLTR\n\nConsiderations:\n\nTSM\n\nASML \n\nAMD\n\nDIS\n\nINTU\n\nNOW\n\nBKNG\n\nSHOP\n\nSPOT\n\nORCL\n\nCOST\n\nPANW\n\nEdit* this is NOT a recommendation list by any means. Went through and just listed those with over 125b market cap and wasn\u2019t a dinosaur or has some growth prospects or mentioned a lot in current event news. The intention was for users to list their own mag12. ", "url": "https://www.reddit.com/r/stocks/comments/1m07vzh/expanding_the_mag7_to_the_magdozen/"}], "news_count": 20, "price_data": {"change": 0.97, "change_percent": "0.5330%", "current_price": 182.97, "symbol": "GOOGL", "timestamp": "2025-07-16T17:57:33.935830", "volume": 33071300}, "sentiment_data": {"confidence": 1.0, "sentiment_score": -0.8, "summary": "The news article expresses strong negative sentiment towards the valuation and future prospects of AI companies. The author argues that AI is overvalued, pointing out that many AI companies are perceived as valuable solely because they use AI technology, rather than based on their actual integration value or potential for providing shareholder value. The author predicts a \u0027AI burst\u0027 where the bubble will collapse, with only a few leading AI companies surviving in the long term. The article suggests that the future of film and entertainment may be dominated by AI-generated content instead of traditional productions."}, "signal_data": {"action": "PUT", "confidence": 1.0, "reasoning": "Negative sentiment (-0.80) with high confidence (1.00)", "signal_strength": 0.8}, "symbol": "GOOGL", "timestamp": "2025-07-16T17:57:53.354528", "trade_signal": {"action": "PUT", "confidence": 1.0, "current_price": 182.97, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BEARISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 30% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 1.83, "option_type": "put", "position_recommendations": {"${amount}": {"contracts": 54, "potential_gain": 29.64, "potential_loss": 14.82, "risk_amount": 98.8, "risk_percent": 4.9, "risk_reward_ratio": 2.0, "stop_price": 1.56, "target_price": 2.38, "total_cost": 98.8}}, "position_size": 1, "reasoning": "Negative sentiment (-0.80) with high confidence (1.00)", "sentiment_score": -0.8, "signal_strength": 0.8, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 182.06, "symbol": "GOOGL", "target_gain_percent": 30.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-07T22:05:19Z", "headline": "Apple Loses Top AI Models Executive to Meta\u2019s Hiring Spree", "source": "Reddit", "summary": "https://www.bloomberg.com/news/articles/2025-07-07/apple-loses-its-top-ai-models-executive-to-meta-s-hiring-spree\n\n\u0026gt; Apple Inc.\u2019s top executive in charge of artificial intelligence models is leaving for Meta Platforms Inc., another setback in the iPhone maker\u2019s struggling AI efforts.\n\n\u0026gt; Ruoming Pang, a distinguished engineer and manager in charge of the company\u2019s Apple foundation models team, is departing, according to people with knowledge of the matter. Pang, who joined Apple from Alphabet Inc. in 2021, is the latest big hire for Meta\u2019s new superintelligence team, said the people, who declined to be named discussing unannounced personnel moves. \n\n\u0026gt; To secure Pang, Meta offered a package worth tens of millions of dollars per year, the people said. Meta Chief Executive Officer Mark Zuckerberg has been on a hiring spree, bringing on major AI leaders including Scale AI\u2019s Alexandr Wang, startup founder Daniel Gross and former GitHub CEO Nat Friedman with high compensation.", "url": "https://www.reddit.com/r/stocks/comments/1lu7im4/apple_loses_top_ai_models_executive_to_metas/"}, {"category": "discussion", "datetime": "2025-07-03T17:06:56Z", "headline": "20k and where to put it", "source": "Reddit", "summary": "Hello friendly investors.\nWould love some advice here. I have Schwab and Amex High yield\nI have about 25k in High yield account and put roughly 20-40% of each check in there depending on on expenses and work. 10-20%% in brokerage. 5-10% in a vacation account to play with. I also have about 16k in Schwab spread out between individual stocks ( I know most advise against this for obvious reasons...) TSLA META AAPL GOOG PLTR AMZN. ( I know... tough picks... but all up.) I have an additional 20k on the sidelines with in my schab account that I\u0027m trying to feel out where to put. I\u0027be been looking at FXAIX as a solid safer/smarter place to put it since it\u0027s a larger buy. was considering SWPPX but looks like FXAIX has a slightly better return/expense ratio.\nfor context I\u0027m 32, no debt.", "url": "https://www.reddit.com/r/stocks/comments/1lquyue/20k_and_where_to_put_it/"}, {"category": "discussion", "datetime": "2025-07-10T13:04:13Z", "headline": "Nvidia didn\u2019t just win with tech  it won with customers", "source": "Reddit", "summary": "Everyone talks about how Nvidia ($NVDA) has the best product  and yeah, H100s and now B100s are beasts. But honestly, what really sets them apart is who\u2019s buying from them. When the top five richest companies on Earth  AMZN, GOOG, META, MSFT, even TSLA  are all basically funneling their AI capex directly into Nvidia\u2019s pockets, you realize this isn\u2019t just about good tech. It\u2019s about having the best seat at the table\n\n$4 trillion market cap. That\u2019s not just hype anymore. It\u2019s the result of every major tech platform building AI data centers on top of Nvidia\u2019s ecosystem. Even if their AI tools flop or adoption slows, Nvidia already got paid. Meanwhile, the Apples, Metas, Googles of the world still need to convince us that the AI tools are worth using\n\nAnd yeah, sure  competition is coming. AMD, Intel, startups like Groq or Cerebras\u2026 But Nvidia\u2019s lead isn\u2019t just in chips. It\u2019s in software (CUDA), developer loyalty, global reach, and sheer momentum\n\nAt this point, they\u2019re not just selling chips. They\u2019re selling shovels during a gold rush  and the miners are billion-dollar tech giants with no choice but to buy in\n\nI\u2019m not saying there\u2019s no risk. If AI turns out to be overhyped, or if capex cools off, Nvidia could feel it. But so far, every quarterly report just reinforces the same message: the AI boom may be messy, but Nvidia wins either way\n\nThey\u2019re making money before anyone else does while everyone\u2019s still figuring out how to monetize AI, Nvidia is just cashing checks", "url": "https://www.reddit.com/r/stocks/comments/1lwc7fb/nvidia_didnt_just_win_with_tech_it_won_with/"}], "news_count": 20, "price_data": {"change": -7.48, "change_percent": "-1.0529%", "current_price": 702.91, "symbol": "META", "timestamp": "2025-07-16T17:57:53.427503", "volume": 13046459}, "sentiment_data": {"confidence": 0.45, "sentiment_score": -0.2, "summary": "The news article discusses the departure of Ruoming Pang from Apple to Meta Platforms Inc., highlighting this as a setback for Apple\u0027s AI efforts. The departure is attributed to Meta offering a significant compensation package, indicating that Meta has been actively hiring top talent in the AI field. This information suggests a negative sentiment towards Apple and positive sentiment towards Meta in terms of their AI initiatives."}, "signal_data": {"action": "PUT", "confidence": 0.45, "reasoning": "Negative sentiment (-0.20) with high confidence (0.45)", "signal_strength": 0.09000000000000001}, "symbol": "META", "timestamp": "2025-07-16T17:58:02.277733", "trade_signal": {"action": "PUT", "confidence": 0.45, "current_price": 702.91, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\u26a0\ufe0f Lower conviction - consider paper trading first", "\ud83d\udee1\ufe0f Use smaller position sizes", "\u2753 Lower confidence - be extra cautious"], "days_to_expiry": 2, "direction": "BEARISH", "entry_strategy": {"confirmation": "Require additional technical or news catalyst", "method": "Limit order with patience for better fill", "timing": "Wait for technical confirmation and volume", "volume_check": "Only trade highly liquid options"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 10% gain or better", "stop_loss": "Hard stop at 8% loss", "time_stop": "Exit before 30-120 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "30-120 minutes", "option_price": 7.03, "option_type": "put", "position_recommendations": {"${amount}": {"contracts": 5, "potential_gain": 3.51, "potential_loss": 2.81, "risk_amount": 35.15, "risk_percent": 1.8, "risk_reward_ratio": 1.25, "stop_price": 6.47, "target_price": 7.73, "total_cost": 35.15}}, "position_size": 1, "reasoning": "Negative sentiment (-0.20) with high confidence (0.45)", "sentiment_score": -0.2, "signal_strength": 0.09000000000000001, "stop_loss_percent": 8.0, "strategy_type": "Conservative Day Trade", "strike_price": 699.4, "symbol": "META", "target_gain_percent": 10.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-10T13:04:13Z", "headline": "Nvidia didn\u2019t just win with tech  it won with customers", "source": "Reddit", "summary": "Everyone talks about how Nvidia ($NVDA) has the best product  and yeah, H100s and now B100s are beasts. But honestly, what really sets them apart is who\u2019s buying from them. When the top five richest companies on Earth  AMZN, GOOG, META, MSFT, even TSLA  are all basically funneling their AI capex directly into Nvidia\u2019s pockets, you realize this isn\u2019t just about good tech. It\u2019s about having the best seat at the table\n\n$4 trillion market cap. That\u2019s not just hype anymore. It\u2019s the result of every major tech platform building AI data centers on top of Nvidia\u2019s ecosystem. Even if their AI tools flop or adoption slows, Nvidia already got paid. Meanwhile, the Apples, Metas, Googles of the world still need to convince us that the AI tools are worth using\n\nAnd yeah, sure  competition is coming. AMD, Intel, startups like Groq or Cerebras\u2026 But Nvidia\u2019s lead isn\u2019t just in chips. It\u2019s in software (CUDA), developer loyalty, global reach, and sheer momentum\n\nAt this point, they\u2019re not just selling chips. They\u2019re selling shovels during a gold rush  and the miners are billion-dollar tech giants with no choice but to buy in\n\nI\u2019m not saying there\u2019s no risk. If AI turns out to be overhyped, or if capex cools off, Nvidia could feel it. But so far, every quarterly report just reinforces the same message: the AI boom may be messy, but Nvidia wins either way\n\nThey\u2019re making money before anyone else does while everyone\u2019s still figuring out how to monetize AI, Nvidia is just cashing checks", "url": "https://www.reddit.com/r/stocks/comments/1lwc7fb/nvidia_didnt_just_win_with_tech_it_won_with/"}, {"category": "discussion", "datetime": "2025-07-15T04:01:07Z", "headline": "Expanding the Mag7 to the MagDozen", "source": "Reddit", "summary": "If the mag7 was expanded to the magdozen, who would be your additions?\n\n1) NVDA\n\n2) MSFT\n\n3) AAPL\n\n4) AMZN\n\n5) GOOGL\n\n6) META\n\n7) TSLA\n_____________\n\n8) AVGO\n\n9) UBER\n\n10) NFLX\n\n11) CRM\n\n12) PLTR\n\nConsiderations:\n\nTSM\n\nASML \n\nAMD\n\nDIS\n\nINTU\n\nNOW\n\nBKNG\n\nSHOP\n\nSPOT\n\nORCL\n\nCOST\n\nPANW\n\nEdit* this is NOT a recommendation list by any means. Went through and just listed those with over 125b market cap and wasn\u2019t a dinosaur or has some growth prospects or mentioned a lot in current event news. The intention was for users to list their own mag12. ", "url": "https://www.reddit.com/r/stocks/comments/1m07vzh/expanding_the_mag7_to_the_magdozen/"}, {"category": "discussion", "datetime": "2025-07-11T13:23:58Z", "headline": "Trump posted: \u2018The stock market is at an all-time high and interest rates should be cut immediately\u2019!", "source": "Reddit", "summary": "Former U.S. President Donald Trump just posted heavy rhetoric on social media, praising tech, industrial stocks and cryptocurrencies for their big gains and strongly calling on the Federal Reserve to cut interest rates. Let\u0027s break down what he said and analyze the current state of the market with the latest data. Tech stocks, industrial stocks, Nasdaq hit record highs, cryptocurrencies \u201cbreak through the sky\u201d Nvidia (NVDA) is up 47% since the tariffs, the U.S. made hundreds of billions of dollars from the tariffs the country came back and called on the Fed to immediately cut interest rates declaring that \u201cthere is no inflation\u201d .\n\nHow does the market interpret this?\n\nExpectations for rate cuts are heating up: inflation is falling back + political heat is rising in a campaign year, Trump\u0027s statement may create some public pressure on the Fed (although its independence remains).\n\nTariffs negative turned positive? : Despite initial concerns that the market was under pressure, from the perspective of capital rotation, industrial, AI and defense stocks have risen, and it seems that the \u201cMade in the USA\u201d narrative is stronger.\n\nNvidia became a symbol: as the AI concept leader, NVDA after the tariffs rose against the trend, became the representative of the \u201cno fear of policy uncertainty\u201d, ARM, SMCI, AVGO, etc. also strengthened, the whole AI plate into the \u201crevaluation period\u201d.\n\nFollow-up possible trend?\n\nIf the next Fed officials do not rush to suppress the rate cut expectations, the market may be the following scenarios\n\n Long beneficiary direction: tech giants (NVDA, MSFT, GOOGL), interest rate sensitive growth stocks (ARKK, SMH), industrial/infrastructure stocks (CAT, DE, GE)\n\nRisks to watch out for: QQQ/SPY technicals are close to overheating, Powell or other officials release hawkish letters, earnings season is approaching, and there could be a \u201cpositive cash-out-on-decline\u201d \n\nWhat do our Reddit friends think?\n\nDo you think Trump is just \u201crubbing it in\u201d or is the impact of his policies really being priced into the market?\n\nWill the Fed turn dovish under this political pressure?\n\nAre you still holding NVDA? Or are you planning to bag it before earnings?", "url": "https://www.reddit.com/r/stocks/comments/1lx6tfx/trump_posted_the_stock_market_is_at_an_alltime/"}], "news_count": 20, "price_data": {"change": -0.2, "change_percent": "-0.0395%", "current_price": 505.62, "symbol": "MSFT", "timestamp": "2025-07-16T17:58:02.671868", "volume": 15143043}, "sentiment_data": {"confidence": 0.92, "sentiment_score": 0.85, "summary": "The news highlights Nvidia\u0027s strong position in the AI market and its significant customer base, including major tech companies like Amazon (AMZN), Google (GOOG), Microsoft (MSFT), and Tesla (TSLA). The sentiment is very positive towards Nvidia\u0027s performance and market leadership. The mention of Trump\u0027s call for interest rate cuts adds a neutral to slightly positive tone, as it reflects the current economic environment favoring tech stocks."}, "signal_data": {"action": "CALL", "confidence": 0.92, "reasoning": "Positive sentiment (0.85) with high confidence (0.92)", "signal_strength": 0.782}, "symbol": "MSFT", "timestamp": "2025-07-16T17:58:20.154430", "trade_signal": {"action": "CALL", "confidence": 0.92, "current_price": 505.62, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 30% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 5.06, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 19, "potential_gain": 28.82, "potential_loss": 14.41, "risk_amount": 96.07, "risk_percent": 4.8, "risk_reward_ratio": 2.0, "stop_price": 4.3, "target_price": 6.57, "total_cost": 96.07}}, "position_size": 1, "reasoning": "Positive sentiment (0.85) with high confidence (0.92)", "sentiment_score": 0.85, "signal_strength": 0.782, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 508.15, "symbol": "MSFT", "target_gain_percent": 30.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-05-10T04:29:59Z", "headline": "Got the biggest kick to my psyche\u0027s nuts in perhaps my entire life", "source": "Reddit", "summary": "My mother recently passed and my dad is hanging on in memory care. I\u0027m now running the family trust and so know all of my parent\u0027s holdings. Anyways I was going through copious amounts of files and yesterday finally took a closer look at a letter my dad wrote to us on 1/15/2007 before a trip they took up the Amazon, in case something bad happened I could start getting at the money. He provided a printout of all his stock and fund holdings and accounts and two positions really stood out. \n\n3100 shares of NFLX (~$70k)\n1600 shares of NVDA. (~$56k)\n\nWe don\u0027t own either of those in the trust. Sold at some point perhaps years ago definitely before the extreme run-ups of the 2020\u0027s. Probably sold after making several hundred thousand or when they didn\u0027t move the right direction.\n\nToday these holdings would be \n\n21,700 shares of NFLX at $1140 = $24.738 million\n96,000 shares of NVDA at $116.65 = $11.198 million\n\n\nLesson is don\u0027t sell unless you absolutely have to and consider selling smaller chunks versus all or nothing. \n\n", "url": "https://www.reddit.com/r/stocks/comments/1kj1xnb/got_the_biggest_kick_to_my_psyches_nuts_in/"}, {"category": "discussion", "datetime": "2025-05-13T20:54:23Z", "headline": "SPMO (Invesco S\u0026amp;P 500 Momentum ETF) Hits New 52-Week High Today", "source": "Reddit", "summary": "SPMO, the Invesco S\u0026amp;P 500 Momentum ETF, hit an all-time high today, reflecting strong investor interest in momentum-driven strategies. This ETF focuses on about 100 S\u0026amp;P 500 stocks with high momentum scores, weighted by market cap and momentum, and is rebalanced twice a year. How much longer can momentum strategies continue to outperform traditional market-cap-weighted indexes?\n\n|Rank|Company Name|Ticker|Weight (%)|\n|:-|:-|:-|:-|\n|1|NVIDIA Corporation|NVDA|8.70|\n|2|[Amazon.com](http://Amazon.com), Inc.|AMZN|8.38|\n|3|Meta Platforms, Inc.|META|8.28|\n|4|JPMorgan Chase \u0026amp; Co.|JPM|5.19|\n|5|Walmart Inc.|WMT|5.06|\n|6|Broadcom Inc.|AVGO|4.99|\n|7|Tesla, Inc.|TSLA|4.59|\n|8|Netflix, Inc.|NFLX|3.71|\n|9|Costco Wholesale Corporation|COST|3.02|\n|10|Palantir Technologies Inc.|PLTR|2.93|", "url": "https://www.reddit.com/r/stocks/comments/1klx4t2/spmo_invesco_sp_500_momentum_etf_hits_new_52week/"}, {"category": "discussion", "datetime": "2025-06-24T17:28:25Z", "headline": "TSLA has been a terrible buy and hold", "source": "Reddit", "summary": "From 1/4/2021 to 6/23/25 TSLA has gone up 43.34%\n\nIn the same time frame, MSFT (+123.25%), GOOGL (+91.39%), META (+159.74%), NFLX (139.75%), AAPL (+55.71%), S\u0026amp;P (+62.81%), and QQQ (+71.88%) have all outperformed. \n\nThe only Mag 7 stock to not outperform TSLA has been AMZN (+30.84%).\n\nWhat\u2019s crazier still is that none of these numbers include dividends.\n\nAlso, as a side note: what\u2019s even crazier still is that I looked at a forgotten about legacy company called General Electric. They are up a whopping 374.46% over the same time frame not including their dividend.\n\nI would say the only redeeming quality of TSLA is that in this 4.5 year frame their PE ratio has dropped from ~1100 to 200. This just goes to show how much valuation and time matter. A great company can have a wildly inaccurate price and you are left with nothing while it grows into its valuation.\n\nAlso worth noting their revenue has been completely flat since reporting Q2 of 2023 while gross profit has fallen by ~20%. Their net earnings per share has collapsed 50% during this time.\n\nLots of the last 2 years have been when Musk was involved with his politics. Maybe he can turn it around now, but either way, the current valuation does not leave much room for any sort of stock price appreciation. The only thing they can hope for now is to get EPS back growing positive instead of consistently negative Q/Q", "url": "https://www.reddit.com/r/stocks/comments/1ljhbcx/tsla_has_been_a_terrible_buy_and_hold/"}], "news_count": 20, "price_data": {"change": -9.96, "change_percent": "-0.7903%", "current_price": 1250.31, "symbol": "NFLX", "timestamp": "2025-07-16T17:58:20.222421", "volume": 3215721}, "sentiment_data": {"confidence": 0.95, "sentiment_score": -0.7, "summary": "The news article discusses the author\u0027s realization about their father\u0027s investment decisions and the current value of stocks they previously owned, specifically Netflix (NFLX) and NVIDIA Corporation (NVDA). The sentiment is negative as it highlights missed opportunities and poor investment choices. Additionally, there is a brief mention of Tesla (TSLA), which is described negatively with statements indicating underperformance and valuation issues."}, "signal_data": {"action": "PUT", "confidence": 0.95, "reasoning": "Negative sentiment (-0.70) with high confidence (0.95)", "signal_strength": 0.6649999999999999}, "symbol": "NFLX", "timestamp": "2025-07-16T17:58:33.506192", "trade_signal": {"action": "PUT", "confidence": 0.95, "current_price": 1250.31, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BEARISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 20% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 12.5, "option_type": "put", "position_recommendations": {"${amount}": {"contracts": 7, "potential_gain": 17.5, "potential_loss": 13.13, "risk_amount": 87.52, "risk_percent": 4.4, "risk_reward_ratio": 1.33, "stop_price": 10.63, "target_price": 15.0, "total_cost": 87.52}}, "position_size": 1, "reasoning": "Negative sentiment (-0.70) with high confidence (0.95)", "sentiment_score": -0.7, "signal_strength": 0.6649999999999999, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 1244.06, "symbol": "NFLX", "target_gain_percent": 20.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-15T04:01:07Z", "headline": "Expanding the Mag7 to the MagDozen", "source": "Reddit", "summary": "If the mag7 was expanded to the magdozen, who would be your additions?\n\n1) NVDA\n\n2) MSFT\n\n3) AAPL\n\n4) AMZN\n\n5) GOOGL\n\n6) META\n\n7) TSLA\n_____________\n\n8) AVGO\n\n9) UBER\n\n10) NFLX\n\n11) CRM\n\n12) PLTR\n\nConsiderations:\n\nTSM\n\nASML \n\nAMD\n\nDIS\n\nINTU\n\nNOW\n\nBKNG\n\nSHOP\n\nSPOT\n\nORCL\n\nCOST\n\nPANW\n\nEdit* this is NOT a recommendation list by any means. Went through and just listed those with over 125b market cap and wasn\u2019t a dinosaur or has some growth prospects or mentioned a lot in current event news. The intention was for users to list their own mag12. ", "url": "https://www.reddit.com/r/stocks/comments/1m07vzh/expanding_the_mag7_to_the_magdozen/"}, {"category": "discussion", "datetime": "2025-07-15T13:11:51Z", "headline": "NVDA eyes fresh highs as China sales may resume", "source": "Reddit", "summary": "Looks like NVDA is back in the headlines (when is it not?)  this time with a shot at reclaiming lost ground in China\n\nAfter months of silence and billions in lost revenue, Nvidia just said it\u0027s applying to resume sales of its H20 AI chips in China. The US government apparently \"assured\" them that licenses will be granted  which, if true, is a massive shift from the strict bans we saw earlier this year. Shares are ripping in premarket\n\nWhat\u2019s wild is that this comes just weeks after Jensen Huang met with Trump. Now he\u0027s in Beijing for a media briefing. Coincidence? Maybe. But the timing feels... calculated\n\nAlso worth noting: AMD is jumping too, riding Nvidia\u2019s coattails and signaling that it might get the same green light. So maybe Washington\u0027s stance on AI chips to China is softening a bit?\n\nOf course, even if deliveries resume, it\u2019s unlikely to impact Nvidia\u2019s current quarter much  too little time left. But if they can get chips flowing in Q3 and Q4, that\u2019s a whole different story\n\nNvidia was already on a tear after breaking that $4T milestone, and now this could add more fuel. If they can recapture even part of that China demand, it could be another big leg up  Does this feel like a short-term bump, or a full-on policy pivot that could open the floodgates again?", "url": "https://www.reddit.com/r/stocks/comments/1m0he5b/nvda_eyes_fresh_highs_as_china_sales_may_resume/"}, {"category": "discussion", "datetime": "2025-07-15T13:07:00Z", "headline": "(07/15) Chip Restrictions Lifted?! - Interesting Stocks Today", "source": "Reddit", "summary": "This is a daily watchlist for short-term trading: I might trade all/none of the stocks listed, and even stocks not listed! I am targeting potentially good candidates for short-term trading; I have no opinion on them as investments. The potential of the stock moving today is what makes it interesting, everything else is secondary.\n\nNews: [US CPI Report For June](https://www.bloomberg.com/news/live-blog/2025-07-15/us-cpi-report-for-june?srnd=homepage-americas)\n\n[**NVDA (NVIDIA)**](https://finviz.com/quote.ashx?t=NVDA\u0026amp;p=d)/AMD- NVDA/AMD is now allowed to sell its previously restricted H20/MI308 chips to China after gaining U.S. government approval. This reopens a major demand pipeline and removes a significant geopolitical overhang, boosting investor sentiment around long-term growth prospects. NVDA has hit ATH from this, I\u0027m more interested in AMD today as a trade though just because it\u0027s run down compared to NVDA, but I\u0027m interested in seeing if NVDA can break $170. The export clearance marks a shift in U.S. posture toward China and semiconductors and the AI race, suggesting trade tensions are entering a more flexible phase and all that money Jensen \"donated\" to Trump is paying off. This benefits high-end chipmakers, namely AMD/NVDA the most.\n\n[**BABA (Alibaba)**](https://finviz.com/quote.ashx?t=BABA\u0026amp;p=d)/KC/FXI/all Chinese stocks- The chip export announcement has been interpreted as Trump easing his stance on China, sparking a rally across most Chinese equities. BABA was up nearly 6% premarket, and I\u0027m mainly interested in seeing if we can break daily highs in BABA today, other than that I\u0027m also watching KC, a Chinese datacenter stock. Main risk is that Trump reverses his stance- the TACO trade can cut both ways.\n\n[**MP (MP Materials)**](https://finviz.com/quote.ashx?t=MP\u0026amp;p=d)\\- The Department of Defense agreed to buy $400M in MP\u0027s newly issued preferred stock, taking a 15% stake in the company last week. AAPL is expected to announce a $500M commitment to MP, signaling \"deepening partnerships to localize critical rare-earth supply chains\" (this was announced on FOX news). I doubt this will make as big a spike as the DOD investment because we\u0027re so far up already, so not too interested in this stock today, but still worth writing about.", "url": "https://www.reddit.com/r/stocks/comments/1m0ha4x/0715_chip_restrictions_lifted_interesting_stocks/"}], "news_count": 20, "price_data": {"change": 0.67, "change_percent": "0.3925%", "current_price": 171.37, "symbol": "NVDA", "timestamp": "2025-07-16T17:58:33.577889", "volume": 158455194}, "sentiment_data": {"confidence": 0.92, "sentiment_score": 0.85, "summary": "The news highlights the positive impact of Nvidia\u0027s (NVDA) resumption of sales in China on its stock price, indicating a strong positive sentiment towards NVDA. The announcement is seen as a significant shift in U.S. policy toward China and semiconductors, which benefits high-end chipmakers like AMD and NVDA. Additionally, the news about BABA\u0027s (Alibaba) potential rally due to eased trade tensions further supports the overall positive outlook for tech stocks."}, "signal_data": {"action": "CALL", "confidence": 0.92, "reasoning": "Positive sentiment (0.85) with high confidence (0.92)", "signal_strength": 0.782}, "symbol": "NVDA", "timestamp": "2025-07-16T17:58:48.842592", "trade_signal": {"action": "CALL", "confidence": 0.92, "current_price": 171.37, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 30% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 1.71, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 58, "potential_gain": 29.82, "potential_loss": 14.91, "risk_amount": 99.39, "risk_percent": 5.0, "risk_reward_ratio": 2.0, "stop_price": 1.46, "target_price": 2.23, "total_cost": 99.39}}, "position_size": 1, "reasoning": "Positive sentiment (0.85) with high confidence (0.92)", "sentiment_score": 0.85, "signal_strength": 0.782, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 172.23, "symbol": "NVDA", "target_gain_percent": 30.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-07T06:18:22Z", "headline": "\"Boring\" stocks with tech-like returns", "source": "Reddit", "summary": "Everybody is chasing the next ai hype. PLTR, RKLB, Semiconductors, etc.\n\nBut what are some stocks that operate in boring mundane industries that have stellar returns. \n\nAs an example, comfort systems (hvac) or terravest (propane tanks). These have crushed the market over the past several years.\n\nWhat are some boring, under the radar stocks you like? (I don\u0027t mean the usual WM, COST that are talked about endlessly on this sub).\n", "url": "https://www.reddit.com/r/stocks/comments/1ltmuuz/boring_stocks_with_techlike_returns/"}, {"category": "discussion", "datetime": "2025-07-08T22:29:51Z", "headline": "What\u0027s the next RKLB or PLTR to buy right now?", "source": "Reddit", "summary": "Folks,\n\nWhich stock is the next RKLB or PLTR that can soar in the next 12 months?\n\nI missed out on these 2 when they were low.\n\nPlease share your opinion on which stocks can potentially 10x in the next 12 months and what\u0027s you\u0027re reasoning for that?\n\nIt would be great if you could share the top 10 stocks to buy right now that can soar in a year\u0027s time. It could be any sector.\n\n\n", "url": "https://www.reddit.com/r/stocks/comments/1lv2drd/whats_the_next_rklb_or_pltr_to_buy_right_now/"}, {"category": "discussion", "datetime": "2025-07-16T00:47:09Z", "headline": "What are some Stocks your looking to hold till 2030+?", "source": "Reddit", "summary": "For context, I\u2019m 23 years old and I know alot of people on this sub are a little older so I\u2019m generally curious as to what stocks you guys are looking to hold. For another 5 to 10 years!!\n\nPersonally I\u2019m holding some RKLB and DCA into it as I\u2019m very bullish on the stock. But what are some others you guys like and would recommend to let\u2019s say a friend or even your father! lol. \n\nI\u2019m not talking about MAG7 or penny stocks but stocks like ASTS RKLB that have a large potential upside, or even stocks like PLTR or Blacksky ", "url": "https://www.reddit.com/r/stocks/comments/1m0yxuq/what_are_some_stocks_your_looking_to_hold_till/"}], "news_count": 20, "price_data": {"change": 2.33, "change_percent": "1.5682%", "current_price": 150.91, "symbol": "PLTR", "timestamp": "2025-07-16T17:58:48.915369", "volume": 57541721}, "sentiment_data": {"confidence": 0.45, "sentiment_score": -0.2, "summary": "The news articles discuss the pursuit of high returns from tech-like stocks like PLTR and RKLB, while also highlighting under-the-radar, boring industries with stellar performance such as HVAC systems and propane tanks. The sentiment is somewhat negative towards the current market focus on trendy tech stocks, but there\u0027s a hint of positive for those who are looking at long-term investments in less hyped sectors."}, "signal_data": {"action": "PUT", "confidence": 0.45, "reasoning": "Negative sentiment (-0.20) with high confidence (0.45)", "signal_strength": 0.09000000000000001}, "symbol": "PLTR", "timestamp": "2025-07-16T17:59:04.760954", "trade_signal": {"action": "PUT", "confidence": 0.45, "current_price": 150.91, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\u26a0\ufe0f Lower conviction - consider paper trading first", "\ud83d\udee1\ufe0f Use smaller position sizes", "\u2753 Lower confidence - be extra cautious"], "days_to_expiry": 2, "direction": "BEARISH", "entry_strategy": {"confirmation": "Require additional technical or news catalyst", "method": "Limit order with patience for better fill", "timing": "Wait for technical confirmation and volume", "volume_check": "Only trade highly liquid options"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 10% gain or better", "stop_loss": "Hard stop at 8% loss", "time_stop": "Exit before 30-120 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "30-120 minutes", "option_price": 1.51, "option_type": "put", "position_recommendations": {"${amount}": {"contracts": 26, "potential_gain": 3.92, "potential_loss": 3.14, "risk_amount": 39.24, "risk_percent": 2.0, "risk_reward_ratio": 1.25, "stop_price": 1.39, "target_price": 1.66, "total_cost": 39.24}}, "position_size": 1, "reasoning": "Negative sentiment (-0.20) with high confidence (0.45)", "sentiment_score": -0.2, "signal_strength": 0.09000000000000001, "stop_loss_percent": 8.0, "strategy_type": "Conservative Day Trade", "strike_price": 150.16, "symbol": "PLTR", "target_gain_percent": 10.0}, "trigger": "watchlist_scan", "type": "stock"}, {"articles": [{"category": "discussion", "datetime": "2025-07-14T08:23:34Z", "headline": "Why i hold UNH while reducing positions on other stocks", "source": "Reddit", "summary": "From April to July 2025, institutions were quietly accumulating **UnitedHealth (UNH)** adding **\\~12 million shares** and increasing portfolio allocation by **\\~34%**.\n\nWe\u0027re talking **Vanguard (+8M)** and **BlackRock (+2.3M)**\n\nAt the same time, due to market uncertainty, filings show many funds were trimming **TSLA, NVDA, and even AAPL**, yet UNH got more love.\n\nThen in June? A **$6.2M LEAPS call sweep** (Dec 2025, $290 strike). This isn\u2019t retail peasants like us trading daddies money.   \nThat\u2019s smart money making a long-dated, high-conviction bet.\n\n# Here\u0027s where it gets juicy:\n\n* End of June: Short interest spiked, price dipped below support\n* Early July: Price reversed hard \u2192 shorts got nuked\n* Classic bear trap setup + quiet accumulation by institutions\n\n#  What to Expect\n\n* Late July = potential breakout trigger from earnings or on the run up to earnings.\n* **Fake dip likely** \u2192 don\u2019t get shaken\n* If fundamentals hold, holding firm may outperform chasing \n\nInstitutions are already positioned they don\u2019t need perfect timing, they need long-term upside\n\nIf earnings later this month show:\n\n* Stable cost ratios\n* Good Medicare enrollment\n* No DOJ bombshells ... then the accumulation zone around $290\u2013305 may end up being the best entry range", "url": "https://www.reddit.com/r/stocks/comments/1lzgx86/why_i_hold_unh_while_reducing_positions_on_other/"}, {"category": "discussion", "datetime": "2025-07-14T13:23:57Z", "headline": "Stocks Rise, Trump Speaks Out, Cryptocurrencies Surge - What Happened Today?\nFolks, it\u0027s been another restless Monday.", "source": "Reddit", "summary": "Just before the U.S. stock market opens, several key stocks and sectors are getting restless:\n\nTop U.S. Stocks Pre-Market Movers for July 14th:\n\nTesla (TSLA) up over 1% \n\nBoeing (BA) also up about 1% \n\nCryptocurrency Concepts Are Taking Off \n\nAzure (NIO) surges about 5% as new energy vehicles heat up again \n\nMeanwhile, Trump is on Truth Social again: the Nasdaq, tech, industrials - all at record highs. Cryptocurrencies are going crazy. The Fed should cut rates immediately. Inflation? Doesn\u0027t exist!\n\nThree major thrusts behind today\u0027s market rally:\n\nPositive macro data \n\nCPI inflation data released last week came in at 3.2% (y/y), which was lower than market expectations \n\nMarkets are starting to bet that the Fed may cut rates sooner \n\nUS bond yields have come down (10-year Treasuries are currently around 3.84%) \n\nTrump\u0027s statements have heated up expectations \n\nHe has publicly called for an \u201cimmediate cut in interest rates\u201d \n\nsaid. \u201cHe\u0027s the reason the market is at record highs\u201d \n\nWhether you agree or not, the market loves any dovish (rate cut) signal, even if it\u0027s a political shout \n\nHot Sectors Rotate \n\nCryptocurrencies: Bitcoin back above $83,000, Ether follows \n\n\u2192 COIN, MSTR, MARA and other related stocks all in the red pre-market \n\nNew Energy Vehicles. NIO leads the way, TSLA steady - may be related to China stimulus and rumors of lower battery costs \n\nINDUSTRY \u0026amp; AEROSPACE: Boeing shines as it benefits from defense export expectations and capital rotation\n\nThree things I\u0027m watching this week:\n\nEarnings season is here: tech giants start announcing earnings this week, will it continue to push the market higher or be a head-scratcher?\n\nFed officials statement: will they make a hawkish counterattack to the \u201cTrump-style rate cut shouts\u201d?\n\nSector rotation risk: will AI, tech stocks top out? Is money flowing into crypto, industrials, energy?\n\nWhat do you think:\n\nWill you get on board with this Trump wave? Or are you ready to reverse course?\n\nNIO Is it for real this time or just another high and low?\n\nDoes anyone else feel like this scenario resembles the eve of that early 2020\u0027s bull market?", "url": "https://www.reddit.com/r/stocks/comments/1lzmave/stocks_rise_trump_speaks_out_cryptocurrencies/"}, {"category": "discussion", "datetime": "2025-07-14T13:26:44Z", "headline": "Pre-market overview for 14 July 2025", "source": "Reddit", "summary": "Markets are weak this morning with Dow futures down over 100 points after Trump announced reciprocal 30% tariffs on the EU and Mexico. Sentiment is somewhat volatile ahead of second quarter earnings and tomorrow CPI data\n\nHowever some stocks are showing relative strength despite headline pressure\n\nTSLA +1.3% premarket \n\nMusk teased an epic reveal before the end of the year after leaving Tesla design studio typical Elon spark The stock has been trying to hold onto its recent breakout area today push looks like a continuation of the momentum. But watch out for the $290-295 area - many short-term traders are pouring in\n\n BA  +1.2% premarket \n\nBoeing breathed a rare sigh of relief after the Air India Authority said no mechanical or maintenance issues were found in the recent crash There may finally be some room for a relief rally  but fundamentals still need to be cleare of a lot of noise the $190 level will be key\n\n Cryptocurrency stocks attracting buying\n\nMSTR +3\n\nBitcoin breaks above $120,000\n\nSQNS +15% after announcing it bought 683 BTC for $79M\n\nCryptocurrency stocks are hot again.MSTR continues to trade as a pure Bitcoin proxy and today volume looks real SQNS move to venture in BTC Treasuries is bold  and could spark sympathy\n\nChina EV/Tech Roundup\n\nNIO +5.7%  Preorders for the new Onvobranded L90 begin. Prices look competitive and market sentiment is improving. Nonetheless, supply remains high.\n\nLI +1.6% - The first all-electric SUV i8 will go on sale on 29 July. Focus on sales trends - Uncertain\n\nBABA +0.9%  Flash sales data solid, but still rangebound KWEB down on the day despite the BABA bump  Chinese tech still struggling for sustained flows\n\nCommodities \u0026amp; FXBrent and WTI both up 1% but still stuck in a chop range\n\nBrent and WTI both up \\~1%, but still stuck in a chop range\n\nGold gave up intraday highs, now near $3351 after briefly tagging $3370\n\nGold gave up intraday highs, now near $3351 after briefly tagging $3370\n\nUSD Index nudged back above 98  nothing dramatic, but worth watching into CPI\n\nUSD Index nudged back above 98  nothing dramatic, but worth watching into CPI\n\nTakeaways of pockets of strength, but not a broad-based risk-on environment Big cap teh is mixed AAPL red on Mistral AI headlines and indexes still feel vulnerable to macro shocks.CPI tomorrow is the real test\n\nLots of pockets of strength but not a broadbased rison environment Big cap tech is mixed AAPL red on Mistral AI headlines and indexes still feel vulnerable to macro shocks CPI tomorrow is the real test.\n\nI\u2019m staying selective  letting existing positions work while scanning for asymmetric setups Not every green premarket print is a reason to chase\n\n", "url": "https://www.reddit.com/r/stocks/comments/1lzmd3r/premarket_overview_for_14_july_2025/"}], "news_count": 20, "price_data": {"change": 10.89, "change_percent": "3.5041%", "current_price": 321.67, "symbol": "TSLA", "timestamp": "2025-07-16T17:59:04.836958", "volume": 96769612}, "sentiment_data": {"confidence": 0.95, "sentiment_score": 0.7, "summary": "The news highlights the positive sentiment towards UnitedHealth (UNH) with institutions increasing their allocation and accumulating shares. The accumulation is attributed to smart money, including Vanguard and BlackRock, who are making long-term bets on UNH\u0027s performance. Despite market uncertainty, UNH has shown resilience and potential for further gains based on earnings and favorable factors such as stable cost ratios and good Medicare enrollment. The news also touches on Tesla (TSLA) showing a positive pre-market move of over 1%, driven by bullish statements from Trump and the rally in cryptocurrencies. However, the overall sentiment leans more towards UNH due to its strong institutional support and potential for long-term growth."}, "signal_data": {"action": "CALL", "confidence": 0.95, "reasoning": "Positive sentiment (0.70) with high confidence (0.95)", "signal_strength": 0.6649999999999999}, "symbol": "TSLA", "timestamp": "2025-07-16T17:59:20.721033", "trade_signal": {"action": "CALL", "confidence": 0.95, "current_price": 321.67, "day_trading_notes": ["Strategy: {strategy_type} based on sentiment analysis", "Conviction Level: {self._get_conviction_level(sentiment_score)}", "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose", "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay", "\u23f0 Time decay accelerates rapidly on 0-2 DTE options", "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads", "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates", "\ud83d\ude80 High conviction trade - sentiment strongly supports direction", "\u26a1 Consider larger position size within risk limits", "\u2705 High confidence in sentiment analysis"], "days_to_expiry": 1, "direction": "BULLISH", "entry_strategy": {"confirmation": "High conviction - no additional confirmation needed", "method": "Market order for immediate execution", "timing": "Enter immediately on market open or at current levels", "volume_check": "Ensure high option volume and tight bid-ask spread"}, "exit_strategy": {"market_close": "Close all positions 30 minutes before market close", "partial_exits": "Consider taking 50% profits at half target, let rest run", "profit_target": "Exit at 20% gain or better", "stop_loss": "Hard stop at 15% loss", "time_stop": "Exit before 1-5 minutes regardless of P\u0026L if no momentum", "trailing_stop": "Consider trailing stop after 50% of target is reached"}, "hold_time": "1-5 minutes", "option_price": 3.22, "option_type": "call", "position_recommendations": {"${amount}": {"contracts": 31, "potential_gain": 19.94, "potential_loss": 14.96, "risk_amount": 99.72, "risk_percent": 5.0, "risk_reward_ratio": 1.33, "stop_price": 2.73, "target_price": 3.86, "total_cost": 99.72}}, "position_size": 1, "reasoning": "Positive sentiment (0.70) with high confidence (0.95)", "sentiment_score": 0.7, "signal_strength": 0.6649999999999999, "stop_loss_percent": 15.0, "strategy_type": "High Conviction Scalp", "strike_price": 323.28, "symbol": "TSLA", "target_gain_percent": 20.0}, "trigger": "watchlist_scan", "type": "stock"}],
+        news_count: 0,
+        watchlist_count: 10,
+        news_timestamp: null,
+        watchlist_timestamp: "2025-07-16T17:59:20.722698"
+    };
+    
+    console.log('🚀 [INIT] Preloaded data available:', {
+        news_count: window.preloadedData.news_count,
+        watchlist_count: window.preloadedData.watchlist_count,
+        news_timestamp: window.preloadedData.news_timestamp,
+        watchlist_timestamp: window.preloadedData.watchlist_timestamp
+    });
+    
+    // Initialize the page with preloaded data instead of making API calls
+    if (window.preloadedData.news_count > 0) {
+        console.log('✅ [INIT] Displaying preloaded news opportunities');
+        currentMode = 'news';
+        document.getElementById('newsBtn').classList.add('active');
+        document.getElementById('watchlistBtn').classList.remove('active');
+        document.getElementById('opportunitiesTitle').textContent = 'News-Driven Opportunities';
+        
+        const data = {
+            data: {
+                opportunities: window.preloadedData.news_opportunities,
+                count: window.preloadedData.news_count,
+                cached: true,
+                cache_timestamp: window.preloadedData.news_timestamp
+            }
+        };
+        displayOpportunities(data);
+    } else if (window.preloadedData.watchlist_count > 0) {
+        console.log('✅ [INIT] No news opportunities, displaying preloaded watchlist opportunities');
+        currentMode = 'watchlist';
+        document.getElementById('watchlistBtn').classList.add('active');
+        document.getElementById('newsBtn').classList.remove('active');
+        document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
+        
+        const data = {
+            data: {
+                opportunities: window.preloadedData.watchlist_opportunities,
+                count: window.preloadedData.watchlist_count,
+                cached: true,
+                cache_timestamp: window.preloadedData.watchlist_timestamp
+            }
+        };
+        displayOpportunities(data);
+    } else {
+        console.log('⚠️ [INIT] No preloaded opportunities available');
+        // Keep default "News-Driven" mode but show empty state
+        currentMode = 'news';
+    }
+});
+</script>
+
+
+ </body></html>

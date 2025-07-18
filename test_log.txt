@@ -1,0 +1,86 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.1, pluggy-1.6.0
+rootdir: /Users/rick/Desktop/stuff/code_projects/IBS/trading
+plugins: anyio-4.9.0, playwright-0.7.0, base-url-2.1.0
+collected 7 items
+
+tests/unit/test_opportunities_page.py ....2025-07-17 13:33:45,398 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-17 13:33:45,398 - INFO - Base URL: http://localhost:5001
+2025-07-17 13:33:45,398 - INFO - Artifacts directory: test_artifacts
+2025-07-17 13:33:46,053 - INFO - Browser setup complete with video recording enabled
+2025-07-17 13:33:46,053 - INFO - Testing page: Homepage (/)
+2025-07-17 13:33:46,814 - INFO - Page load time: 510.28ms
+2025-07-17 13:33:46,931 - INFO - Screenshot saved: test_artifacts/homepage_20250717_133346.png
+2025-07-17 13:33:48,934 - INFO - ✅ Homepage: PASSED (populated in 510.28ms)
+2025-07-17 13:33:48,935 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-17 13:33:49,589 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-17 13:33:49,602 - INFO - Found element: #stocksTableBody
+2025-07-17 13:33:49,606 - INFO - Found element: #winnersList
+2025-07-17 13:33:49,609 - INFO - Found element: #losersList
+2025-07-17 13:33:49,610 - INFO - Found element: #stockAnalysisSection
+2025-07-17 13:33:51,611 - INFO - Page load time: 2633.91ms
+2025-07-17 13:33:51,755 - INFO - Screenshot saved: test_artifacts/stocks_page_20250717_133351.png
+2025-07-17 13:33:53,758 - INFO - ✅ Stocks Page: PASSED (populated in 2633.91ms)
+2025-07-17 13:33:53,758 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-17 13:33:54,344 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-17 13:33:54,353 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-17 13:34:14,354 - WARNING - Element #cryptoCardsRow not found: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator("#cryptoCardsRow") to be visible
+    45 × locator resolved to hidden <div id="cryptoCardsRow"></div>
+
+2025-07-17 13:34:14,357 - INFO - Found element: #sentimentChartContainer
+2025-07-17 13:34:16,359 - INFO - Page load time: 22576.97ms
+2025-07-17 13:34:16,450 - INFO - Screenshot saved: test_artifacts/crypto_page_20250717_133416.png
+2025-07-17 13:34:18,451 - ERROR - ❌ Crypto Page: FAILED - ['#cryptoCardsRow (empty)']
+2025-07-17 13:34:18,451 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-17 13:34:19,085 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-17 13:34:19,095 - INFO - Found element: #opportunitiesSection
+2025-07-17 13:34:19,101 - INFO - Found element: #opportunitiesContainer
+2025-07-17 13:34:19,103 - INFO - Found element: #findButton
+2025-07-17 13:34:19,105 - INFO - Found element: #newsBtn
+2025-07-17 13:34:19,107 - INFO - Found element: #watchlistBtn
+2025-07-17 13:34:19,109 - INFO - Found element: #refreshBtn
+2025-07-17 13:34:19,111 - INFO - Found element: #lastUpdated
+2025-07-17 13:34:49,112 - WARNING - Element .opportunity-card not found: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".opportunity-card") to be visible
+
+2025-07-17 13:34:51,114 - INFO - Page load time: 32591.80ms
+2025-07-17 13:34:51,207 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250717_133451.png
+2025-07-17 13:34:53,209 - ERROR - ❌ Opportunities Page: FAILED - ['.opportunity-card']
+2025-07-17 13:34:53,210 - INFO - Testing page: System Status Page (/system_status)
+2025-07-17 13:34:54,752 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-17 13:34:54,765 - INFO - Found element: .container
+2025-07-17 13:34:54,770 - INFO - Found element: .card
+2025-07-17 13:34:54,772 - INFO - Found element: h1
+2025-07-17 13:34:56,774 - INFO - Page load time: 3531.84ms
+2025-07-17 13:34:56,955 - INFO - Screenshot saved: test_artifacts/system_status_page_20250717_133456.png
+2025-07-17 13:34:58,956 - INFO - ✅ System Status Page: PASSED (populated in 3531.84ms)
+2025-07-17 13:34:58,956 - INFO - Testing page: Logs Page (/logs)
+2025-07-17 13:34:59,552 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-17 13:34:59,561 - INFO - Found element: #logContainer
+2025-07-17 13:34:59,567 - INFO - Found element: #logStats
+2025-07-17 13:34:59,570 - INFO - Found element: .container
+2025-07-17 13:35:01,572 - INFO - Page load time: 2595.34ms
+2025-07-17 13:35:01,659 - INFO - Screenshot saved: test_artifacts/logs_page_20250717_133501.png
+2025-07-17 13:35:03,663 - INFO - ✅ Logs Page: PASSED (populated in 2595.34ms)
+2025-07-17 13:35:03,664 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-17 13:35:04,261 - INFO - Page load time: 561.43ms
+2025-07-17 13:35:04,380 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250717_133504.png
+2025-07-17 13:35:06,381 - ERROR - ❌ Portfolio Page: FAILED - []
+2025-07-17 13:35:06,382 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-17 13:35:06,983 - INFO - Page load time: 572.41ms
+2025-07-17 13:35:07,108 - INFO - Screenshot saved: test_artifacts/backtest_page_20250717_133506.png
+2025-07-17 13:35:09,111 - ERROR - ❌ Backtest Page: FAILED - []
+2025-07-17 13:35:09,111 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-17 13:35:09,700 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-17 13:35:09,708 - INFO - Found element: .container
+2025-07-17 13:35:09,713 - INFO - Found element: h1
+2025-07-17 13:35:09,715 - INFO - Found element: .card
+2025-07-17 13:35:11,717 - INFO - Page load time: 2579.96ms
+2025-07-17 13:35:11,863 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250717_133511.png
+2025-07-17 13:35:13,865 - INFO - ✅ Recommendations Page: PASSED (populated in 2579.96ms)
+2025-07-17 13:35:13,868 - INFO - Test report saved: test_artifacts/test_report_20250717_133513.json
+2025-07-17 13:35:13,869 - INFO - Text report saved: test_artifacts/test_report_20250717_133513.txt
+2025-07-17 13:35:14,213 - INFO - Browser teardown complete

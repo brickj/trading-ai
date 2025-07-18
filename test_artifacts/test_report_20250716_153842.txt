@@ -1,0 +1,78 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-07-16T15:38:42.325669
+Base URL: http://localhost:5001
+Total Pages Tested: 9
+Pages Passed: 5
+Pages Failed: 4
+Success Rate: 55.6%
+Average Load Time: 2915.52ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: PASS
+  Load Time: 506.56ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/homepage_20250716_153756.png
+
+Stocks Page (/stocks):
+  Status: PASS
+  Load Time: 2644.00ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/stocks_page_20250716_153801.png
+
+Crypto Page (/crypto):
+  Status: PASS
+  Load Time: 3369.35ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/crypto_page_20250716_153807.png
+
+Opportunities Page (/opportunities):
+  Status: FAIL
+  Load Time: 10003.16ms
+  Load Success: False
+  Is Populated: True
+  Screenshot: test_artifacts/opportunities_page_20250716_153819.png
+
+System Status Page (/system_status):
+  Status: PASS
+  Load Time: 3509.00ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/system_status_page_20250716_153825.png
+
+Logs Page (/logs):
+  Status: FAIL
+  Load Time: 2606.79ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/logs_page_20250716_153830.png
+
+Portfolio Page (/portfolio):
+  Status: FAIL
+  Load Time: 502.91ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#portfolioContainer', '#portfolioSection', '#addPositionForm']
+  Screenshot: test_artifacts/portfolio_page_20250716_153832.png
+
+Backtest Page (/backtest):
+  Status: FAIL
+  Load Time: 500.97ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#backtestForm', '#daysSelector']
+  Screenshot: test_artifacts/backtest_page_20250716_153835.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2596.91ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250716_153840.png

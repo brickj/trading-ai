@@ -1,7 +1,7 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'news'; // Changed default to news
+let currentMode = 'watchlist'; // Changed default to watchlist
 let opportunitiesData = [];
 let isRefreshing = false;
 
@@ -16,21 +16,21 @@ document.addEventListener('DOMContentLoaded', function() {
         loadOpportunities(true); // Force refresh for current mode
     });
     
-    // Set initial UI state for news mode
+    // Set initial UI state for watchlist mode
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
         btn.classList.remove('btn-primary', 'active');
         btn.classList.add('btn-outline-primary');
     });
     
-    // Set news button as active
-    const newsBtn = document.getElementById('newsBtn');
-    newsBtn.classList.remove('btn-outline-primary');
-    newsBtn.classList.add('btn-primary', 'active');
+    // Set watchlist button as active
+    const watchlistBtn = document.getElementById('watchlistBtn');
+    watchlistBtn.classList.remove('btn-outline-primary');
+    watchlistBtn.classList.add('btn-primary', 'active');
     
     // Set initial title
-    document.getElementById('opportunitiesTitle').textContent = 'News-Driven Opportunities';
+    document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
     
-    // Load initial data (from cache) - will load news data
+    // Load initial data (from cache) - will load watchlist data
     loadOpportunities(false);
     
     // Load watchlist configuration
@@ -511,7 +511,68 @@ async function executeOpportunity(symbol) {
 
 // Analyze watchlist opportunities (for the button click)
 function analyzeWatchlistOpportunities() {
+    console.log('🔍 [ANALYZE] analyzeWatchlistOpportunities called');
+    
+    // Switch to watchlist mode first
     switchMode('watchlist');
+    
+    // Then trigger a refresh to run the analysis
+    loadOpportunities(true);
+}
+
+// Socket.IO event handlers for real-time progress updates
+if (typeof io !== 'undefined') {
+    const socket = io();
+    
+    // Handle watchlist progress updates
+    socket.on('watchlist_progress', function(data) {
+        console.log('📡 [SOCKET] Watchlist progress:', data);
+        
+        const { symbol, completed, total, status } = data;
+        
+        // Update loading message with progress
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        if (loadingSpinner && status === 'processing') {
+            const progressText = loadingSpinner.querySelector('p');
+            if (progressText) {
+                progressText.textContent = `Analyzing ${symbol}... (${completed}/${total})`;
+            }
+        }
+        
+        // Show completion message
+        if (status === 'completed') {
+            const progressText = loadingSpinner?.querySelector('p');
+            if (progressText) {
+                progressText.textContent = `Analysis completed! Found ${data.opportunities_found || 0} opportunities.`;
+            }
+        }
+    });
+    
+    // Handle general progress updates
+    socket.on('progress', function(data) {
+        console.log('📡 [SOCKET] General progress:', data);
+        
+        const { current, total, symbol, status } = data;
+        
+        // Update loading message
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        if (loadingSpinner) {
+            const progressText = loadingSpinner.querySelector('p');
+            if (progressText) {
+                if (status === 'processing') {
+                    progressText.textContent = `Processing ${symbol}... (${current}/${total})`;
+                } else if (status === 'completed') {
+                    progressText.textContent = 'Analysis completed!';
+                }
+            }
+        }
+    });
+    
+    // Handle errors
+    socket.on('error', function(data) {
+        console.error('📡 [SOCKET] Error:', data);
+        showAlert('Analysis error: ' + (data.message || 'Unknown error'), 'danger');
+    });
 }
 
 // Auto-refresh every 5 minutes
@@ -538,18 +599,48 @@ async function loadWatchlistConfig() {
             return;
         }
         
-        // Format stocks for display (no crypto)
+        // Format stocks for display
         const stocks = data.data.stocks || [];
-        const stockSymbols = stocks.map(item => item.symbol).join(', ');
+        const cryptos = data.data.crypto || [];
         
-        configContainer.innerHTML = `
-            <p><small><strong>Watchlist Stocks:</strong> ${stockSymbols || 'None configured'}</small></p>
-            <p><small><strong>Total Symbols:</strong> ${stocks.length}</small></p>
-        `;
+        let configHtml = '';
+        
+        if (stocks.length > 0) {
+            const stockSymbols = stocks.map(item => item.symbol).join(', ');
+            configHtml += `<p><small><strong>Watchlist Stocks:</strong> ${stockSymbols}</small></p>`;
+        } else {
+            configHtml += `<p><small><strong>Watchlist Stocks:</strong> <span class="text-muted">None configured</span></small></p>`;
+        }
+        
+        if (cryptos.length > 0) {
+            const cryptoSymbols = cryptos.map(item => item.symbol).join(', ');
+            configHtml += `<p><small><strong>Watchlist Crypto:</strong> ${cryptoSymbols}</small></p>`;
+        } else {
+            configHtml += `<p><small><strong>Watchlist Crypto:</strong> <span class="text-muted">None configured</span></small></p>`;
+        }
+        
+        configHtml += `<p><small><strong>Total Symbols:</strong> ${stocks.length + cryptos.length}</small></p>`;
+        
+        // Add analysis settings if available
+        if (data.data.stock_limit) {
+            configHtml += `<p><small><strong>Analysis Limit:</strong> ${data.data.stock_limit} symbols</small></p>`;
+        }
+        
+        if (data.data.news_days) {
+            configHtml += `<p><small><strong>News Days:</strong> ${data.data.news_days} days</small></p>`;
+        }
+        
+        // Add message if no symbols configured
+        if (stocks.length === 0 && cryptos.length === 0) {
+            configHtml += `<div class="alert alert-warning mt-2"><small><i class="fas fa-exclamation-triangle"></i> No watchlist symbols configured. Add symbols in System Status page to enable watchlist analysis.</small></div>`;
+        }
+        
+        configContainer.innerHTML = configHtml;
         
         console.log('✅ [CONFIG] Watchlist configuration loaded successfully:', {
             stocks: stocks.length,
-            total: stocks.length
+            cryptos: cryptos.length,
+            total: stocks.length + cryptos.length
         });
         
     } catch (error) {
@@ -560,6 +651,7 @@ async function loadWatchlistConfig() {
                 <div class="alert alert-warning">
                     <small><i class="fas fa-exclamation-triangle"></i> Failed to load watchlist configuration</small>
                 </div>
+                <p><small><strong>Error:</strong> ${error.message}</small></p>
             `;
         }
     }

@@ -319,41 +319,77 @@ def run_scheduled_jobs():
     """Load job schedules from DB and schedule them with APScheduler."""
     from src.data.preload_news_opportunities import preload_news_opportunities
     from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
-    from src.core.database import get_db_connection
+    from src.core.database import get_db_connection, ensure_job_schedules_table
+    from src.core.scalping_analyzer import scalping_analyzer
+    
+    # Define preload_stock_data as a placeholder (will be handled by app.py scheduler)
+    def preload_stock_data():
+        print("[SCHEDULER] preload_stock_data called - this will be handled by the main app scheduler")
+    
+    # Ensure job_schedules table exists
+    ensure_job_schedules_table()
+    
     scheduler = BackgroundScheduler()
     job_map = {
         'preload_news_opportunities': preload_news_opportunities,
-        'preload_watchlist_opportunities': preload_watchlist_opportunities
+        'preload_watchlist_opportunities': preload_watchlist_opportunities,
+        'preload_stock_data': preload_stock_data,
+        'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis()
     }
+    
     def update_last_run(job_id):
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute('UPDATE job_schedules SET last_run = NOW() WHERE id = %s', (job_id,))
                 conn.commit()
+    
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute('SELECT id, job_name, run_time, enabled FROM job_schedules WHERE enabled = TRUE')
-                for row in cur.fetchall():
+                jobs = cur.fetchall()
+                
+                if not jobs:
+                    print("[SCHEDULER] No enabled jobs found in database. Setting up default jobs...")
+                    # Run the job setup script
+                    try:
+                        from src.utils.setup_job_scheduler import setup_default_jobs
+                        if setup_default_jobs():
+                            # Re-query for jobs after setup
+                            cur.execute('SELECT id, job_name, run_time, enabled FROM job_schedules WHERE enabled = TRUE')
+                            jobs = cur.fetchall()
+                        else:
+                            print("[SCHEDULER ERROR] Failed to set up default jobs")
+                    except ImportError:
+                        print("[SCHEDULER ERROR] Could not import job setup script")
+                
+                for row in jobs:
                     job_id, job_name, run_time, enabled = row
                     if job_name in job_map:
                         hour, minute, *_ = str(run_time).split(':')
                         def job_wrapper(jid=job_id, jname=job_name):
                             try:
+                                print(f"[SCHEDULER] Running job: {jname}")
                                 job_map[jname]()
                                 update_last_run(jid)
+                                print(f"[SCHEDULER] Completed job: {jname}")
                             except Exception as e:
                                 print(f"[SCHEDULER ERROR] Job {jname} failed: {e}\n{traceback.format_exc()}")
+                        
                         scheduler.add_job(
                             job_wrapper,
-                            CronTrigger(hour=int(hour), minute=int(minute)),
+                            CronTrigger(hour=int(hour), minute=int(minute), day_of_week='mon-fri'),
                             id=f"job_{job_id}",
                             name=job_name,
                             replace_existing=True
                         )
-                        print(f"[SCHEDULER] Scheduled {job_name} at {hour}:{minute}")
+                        print(f"[SCHEDULER] Scheduled {job_name} at {hour}:{minute} (Mon-Fri)")
+                    else:
+                        print(f"[SCHEDULER WARNING] Unknown job: {job_name}")
+        
         scheduler.start()
-        print("[SCHEDULER] All enabled jobs scheduled.")
+        print(f"[SCHEDULER] Started scheduler with {len(scheduler.get_jobs())} jobs")
+        
     except Exception as e:
         print(f"[SCHEDULER ERROR] Failed to schedule jobs: {e}\n{traceback.format_exc()}")
 

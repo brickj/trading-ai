@@ -250,7 +250,7 @@ NEWS_CONFIDENCE_THRESHOLD = 0.6
 
 # AI Configuration
 USE_OLLAMA = True  # Use local Ollama instead of OpenAI
-OLLAMA_MODEL = 'llama3.2'  # Local model for sentiment analysis
+OLLAMA_MODEL = 'qwen2.5:3b'  # Local model for sentiment analysis
 ```
 
 ## 📈 API Endpoints

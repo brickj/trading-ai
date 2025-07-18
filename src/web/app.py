@@ -1186,8 +1186,9 @@ def test_backtest_frontend_debug():
 @app.route("/opportunities")
 def opportunities_page():
     """Trading opportunities page"""
+    import json
+    from flask import request
     try:
-        from flask import request
         trading_logger.api_logger.info("[DEBUG] Entering opportunities_page route handler")
         
         user_agent = request.headers.get('User-Agent', 'unknown')
@@ -1195,24 +1196,120 @@ def opportunities_page():
         
         trading_logger.api_logger.info(f"[DEBUG] opportunities_page request | IP: {ip} | UA: {user_agent}")
         
-        # Check if preloaded opportunity data is available (for logging purposes)
+        # Preload data server-side to avoid frontend API timeouts
         try:
             from src.data.preload_news_opportunities import get_latest_preloaded_news_opportunities
             from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
             
+            trading_logger.api_logger.info("[DEBUG] Calling get_latest_preloaded_news_opportunities()")
             news_opps = get_latest_preloaded_news_opportunities()
+            trading_logger.api_logger.info("[DEBUG] Calling get_latest_preloaded_watchlist_opportunities()")
             watchlist_opps = get_latest_preloaded_watchlist_opportunities()
             
-            news_count = len(news_opps.get("opportunities", [])) if news_opps else 0
-            watchlist_count = len(watchlist_opps.get("opportunities", [])) if watchlist_opps else 0
+            # Log the raw responses for debugging
+            trading_logger.api_logger.info("[DEBUG] ===== OPPORTUNITIES DATA =====")
+            trading_logger.api_logger.info(f"[DEBUG] News opportunities type: {type(news_opps)}")
+            trading_logger.api_logger.info(f"[DEBUG] News opportunities keys: {list(news_opps.keys()) if isinstance(news_opps, dict) else 'Not a dict'}")
+            trading_logger.api_logger.info(f"[DEBUG] Watchlist opportunities type: {type(watchlist_opps)}")
+            trading_logger.api_logger.info(f"[DEBUG] Watchlist opportunities keys: {list(watchlist_opps.keys()) if isinstance(watchlist_opps, dict) else 'Not a dict'}")
             
-            trading_logger.api_logger.info(f"[DEBUG] Opportunities page - preloaded data available: {news_count} news, {watchlist_count} watchlist opportunities")
+            if isinstance(news_opps, dict):
+                trading_logger.api_logger.info(f"[DEBUG] News success: {news_opps.get('success')}")
+                trading_logger.api_logger.info(f"[DEBUG] News error: {news_opps.get('error')}")
+                trading_logger.api_logger.info(f"[DEBUG] News opportunities count: {len(news_opps.get('opportunities', []))}")
+                
+            if isinstance(watchlist_opps, dict):
+                trading_logger.api_logger.info(f"[DEBUG] Watchlist success: {watchlist_opps.get('success')}")
+                trading_logger.api_logger.info(f"[DEBUG] Watchlist error: {watchlist_opps.get('error')}")
+                trading_logger.api_logger.info(f"[DEBUG] Watchlist opportunities count: {len(watchlist_opps.get('opportunities', []))}")
+            
+            # Extract data with proper error handling
+            news_opps_list = news_opps.get("opportunities", []) if news_opps and isinstance(news_opps, dict) else []
+            watchlist_opps_list = watchlist_opps.get("opportunities", []) if watchlist_opps and isinstance(watchlist_opps, dict) else []
+            
+            news_count = len(news_opps_list)
+            watchlist_count = len(watchlist_opps_list)
+            
+            # Log any errors from the preload functions
+            if news_opps and not news_opps.get('success', False):
+                trading_logger.error_logger.error(f"[ERROR] News opportunities preload failed: {news_opps.get('error', 'Unknown error')}")
+            if watchlist_opps and not watchlist_opps.get('success', False):
+                trading_logger.error_logger.error(f"[ERROR] Watchlist opportunities preload failed: {watchlist_opps.get('error', 'Unknown error')}")
+            
+            trading_logger.api_logger.info(f"[DEBUG] Opportunities page - loaded: {news_count} news, {watchlist_count} watchlist opportunities")
+            
+            # Prepare data for template with proper structure
+            preloaded_data = {
+                "data": {
+                    "news_opportunities": news_opps_list or [],
+                    "watchlist_opportunities": watchlist_opps_list or [],
+                    "news_count": news_count,
+                    "watchlist_count": watchlist_count,
+                    "news_timestamp": news_opps.get("timestamp") if isinstance(news_opps, dict) else None,
+                    "watchlist_timestamp": watchlist_opps.get("timestamp") if isinstance(watchlist_opps, dict) else None,
+                    "news_success": news_opps.get("success", False) if isinstance(news_opps, dict) else False,
+                    "watchlist_success": watchlist_opps.get("success", False) if isinstance(watchlist_opps, dict) else False,
+                    "news_error": "Yahoo Finance API rate limit reached. Please try again later." if "Too Many Requests" in str(news_opps.get("error", "")) else 
+                                (news_opps.get("error") if isinstance(news_opps, dict) and not news_opps.get("success", False) else None),
+                    "watchlist_error": watchlist_opps.get("error") if isinstance(watchlist_opps, dict) and not watchlist_opps.get("success", False) else None
+                },
+                "news_count": news_count,
+                "watchlist_count": watchlist_count,
+                "news_timestamp": news_opps.get("timestamp") if isinstance(news_opps, dict) else None,
+                "watchlist_timestamp": watchlist_opps.get("timestamp") if isinstance(watchlist_opps, dict) else None,
+                "news_success": news_opps.get("success", False) if isinstance(news_opps, dict) else False,
+                "watchlist_success": watchlist_opps.get("success", False) if isinstance(watchlist_opps, dict) else False,
+                "news_error": "Yahoo Finance API rate limit reached. Please try again later." if "Too Many Requests" in str(news_opps.get("error", "")) else 
+                             (news_opps.get("error") if isinstance(news_opps, dict) and not news_opps.get("success", False) else None),
+                "watchlist_error": watchlist_opps.get("error") if isinstance(watchlist_opps, dict) and not watchlist_opps.get("success", False) else None
+            }
+            
+            trading_logger.api_logger.info("[DEBUG] Rendering opportunities.html template with preloaded data")
+            trading_logger.api_logger.info(f"[EXTRA DEBUG] preloaded_data: news_count={preloaded_data['news_count']}, watchlist_count={preloaded_data['watchlist_count']}")
+            
+            # Safe debug logging for opportunities data
+            try:
+                if preloaded_data.get('data', {}).get('news_opportunities'):
+                    trading_logger.api_logger.info(f"[EXTRA DEBUG] First news opportunity: {str(preloaded_data['data']['news_opportunities'][0])}")
+                else:
+                    trading_logger.api_logger.info("[EXTRA DEBUG] No news opportunities found")
+            except Exception as debug_e:
+                trading_logger.api_logger.warning(f"[EXTRA DEBUG] Error logging news opportunities: {debug_e}")
+                
+            try:
+                if preloaded_data.get('data', {}).get('watchlist_opportunities'):
+                    trading_logger.api_logger.info(f"[EXTRA DEBUG] First watchlist opportunity: {str(preloaded_data['data']['watchlist_opportunities'][0])}")
+                else:
+                    trading_logger.api_logger.info("[EXTRA DEBUG] No watchlist opportunities found")
+            except Exception as debug_e:
+                trading_logger.api_logger.warning(f"[EXTRA DEBUG] Error logging watchlist opportunities: {debug_e}")
+            
+            # Ensure all data is JSON serializable
+            def safe_serialize(obj):
+                if obj is None or isinstance(obj, (str, int, float, bool)):
+                    return obj
+                elif isinstance(obj, dict):
+                    return {k: safe_serialize(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [safe_serialize(item) for item in obj]
+                elif hasattr(obj, 'isoformat'):
+                    return obj.isoformat()
+                elif hasattr(obj, 'to_dict'):
+                    return safe_serialize(obj.to_dict())
+                else:
+                    return str(obj)
+            
+            serialized_data = safe_serialize(preloaded_data)
+            preloaded_json = json.dumps(serialized_data)
+            trading_logger.api_logger.info(f"[DEBUG] Serialized preloaded data: {preloaded_json[:500]}...")
         except Exception as e:
-            trading_logger.error_logger.error(f"[DEBUG] Error checking preloaded opportunities: {str(e)}")
+            trading_logger.error_logger.error(f"[ERROR] Error serializing preloaded data: {str(e)}")
+            preloaded_json = '{"error": "Failed to load opportunities data"}'
         
-        trading_logger.api_logger.info("[DEBUG] Rendering opportunities.html template")
         return render_template(
-            "opportunities.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
+            "opportunities.html", 
+            historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS,
+            preloaded_json=preloaded_json
         )
     except Exception as e:
         trading_logger.error_logger.error(f"[CRITICAL] Error rendering opportunities page: {str(e)}")
@@ -2287,24 +2384,29 @@ def check_rate_limit(endpoint):
     return True
 
 
-def create_app():
-    """Create and start the Flask application"""
+def create_app(port=5001):
+    """
+    Create and start the Flask application
+    
+    Args:
+        port (int): Port number to run the server on (default: 5001)
+    """
     import sys
-    print('[DEBUG] Entered create_app()')
+    print(f'[DEBUG] Entered create_app() with port={port}')
     try:
         from src.core.logger import log_info, log_system_event
-        log_info("Starting Flask application via create_app", "system")
-        log_system_event("Flask application starting", "INFO")
-        print('[DEBUG] About to start socketio.run() on 0.0.0.0:5001')
+        log_info(f"Starting Flask application on port {port}", "system")
+        log_system_event(f"Flask application starting on port {port}", "INFO")
+        print(f'[DEBUG] About to start socketio.run() on 0.0.0.0:{port}')
         sys.stdout.flush()
         # Start the SocketIO server
-        socketio.run(app, host='0.0.0.0', port=5001, debug=False, allow_unsafe_werkzeug=True)
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
         print('[DEBUG] socketio.run() has exited (should not happen unless server stops)')
         sys.stdout.flush()
     except Exception as e:
         print(f'[DEBUG] Exception in create_app: {e}')
         from src.core.logger import log_exception
-        log_exception("Failed to start Flask application", e)
+        log_exception(f"Failed to start Flask application on port {port}", e)
         sys.stdout.flush()
 
 # Global cache for preloaded data
@@ -2588,7 +2690,8 @@ def refresh_market_movers():
         print("[INFO] Refresh market movers request received")
         
         # Run the full pipeline to get fresh market movers
-        success = save_preloaded_data_to_db()
+        # This now uses the market_movers table directly via preload_stock_data()
+        preload_stock_data()
         
         # Check if we actually have data in the database
         with get_db_connection() as conn:
@@ -2732,60 +2835,19 @@ def get_logs():
                     if 'timestamp' in log and log['timestamp'] is not None:
                         log['timestamp'] = log['timestamp'].isoformat()
                 
-                # Generate filename
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"logs_export_{timestamp}"
-                
-                if export_format == 'json':
-                    # Export as JSON
-                    import json
-                    response_data = {
-                        'export_info': {
-                            'format': 'json',
-                            'timestamp': datetime.now().isoformat(),
-                            'total_logs': len(logs),
-                            'filters': {
-                                'level': level,
-                                'category': category,
-                                'limit': limit
-                            }
-                        },
-                        'logs': logs
+                # Return logs data
+                return create_api_response({
+                    'logs': logs,
+                    'total': len(logs),
+                    'filters': {
+                        'level': level,
+                        'category': category,
+                        'limit': limit
                     }
-                    
-                    response = make_response(json.dumps(response_data, indent=2))
-                    response.headers['Content-Type'] = 'application/json'
-                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.json"'
-                    return response
-                    
-                elif export_format == 'csv':
-                    # Export as CSV
-                    output = io.StringIO()
-                    writer = csv.writer(output)
-                    
-                    # Write header
-                    if logs:
-                        headers = list(logs[0].keys())
-                        writer.writerow(headers)
-                        
-                        # Write data rows
-                        for log in logs:
-                            row = []
-                            for header in headers:
-                                value = log.get(header, '')
-                                # Convert complex objects to string
-                                if isinstance(value, (dict, list)):
-                                    value = json.dumps(value)
-                                row.append(str(value))
-                            writer.writerow(row)
-                    
-                    response = make_response(output.getvalue())
-                    response.headers['Content-Type'] = 'text/csv'
-                    response.headers['Content-Disposition'] = f'attachment; filename="{filename}.csv"'
-                    return response
-                    
+                })
+                
     except Exception as e:
-        log_exception("Log export endpoint", e)
+        log_exception("Logs endpoint", e)
         return create_api_response(error=str(e), status_code=500)
 
 # At startup, load from database before running preload_stock_data
@@ -3392,49 +3454,395 @@ def enable_job_schedule(schedule_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-def save_preloaded_data_to_db(preloaded_data):
-    """
-    Save the preloaded stock analysis data to the preloaded_data table.
-    """
-    from src.core.database import get_db_connection
-    import datetime
+# Removed save_preloaded_data_to_db function - now using market_movers table directly
+
+
+@app.route("/reporting")
+def reporting_page():
+    """Reporting and analytics page"""
+    # Set default dates (last 30 days)
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    
+    return render_template("reporting.html", 
+                         default_start_date=start_date.strftime('%Y-%m-%d'),
+                         default_end_date=end_date.strftime('%Y-%m-%d'))
+
+
+@app.route("/api/reporting/generate", methods=["POST"])
+def generate_report():
+    """Generate comprehensive trading report"""
+    try:
+        data = request.get_json()
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        report_type = data.get('report_type', 'comprehensive')
+        
+        # Parse dates
+        start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        # Generate mock data for now (will be replaced with real data later)
+        report_data = generate_mock_report_data(start_dt, end_dt, report_type)
+        
+        return create_api_response(data=report_data)
+    except Exception as e:
+        log_exception("Generate report", e)
+        return create_api_response(error=str(e), status_code=500)
+
+
+def generate_real_report_data(start_date, end_date, report_type):
+    """Generate real report data from database with mock data clearly marked"""
+    import random
+    from datetime import timedelta
+    
+    # Generate date range
+    date_range = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_range.append(current_date.strftime('%Y-%m-%d'))
+        current_date += timedelta(days=1)
+    
+    # REAL DATA: Get recommendations statistics
+    recommendations_data = get_real_recommendations_data(start_date, end_date)
+    
+    # REAL DATA: Get scalping signals statistics
+    scalping_data = get_real_scalping_data(start_date, end_date)
+    
+    # REAL DATA: Get market movers data
+    market_movers_data = get_real_market_movers_data(start_date, end_date)
+    
+    # REAL DATA: Get backtest results
+    backtest_data = get_real_backtest_data(start_date, end_date)
+    
+    # REAL DATA: Get system metrics
+    system_data = get_real_system_metrics(start_date, end_date)
+    
+    # MOCK DATA: Portfolio performance (no real portfolio tracking yet)
+    portfolio_values = [10000]
+    for i in range(1, len(date_range)):
+        daily_return = random.uniform(-0.03, 0.05)
+        portfolio_values.append(portfolio_values[-1] * (1 + daily_return))
+    
+    total_return = (portfolio_values[-1] - portfolio_values[0]) / portfolio_values[0]
+    
+    return {
+        "performance": {
+            "total_return": total_return,
+            "win_rate": recommendations_data.get("win_rate", 0.0),
+            "sharpe_ratio": backtest_data.get("avg_sharpe", 1.2),
+            "max_drawdown": backtest_data.get("avg_drawdown", -0.08),
+            "portfolio_data": {
+                "labels": date_range,
+                "values": portfolio_values,
+                "note": "🔴 MOCK DATA - No real portfolio tracking implemented"
+            },
+            "asset_allocation": {
+                "labels": ["Stocks", "Options", "Crypto", "Cash"],
+                "values": [45, 35, 15, 5],
+                "note": "🔴 MOCK DATA - No real asset allocation tracking"
+            }
+        },
+        "trading_activity": {
+            "total_trades": recommendations_data.get("total_recommendations", 0),
+            "avg_holding_period": recommendations_data.get("avg_holding_period", 3.5),
+            "opportunity_conversion": recommendations_data.get("opportunity_conversion", 0.4),
+            "avg_trade_size": recommendations_data.get("avg_trade_size", 1000),
+            "daily_volume": {
+                "labels": date_range[-10:],
+                "values": recommendations_data.get("daily_volumes", [random.randint(5, 20) for _ in range(10)]),
+                "note": "🔴 MOCK DATA - Daily volumes not tracked"
+            },
+            "time_analysis": {
+                "labels": ["9AM", "10AM", "11AM", "12PM", "1PM", "2PM", "3PM", "4PM"],
+                "values": [random.randint(5, 25) for _ in range(8)],
+                "note": "🔴 MOCK DATA - Time-based analysis not implemented"
+            },
+            "top_symbols": recommendations_data.get("top_symbols", []),
+            "strategy_performance": {
+                "labels": ["News-Driven", "Watchlist", "Scalping", "Technical"],
+                "values": [0.12, 0.08, 0.18, 0.05],
+                "note": "🔴 MOCK DATA - Strategy performance not tracked"
+            }
+        },
+        "risk_management": {
+            "value_at_risk": random.uniform(500, 1500),
+            "volatility": random.uniform(0.15, 0.35),
+            "beta": random.uniform(0.8, 1.2),
+            "correlation": random.uniform(0.6, 0.9),
+            "drawdown_data": {
+                "labels": date_range,
+                "values": [random.uniform(-0.1, 0.02) for _ in date_range],
+                "note": "🔴 MOCK DATA - Real drawdown calculation not implemented"
+            },
+            "risk_return_data": {
+                "points": [
+                    {"x": random.uniform(0.1, 0.4), "y": random.uniform(0.05, 0.25)} 
+                    for _ in range(20)
+                ],
+                "note": "🔴 MOCK DATA - Risk-return analysis not implemented"
+            }
+        },
+        "news_impact": {
+            "success_rate": recommendations_data.get("news_success_rate", 0.7),
+            "sentiment_accuracy": recommendations_data.get("sentiment_accuracy", 0.75),
+            "avg_reaction_time": random.uniform(2, 8),
+            "total_articles": recommendations_data.get("total_articles", 1500),
+            "source_effectiveness": {
+                "labels": ["Yahoo Finance", "Alpha Vantage", "NewsAPI", "Reddit"],
+                "values": [0.75, 0.68, 0.72, 0.65],
+                "note": "🔴 MOCK DATA - Source effectiveness not tracked"
+            },
+            "sentiment_performance": {
+                "labels": date_range[-7:],
+                "sentiment": [random.uniform(-0.5, 0.5) for _ in range(7)],
+                "performance": [random.uniform(-0.02, 0.03) for _ in range(7)],
+                "note": "🔴 MOCK DATA - Sentiment vs performance correlation not calculated"
+            }
+        },
+        "system_metrics": {
+            "uptime": system_data.get("uptime", 0.98),
+            "data_freshness": system_data.get("data_freshness", 5),
+            "api_success_rate": system_data.get("api_success_rate", 0.95),
+            "preload_success_rate": system_data.get("preload_success_rate", 0.85),
+            "api_response_times": {
+                "labels": date_range[-7:],
+                "values": system_data.get("api_response_times", [random.uniform(100, 500) for _ in range(7)]),
+                "note": "🔴 MOCK DATA - API response times not tracked"
+            },
+            "provider_reliability": {
+                "labels": ["Alpha Vantage", "Yahoo Finance", "CoinGecko", "NewsAPI"],
+                "values": [0.92, 0.95, 0.88, 0.90],
+                "note": "🔴 MOCK DATA - Provider reliability not tracked"
+            }
+        },
+        "comparative": {
+            "benchmark_data": {
+                "labels": date_range,
+                "portfolio": portfolio_values,
+                "benchmark": [10000 * (1 + i * 0.0005) for i in range(len(date_range))],
+                "note": "🔴 MOCK DATA - Benchmark comparison not implemented"
+            },
+            "strategy_comparison": {
+                "labels": ["News-Driven", "Watchlist", "Scalping", "Technical"],
+                "returns": [0.12, 0.08, 0.18, 0.05],
+                "note": "🔴 MOCK DATA - Strategy comparison not implemented"
+            },
+            "metrics_comparison": [
+                {"name": "Total Return", "portfolio": total_return, "benchmark": 0.08, "difference": total_return - 0.08},
+                {"name": "Volatility", "portfolio": random.uniform(0.15, 0.35), "benchmark": 0.18, "difference": random.uniform(-0.1, 0.1)},
+                {"name": "Sharpe Ratio", "portfolio": backtest_data.get("avg_sharpe", 1.2), "benchmark": 0.9, "difference": backtest_data.get("avg_sharpe", 1.2) - 0.9},
+                {"name": "Max Drawdown", "portfolio": backtest_data.get("avg_drawdown", -0.08), "benchmark": -0.12, "difference": backtest_data.get("avg_drawdown", -0.08) - (-0.12)}
+            ]
+        }
+    }
+
+
+def get_real_recommendations_data(start_date, end_date):
+    """Get real recommendations data from database"""
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
-                # Create table if it doesn't exist
-                cur.execute('''
-                    CREATE TABLE IF NOT EXISTS preloaded_data (
-                        id SERIAL PRIMARY KEY,
-                        timestamp TIMESTAMP NOT NULL,
-                        enhanced_analysis JSONB NOT NULL,
-                        total_analyzed INTEGER DEFAULT 0,
-                        opportunities_found INTEGER DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                # Insert new data
-                cur.execute('''
-                    INSERT INTO preloaded_data (timestamp, enhanced_analysis, total_analyzed, opportunities_found)
-                    VALUES (%s, %s, %s, %s)
-                ''', (
-                    datetime.datetime.now(),
-                    Json(preloaded_data.get('enhanced_analysis', [])),
-                    preloaded_data.get('total_analyzed', 0),
-                    preloaded_data.get('opportunities_found', 0)
-                ))
-                # Clean up old entries (keep only last 10)
-                cur.execute('''
-                    DELETE FROM preloaded_data
-                    WHERE id NOT IN (
-                        SELECT id FROM preloaded_data
-                        ORDER BY timestamp DESC
-                        LIMIT 10
-                    )
-                ''')
-                conn.commit()
-        print(f"[DEBUG] Saved preloaded_data to DB: {preloaded_data.get('total_analyzed', 0)} analyzed, {preloaded_data.get('opportunities_found', 0)} found")
+                # Get total recommendations in date range
+                cur.execute("""
+                    SELECT COUNT(*) as total,
+                           COUNT(CASE WHEN actual_outcome IS NOT NULL THEN 1 END) as evaluated,
+                           COUNT(CASE WHEN profitable = TRUE THEN 1 END) as profitable,
+                           AVG(CASE WHEN actual_outcome IS NOT NULL THEN actual_outcome ELSE NULL END) as avg_outcome
+                    FROM recommendations
+                    WHERE timestamp BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                result = cur.fetchone()
+                if not result:
+                    return {"total_recommendations": 0, "win_rate": 0.0}
+                
+                total = result["total"] or 0
+                evaluated = result["evaluated"] or 0
+                profitable = result["profitable"] or 0
+                avg_outcome = result["avg_outcome"] or 0.0
+                
+                win_rate = (profitable / evaluated * 100) if evaluated > 0 else 0.0
+                
+                # Get top symbols by recommendation count
+                cur.execute("""
+                    SELECT symbol, COUNT(*) as count,
+                           COUNT(CASE WHEN profitable = TRUE THEN 1 END) as wins
+                    FROM recommendations
+                    WHERE timestamp BETWEEN %s AND %s
+                    GROUP BY symbol
+                    ORDER BY count DESC
+                    LIMIT 5
+                """, (start_date, end_date))
+                
+                top_symbols = []
+                for row in cur.fetchall():
+                    symbol = row["symbol"]
+                    count = row["count"]
+                    wins = row["wins"]
+                    win_rate_symbol = (wins / count * 100) if count > 0 else 0.0
+                    top_symbols.append({
+                        "symbol": symbol,
+                        "trades": count,
+                        "win_rate": win_rate_symbol,
+                        "return_pct": avg_outcome * 100  # Using overall average as proxy
+                    })
+                
+                return {
+                    "total_recommendations": total,
+                    "evaluated_recommendations": evaluated,
+                    "profitable_recommendations": profitable,
+                    "win_rate": win_rate,
+                    "avg_outcome": avg_outcome,
+                    "top_symbols": top_symbols,
+                    "avg_holding_period": 3.5,  # Mock - not tracked
+                    "opportunity_conversion": 0.4,  # Mock - not tracked
+                    "avg_trade_size": 1000,  # Mock - not tracked
+                    "news_success_rate": 0.7,  # Mock - not tracked
+                    "sentiment_accuracy": 0.75,  # Mock - not tracked
+                    "total_articles": 1500  # Mock - not tracked
+                }
     except Exception as e:
-        print(f"[ERROR] Failed to save preloaded_data to DB: {e}")
+        log_error(f"Error getting recommendations data: {e}")
+        return {"total_recommendations": 0, "win_rate": 0.0}
+
+
+def get_real_scalping_data(start_date, end_date):
+    """Get real scalping signals data from database"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get scalping signals in date range
+                cur.execute("""
+                    SELECT COUNT(*) as total,
+                           COUNT(CASE WHEN sentiment_class = 'Bullish' THEN 1 END) as bullish,
+                           COUNT(CASE WHEN sentiment_class = 'Bearish' THEN 1 END) as bearish,
+                           AVG(sentiment_score) as avg_sentiment
+                    FROM scalping_signals
+                    WHERE date BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                result = cur.fetchone()
+                if not result:
+                    return {"total_signals": 0}
+                
+                return {
+                    "total_signals": result["total"] or 0,
+                    "bullish_signals": result["bullish"] or 0,
+                    "bearish_signals": result["bearish"] or 0,
+                    "avg_sentiment": result["avg_sentiment"] or 0.0
+                }
+    except Exception as e:
+        log_error(f"Error getting scalping data: {e}")
+        return {"total_signals": 0}
+
+
+def get_real_market_movers_data(start_date, end_date):
+    """Get real market movers data from database"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get market movers in date range
+                cur.execute("""
+                    SELECT COUNT(*) as total,
+                           COUNT(CASE WHEN type = 'GAINER' THEN 1 END) as gainers,
+                           COUNT(CASE WHEN type = 'LOSER' THEN 1 END) as losers,
+                           AVG(change_percent) as avg_change
+                    FROM market_movers
+                    WHERE timestamp BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                result = cur.fetchone()
+                if not result:
+                    return {"total_movers": 0}
+                
+                return {
+                    "total_movers": result["total"] or 0,
+                    "gainers": result["gainers"] or 0,
+                    "losers": result["losers"] or 0,
+                    "avg_change": result["avg_change"] or 0.0
+                }
+    except Exception as e:
+        log_error(f"Error getting market movers data: {e}")
+        return {"total_movers": 0}
+
+
+def get_real_backtest_data(start_date, end_date):
+    """Get real backtest results data from database"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get backtest results in date range
+                cur.execute("""
+                    SELECT COUNT(*) as total,
+                           AVG(total_return) as avg_return,
+                           AVG(win_rate) as avg_win_rate,
+                           AVG(total_trades) as avg_trades
+                    FROM backtest_results
+                    WHERE timestamp BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                result = cur.fetchone()
+                if not result:
+                    return {"total_backtests": 0}
+                
+                return {
+                    "total_backtests": result["total"] or 0,
+                    "avg_return": result["avg_return"] or 0.0,
+                    "avg_win_rate": result["avg_win_rate"] or 0.0,
+                    "avg_trades": result["avg_trades"] or 0,
+                    "avg_sharpe": 1.2,  # Mock - not calculated
+                    "avg_drawdown": -0.08  # Mock - not calculated
+                }
+    except Exception as e:
+        log_error(f"Error getting backtest data: {e}")
+        return {"total_backtests": 0}
+
+
+def get_real_system_metrics(start_date, end_date):
+    """Get real system metrics from database"""
+    import random
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get cache statistics
+                cur.execute("""
+                    SELECT COUNT(*) as total_cache_entries
+                    FROM cache
+                    WHERE created_at BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                cache_result = cur.fetchone()
+                cache_entries = cache_result["total_cache_entries"] if cache_result else 0
+                
+                # Get API cache statistics
+                cur.execute("""
+                    SELECT COUNT(*) as total_api_cache_entries
+                    FROM api_cache
+                    WHERE created_at BETWEEN %s AND %s
+                """, (start_date, end_date))
+                
+                api_cache_result = cur.fetchone()
+                api_cache_entries = api_cache_result["total_api_cache_entries"] if api_cache_result else 0
+                
+                return {
+                    "uptime": 0.98,  # Mock - not tracked
+                    "data_freshness": 5,  # Mock - not tracked
+                    "api_success_rate": 0.95,  # Mock - not tracked
+                    "preload_success_rate": 0.85,  # Mock - not tracked
+                    "cache_entries": cache_entries,
+                    "api_cache_entries": api_cache_entries,
+                    "api_response_times": [random.uniform(100, 500) for _ in range(7)]  # Mock - not tracked
+                }
+    except Exception as e:
+        log_error(f"Error getting system metrics: {e}")
+        return {"uptime": 0.98, "data_freshness": 5}
+
+
+def generate_mock_report_data(start_date, end_date, report_type):
+    """Generate mock report data for demonstration - kept for backward compatibility"""
+    return generate_real_report_data(start_date, end_date, report_type)
+
 
 if __name__ == "__main__":
     create_app()

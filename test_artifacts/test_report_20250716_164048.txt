@@ -1,0 +1,76 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-07-16T16:40:48.458877
+Base URL: http://localhost:5001
+Total Pages Tested: 9
+Pages Passed: 5
+Pages Failed: 4
+Success Rate: 55.6%
+Average Load Time: 5067.74ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: PASS
+  Load Time: 510.30ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/homepage_20250716_163943.png
+
+Stocks Page (/stocks):
+  Status: PASS
+  Load Time: 2637.64ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/stocks_page_20250716_163948.png
+
+Crypto Page (/crypto):
+  Status: PASS
+  Load Time: 22573.66ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/crypto_page_20250716_164013.png
+
+Opportunities Page (/opportunities):
+  Status: FAIL
+  Load Time: 10002.30ms
+  Load Success: False
+  Is Populated: True
+  Screenshot: test_artifacts/opportunities_page_20250716_164025.png
+
+System Status Page (/system_status):
+  Status: PASS
+  Load Time: 3565.80ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/system_status_page_20250716_164031.png
+
+Logs Page (/logs):
+  Status: FAIL
+  Load Time: 2582.18ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/logs_page_20250716_164035.png
+
+Portfolio Page (/portfolio_page):
+  Status: FAIL
+  Load Time: 567.99ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/portfolio_page_20250716_164038.png
+
+Backtest Page (/backtest_page):
+  Status: FAIL
+  Load Time: 568.58ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/backtest_page_20250716_164041.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2601.22ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250716_164046.png

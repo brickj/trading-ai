@@ -49,7 +49,7 @@ class SentimentAnalyzer:
             response = requests.post(
                 f"{self.ollama_base_url}/api/generate",
                 json=payload,
-                timeout=300,  # 5 minutes timeout for local processing
+                timeout=60,  # 1 minute timeout for local processing
             )
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
@@ -346,43 +346,12 @@ class SentimentAnalyzer:
         
         # Add context-specific prompt
         if is_crypto:
-            # Enhanced crypto prompt with detailed guidance
-            prompt = f"""
-You are an expert cryptocurrency news sentiment analyzer for trading. Your job is to analyze crypto news content and determine how it affects {symbol} sentiment.
+            # Simplified crypto prompt
+            prompt = f"""Analyze crypto news sentiment for {symbol}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
 
-SENTIMENT SCORE GUIDELINES:
-- -1.0 to -0.7: Very negative (hack, regulatory ban, major exchange failure, network attack)
-- -0.7 to -0.3: Negative (regulatory crackdown, whale selling, technical issues, bearish market)
-- -0.3 to -0.1: Slightly negative (minor delays, cautious adoption, market uncertainty)
-- -0.1 to 0.1: Neutral (routine updates, mixed signals, no clear direction)
-- 0.1 to 0.3: Slightly positive (minor partnerships, stable performance, small upgrades)
-- 0.3 to 0.7: Positive (major adoption, institutional investment, technical breakthroughs)
-- 0.7 to 1.0: Very positive (mass adoption, major partnership, regulatory approval, huge gains)
+News: {news_text}
 
-CONFIDENCE GUIDELINES:
-- 0.9-1.0: Very high confidence (clear, specific crypto news with direct impact)
-- 0.7-0.8: High confidence (strong evidence, multiple sources agree)
-- 0.5-0.6: Medium confidence (some evidence, mixed signals)
-- 0.3-0.4: Low confidence (weak evidence, unclear impact)
-- 0.1-0.2: Very low confidence (speculation, rumors, minimal data)
-
-CRYPTO-SPECIFIC FACTORS:
-1. Regulatory news (bans, approvals, new laws)
-2. Institutional adoption (companies, banks, governments)
-3. Technical developments (upgrades, new features, security)
-4. Market dynamics (whale movements, exchange issues)
-5. Network activity (transactions, adoption, developer activity)
-
-Crypto news content for {symbol}:
-{news_text}
-
-Return ONLY valid JSON in this exact format:
-{{
-    "sentiment_score": [score between -1.0 and 1.0],
-    "confidence": [confidence between 0.0 and 1.0],
-    "summary": "[2-3 sentence summary explaining the sentiment and key crypto factors]"
-}}
-"""
+Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string"}}"""
             messages = [
                 {
                     "role": "system",
@@ -391,43 +360,12 @@ Return ONLY valid JSON in this exact format:
                 {"role": "user", "content": prompt},
             ]
         else:
-            # Enhanced stock prompt with detailed guidance
-            prompt = f"""
-You are an expert financial news sentiment analyzer for stock trading. Your job is to analyze news content and determine how it affects stock sentiment.
+            # Simplified stock prompt
+            prompt = f"""Analyze stock news sentiment for {symbol if symbol else 'stock'}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
 
-SENTIMENT SCORE GUIDELINES:
-- -1.0 to -0.7: Very negative (earnings miss, scandal, bankruptcy, major losses)
-- -0.7 to -0.3: Negative (downgrades, layoffs, regulatory issues, declining sales)
-- -0.3 to -0.1: Slightly negative (minor setbacks, delays, cautious outlook)
-- -0.1 to 0.1: Neutral (mixed news, no clear direction, routine announcements)
-- 0.1 to 0.3: Slightly positive (minor wins, stable performance, small upgrades)
-- 0.3 to 0.7: Positive (earnings beat, new products, partnerships, growth)
-- 0.7 to 1.0: Very positive (major breakthrough, acquisition, huge earnings beat)
+News: {news_text}
 
-CONFIDENCE GUIDELINES:
-- 0.9-1.0: Very high confidence (clear, specific news with direct impact)
-- 0.7-0.8: High confidence (strong evidence, multiple sources agree)
-- 0.5-0.6: Medium confidence (some evidence, mixed signals)
-- 0.3-0.4: Low confidence (weak evidence, unclear impact)
-- 0.1-0.2: Very low confidence (speculation, rumors, minimal data)
-
-ANALYSIS PROCESS:
-1. Identify the main news events and their impact on the company
-2. Consider the magnitude and timing of the news
-3. Evaluate the reliability of the news sources
-4. Assess how this affects future stock performance
-5. Determine sentiment score and confidence level
-
-News content for {symbol if symbol else 'stock'}:
-{news_text}
-
-Return ONLY valid JSON in this exact format:
-{{
-    "sentiment_score": [score between -1.0 and 1.0],
-    "confidence": [confidence between 0.0 and 1.0],
-    "summary": "[2-3 sentence summary explaining the sentiment and key factors]"
-}}
-"""
+Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string"}}"""
             messages = [
                 {
                     "role": "system",

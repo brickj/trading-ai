@@ -1,0 +1,78 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-07-17T13:35:13.866220
+Base URL: http://localhost:5001
+Total Pages Tested: 9
+Pages Passed: 5
+Pages Failed: 4
+Success Rate: 55.6%
+Average Load Time: 7572.66ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: PASS
+  Load Time: 510.28ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/homepage_20250717_133346.png
+
+Stocks Page (/stocks):
+  Status: PASS
+  Load Time: 2633.91ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/stocks_page_20250717_133351.png
+
+Crypto Page (/crypto):
+  Status: FAIL
+  Load Time: 22576.97ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#cryptoCardsRow (empty)']
+  Screenshot: test_artifacts/crypto_page_20250717_133416.png
+
+Opportunities Page (/opportunities):
+  Status: FAIL
+  Load Time: 32591.80ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['.opportunity-card']
+  Screenshot: test_artifacts/opportunities_page_20250717_133451.png
+
+System Status Page (/system_status):
+  Status: PASS
+  Load Time: 3531.84ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/system_status_page_20250717_133456.png
+
+Logs Page (/logs):
+  Status: PASS
+  Load Time: 2595.34ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/logs_page_20250717_133501.png
+
+Portfolio Page (/portfolio_page):
+  Status: FAIL
+  Load Time: 561.43ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/portfolio_page_20250717_133504.png
+
+Backtest Page (/backtest_page):
+  Status: FAIL
+  Load Time: 572.41ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/backtest_page_20250717_133506.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2579.96ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250717_133511.png

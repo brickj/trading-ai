@@ -1,0 +1,173 @@
+{
+  "test_run": {
+    "timestamp": "2025-07-16T15:38:42.325669",
+    "base_url": "http://localhost:5001",
+    "total_pages_tested": 9,
+    "pages_passed": 5,
+    "pages_failed": 4,
+    "success_rate": "55.6%",
+    "average_load_time_ms": 2915.52
+  },
+  "page_results": [
+    {
+      "page_name": "Homepage",
+      "route": "/",
+      "timestamp": "2025-07-16T15:37:59.016587",
+      "load_success": true,
+      "load_time_ms": 506.5619945526123,
+      "total_test_time_ms": 2896.6362476348877,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 16374
+      },
+      "screenshot_path": "test_artifacts/homepage_20250716_153756.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Stocks Page",
+      "route": "/stocks",
+      "timestamp": "2025-07-16T15:38:03.884302",
+      "load_success": true,
+      "load_time_ms": 2644.001007080078,
+      "total_test_time_ms": 4867.131948471069,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 27900
+      },
+      "screenshot_path": "test_artifacts/stocks_page_20250716_153801.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Crypto Page",
+      "route": "/crypto",
+      "timestamp": "2025-07-16T15:38:09.502516",
+      "load_success": true,
+      "load_time_ms": 3369.352102279663,
+      "total_test_time_ms": 5617.942094802856,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 21649
+      },
+      "screenshot_path": "test_artifacts/crypto_page_20250716_153807.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Opportunities Page",
+      "route": "/opportunities",
+      "timestamp": "2025-07-16T15:38:21.720993",
+      "load_success": false,
+      "load_time_ms": 10003.15523147583,
+      "total_test_time_ms": 12218.172073364258,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 11725
+      },
+      "screenshot_path": "test_artifacts/opportunities_page_20250716_153819.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "System Status Page",
+      "route": "/system_status",
+      "timestamp": "2025-07-16T15:38:27.502957",
+      "load_success": true,
+      "load_time_ms": 3509.002923965454,
+      "total_test_time_ms": 5781.806707382202,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 63084
+      },
+      "screenshot_path": "test_artifacts/system_status_page_20250716_153825.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Logs Page",
+      "route": "/logs",
+      "timestamp": "2025-07-16T15:38:32.235828",
+      "load_success": true,
+      "load_time_ms": 2606.7941188812256,
+      "total_test_time_ms": 4732.35297203064,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 1,
+        "page_content_length": 28194
+      },
+      "screenshot_path": "test_artifacts/logs_page_20250716_153830.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Portfolio Page",
+      "route": "/portfolio",
+      "timestamp": "2025-07-16T15:38:34.858781",
+      "load_success": true,
+      "load_time_ms": 502.90608406066895,
+      "total_test_time_ms": 2622.785806655884,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          "#portfolioContainer",
+          "#portfolioSection",
+          "#addPositionForm"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 240
+      },
+      "screenshot_path": "test_artifacts/portfolio_page_20250716_153832.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Backtest Page",
+      "route": "/backtest",
+      "timestamp": "2025-07-16T15:38:37.494681",
+      "load_success": true,
+      "load_time_ms": 500.97012519836426,
+      "total_test_time_ms": 2635.603904724121,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          "#backtestForm",
+          "#daysSelector"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 240
+      },
+      "screenshot_path": "test_artifacts/backtest_page_20250716_153835.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Recommendations Page",
+      "route": "/recommendations",
+      "timestamp": "2025-07-16T15:38:42.324965",
+      "load_success": true,
+      "load_time_ms": 2596.907138824463,
+      "total_test_time_ms": 4829.771995544434,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 51619
+      },
+      "screenshot_path": "test_artifacts/recommendations_page_20250716_153840.png",
+      "status": "PASS"
+    }
+  ]
+}

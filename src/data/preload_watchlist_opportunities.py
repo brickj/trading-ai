@@ -164,12 +164,30 @@ def preload_watchlist_opportunities():
 def get_latest_preloaded_watchlist_opportunities():
     """
     Fetch the most recent preloaded watchlist opportunities from the database.
-    Returns None if no data is available.
+    Returns a consistent dictionary structure even on error.
     """
+    default_response = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "opportunities": [],
+        "symbols_analyzed": 0,
+        "errors_count": 0,
+        "cached": False,
+        "success": False,
+        "error": None
+    }
+    
     try:
+        # Ensure table exists before querying
+        ensure_watchlist_opportunities_table()
+        
         with get_db_connection() as conn:
+            if not conn:
+                error_msg = "Failed to establish database connection"
+                logger.error(f"[PRELOAD_WATCHLIST_OPPS] {error_msg}")
+                return {**default_response, "error": error_msg}
+                
             with conn.cursor() as cur:
-                # Use a more explicit query with proper column selection
+                logger.debug("[PRELOAD_WATCHLIST_OPPS] Querying for latest watchlist opportunities")
                 cur.execute("""
                     SELECT 
                         timestamp,
@@ -184,56 +202,64 @@ def get_latest_preloaded_watchlist_opportunities():
                 result = cur.fetchone()
                 
                 if result:
-                    # Since we're using RealDictCursor, result is a dict with column names as keys
+                    # Extract data from result dictionary (RealDictCursor)
                     timestamp = result.get('timestamp')
-                    opportunities = result.get('opportunities')
-                    symbols_analyzed = result.get('symbols_analyzed')
-                    errors_count = result.get('errors_count')
+                    opportunities = result.get('opportunities', [])
+                    symbols_analyzed = result.get('symbols_analyzed', 0)
+                    errors_count = result.get('errors_count', 0)
                     
-                    # Debug logging
-                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw timestamp: {timestamp} (type: {type(timestamp)})")
-                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw opportunities: {opportunities} (type: {type(opportunities)})")
-                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw symbols_analyzed: {symbols_analyzed} (type: {type(symbols_analyzed)})")
-                    logger.info(f"[PRELOAD_WATCHLIST_OPPS] Raw errors_count: {errors_count} (type: {type(errors_count)})")
+                    # Log basic info about the data
+                    logger.info(
+                        f"[PRELOAD_WATCHLIST_OPPS] Found opportunities for {symbols_analyzed} symbols "
+                        f"(errors: {errors_count}, timestamp: {timestamp})"
+                    )
                     
-                    # Handle opportunities data - JSONB should come back as a Python object
+                    # Handle opportunities data - ensure it's a list
                     if opportunities is None:
                         opportunities = []
+                        logger.warning("[PRELOAD_WATCHLIST_OPPS] No opportunities found in database record")
                     elif isinstance(opportunities, str):
                         # If it's a string, try to parse it as JSON
                         import json
                         try:
                             opportunities = json.loads(opportunities)
-                        except json.JSONDecodeError:
-                            logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to parse opportunities JSON: {opportunities[:100]}")
+                            if not isinstance(opportunities, list):
+                                logger.error(f"[PRELOAD_WATCHLIST_OPPS] Parsed opportunities is not a list: {type(opportunities)}")
+                                opportunities = []
+                        except json.JSONDecodeError as je:
+                            logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to parse opportunities JSON: {str(je)}")
                             opportunities = []
-                    elif not isinstance(opportunities, list):
-                        # If it's not a list, something is wrong
-                        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Unexpected opportunities type: {type(opportunities)}")
-                        opportunities = []
                     
-                    # Ensure symbols_analyzed and errors_count are integers
+                    # Ensure counts are integers
                     try:
                         symbols_analyzed = int(symbols_analyzed) if symbols_analyzed is not None else 0
                         errors_count = int(errors_count) if errors_count is not None else 0
-                    except (ValueError, TypeError):
-                        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to convert counts to int: {symbols_analyzed}, {errors_count}")
+                    except (ValueError, TypeError) as ve:
+                        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Invalid count values: {ve}")
                         symbols_analyzed = 0
                         errors_count = 0
                     
+                    # Format timestamp for JSON serialization
+                    timestamp_str = (
+                        timestamp.isoformat() 
+                        if hasattr(timestamp, 'isoformat') 
+                        else str(timestamp)
+                    )
+                    
                     return {
-                        "timestamp": timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
-                        "opportunities": opportunities,
+                        "timestamp": timestamp_str,
+                        "opportunities": opportunities if isinstance(opportunities, list) else [],
                         "symbols_analyzed": symbols_analyzed,
                         "errors_count": errors_count,
-                        "cached": True
+                        "cached": True,
+                        "success": True,
+                        "error": None
                     }
                 else:
-                    logger.warning("[PRELOAD_WATCHLIST_OPPS] No preloaded watchlist opportunities found in database")
-                    return None
+                    logger.warning("[PRELOAD_WATCHLIST_OPPS] No watchlist opportunities found in database")
+                    return {**default_response, "error": "No watchlist opportunities found"}
                     
     except Exception as e:
-        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Failed to retrieve preloaded watchlist opportunities: {e}")
-        import traceback
-        logger.error(f"[PRELOAD_WATCHLIST_OPPS] Traceback: {traceback.format_exc()}")
-        return None
+        error_msg = f"Error fetching watchlist opportunities: {str(e)}"
+        logger.exception(f"[PRELOAD_WATCHLIST_OPPS] {error_msg}")
+        return {**default_response, "error": error_msg}

@@ -2,23 +2,33 @@
 
 // Theme management
 function toggleTheme() {
-    frontendLogger.logUserAction('Theme Toggle Clicked');
-    
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    html.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    const icon = document.getElementById('themeIcon');
-    if (newTheme === 'dark') {
-        icon.className = 'fas fa-moon';
-    } else {
-        icon.className = 'fas fa-sun';
+    try {
+        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
+            window.frontendLogger.logUserAction('Theme Toggle Clicked');
+        }
+        
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+            if (newTheme === 'dark') {
+                icon.className = 'fas fa-moon';
+            } else {
+                icon.className = 'fas fa-sun';
+            }
+        }
+        
+        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
+            window.frontendLogger.logUserAction('Theme Changed', null, { from: currentTheme, to: newTheme });
+        }
+    } catch (e) {
+        console.error('Error in toggleTheme:', e);
     }
-    
-    frontendLogger.logUserAction('Theme Changed', null, { from: currentTheme, to: newTheme });
 }
 
 // Initialize theme from localStorage
@@ -148,16 +158,42 @@ function debugLog(message, data = null) {
 
 // Initialize theme on page load
 document.addEventListener('DOMContentLoaded', function() {
-    initializeTheme();
-    frontendLogger.info('Page Loaded: ' + window.location.href, 'navigation');
+    try {
+        initializeTheme();
+        if (window.frontendLogger && typeof window.frontendLogger.info === 'function') {
+            window.frontendLogger.info('Page Loaded: ' + window.location.href, 'navigation');
+        } else {
+            console.log('[' + new Date().toISOString() + '] [INFO] [navigation] Page Loaded: ' + window.location.href);
+        }
+    } catch (e) {
+        console.error('Error in DOMContentLoaded handler:', e);
+    }
 });
+
+// Safe logger function that won't break if frontendLogger isn't available
+function safeLogError(message, category) {
+    try {
+        if (window.frontendLogger && typeof window.frontendLogger.error === 'function') {
+            try {
+                window.frontendLogger.error(message, category);
+            } catch (logError) {
+                console.error('Error logging with frontendLogger:', logError);
+                console.error('[' + new Date().toISOString() + '] [ERROR] [' + (category || 'system') + '] ' + message);
+            }
+        } else {
+            console.error('[' + new Date().toISOString() + '] [ERROR] [' + (category || 'system') + '] ' + message);
+        }
+    } catch (e) {
+        console.error('Error in safeLogError:', e);
+    }
+}
 
 // Log any unhandled errors
 window.addEventListener('error', function(event) {
-    frontendLogger.error('JavaScript Error: ' + event.message + ' at ' + event.filename + ':' + event.lineno, 'error');
+    safeLogError('JavaScript Error: ' + event.message + ' at ' + event.filename + ':' + event.lineno, 'error');
 });
 
 // Global error handler for async operations
 window.addEventListener('unhandledrejection', function(event) {
-    frontendLogger.error('Unhandled Promise Rejection: ' + event.reason, 'error');
+    safeLogError('Unhandled Promise Rejection: ' + (event.reason || 'Unknown reason'), 'error');
 }); 
