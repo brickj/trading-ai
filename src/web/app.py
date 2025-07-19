@@ -50,7 +50,7 @@ from src.core.tier_manager import tier_manager
 from src.web.scalping_signals import scalping_signals_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
-from psycopg2.extras import Json, RealDictCursor
+from psycopg2.extras import Json, RealDictCursor, DictCursor
 import threading
 from src.core.database import get_db_connection
 import os
@@ -897,6 +897,402 @@ def backtest():
     except Exception as e:
         log_exception("Backtest endpoint", e)
         return create_api_response(error=str(e), status_code=500)
+
+
+@app.route("/api/backtest/historical", methods=["POST"])
+def backtest_historical_recommendations():
+    """Run backtest based on historical recommendations from the database."""
+    try:
+        data = request.get_json()
+        symbol = data.get("symbol", "").upper()
+        days_back = int(data.get("days_back", 30))
+        strategy_type = data.get("strategy_type", "all")  # all, stocks, crypto
+        
+        # Create a connection without RealDictCursor for this function
+        db_cfg = Config.DATABASE_CONFIG
+        conn = psycopg2.connect(
+            host=db_cfg["host"],
+            port=db_cfg["port"],
+            database=db_cfg["database"],
+            user=db_cfg["user"],
+            password=db_cfg["password"],
+            cursor_factory=None  # Use default cursor (tuples)
+        )
+        try:
+            with conn.cursor() as cur:
+                # Build query based on parameters
+                query = """
+                    SELECT 
+                        id, symbol, timestamp, recommendation_type, action, 
+                        strike_price, days_to_expiry, option_price, sentiment_confidence,
+                        historical_confidence, final_confidence, sentiment_score,
+                        current_stock_price, reasoning, actual_outcome, 
+                        outcome_timestamp, profitable
+                    FROM recommendations 
+                    WHERE timestamp >= NOW() - INTERVAL '30 days'
+                """
+                params = []
+                
+                # Note: symbol parameter is not being used in this query since we hardcoded the interval
+                # if symbol:
+                #     query += " AND symbol = %s"
+                #     params.append(symbol)
+                
+                if strategy_type != "all":
+                    if strategy_type == "stocks":
+                        query += " AND recommendation_type NOT LIKE 'crypto%'"
+                    elif strategy_type == "crypto":
+                        query += " AND recommendation_type LIKE 'crypto%'"
+                
+                query += " ORDER BY timestamp DESC"
+                
+                print(f"DEBUG: Query: {query}")
+                print(f"DEBUG: Params: {params}")
+                cur.execute(query, params)
+                recommendations = cur.fetchall()
+        finally:
+            conn.close()
+        
+        if not recommendations:
+            return create_api_response(
+                data={
+                    "message": f"No historical recommendations found for {symbol or 'all symbols'} in the last {days_back} days",
+                    "total_recommendations": 0,
+                    "backtest_results": {}
+                }
+            )
+        
+        # Process recommendations into backtest results
+        backtest_results = process_historical_recommendations(recommendations)
+        
+        return create_api_response(data=backtest_results)
+        
+    except Exception as e:
+        log_exception("Historical backtest endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
+
+@app.route("/api/backtest/recommendations", methods=["GET"])
+def get_backtest_recommendations():
+    """Get historical recommendations for backtesting analysis."""
+    try:
+        symbol = request.args.get("symbol", "").upper()
+        days_back = int(request.args.get("days_back", 30))
+        limit = int(request.args.get("limit", 100))
+        
+        # Create a connection without RealDictCursor for this function
+        db_cfg = Config.DATABASE_CONFIG
+        conn = psycopg2.connect(
+            host=db_cfg["host"],
+            port=db_cfg["port"],
+            database=db_cfg["database"],
+            user=db_cfg["user"],
+            password=db_cfg["password"],
+            cursor_factory=None  # Use default cursor (tuples)
+        )
+        try:
+            with conn.cursor() as cur:
+                query = """
+                    SELECT 
+                        id, symbol, timestamp, recommendation_type, action, 
+                        strike_price, current_stock_price, sentiment_confidence,
+                        final_confidence, sentiment_score, reasoning,
+                        actual_outcome, outcome_timestamp, profitable
+                    FROM recommendations 
+                    WHERE timestamp >= NOW() - INTERVAL %s days
+                """
+                params = [days_back]
+                
+                if symbol:
+                    query += " AND symbol = %s"
+                    params.append(symbol)
+                
+                query += " ORDER BY timestamp DESC LIMIT %s"
+                params.append(limit)
+                
+                cur.execute(query, params)
+                recommendations = cur.fetchall()
+        finally:
+            conn.close()
+        
+        # Convert to list of dictionaries
+        results = []
+        for rec in recommendations:
+            results.append({
+                "id": rec[0],
+                "symbol": rec[1],
+                "timestamp": rec[2].isoformat() if rec[2] else None,
+                "recommendation_type": rec[3],
+                "action": rec[4],
+                "strike_price": float(rec[5]) if rec[5] else None,
+                "current_stock_price": float(rec[6]) if rec[6] else None,
+                "sentiment_confidence": float(rec[7]) if rec[7] else None,
+                "final_confidence": float(rec[8]) if rec[8] else None,
+                "sentiment_score": float(rec[9]) if rec[9] else None,
+                "reasoning": rec[10],
+                "actual_outcome": float(rec[11]) if rec[11] else None,
+                "outcome_timestamp": rec[12].isoformat() if rec[12] else None,
+                "profitable": rec[13]
+            })
+        
+        return create_api_response(data={
+            "recommendations": results,
+            "total_count": len(results),
+            "symbol": symbol,
+            "days_back": days_back
+        })
+        
+    except Exception as e:
+        log_exception("Get backtest recommendations endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
+
+@app.route("/api/backtest/stats", methods=["GET"])
+def get_backtest_statistics():
+    """Get comprehensive backtesting statistics from historical recommendations."""
+    try:
+        days_back = int(request.args.get("days_back", 30))
+        symbol = request.args.get("symbol", "").upper()
+        
+        # Create a connection without RealDictCursor for this function
+        db_cfg = Config.DATABASE_CONFIG
+        conn = psycopg2.connect(
+            host=db_cfg["host"],
+            port=db_cfg["port"],
+            database=db_cfg["database"],
+            user=db_cfg["user"],
+            password=db_cfg["password"],
+            cursor_factory=None  # Use default cursor (tuples)
+        )
+        try:
+            with conn.cursor() as cur:
+                # Build base query
+                base_query = f"""
+                    FROM recommendations 
+                    WHERE timestamp >= NOW() - INTERVAL '{days_back} days'
+                """
+                params = []
+                
+                if symbol:
+                    base_query += " AND symbol = %s"
+                    params.append(symbol)
+                
+                # Overall statistics
+                cur.execute(f"SELECT COUNT(*) {base_query}", params)
+                result = cur.fetchone()
+                total_recommendations = result[0] if result else 0
+                
+                cur.execute(f"SELECT COUNT(*) {base_query} AND profitable = true", params)
+                result = cur.fetchone()
+                profitable_count = result[0] if result else 0
+                
+                cur.execute(f"SELECT COUNT(*) {base_query} AND profitable = false", params)
+                result = cur.fetchone()
+                unprofitable_count = result[0] if result else 0
+                
+                # Success rate
+                success_rate = (profitable_count / total_recommendations * 100) if total_recommendations > 0 else 0
+                
+                # Average confidence scores
+                cur.execute(f"""
+                    SELECT 
+                        AVG(sentiment_confidence) as avg_sentiment_confidence,
+                        AVG(final_confidence) as avg_final_confidence,
+                        AVG(sentiment_score) as avg_sentiment_score
+                    {base_query}
+                """, params)
+                avg_scores = cur.fetchone()
+                
+                # Action breakdown
+                cur.execute(f"""
+                    SELECT action, COUNT(*) as count
+                    {base_query}
+                    GROUP BY action
+                    ORDER BY count DESC
+                """, params)
+                action_breakdown = cur.fetchall()
+                
+                # Recommendation type breakdown
+                cur.execute(f"""
+                    SELECT recommendation_type, COUNT(*) as count
+                    {base_query}
+                    GROUP BY recommendation_type
+                    ORDER BY count DESC
+                """, params)
+                type_breakdown = cur.fetchall()
+                
+                # Top performing symbols
+                cur.execute(f"""
+                    SELECT symbol, COUNT(*) as total, 
+                           SUM(CASE WHEN profitable = true THEN 1 ELSE 0 END) as profitable_count
+                    {base_query}
+                    GROUP BY symbol
+                    HAVING COUNT(*) >= 5
+                    ORDER BY (SUM(CASE WHEN profitable = true THEN 1 ELSE 0 END)::float / COUNT(*)) DESC
+                    LIMIT 10
+                """, params)
+                top_symbols = cur.fetchall()
+        except Exception as e:
+            log_exception("Backtest statistics database error", e)
+            return create_api_response(error=str(e), status_code=500)
+        finally:
+            if conn:
+                conn.close()
+        
+        stats = {
+            "total_recommendations": total_recommendations,
+            "profitable_count": profitable_count,
+            "unprofitable_count": unprofitable_count,
+            "success_rate": round(success_rate, 2),
+            "average_scores": {
+                "sentiment_confidence": round(float(avg_scores[0] or 0), 3),
+                "final_confidence": round(float(avg_scores[1] or 0), 3),
+                "sentiment_score": round(float(avg_scores[2] or 0), 3)
+            },
+            "action_breakdown": [{"action": row[0], "count": row[1]} for row in action_breakdown],
+            "type_breakdown": [{"type": row[0], "count": row[1]} for row in type_breakdown],
+            "top_performing_symbols": [
+                {
+                    "symbol": row[0],
+                    "total_recommendations": row[1],
+                    "profitable_count": row[2],
+                    "success_rate": round((row[2] / row[1]) * 100, 2)
+                }
+                for row in top_symbols if len(row) >= 3
+            ],
+            "period_days": days_back,
+            "symbol": symbol
+        }
+        
+        return create_api_response(data=stats)
+        
+    except Exception as e:
+        log_exception("Backtest statistics endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
+
+
+def process_historical_recommendations(recommendations):
+    """Process historical recommendations into backtest results."""
+    try:
+        print(f"DEBUG: Processing {len(recommendations)} recommendations")
+        if recommendations:
+            print(f"DEBUG: First recommendation: {recommendations[0]}")
+            print(f"DEBUG: Length of first recommendation: {len(recommendations[0])}")
+        
+        total_recommendations = len(recommendations)
+        profitable_count = sum(1 for rec in recommendations if rec[16])  # profitable field (index 16)
+        unprofitable_count = sum(1 for rec in recommendations if rec[16] is False)
+        unknown_count = sum(1 for rec in recommendations if rec[16] is None)
+        
+        # Calculate success rate
+        success_rate = (profitable_count / (profitable_count + unprofitable_count) * 100) if (profitable_count + unprofitable_count) > 0 else 0
+        
+        # Calculate average confidence scores
+        sentiment_confidences = []
+        final_confidences = []
+        sentiment_scores = []
+        
+        for rec in recommendations:
+            try:
+                if rec[8] is not None:  # sentiment_confidence (index 8)
+                    sentiment_confidences.append(float(rec[8]))
+            except (ValueError, TypeError):
+                pass  # Skip invalid values
+                
+            try:
+                if rec[10] is not None:  # final_confidence (index 10)
+                    final_confidences.append(float(rec[10]))
+            except (ValueError, TypeError):
+                pass  # Skip invalid values
+                
+            try:
+                if rec[11] is not None:  # sentiment_score (index 11)
+                    sentiment_scores.append(float(rec[11]))
+            except (ValueError, TypeError):
+                pass  # Skip invalid values
+        
+        avg_sentiment_confidence = sum(sentiment_confidences) / len(sentiment_confidences) if sentiment_confidences else 0
+        avg_final_confidence = sum(final_confidences) / len(final_confidences) if final_confidences else 0
+        avg_sentiment_score = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+        
+        # Action breakdown
+        actions = {}
+        for rec in recommendations:
+            action = rec[4]  # action field
+            if action:
+                actions[action] = actions.get(action, 0) + 1
+        
+        # Recommendation type breakdown
+        types = {}
+        for rec in recommendations:
+            rec_type = rec[3]  # recommendation_type field
+            if rec_type:
+                types[rec_type] = types.get(rec_type, 0) + 1
+        
+        # Symbol breakdown
+        symbols = {}
+        for rec in recommendations:
+            symbol = rec[1]  # symbol field (index 1)
+            if symbol:
+                if symbol not in symbols:
+                    symbols[symbol] = {"total": 0, "profitable": 0, "unprofitable": 0}
+                symbols[symbol]["total"] += 1
+                if rec[16] is True:  # profitable field (index 16)
+                    symbols[symbol]["profitable"] += 1
+                elif rec[16] is False:
+                    symbols[symbol]["unprofitable"] += 1
+        
+        # Calculate symbol success rates
+        for symbol in symbols:
+            total = symbols[symbol]["total"]
+            profitable = symbols[symbol]["profitable"]
+            symbols[symbol]["success_rate"] = (profitable / total * 100) if total > 0 else 0
+        
+        # Sort symbols by success rate
+        sorted_symbols = sorted(symbols.items(), key=lambda x: x[1]["success_rate"], reverse=True)
+        
+        return {
+            "total_recommendations": total_recommendations,
+            "profitable_count": profitable_count,
+            "unprofitable_count": unprofitable_count,
+            "unknown_count": unknown_count,
+            "success_rate": round(success_rate, 2),
+            "average_scores": {
+                "sentiment_confidence": round(avg_sentiment_confidence, 3),
+                "final_confidence": round(avg_final_confidence, 3),
+                "sentiment_score": round(avg_sentiment_score, 3)
+            },
+            "action_breakdown": [{"action": action, "count": count} for action, count in actions.items()],
+            "type_breakdown": [{"type": rec_type, "count": count} for rec_type, count in types.items()],
+            "symbol_performance": [
+                {
+                    "symbol": symbol,
+                    "total_recommendations": data["total"],
+                    "profitable_count": data["profitable"],
+                    "unprofitable_count": data["unprofitable"],
+                    "success_rate": round(data["success_rate"], 2)
+                }
+                for symbol, data in sorted_symbols
+            ],
+            "recommendations_sample": [
+                {
+                    "symbol": rec[1],
+                    "timestamp": str(rec[2]) if rec[2] else None,
+                    "action": rec[4],
+                    "confidence": float(rec[10]) if rec[10] else None,  # final_confidence (index 10)
+                    "profitable": rec[16]  # profitable (index 16)
+                }
+                for rec in recommendations[:10]  # First 10 recommendations
+            ]
+        }
+        
+    except Exception as e:
+        log_exception("Process historical recommendations", e)
+        return {
+            "error": str(e),
+            "total_recommendations": 0,
+            "success_rate": 0
+        }
 
 
 @app.route("/api/portfolio")

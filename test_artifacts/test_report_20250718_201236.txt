@@ -1,0 +1,85 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-07-18T20:12:36.914132
+Base URL: http://localhost:5001
+Total Pages Tested: 10
+Pages Passed: 8
+Pages Failed: 2
+Success Rate: 80.0%
+Average Load Time: 6909.58ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: PASS
+  Load Time: 508.14ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/homepage_20250718_201104.png
+
+Stocks Page (/stocks):
+  Status: PASS
+  Load Time: 2634.14ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/stocks_page_20250718_201109.png
+
+Crypto Page (/crypto):
+  Status: PASS
+  Load Time: 3370.48ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/crypto_page_20250718_201115.png
+
+Opportunities Page (/opportunities):
+  Status: PASS
+  Load Time: 3153.42ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/opportunities_page_20250718_201121.png
+
+System Status Page (/system_status):
+  Status: PASS
+  Load Time: 3542.19ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/system_status_page_20250718_201127.png
+
+Logs Page (/logs):
+  Status: PASS
+  Load Time: 2596.06ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/logs_page_20250718_201132.png
+
+Portfolio Page (/portfolio_page):
+  Status: PASS
+  Load Time: 2587.90ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/portfolio_page_20250718_201137.png
+
+Backtest Page (/backtest_page):
+  Status: FAIL
+  Load Time: 575.72ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#symbol (empty)']
+  Screenshot: test_artifacts/backtest_page_20250718_201140.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2605.60ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250718_201144.png
+
+Market Movers Page (/market_movers):
+  Status: FAIL
+  Load Time: 47522.13ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['.container', '.card', '#marketMoversContainer', 'Market movers container missing', 'Market movers title missing', 'No data cards found', 'No price elements found', 'No symbol elements found']
+  Screenshot: test_artifacts/market_movers_page_20250718_201234.png
