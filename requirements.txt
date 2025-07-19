@@ -10,3 +10,5 @@ flask-socketio
 flask-cors
 apscheduler
 psutil
+beautifulsoup4
+lxml

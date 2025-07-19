@@ -1593,6 +1593,70 @@ def watchlist_opportunities():
 
 
 
+def get_system_metrics():
+    """Get basic system metrics"""
+    try:
+        import psutil
+        import platform
+        
+        # CPU usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        
+        # Memory usage
+        memory = psutil.virtual_memory()
+        memory_percent = memory.percent
+        memory_used_gb = memory.used / (1024**3)
+        memory_total_gb = memory.total / (1024**3)
+        
+        # Disk usage
+        disk = psutil.disk_usage('/')
+        disk_percent = disk.percent
+        disk_used_gb = disk.used / (1024**3)
+        disk_total_gb = disk.total / (1024**3)
+        
+        # System info
+        system_info = {
+            "platform": platform.system(),
+            "platform_version": platform.version(),
+            "python_version": platform.python_version(),
+            "architecture": platform.machine(),
+        }
+        
+        # Process info
+        process = psutil.Process()
+        process_memory_mb = process.memory_info().rss / (1024**2)
+        process_cpu_percent = process.cpu_percent()
+        
+        return {
+            "status": "ok",
+            "cpu": {
+                "system_percent": cpu_percent,
+                "process_percent": process_cpu_percent
+            },
+            "memory": {
+                "system_percent": memory_percent,
+                "system_used_gb": round(memory_used_gb, 2),
+                "system_total_gb": round(memory_total_gb, 2),
+                "process_mb": round(process_memory_mb, 2)
+            },
+            "disk": {
+                "percent": disk_percent,
+                "used_gb": round(disk_used_gb, 2),
+                "total_gb": round(disk_total_gb, 2)
+            },
+            "system": system_info,
+            "uptime": {
+                "boot_time": datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+            }
+        }
+    except Exception as e:
+        log_error(f"Error getting system metrics: {str(e)}")
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+
 @app.route("/api/go_services/health")
 def go_services_health():
     """Get health status of Go microservices - DISABLED"""
@@ -1679,6 +1743,7 @@ def system_status():
             "error": "System status unavailable",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }), 500
+
 
 
 @app.route("/recommendations_test")
@@ -3406,12 +3471,12 @@ def get_job_schedules():
                 rows = cur.fetchall()
                 schedules = [
                     {
-                        'id': row[0],
-                        'job_name': row[1],
-                        'run_time': str(row[2]),
-                        'enabled': row[3],
-                        'last_run': row[4].isoformat() if row[4] else None,
-                        'created_at': row[5].isoformat() if row[5] else None
+                        'id': row['id'],
+                        'job_name': row['job_name'],
+                        'run_time': str(row['run_time']),
+                        'enabled': row['enabled'],
+                        'last_run': row['last_run'].isoformat() if row['last_run'] else None,
+                        'created_at': row['created_at'].isoformat() if row['created_at'] else None
                     }
                     for row in rows
                 ]

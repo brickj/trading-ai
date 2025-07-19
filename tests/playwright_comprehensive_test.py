@@ -116,9 +116,17 @@ class ComprehensivePageTest:
                 "expected_elements": [
                     "#portfolioContainer",  # Portfolio container
                     "#portfolioSection",  # Portfolio section
-                    "#addPositionForm"  # Add position form
+                    "#addPositionForm",  # Add position form
+                    "#positionsTable",  # Positions table
+                    "#tradesTable",  # Trades table
+                    "#currentCapital",  # Current capital display
+                    "#totalValue",  # Total value display
+                    "#unrealizedPnl",  # Unrealized P&L display
+                    "#openPositions"  # Open positions count
                 ],
-                "wait_for_data": False  # Uses mock data
+                "wait_for_data": True,
+                "data_timeout": 10000,
+                "verify_function": "verify_portfolio_page"
             },
             {
                 "name": "Backtest Page",
@@ -126,9 +134,13 @@ class ComprehensivePageTest:
                 "expected_elements": [
                     "#backtestForm",  # Backtest form
                     "#daysSelector",  # Days selector
-                    "h1"  # Page heading
+                    "#symbol",  # Symbol input
+                    "#daysBack",  # Days back selector
+                    "h1",  # Page heading
+                    "#resultsSection"  # Results section (hidden by default)
                 ],
-                "wait_for_data": False
+                "wait_for_data": False,  # No initial data loading
+                "verify_function": "verify_backtest_page"
             },
             {
                 "name": "Recommendations Page",
@@ -140,6 +152,19 @@ class ComprehensivePageTest:
                 ],
                 "wait_for_data": True,
                 "data_timeout": 20000
+            },
+            {
+                "name": "Market Movers Page",
+                "route": "/market_movers",
+                "expected_elements": [
+                    ".container",  # Main container
+                    "h1",  # Page heading
+                    ".card",  # Market mover cards
+                    "#marketMoversContainer"  # Market movers container
+                ],
+                "wait_for_data": True,
+                "data_timeout": 15000,
+                "verify_function": "verify_market_movers_page"
             }
         ]
     
@@ -402,25 +427,44 @@ class ComprehensivePageTest:
                     try:
                         # Check for required elements in each card
                         required_elements = [
-                            ".symbol",
-                            ".price",
-                            ".change",
-                            ".sentiment",
-                            ".recommendation"
+                            "strong",  # Symbol is in <strong> element
+                            "h6",      # Section headers like "Price Info", "Sentiment", etc.
+                            "p",       # Price info, sentiment data, trade details
+                            "span",    # Sentiment score with dynamic classes
+                            "button"   # Execute button
                         ]
                         
-                        for elem in required_elements:
-                            elem_count = await card.locator(elem).count()
-                            if elem_count == 0:
-                                result["missing_elements"].append(f"Card {i+1} missing {elem}")
-                                result["is_populated"] = False
-                                
-                                # Log the card HTML for debugging
-                                try:
-                                    card_html = await card.evaluate('el => el.outerHTML')
-                                    logger.warning(f"Card {i+1} HTML (missing {elem}): {card_html[:500]}...")
-                                except Exception as e:
-                                    logger.error(f"Error getting card HTML: {e}")
+                        # Check for specific content that should be present
+                        card_html = await card.evaluate('el => el.outerHTML')
+                        
+                        # Check for symbol (should be in <strong> tag)
+                        if '<strong>' not in card_html:
+                            result["missing_elements"].append(f"Card {i+1} missing symbol in <strong> tag")
+                            result["is_populated"] = False
+                        
+                        # Check for price information (should have "Current:" text)
+                        if 'Current:' not in card_html:
+                            result["missing_elements"].append(f"Card {i+1} missing price information")
+                            result["is_populated"] = False
+                        
+                        # Check for sentiment information (should have "Score:" text)
+                        if 'Score:' not in card_html:
+                            result["missing_elements"].append(f"Card {i+1} missing sentiment information")
+                            result["is_populated"] = False
+                        
+                        # Check for execute button
+                        if 'Execute' not in card_html:
+                            result["missing_elements"].append(f"Card {i+1} missing execute button")
+                            result["is_populated"] = False
+                        
+                        # Check for section headers
+                        if 'Price Info' not in card_html and 'Sentiment' not in card_html:
+                            result["missing_elements"].append(f"Card {i+1} missing section headers")
+                            result["is_populated"] = False
+                        
+                        # Log the card HTML for debugging if there are issues
+                        if result["missing_elements"]:
+                            logger.warning(f"Card {i+1} HTML: {card_html[:500]}...")
                     except Exception as e:
                         error_msg = f"Error checking card {i+1}: {e}"
                         result["missing_elements"].append(error_msg)
@@ -468,6 +512,338 @@ class ComprehensivePageTest:
             except Exception as snapshot_error:
                 logger.error(f"Failed to take error snapshot: {snapshot_error}")
             
+            return result
+    
+    async def verify_portfolio_page(self, page_config):
+        """Verify that portfolio page is fully populated with data"""
+        result = {
+            "is_populated": False,
+            "missing_elements": [],
+            "loading_indicators": 0,
+            "error_messages": 0,
+            "page_content_length": 0,
+            "portfolio_data": {}
+        }
+        
+        try:
+            # Check for console errors
+            console_errors = []
+            def handle_console(msg):
+                if msg.type == "error":
+                    console_errors.append({
+                        "text": msg.text,
+                        "url": msg.location.get("url", "unknown"),
+                        "line": msg.location.get("lineNumber", 0),
+                        "col": msg.location.get("columnNumber", 0)
+                    })
+            
+            # Add console listener
+            self.page.on("console", handle_console)
+            
+            # First, do the default verification
+            default_result = await self.verify_default_page_population(page_config)
+            result.update(default_result)
+            
+            # Check for portfolio-specific elements
+            try:
+                # Check if portfolio data is loaded
+                portfolio_data = await self.page.evaluate("""async () => {
+                    try {
+                        // Check if portfolio data is available
+                        const currentCapital = document.getElementById('currentCapital')?.textContent;
+                        const totalValue = document.getElementById('totalValue')?.textContent;
+                        const unrealizedPnl = document.getElementById('unrealizedPnl')?.textContent;
+                        const openPositions = document.getElementById('openPositions')?.textContent;
+                        
+                        // Check if positions table has data
+                        const positionsTable = document.getElementById('positionsTableBody');
+                        const hasPositions = positionsTable && !positionsTable.textContent.includes('No open positions');
+                        
+                        // Check if trades table has data
+                        const tradesTable = document.getElementById('tradesTableBody');
+                        const hasTrades = tradesTable && !tradesTable.textContent.includes('No trades executed yet');
+                        
+                        return {
+                            currentCapital,
+                            totalValue,
+                            unrealizedPnl,
+                            openPositions,
+                            hasPositions,
+                            hasTrades,
+                            positionsCount: positionsTable?.rows?.length || 0,
+                            tradesCount: tradesTable?.rows?.length || 0
+                        };
+                    } catch (e) {
+                        return { error: e.message };
+                    }
+                }""")
+                
+                result["portfolio_data"] = portfolio_data
+                logger.info(f"Portfolio data: {portfolio_data}")
+                
+                # Check if basic portfolio elements are present
+                if not portfolio_data.get("currentCapital"):
+                    result["missing_elements"].append("Current capital not displayed")
+                if not portfolio_data.get("totalValue"):
+                    result["missing_elements"].append("Total value not displayed")
+                if not portfolio_data.get("unrealizedPnl"):
+                    result["missing_elements"].append("Unrealized P&L not displayed")
+                if not portfolio_data.get("openPositions"):
+                    result["missing_elements"].append("Open positions count not displayed")
+                
+                # Portfolio is considered populated if basic elements are present
+                # (even if no actual positions exist)
+                if len(result["missing_elements"]) == 0:
+                    result["is_populated"] = True
+                
+            except Exception as e:
+                logger.error(f"Error checking portfolio data: {e}")
+                result["missing_elements"].append(f"Error checking portfolio data: {e}")
+            
+            # Check for console errors
+            if console_errors:
+                result["console_errors"] = console_errors
+                logger.error(f"Found {len(console_errors)} console errors")
+                for i, err in enumerate(console_errors[:3]):
+                    logger.error(f"Console Error {i+1}: {err['text']} at {err['url']}:{err['line']}:{err['col']}")
+            
+            # Take a snapshot
+            try:
+                status = "verified" if result["is_populated"] else "errors"
+                snapshot_path = await self.take_snapshot(f"portfolio_{status}")
+                result["snapshot_path"] = snapshot_path
+                logger.info(f"Portfolio snapshot saved to {snapshot_path}")
+            except Exception as e:
+                logger.error(f"Failed to take portfolio snapshot: {e}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in verify_portfolio_page: {e}")
+            result["is_populated"] = False
+            result["missing_elements"].append(f"Verification error: {e}")
+            return result
+    
+    async def verify_backtest_page(self, page_config):
+        """Verify that backtest page is properly configured"""
+        result = {
+            "is_populated": False,
+            "missing_elements": [],
+            "loading_indicators": 0,
+            "error_messages": 0,
+            "page_content_length": 0,
+            "backtest_config": {}
+        }
+        
+        try:
+            # Check for console errors
+            console_errors = []
+            def handle_console(msg):
+                if msg.type == "error":
+                    console_errors.append({
+                        "text": msg.text,
+                        "url": msg.location.get("url", "unknown"),
+                        "line": msg.location.get("lineNumber", 0),
+                        "col": msg.location.get("columnNumber", 0)
+                    })
+            
+            # Add console listener
+            self.page.on("console", handle_console)
+            
+            # First, do the default verification
+            default_result = await self.verify_default_page_population(page_config)
+            result.update(default_result)
+            
+            # Check for backtest-specific elements
+            try:
+                # Check if backtest form is properly configured
+                backtest_config = await self.page.evaluate("""async () => {
+                    try {
+                        const symbolInput = document.getElementById('symbol');
+                        const daysBackSelect = document.getElementById('daysBack');
+                        const backtestForm = document.getElementById('backtestForm');
+                        const resultsSection = document.getElementById('resultsSection');
+                        
+                        return {
+                            hasSymbolInput: !!symbolInput,
+                            hasDaysBackSelect: !!daysBackSelect,
+                            hasBacktestForm: !!backtestForm,
+                            hasResultsSection: !!resultsSection,
+                            symbolPlaceholder: symbolInput?.placeholder || '',
+                            daysBackOptions: daysBackSelect?.options?.length || 0,
+                            formAction: backtestForm?.action || '',
+                            resultsVisible: resultsSection?.style?.display !== 'none'
+                        };
+                    } catch (e) {
+                        return { error: e.message };
+                    }
+                }""")
+                
+                result["backtest_config"] = backtest_config
+                logger.info(f"Backtest config: {backtest_config}")
+                
+                # Check if required elements are present
+                if not backtest_config.get("hasSymbolInput"):
+                    result["missing_elements"].append("Symbol input field missing")
+                if not backtest_config.get("hasDaysBackSelect"):
+                    result["missing_elements"].append("Days back selector missing")
+                if not backtest_config.get("hasBacktestForm"):
+                    result["missing_elements"].append("Backtest form missing")
+                if not backtest_config.get("hasResultsSection"):
+                    result["missing_elements"].append("Results section missing")
+                
+                # Check if form has proper configuration
+                if not backtest_config.get("symbolPlaceholder"):
+                    result["missing_elements"].append("Symbol input placeholder missing")
+                if backtest_config.get("daysBackOptions", 0) < 2:
+                    result["missing_elements"].append("Insufficient days back options")
+                
+                # Backtest page is considered populated if form is properly configured
+                # (no actual data needed since it's user-driven)
+                if len(result["missing_elements"]) == 0:
+                    result["is_populated"] = True
+                
+            except Exception as e:
+                logger.error(f"Error checking backtest config: {e}")
+                result["missing_elements"].append(f"Error checking backtest config: {e}")
+            
+            # Check for console errors
+            if console_errors:
+                result["console_errors"] = console_errors
+                logger.error(f"Found {len(console_errors)} console errors")
+                for i, err in enumerate(console_errors[:3]):
+                    logger.error(f"Console Error {i+1}: {err['text']} at {err['url']}:{err['line']}:{err['col']}")
+            
+            # Take a snapshot
+            try:
+                status = "verified" if result["is_populated"] else "errors"
+                snapshot_path = await self.take_snapshot(f"backtest_{status}")
+                result["snapshot_path"] = snapshot_path
+                logger.info(f"Backtest snapshot saved to {snapshot_path}")
+            except Exception as e:
+                logger.error(f"Failed to take backtest snapshot: {e}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in verify_backtest_page: {e}")
+            result["is_populated"] = False
+            result["missing_elements"].append(f"Verification error: {e}")
+            return result
+    
+    async def verify_market_movers_page(self, page_config):
+        """Verify that market movers page is fully populated with data"""
+        result = {
+            "is_populated": False,
+            "missing_elements": [],
+            "loading_indicators": 0,
+            "error_messages": 0,
+            "page_content_length": 0,
+            "market_movers_data": {}
+        }
+        
+        try:
+            # Check for console errors
+            console_errors = []
+            def handle_console(msg):
+                if msg.type == "error":
+                    console_errors.append({
+                        "text": msg.text,
+                        "url": msg.location.get("url", "unknown"),
+                        "line": msg.location.get("lineNumber", 0),
+                        "col": msg.location.get("columnNumber", 0)
+                    })
+            
+            # Add console listener
+            self.page.on("console", handle_console)
+            
+            # First, do the default verification
+            default_result = await self.verify_default_page_population(page_config)
+            result.update(default_result)
+            
+            # Check for market movers specific elements
+            try:
+                # Check if market movers data is loaded
+                market_movers_data = await self.page.evaluate("""async () => {
+                    try {
+                        // Check if market movers container exists
+                        const container = document.getElementById('marketMoversContainer');
+                        const cards = document.querySelectorAll('.card');
+                        const h1Elements = document.querySelectorAll('h1');
+                        
+                        // Check for specific market movers content
+                        const hasMarketMoversTitle = Array.from(h1Elements).some(h1 => 
+                            h1.textContent.toLowerCase().includes('market') || 
+                            h1.textContent.toLowerCase().includes('mover')
+                        );
+                        
+                        // Check if there are any data cards
+                        const hasDataCards = cards.length > 0;
+                        
+                        // Check for specific market data elements
+                        const hasPriceElements = document.querySelectorAll('[class*="price"], [class*="change"], [class*="percent"]').length > 0;
+                        const hasSymbolElements = document.querySelectorAll('[class*="symbol"], strong').length > 0;
+                        
+                        return {
+                            hasContainer: !!container,
+                            hasMarketMoversTitle,
+                            hasDataCards,
+                            hasPriceElements,
+                            hasSymbolElements,
+                            cardsCount: cards.length,
+                            priceElementsCount: document.querySelectorAll('[class*="price"], [class*="change"], [class*="percent"]').length,
+                            symbolElementsCount: document.querySelectorAll('[class*="symbol"], strong').length
+                        };
+                    } catch (e) {
+                        return { error: e.message };
+                    }
+                }""")
+                
+                result["market_movers_data"] = market_movers_data
+                logger.info(f"Market movers data: {market_movers_data}")
+                
+                # Check if required elements are present
+                if not market_movers_data.get("hasContainer"):
+                    result["missing_elements"].append("Market movers container missing")
+                if not market_movers_data.get("hasMarketMoversTitle"):
+                    result["missing_elements"].append("Market movers title missing")
+                if not market_movers_data.get("hasDataCards"):
+                    result["missing_elements"].append("No data cards found")
+                if not market_movers_data.get("hasPriceElements"):
+                    result["missing_elements"].append("No price elements found")
+                if not market_movers_data.get("hasSymbolElements"):
+                    result["missing_elements"].append("No symbol elements found")
+                
+                # Market movers page is considered populated if basic elements are present
+                if len(result["missing_elements"]) == 0:
+                    result["is_populated"] = True
+                
+            except Exception as e:
+                logger.error(f"Error checking market movers data: {e}")
+                result["missing_elements"].append(f"Error checking market movers data: {e}")
+            
+            # Check for console errors
+            if console_errors:
+                result["console_errors"] = console_errors
+                logger.error(f"Found {len(console_errors)} console errors")
+                for i, err in enumerate(console_errors[:3]):
+                    logger.error(f"Console Error {i+1}: {err['text']} at {err['url']}:{err['line']}:{err['col']}")
+            
+            # Take a snapshot
+            try:
+                status = "verified" if result["is_populated"] else "errors"
+                snapshot_path = await self.take_snapshot(f"market_movers_{status}")
+                result["snapshot_path"] = snapshot_path
+                logger.info(f"Market movers snapshot saved to {snapshot_path}")
+            except Exception as e:
+                logger.error(f"Failed to take market movers snapshot: {e}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in verify_market_movers_page: {e}")
+            result["is_populated"] = False
+            result["missing_elements"].append(f"Verification error: {e}")
             return result
     
     async def take_screenshot(self, page_name):

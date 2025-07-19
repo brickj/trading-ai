@@ -1,86 +1,637 @@
 ============================= test session starts ==============================
 platform darwin -- Python 3.9.6, pytest-8.4.1, pluggy-1.6.0
 rootdir: /Users/rick/Desktop/stuff/code_projects/IBS/trading
-plugins: anyio-4.9.0, playwright-0.7.0, base-url-2.1.0
-collected 7 items
+plugins: anyio-4.9.0, asyncio-1.1.0, playwright-0.7.0, base-url-2.1.0
+asyncio: mode=strict, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 1 item
 
-tests/unit/test_opportunities_page.py ....2025-07-17 13:33:45,398 - INFO - 🚀 Starting Comprehensive Page Population Test
-2025-07-17 13:33:45,398 - INFO - Base URL: http://localhost:5001
-2025-07-17 13:33:45,398 - INFO - Artifacts directory: test_artifacts
-2025-07-17 13:33:46,053 - INFO - Browser setup complete with video recording enabled
-2025-07-17 13:33:46,053 - INFO - Testing page: Homepage (/)
-2025-07-17 13:33:46,814 - INFO - Page load time: 510.28ms
-2025-07-17 13:33:46,931 - INFO - Screenshot saved: test_artifacts/homepage_20250717_133346.png
-2025-07-17 13:33:48,934 - INFO - ✅ Homepage: PASSED (populated in 510.28ms)
-2025-07-17 13:33:48,935 - INFO - Testing page: Stocks Page (/stocks)
-2025-07-17 13:33:49,589 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
-2025-07-17 13:33:49,602 - INFO - Found element: #stocksTableBody
-2025-07-17 13:33:49,606 - INFO - Found element: #winnersList
-2025-07-17 13:33:49,609 - INFO - Found element: #losersList
-2025-07-17 13:33:49,610 - INFO - Found element: #stockAnalysisSection
-2025-07-17 13:33:51,611 - INFO - Page load time: 2633.91ms
-2025-07-17 13:33:51,755 - INFO - Screenshot saved: test_artifacts/stocks_page_20250717_133351.png
-2025-07-17 13:33:53,758 - INFO - ✅ Stocks Page: PASSED (populated in 2633.91ms)
-2025-07-17 13:33:53,758 - INFO - Testing page: Crypto Page (/crypto)
-2025-07-17 13:33:54,344 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
-2025-07-17 13:33:54,353 - INFO - Found element: #cryptoAnalysisContainer
-2025-07-17 13:34:14,354 - WARNING - Element #cryptoCardsRow not found: Page.wait_for_selector: Timeout 20000ms exceeded.
-Call log:
-  - waiting for locator("#cryptoCardsRow") to be visible
-    45 × locator resolved to hidden <div id="cryptoCardsRow"></div>
+tests/playwright_comprehensive_test.py F
 
-2025-07-17 13:34:14,357 - INFO - Found element: #sentimentChartContainer
-2025-07-17 13:34:16,359 - INFO - Page load time: 22576.97ms
-2025-07-17 13:34:16,450 - INFO - Screenshot saved: test_artifacts/crypto_page_20250717_133416.png
-2025-07-17 13:34:18,451 - ERROR - ❌ Crypto Page: FAILED - ['#cryptoCardsRow (empty)']
-2025-07-17 13:34:18,451 - INFO - Testing page: Opportunities Page (/opportunities)
-2025-07-17 13:34:19,085 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
-2025-07-17 13:34:19,095 - INFO - Found element: #opportunitiesSection
-2025-07-17 13:34:19,101 - INFO - Found element: #opportunitiesContainer
-2025-07-17 13:34:19,103 - INFO - Found element: #findButton
-2025-07-17 13:34:19,105 - INFO - Found element: #newsBtn
-2025-07-17 13:34:19,107 - INFO - Found element: #watchlistBtn
-2025-07-17 13:34:19,109 - INFO - Found element: #refreshBtn
-2025-07-17 13:34:19,111 - INFO - Found element: #lastUpdated
-2025-07-17 13:34:49,112 - WARNING - Element .opportunity-card not found: Page.wait_for_selector: Timeout 30000ms exceeded.
-Call log:
-  - waiting for locator(".opportunity-card") to be visible
+=================================== FAILURES ===================================
+___________________________ test_opportunities_page ____________________________
 
-2025-07-17 13:34:51,114 - INFO - Page load time: 32591.80ms
-2025-07-17 13:34:51,207 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250717_133451.png
-2025-07-17 13:34:53,209 - ERROR - ❌ Opportunities Page: FAILED - ['.opportunity-card']
-2025-07-17 13:34:53,210 - INFO - Testing page: System Status Page (/system_status)
-2025-07-17 13:34:54,752 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
-2025-07-17 13:34:54,765 - INFO - Found element: .container
-2025-07-17 13:34:54,770 - INFO - Found element: .card
-2025-07-17 13:34:54,772 - INFO - Found element: h1
-2025-07-17 13:34:56,774 - INFO - Page load time: 3531.84ms
-2025-07-17 13:34:56,955 - INFO - Screenshot saved: test_artifacts/system_status_page_20250717_133456.png
-2025-07-17 13:34:58,956 - INFO - ✅ System Status Page: PASSED (populated in 3531.84ms)
-2025-07-17 13:34:58,956 - INFO - Testing page: Logs Page (/logs)
-2025-07-17 13:34:59,552 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
-2025-07-17 13:34:59,561 - INFO - Found element: #logContainer
-2025-07-17 13:34:59,567 - INFO - Found element: #logStats
-2025-07-17 13:34:59,570 - INFO - Found element: .container
-2025-07-17 13:35:01,572 - INFO - Page load time: 2595.34ms
-2025-07-17 13:35:01,659 - INFO - Screenshot saved: test_artifacts/logs_page_20250717_133501.png
-2025-07-17 13:35:03,663 - INFO - ✅ Logs Page: PASSED (populated in 2595.34ms)
-2025-07-17 13:35:03,664 - INFO - Testing page: Portfolio Page (/portfolio_page)
-2025-07-17 13:35:04,261 - INFO - Page load time: 561.43ms
-2025-07-17 13:35:04,380 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250717_133504.png
-2025-07-17 13:35:06,381 - ERROR - ❌ Portfolio Page: FAILED - []
-2025-07-17 13:35:06,382 - INFO - Testing page: Backtest Page (/backtest_page)
-2025-07-17 13:35:06,983 - INFO - Page load time: 572.41ms
-2025-07-17 13:35:07,108 - INFO - Screenshot saved: test_artifacts/backtest_page_20250717_133506.png
-2025-07-17 13:35:09,111 - ERROR - ❌ Backtest Page: FAILED - []
-2025-07-17 13:35:09,111 - INFO - Testing page: Recommendations Page (/recommendations)
-2025-07-17 13:35:09,700 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
-2025-07-17 13:35:09,708 - INFO - Found element: .container
-2025-07-17 13:35:09,713 - INFO - Found element: h1
-2025-07-17 13:35:09,715 - INFO - Found element: .card
-2025-07-17 13:35:11,717 - INFO - Page load time: 2579.96ms
-2025-07-17 13:35:11,863 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250717_133511.png
-2025-07-17 13:35:13,865 - INFO - ✅ Recommendations Page: PASSED (populated in 2579.96ms)
-2025-07-17 13:35:13,868 - INFO - Test report saved: test_artifacts/test_report_20250717_133513.json
-2025-07-17 13:35:13,869 - INFO - Text report saved: test_artifacts/test_report_20250717_133513.txt
-2025-07-17 13:35:14,213 - INFO - Browser teardown complete
+    @pytest.mark.asyncio
+    async def test_opportunities_page():
+        """Test the opportunities page specifically with detailed logging"""
+        test = ComprehensivePageTest()
+    
+        # Find the opportunities page config
+        opp_config = None
+        for page in test.pages_to_test:
+            if page.get("name") == "Opportunities Page":
+                opp_config = page
+                break
+    
+        if not opp_config:
+            logger.error("Opportunities Page config not found in test suite")
+            assert False, "Opportunities Page config not found in test suite"
+    
+        # Run the test
+        logger.info("Starting Opportunities Page test...")
+        await test.setup_browser()
+        try:
+            # Navigate to the opportunities page
+            url = f"{test.base_url}{opp_config['route']}"
+            logger.info(f"Navigating to {url}")
+            await test.page.goto(url, wait_until="networkidle")
+    
+            # Run the custom verification
+            logger.info("Running custom verification for Opportunities Page")
+            result = await test.verify_opportunities_page(opp_config)
+    
+            # Log detailed results
+            logger.info(f"Verification result: {json.dumps(result, indent=2, default=str)}")
+    
+            # Assert the page is populated
+>           assert result["is_populated"], f"Opportunities page not properly populated. Issues: {', '.join(result['missing_elements'])}"
+E           AssertionError: Opportunities page not properly populated. Issues: Card 1 missing .symbol, Card 1 missing .price, Card 1 missing .change, Card 1 missing .sentiment, Card 1 missing .recommendation, Card 2 missing .symbol, Card 2 missing .price, Card 2 missing .change, Card 2 missing .sentiment, Card 2 missing .recommendation, Card 3 missing .symbol, Card 3 missing .price, Card 3 missing .change, Card 3 missing .sentiment, Card 3 missing .recommendation
+E           assert False
+
+tests/playwright_comprehensive_test.py:717: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 1 HTML (missing .symbol): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 1 HTML (missing .price): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 1 HTML (missing .change): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 1 HTML (missing .sentiment): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 1 HTML (missing .recommendation): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AAPL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-danger">PUT</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 2 HTML (missing .symbol): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 2 HTML (missing .price): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 2 HTML (missing .change): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 2 HTML (missing .sentiment): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 2 HTML (missing .recommendation): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>AMZN</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 3 HTML (missing .symbol): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cl...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 3 HTML (missing .price): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cl...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 3 HTML (missing .change): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cl...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 3 HTML (missing .sentiment): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cl...
+WARNING  playwright_comprehensive_test:playwright_comprehensive_test.py:421 Card 3 HTML (missing .recommendation): <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>GOOGL</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-warning">Watchlist</span>
+                    <span class="badge bg-success">CALL</span>
+                </h6>
+            </div>
+            <div>
+                <button cl...
+ERROR    playwright_comprehensive_test:playwright_comprehensive_test.py:723 ❌ Opportunities Page test failed: Opportunities page not properly populated. Issues: Card 1 missing .symbol, Card 1 missing .price, Card 1 missing .change, Card 1 missing .sentiment, Card 1 missing .recommendation, Card 2 missing .symbol, Card 2 missing .price, Card 2 missing .change, Card 2 missing .sentiment, Card 2 missing .recommendation, Card 3 missing .symbol, Card 3 missing .price, Card 3 missing .change, Card 3 missing .sentiment, Card 3 missing .recommendation
+assert False
+=========================== short test summary info ============================
+FAILED tests/playwright_comprehensive_test.py::test_opportunities_page - Asse...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 2.91s ===============================
+2025-07-18 19:55:55,163 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-18 19:55:55,163 - INFO - Base URL: http://localhost:5001
+2025-07-18 19:55:55,163 - INFO - Artifacts directory: test_artifacts
+2025-07-18 19:55:55,439 - INFO - Browser setup complete with video recording enabled
+2025-07-18 19:55:55,439 - INFO - Testing page: Homepage (/)
+2025-07-18 19:55:56,164 - INFO - Page load time: 507.08ms
+2025-07-18 19:55:56,303 - INFO - Screenshot saved: test_artifacts/homepage_20250718_195556.png
+2025-07-18 19:55:58,305 - INFO - ✅ Homepage: PASSED (populated in 507.08ms)
+2025-07-18 19:55:58,306 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-18 19:55:58,979 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-18 19:55:58,990 - INFO - Found element: #stocksTableBody
+2025-07-18 19:55:58,996 - INFO - Found element: #winnersList
+2025-07-18 19:55:58,998 - INFO - Found element: #losersList
+2025-07-18 19:55:59,001 - INFO - Found element: #stockAnalysisSection
+2025-07-18 19:56:01,002 - INFO - Page load time: 2641.47ms
+2025-07-18 19:56:01,173 - INFO - Screenshot saved: test_artifacts/stocks_page_20250718_195601.png
+2025-07-18 19:56:03,176 - INFO - ✅ Stocks Page: PASSED (populated in 2641.47ms)
+2025-07-18 19:56:03,176 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-18 19:56:03,784 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-18 19:56:03,792 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-18 19:56:23,791 - WARNING - Element #cryptoCardsRow not found: Timeout 20000ms exceeded.
+2025-07-18 19:56:23,794 - INFO - Found element: #sentimentChartContainer
+2025-07-18 19:56:25,795 - INFO - Page load time: 22584.58ms
+2025-07-18 19:56:25,955 - INFO - Screenshot saved: test_artifacts/crypto_page_20250718_195625.png
+2025-07-18 19:56:27,956 - ERROR - ❌ Crypto Page: FAILED - ['#cryptoCardsRow (empty)']
+2025-07-18 19:56:27,957 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-18 19:56:29,161 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-18 19:56:29,177 - INFO - Found element: #opportunitiesSection
+2025-07-18 19:56:29,183 - INFO - Found element: #opportunitiesContainer
+2025-07-18 19:56:29,186 - INFO - Found element: #findButton
+2025-07-18 19:56:29,188 - INFO - Found element: #newsBtn
+2025-07-18 19:56:29,191 - INFO - Found element: #watchlistBtn
+2025-07-18 19:56:29,194 - INFO - Found element: #refreshBtn
+2025-07-18 19:56:29,196 - INFO - Found element: #lastUpdated
+2025-07-18 19:56:29,198 - INFO - Found element: .opportunity-card
+2025-07-18 19:56:31,199 - INFO - Page load time: 3138.46ms
+2025-07-18 19:56:31,262 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-07-18T19:49:12.905117', 'cached': True, 'count': 4, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 18:11:00 +0000', 'headline': 'Netflix Earnings Show That YouTube Is the Streamer to Fear', 'source': 'Yahoo Finance', 'summary': 'The streaming company has survived an onslaught of well-heeled competition from Disney, Amazon, Apple, and more.', 'url': 'https://finance.yahoo.com/m/0b149408-8be0-3a6b-ba57-839fec32a22b/netflix-earnings-show-that.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 18:31:14 +0000', 'headline': 'Jim Cramer Says “Apple Can Change Course” By Acquiring Perplexity', 'source': 'Yahoo Finance', 'summary': 'Apple Inc. (NASDAQ:AAPL) is one of the stocks Jim Cramer weighed in on. During the episode, Cramer discussed the company’s AI strategy, as he commented: “This is one of the reasons why I’m so concerned about Apple. Here’s a company with absolutely no AI strategy that I can see that does buying back stock endlessly, […]', 'url': 'https://finance.yahoo.com/news/jim-cramer-says-apple-change-183114123.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 19:00:52 +0000', 'headline': 'Apple races ahead in epic $150M F1 media rights bid', 'source': 'Yahoo Finance', 'summary': 'Apple (AAPL) is putting their pedal to the metal in their race for F1 media rights. This week on Yahoo Finance Sports Report, host Joe Pompliano takes a look at some of this week’s biggest headlines in the sports business world that you and your portfolio need to know. From Apple’s $150 million bid for Formula 1 media rights to FanDuel’s $31 billion valuation, sports business is being transformed by big financial plays. Yahoo Sports Senior Writer Frank Schwab joins the show to talk about NFL training camp and what to expect for the league heading into the 2025-26 season. Plus, Learfield CEO Cole Gahagan stops by to discuss college sports marketing and how Learfield is helping schools build revenue in a world of NIL, stadium naming rights, athletic fees, and more. Yahoo Finance Sports Report with Joe Pompliano, a vodcast brought to you by Yahoo Finance and Yahoo Sports, looks beyond the latest sports business headlines, analyzes all the need-to-know news - the teams, trades, and billion dollar deals - so you and your portfolio will win BIG. Yahoo Finance Sports Report is developed and produced by Lauren Pokedoff.', 'url': 'https://finance.yahoo.com/video/apple-races-ahead-epic-150m-190052345.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': 1.16, 'change_percent': '0.5523%', 'current_price': 196.58, 'symbol': 'AAPL', 'timestamp': '2025-07-18T19:46:32.201217', 'volume': 48334307}, 'sentiment_data': {'confidence': 0.75, 'sentiment_score': -0.2, 'summary': 'The news contains a mix of positive and negative sentiments with an overall slightly negative tone. The stock market is weak due to geopolitical tensions, but some individual stocks are showing relative strength. There are concerns about the US-EU trade talks breaking down, which could negatively impact large-cap tech stocks. The sentiment score reflects this mixed picture with a slight bias towards negativity.'}, 'signal_data': {'action': 'PUT', 'confidence': 0.75, 'reasoning': 'Negative sentiment (-0.20) with high confidence (0.75)', 'signal_strength': 0.15000000000000002}, 'symbol': 'AAPL', 'timestamp': '2025-07-18T19:49:01.861391', 'trade_signal': {'action': 'PUT', 'confidence': 0.75, 'current_price': 196.58, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '⚖️ Moderate confidence - monitor for changes'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 1.97, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 20, 'potential_gain': 3.93, 'potential_loss': 3.15, 'risk_amount': 39.32, 'risk_percent': 2, 'risk_reward_ratio': 1.25, 'stop_price': 1.81, 'target_price': 2.16, 'total_cost': 39.32}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.20) with high confidence (0.75)', 'sentiment_score': -0.2, 'signal_strength': 0.15000000000000002, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 195.6, 'symbol': 'AAPL', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:59:00 +0000', 'headline': 'Tech, Media & Telecom Roundup: Market Talk', 'source': 'Yahoo Finance', 'summary': 'Find insight on Netflix, Vivendi and more in the latest Market Talks covering Technology, Media and Telecom.', 'url': 'https://finance.yahoo.com/m/8b17ddaa-1cdd-3c51-b370-ce8fc057df94/tech%2C-media-%26-telecom.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:31:06 +0000', 'headline': 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning', 'source': 'Yahoo Finance', 'summary': 'Net income jumped to $3.1B, with EPS of $7.19 versus $4.88 last year', 'url': 'https://finance.yahoo.com/news/netflix-beats-earnings-expectations-revenue-213106117.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:55:22 +0000', 'headline': "One drone stock is up almost 100%. Here's why the sky might be the limit", 'source': 'Yahoo Finance', 'summary': "The week in stocks: What's next for Netflix shares, why dividend stocks may be back in fashion and the top three picks from one analyst", 'url': 'https://ca.finance.yahoo.com/news/one-drone-stock-almost-100-215522367.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': -64.93, 'change_percent': '-5.0959%', 'current_price': 1209.24, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:47:08.312367', 'volume': 10637726}, 'sentiment_data': {'confidence': 0.45, 'sentiment_score': -0.3, 'summary': "The news roundup covers various companies in the tech, media, and telecom sectors. While Netflix's earnings beat expectations with a significant revenue surge, its stock price has dipped due to margin warnings. The summary also mentions other stocks like AVGO (Analog Devices), UBER (Uber Technologies), and NFLX (Netflix) among others. Despite these mixed signals, the overall tone is cautiously optimistic as it highlights potential growth prospects for some companies."}, 'signal_data': {'action': 'PUT', 'confidence': 0.45, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'signal_strength': 0.135}, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:49:04.089017', 'trade_signal': {'action': 'PUT', 'confidence': 0.45, 'current_price': 1209.24, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '❓ Lower confidence - be extra cautious'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 12.09, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 3, 'potential_gain': 3.63, 'potential_loss': 2.9, 'risk_amount': 36.28, 'risk_percent': 1.8, 'risk_reward_ratio': 1.25, 'stop_price': 11.13, 'target_price': 13.3, 'total_cost': 36.28}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'sentiment_score': -0.3, 'signal_strength': 0.135, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 1203.19, 'symbol': 'NFLX', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:05:27 +0000', 'headline': 'Opendoor stock records 180% weekly gain as retail frenzy cements meme status', 'source': 'Yahoo Finance', 'summary': "After EMJ Capital's principal posted a turnaround thesis on the iBuyer platform Opendoor, retail investors have descended on the stock, pushing it to meme status.", 'url': 'https://finance.yahoo.com/news/opendoor-stock-records-180-weekly-gain-as-retail-frenzy-cements-meme-status-200527311.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:32:38 +0000', 'headline': 'Opendoor Explodes 175% After Hedge Fund Shoutout--But Is a Crash Coming Next?', 'source': 'Yahoo Finance', 'summary': "Retail traders swarm in, short sellers panic, and options go wild--Opendoor just became the market's newest battleground.", 'url': 'https://finance.yahoo.com/news/opendoor-explodes-175-hedge-fund-213238602.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-07-18T15:43:25Z', 'headline': 'Potential conflict between "Genius" Act and Circle ($CRCL) business model?', 'source': 'Reddit', 'summary': 'The Economist published this article about the "Genius" Act: [https://www.economist.com/finance-and-economics/2025/07/16/stablecoins-might-cut-americas-debt-payments-but-at-what-cost](https://www.economist.com/finance-and-economics/2025/07/16/stablecoins-might-cut-americas-debt-payments-but-at-what-cost)\n\nThe article implies that the current administration conceived of the idea of opening the legal floodgates to stablecoins so that people will purchase them and this will drive down interest rates, allowing it to reduce its interest payments on issued debt and thereby make it easier to extend tax cuts (a la Trump\'s "Big Beautiful Bill").\n\nIn short, the government\'s own stated motivation for stablecoin growth directly conflicts with the current profit model for stablecoin issuers like Circle, which is 99% dependent on interest payments from government debt for its revenues.\n\nAm I understanding this correctly?', 'url': 'https://www.reddit.com/r/stocks/comments/1m35rhv/potential_conflict_between_genius_act_and_circle/'}], 'news_count': 5, 'price_data': {'change': 0.6, 'change_percent': '36.3636%', 'current_price': 2.25, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:47:11.006178', 'volume': 547835057}, 'sentiment_data': {'confidence': 0.92, 'sentiment_score': 0.85, 'summary': 'The news articles provide a mixed but generally positive sentiment towards Opendoor stock. The headlines indicate significant gains and the establishment of a meme status, which is typically associated with strong positive sentiment. However, there are also concerns about potential conflicts and short selling, suggesting some caution. The OpenAI report highlights its massive potential market value, indicating optimism for future growth. The special dividend announcement suggests a current opportunity but also hints at risks if not managed properly.'}, 'signal_data': {'action': 'CALL', 'confidence': 0.92, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'signal_strength': 0.782}, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:49:08.214442', 'trade_signal': {'action': 'CALL', 'confidence': 0.92, 'current_price': 2.25, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 30% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 0.02, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 4444, 'potential_gain': 30, 'potential_loss': 15, 'risk_amount': 99.99, 'risk_percent': 5, 'risk_reward_ratio': 2, 'stop_price': 0.02, 'target_price': 0.03, 'total_cost': 99.99}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'sentiment_score': 0.85, 'signal_strength': 0.782, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 2.26, 'symbol': 'OPEN', 'target_gain_percent': 30}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 17:38:00 +0000', 'headline': 'GE’s 3 Offspring Are All Grown Up and Making Waves. The Best Is Yet to Come.', 'source': 'Yahoo Finance', 'summary': 'The former GEs should get no small amount of credit for the industrial strength of the industrial sector.', 'url': 'https://finance.yahoo.com/m/3d2ca61b-f763-3a76-960d-47f67ccaee46/ge%E2%80%99s-3-offspring-are-all.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:39:00 +0000', 'headline': 'GE Aerospace Price Targets Suggest a Record High Is Coming. How That’s Possible.', 'source': 'Yahoo Finance', 'summary': 'After  GE Aerospace  produced “blowout” second-quarter results, Wall Street reacted by raising its targets for the stock price, suggesting shares could soon reach a record high.  Wall Street was looking for operating profit of $2.1 billion and earnings per share of $1.43 on sales of $9.6 billion, according to FactSet.  Management now expects 2025 operating profit of between $8.2 billion and $8.5 billion, up from a prior range of $7.8 billion to $8.2 billion.', 'url': 'https://finance.yahoo.com/m/54e6d0b2-6d3d-354f-8f2b-b79de35edd19/ge-aerospace-price-targets.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-06-17T18:37:03Z', 'headline': "How Trump's G7 Trade Stance Will Affect U.S. Stocks", 'source': 'Reddit', 'summary': "Reuters reports that President Trump abruptly left the G7 summit after blasting the EU for not offering a “fair deal” and calling Japan “tough” in stalled talks He’s also floating new pharmaceutical and energy tariffs to boost domestic production   \n  \nTariff Risk: Trump's comments suggest he could unilaterally impose tariffs or expand tariffs on EU auto and pharmaceutical imports, and possibly even impose more tariffs - a move that has historically devastated related stock groups  \n  \nSector exposure: Watch autos (GM, F, TSLA), large-cap pharma (PFE, MRK) and industrials (CAT, GE) for increased volatility  \n  \nMarket sentiment: Despite Middle East tensions, major indices barely flinched on Monday, but a fresh bout of trade uncertainty could undermine recent gains  \n", 'url': 'https://www.reddit.com/r/stocks/comments/1ldv316/how_trumps_g7_trade_stance_will_affect_us_stocks/'}], 'news_count': 5, 'price_data': {'change': 2.99, 'change_percent': '1.1488%', 'current_price': 263.27, 'symbol': 'GE', 'timestamp': '2025-07-18T19:47:18.886264', 'volume': 8509140}, 'sentiment_data': {'confidence': 0.85, 'sentiment_score': 0.75, 'summary': 'The news highlights positive sentiment towards General Electric (GE) and its aerospace division, with price targets increasing and strong performance expected in the future. The overall tone is cautiously optimistic.'}, 'signal_data': {'action': 'CALL', 'confidence': 0.85, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'signal_strength': 0.6375}, 'symbol': 'GE', 'timestamp': '2025-07-18T19:49:12.903339', 'trade_signal': {'action': 'CALL', 'confidence': 0.85, 'current_price': 263.27, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 20% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 2.63, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 37, 'potential_gain': 19.48, 'potential_loss': 14.61, 'risk_amount': 97.41, 'risk_percent': 4.9, 'risk_reward_ratio': 1.33, 'stop_price': 2.24, 'target_price': 3.16, 'total_cost': 97.41}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'sentiment_score': 0.75, 'signal_strength': 0.6375, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 264.59, 'symbol': 'GE', 'target_gain_percent': 20}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'success': True, 'timestamp': '2025-07-18T19:56:31.256525'}, 'opportunities_count': 4}
+2025-07-18 19:56:31,267 - INFO - Found 9 opportunity cards
+2025-07-18 19:56:31,588 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_195631.png
+2025-07-18 19:56:31,588 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_195631.png
+2025-07-18 19:56:31,923 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250718_195631.png
+2025-07-18 19:56:33,925 - INFO - ✅ Opportunities Page: PASSED (populated in 3138.46ms)
+2025-07-18 19:56:33,925 - INFO - Testing page: System Status Page (/system_status)
+2025-07-18 19:56:35,499 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-18 19:56:35,508 - INFO - Found element: .container
+2025-07-18 19:56:35,512 - INFO - Found element: .card
+2025-07-18 19:56:35,513 - INFO - Found element: h1
+2025-07-18 19:56:37,514 - INFO - Page load time: 3545.53ms
+2025-07-18 19:56:37,749 - INFO - Screenshot saved: test_artifacts/system_status_page_20250718_195637.png
+2025-07-18 19:56:39,750 - INFO - ✅ System Status Page: PASSED (populated in 3545.53ms)
+2025-07-18 19:56:39,750 - INFO - Testing page: Logs Page (/logs)
+2025-07-18 19:56:40,351 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-18 19:56:40,360 - INFO - Found element: #logContainer
+2025-07-18 19:56:40,364 - INFO - Found element: #logStats
+2025-07-18 19:56:40,367 - INFO - Found element: .container
+2025-07-18 19:56:42,368 - INFO - Page load time: 2581.13ms
+2025-07-18 19:56:42,540 - INFO - Screenshot saved: test_artifacts/logs_page_20250718_195642.png
+2025-07-18 19:56:44,543 - INFO - ✅ Logs Page: PASSED (populated in 2581.13ms)
+2025-07-18 19:56:44,543 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-18 19:56:45,144 - INFO - Page load time: 571.51ms
+2025-07-18 19:56:45,303 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250718_195645.png
+2025-07-18 19:56:47,305 - ERROR - ❌ Portfolio Page: FAILED - []
+2025-07-18 19:56:47,306 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-18 19:56:47,916 - INFO - Page load time: 577.61ms
+2025-07-18 19:56:48,088 - INFO - Screenshot saved: test_artifacts/backtest_page_20250718_195647.png
+2025-07-18 19:56:50,091 - ERROR - ❌ Backtest Page: FAILED - []
+2025-07-18 19:56:50,091 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-18 19:56:50,715 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-18 19:56:50,723 - INFO - Found element: .container
+2025-07-18 19:56:50,730 - INFO - Found element: h1
+2025-07-18 19:56:50,732 - INFO - Found element: .card
+2025-07-18 19:56:52,734 - INFO - Page load time: 2606.90ms
+2025-07-18 19:56:52,946 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250718_195652.png
+2025-07-18 19:56:54,948 - INFO - ✅ Recommendations Page: PASSED (populated in 2606.90ms)
+2025-07-18 19:56:54,949 - INFO - Test report saved: test_artifacts/test_report_20250718_195654.json
+2025-07-18 19:56:54,949 - INFO - Text report saved: test_artifacts/test_report_20250718_195654.txt
+2025-07-18 19:56:56,028 - INFO - Browser teardown complete
+2025-07-18 19:59:23,427 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-18 19:59:23,427 - INFO - Base URL: http://localhost:5001
+2025-07-18 19:59:23,427 - INFO - Artifacts directory: test_artifacts
+2025-07-18 19:59:23,774 - INFO - Browser setup complete with video recording enabled
+2025-07-18 19:59:23,777 - INFO - Testing page: Homepage (/)
+2025-07-18 19:59:24,532 - INFO - Page load time: 505.71ms
+2025-07-18 19:59:24,708 - INFO - Screenshot saved: test_artifacts/homepage_20250718_195924.png
+2025-07-18 19:59:26,711 - INFO - ✅ Homepage: PASSED (populated in 505.71ms)
+2025-07-18 19:59:26,711 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-18 19:59:27,379 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-18 19:59:27,392 - INFO - Found element: #stocksTableBody
+2025-07-18 19:59:27,396 - INFO - Found element: #winnersList
+2025-07-18 19:59:27,399 - INFO - Found element: #losersList
+2025-07-18 19:59:27,401 - INFO - Found element: #stockAnalysisSection
+2025-07-18 19:59:29,401 - INFO - Page load time: 2641.36ms
+2025-07-18 19:59:29,579 - INFO - Screenshot saved: test_artifacts/stocks_page_20250718_195929.png
+2025-07-18 19:59:31,582 - INFO - ✅ Stocks Page: PASSED (populated in 2641.36ms)
+2025-07-18 19:59:34,109 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-18 19:59:34,697 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-18 19:59:34,705 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-18 19:59:35,488 - INFO - Found element: #cryptoCardsRow
+2025-07-18 19:59:35,491 - INFO - Found element: #sentimentChartContainer
+2025-07-18 19:59:37,492 - INFO - Page load time: 3363.40ms
+2025-07-18 19:59:37,837 - INFO - Screenshot saved: test_artifacts/crypto_page_20250718_195937.png
+2025-07-18 19:59:39,838 - INFO - ✅ Crypto Page: PASSED (populated in 3363.40ms)
+2025-07-18 19:59:39,839 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-18 19:59:41,056 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-18 19:59:41,065 - INFO - Found element: #opportunitiesSection
+2025-07-18 19:59:41,069 - INFO - Found element: #opportunitiesContainer
+2025-07-18 19:59:41,071 - INFO - Found element: #findButton
+2025-07-18 19:59:41,074 - INFO - Found element: #newsBtn
+2025-07-18 19:59:41,076 - INFO - Found element: #watchlistBtn
+2025-07-18 19:59:41,078 - INFO - Found element: #refreshBtn
+2025-07-18 19:59:41,080 - INFO - Found element: #lastUpdated
+2025-07-18 19:59:41,082 - INFO - Found element: .opportunity-card
+2025-07-18 19:59:43,083 - INFO - Page load time: 3125.83ms
+2025-07-18 19:59:43,136 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-07-18T19:49:12.905117', 'cached': True, 'count': 4, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 18:11:00 +0000', 'headline': 'Netflix Earnings Show That YouTube Is the Streamer to Fear', 'source': 'Yahoo Finance', 'summary': 'The streaming company has survived an onslaught of well-heeled competition from Disney, Amazon, Apple, and more.', 'url': 'https://finance.yahoo.com/m/0b149408-8be0-3a6b-ba57-839fec32a22b/netflix-earnings-show-that.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 18:31:14 +0000', 'headline': 'Jim Cramer Says “Apple Can Change Course” By Acquiring Perplexity', 'source': 'Yahoo Finance', 'summary': 'Apple Inc. (NASDAQ:AAPL) is one of the stocks Jim Cramer weighed in on. During the episode, Cramer discussed the company’s AI strategy, as he commented: “This is one of the reasons why I’m so concerned about Apple. Here’s a company with absolutely no AI strategy that I can see that does buying back stock endlessly, […]', 'url': 'https://finance.yahoo.com/news/jim-cramer-says-apple-change-183114123.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 19:00:52 +0000', 'headline': 'Apple races ahead in epic $150M F1 media rights bid', 'source': 'Yahoo Finance', 'summary': 'Apple (AAPL) is putting their pedal to the metal in their race for F1 media rights. This week on Yahoo Finance Sports Report, host Joe Pompliano takes a look at some of this week’s biggest headlines in the sports business world that you and your portfolio need to know. From Apple’s $150 million bid for Formula 1 media rights to FanDuel’s $31 billion valuation, sports business is being transformed by big financial plays. Yahoo Sports Senior Writer Frank Schwab joins the show to talk about NFL training camp and what to expect for the league heading into the 2025-26 season. Plus, Learfield CEO Cole Gahagan stops by to discuss college sports marketing and how Learfield is helping schools build revenue in a world of NIL, stadium naming rights, athletic fees, and more. Yahoo Finance Sports Report with Joe Pompliano, a vodcast brought to you by Yahoo Finance and Yahoo Sports, looks beyond the latest sports business headlines, analyzes all the need-to-know news - the teams, trades, and billion dollar deals - so you and your portfolio will win BIG. Yahoo Finance Sports Report is developed and produced by Lauren Pokedoff.', 'url': 'https://finance.yahoo.com/video/apple-races-ahead-epic-150m-190052345.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': 1.16, 'change_percent': '0.5523%', 'current_price': 196.58, 'symbol': 'AAPL', 'timestamp': '2025-07-18T19:46:32.201217', 'volume': 48334307}, 'sentiment_data': {'confidence': 0.75, 'sentiment_score': -0.2, 'summary': 'The news contains a mix of positive and negative sentiments with an overall slightly negative tone. The stock market is weak due to geopolitical tensions, but some individual stocks are showing relative strength. There are concerns about the US-EU trade talks breaking down, which could negatively impact large-cap tech stocks. The sentiment score reflects this mixed picture with a slight bias towards negativity.'}, 'signal_data': {'action': 'PUT', 'confidence': 0.75, 'reasoning': 'Negative sentiment (-0.20) with high confidence (0.75)', 'signal_strength': 0.15000000000000002}, 'symbol': 'AAPL', 'timestamp': '2025-07-18T19:49:01.861391', 'trade_signal': {'action': 'PUT', 'confidence': 0.75, 'current_price': 196.58, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '⚖️ Moderate confidence - monitor for changes'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 1.97, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 20, 'potential_gain': 3.93, 'potential_loss': 3.15, 'risk_amount': 39.32, 'risk_percent': 2, 'risk_reward_ratio': 1.25, 'stop_price': 1.81, 'target_price': 2.16, 'total_cost': 39.32}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.20) with high confidence (0.75)', 'sentiment_score': -0.2, 'signal_strength': 0.15000000000000002, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 195.6, 'symbol': 'AAPL', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:59:00 +0000', 'headline': 'Tech, Media & Telecom Roundup: Market Talk', 'source': 'Yahoo Finance', 'summary': 'Find insight on Netflix, Vivendi and more in the latest Market Talks covering Technology, Media and Telecom.', 'url': 'https://finance.yahoo.com/m/8b17ddaa-1cdd-3c51-b370-ce8fc057df94/tech%2C-media-%26-telecom.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:31:06 +0000', 'headline': 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning', 'source': 'Yahoo Finance', 'summary': 'Net income jumped to $3.1B, with EPS of $7.19 versus $4.88 last year', 'url': 'https://finance.yahoo.com/news/netflix-beats-earnings-expectations-revenue-213106117.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:55:22 +0000', 'headline': "One drone stock is up almost 100%. Here's why the sky might be the limit", 'source': 'Yahoo Finance', 'summary': "The week in stocks: What's next for Netflix shares, why dividend stocks may be back in fashion and the top three picks from one analyst", 'url': 'https://ca.finance.yahoo.com/news/one-drone-stock-almost-100-215522367.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': -64.93, 'change_percent': '-5.0959%', 'current_price': 1209.24, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:47:08.312367', 'volume': 10637726}, 'sentiment_data': {'confidence': 0.45, 'sentiment_score': -0.3, 'summary': "The news roundup covers various companies in the tech, media, and telecom sectors. While Netflix's earnings beat expectations with a significant revenue surge, its stock price has dipped due to margin warnings. The summary also mentions other stocks like AVGO (Analog Devices), UBER (Uber Technologies), and NFLX (Netflix) among others. Despite these mixed signals, the overall tone is cautiously optimistic as it highlights potential growth prospects for some companies."}, 'signal_data': {'action': 'PUT', 'confidence': 0.45, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'signal_strength': 0.135}, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:49:04.089017', 'trade_signal': {'action': 'PUT', 'confidence': 0.45, 'current_price': 1209.24, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '❓ Lower confidence - be extra cautious'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 12.09, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 3, 'potential_gain': 3.63, 'potential_loss': 2.9, 'risk_amount': 36.28, 'risk_percent': 1.8, 'risk_reward_ratio': 1.25, 'stop_price': 11.13, 'target_price': 13.3, 'total_cost': 36.28}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'sentiment_score': -0.3, 'signal_strength': 0.135, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 1203.19, 'symbol': 'NFLX', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:05:27 +0000', 'headline': 'Opendoor stock records 180% weekly gain as retail frenzy cements meme status', 'source': 'Yahoo Finance', 'summary': "After EMJ Capital's principal posted a turnaround thesis on the iBuyer platform Opendoor, retail investors have descended on the stock, pushing it to meme status.", 'url': 'https://finance.yahoo.com/news/opendoor-stock-records-180-weekly-gain-as-retail-frenzy-cements-meme-status-200527311.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:32:38 +0000', 'headline': 'Opendoor Explodes 175% After Hedge Fund Shoutout--But Is a Crash Coming Next?', 'source': 'Yahoo Finance', 'summary': "Retail traders swarm in, short sellers panic, and options go wild--Opendoor just became the market's newest battleground.", 'url': 'https://finance.yahoo.com/news/opendoor-explodes-175-hedge-fund-213238602.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-07-18T15:43:25Z', 'headline': 'Potential conflict between "Genius" Act and Circle ($CRCL) business model?', 'source': 'Reddit', 'summary': 'The Economist published this article about the "Genius" Act: [https://www.economist.com/finance-and-economics/2025/07/16/stablecoins-might-cut-americas-debt-payments-but-at-what-cost](https://www.economist.com/finance-and-economics/2025/07/16/stablecoins-might-cut-americas-debt-payments-but-at-what-cost)\n\nThe article implies that the current administration conceived of the idea of opening the legal floodgates to stablecoins so that people will purchase them and this will drive down interest rates, allowing it to reduce its interest payments on issued debt and thereby make it easier to extend tax cuts (a la Trump\'s "Big Beautiful Bill").\n\nIn short, the government\'s own stated motivation for stablecoin growth directly conflicts with the current profit model for stablecoin issuers like Circle, which is 99% dependent on interest payments from government debt for its revenues.\n\nAm I understanding this correctly?', 'url': 'https://www.reddit.com/r/stocks/comments/1m35rhv/potential_conflict_between_genius_act_and_circle/'}], 'news_count': 5, 'price_data': {'change': 0.6, 'change_percent': '36.3636%', 'current_price': 2.25, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:47:11.006178', 'volume': 547835057}, 'sentiment_data': {'confidence': 0.92, 'sentiment_score': 0.85, 'summary': 'The news articles provide a mixed but generally positive sentiment towards Opendoor stock. The headlines indicate significant gains and the establishment of a meme status, which is typically associated with strong positive sentiment. However, there are also concerns about potential conflicts and short selling, suggesting some caution. The OpenAI report highlights its massive potential market value, indicating optimism for future growth. The special dividend announcement suggests a current opportunity but also hints at risks if not managed properly.'}, 'signal_data': {'action': 'CALL', 'confidence': 0.92, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'signal_strength': 0.782}, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:49:08.214442', 'trade_signal': {'action': 'CALL', 'confidence': 0.92, 'current_price': 2.25, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 30% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 0.02, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 4444, 'potential_gain': 30, 'potential_loss': 15, 'risk_amount': 99.99, 'risk_percent': 5, 'risk_reward_ratio': 2, 'stop_price': 0.02, 'target_price': 0.03, 'total_cost': 99.99}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'sentiment_score': 0.85, 'signal_strength': 0.782, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 2.26, 'symbol': 'OPEN', 'target_gain_percent': 30}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 17:38:00 +0000', 'headline': 'GE’s 3 Offspring Are All Grown Up and Making Waves. The Best Is Yet to Come.', 'source': 'Yahoo Finance', 'summary': 'The former GEs should get no small amount of credit for the industrial strength of the industrial sector.', 'url': 'https://finance.yahoo.com/m/3d2ca61b-f763-3a76-960d-47f67ccaee46/ge%E2%80%99s-3-offspring-are-all.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:39:00 +0000', 'headline': 'GE Aerospace Price Targets Suggest a Record High Is Coming. How That’s Possible.', 'source': 'Yahoo Finance', 'summary': 'After  GE Aerospace  produced “blowout” second-quarter results, Wall Street reacted by raising its targets for the stock price, suggesting shares could soon reach a record high.  Wall Street was looking for operating profit of $2.1 billion and earnings per share of $1.43 on sales of $9.6 billion, according to FactSet.  Management now expects 2025 operating profit of between $8.2 billion and $8.5 billion, up from a prior range of $7.8 billion to $8.2 billion.', 'url': 'https://finance.yahoo.com/m/54e6d0b2-6d3d-354f-8f2b-b79de35edd19/ge-aerospace-price-targets.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-06-17T18:37:03Z', 'headline': "How Trump's G7 Trade Stance Will Affect U.S. Stocks", 'source': 'Reddit', 'summary': "Reuters reports that President Trump abruptly left the G7 summit after blasting the EU for not offering a “fair deal” and calling Japan “tough” in stalled talks He’s also floating new pharmaceutical and energy tariffs to boost domestic production   \n  \nTariff Risk: Trump's comments suggest he could unilaterally impose tariffs or expand tariffs on EU auto and pharmaceutical imports, and possibly even impose more tariffs - a move that has historically devastated related stock groups  \n  \nSector exposure: Watch autos (GM, F, TSLA), large-cap pharma (PFE, MRK) and industrials (CAT, GE) for increased volatility  \n  \nMarket sentiment: Despite Middle East tensions, major indices barely flinched on Monday, but a fresh bout of trade uncertainty could undermine recent gains  \n", 'url': 'https://www.reddit.com/r/stocks/comments/1ldv316/how_trumps_g7_trade_stance_will_affect_us_stocks/'}], 'news_count': 5, 'price_data': {'change': 2.99, 'change_percent': '1.1488%', 'current_price': 263.27, 'symbol': 'GE', 'timestamp': '2025-07-18T19:47:18.886264', 'volume': 8509140}, 'sentiment_data': {'confidence': 0.85, 'sentiment_score': 0.75, 'summary': 'The news highlights positive sentiment towards General Electric (GE) and its aerospace division, with price targets increasing and strong performance expected in the future. The overall tone is cautiously optimistic.'}, 'signal_data': {'action': 'CALL', 'confidence': 0.85, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'signal_strength': 0.6375}, 'symbol': 'GE', 'timestamp': '2025-07-18T19:49:12.903339', 'trade_signal': {'action': 'CALL', 'confidence': 0.85, 'current_price': 263.27, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 20% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 2.63, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 37, 'potential_gain': 19.48, 'potential_loss': 14.61, 'risk_amount': 97.41, 'risk_percent': 4.9, 'risk_reward_ratio': 1.33, 'stop_price': 2.24, 'target_price': 3.16, 'total_cost': 97.41}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'sentiment_score': 0.75, 'signal_strength': 0.6375, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 264.59, 'symbol': 'GE', 'target_gain_percent': 20}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'success': True, 'timestamp': '2025-07-18T19:59:43.131946'}, 'opportunities_count': 4}
+2025-07-18 19:59:43,986 - INFO - Found 9 opportunity cards
+2025-07-18 19:59:44,333 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_195943.png
+2025-07-18 19:59:44,333 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_195943.png
+2025-07-18 19:59:44,700 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250718_195944.png
+2025-07-18 19:59:46,701 - INFO - ✅ Opportunities Page: PASSED (populated in 3125.83ms)
+2025-07-18 19:59:46,701 - INFO - Testing page: System Status Page (/system_status)
+2025-07-18 19:59:48,255 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-18 19:59:48,265 - INFO - Found element: .container
+2025-07-18 19:59:48,268 - INFO - Found element: .card
+2025-07-18 19:59:48,270 - INFO - Found element: h1
+2025-07-18 19:59:50,272 - INFO - Page load time: 3538.32ms
+2025-07-18 19:59:50,566 - INFO - Screenshot saved: test_artifacts/system_status_page_20250718_195950.png
+2025-07-18 19:59:52,568 - INFO - ✅ System Status Page: PASSED (populated in 3538.32ms)
+2025-07-18 19:59:52,568 - INFO - Testing page: Logs Page (/logs)
+2025-07-18 19:59:53,181 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-18 19:59:53,189 - INFO - Found element: #logContainer
+2025-07-18 19:59:53,194 - INFO - Found element: #logStats
+2025-07-18 19:59:53,197 - INFO - Found element: .container
+2025-07-18 19:59:55,199 - INFO - Page load time: 2597.78ms
+2025-07-18 19:59:55,376 - INFO - Screenshot saved: test_artifacts/logs_page_20250718_195955.png
+2025-07-18 19:59:57,378 - INFO - ✅ Logs Page: PASSED (populated in 2597.78ms)
+2025-07-18 19:59:57,378 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-18 19:59:57,974 - INFO - Page load time: 571.26ms
+2025-07-18 19:59:58,178 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250718_195957.png
+2025-07-18 20:00:00,180 - ERROR - ❌ Portfolio Page: FAILED - []
+2025-07-18 20:00:00,180 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-18 20:00:00,790 - INFO - Page load time: 589.94ms
+2025-07-18 20:00:00,991 - INFO - Screenshot saved: test_artifacts/backtest_page_20250718_200000.png
+2025-07-18 20:00:02,993 - ERROR - ❌ Backtest Page: FAILED - []
+2025-07-18 20:00:02,993 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-18 20:00:03,590 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-18 20:00:03,598 - INFO - Found element: .container
+2025-07-18 20:00:03,602 - INFO - Found element: h1
+2025-07-18 20:00:03,604 - INFO - Found element: .card
+2025-07-18 20:00:05,606 - INFO - Page load time: 2578.98ms
+2025-07-18 20:00:05,815 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250718_200005.png
+2025-07-18 20:00:07,817 - INFO - ✅ Recommendations Page: PASSED (populated in 2578.98ms)
+2025-07-18 20:00:07,818 - INFO - Test report saved: test_artifacts/test_report_20250718_200007.json
+2025-07-18 20:00:07,818 - INFO - Text report saved: test_artifacts/test_report_20250718_200007.txt
+2025-07-18 20:00:08,979 - INFO - Browser teardown complete
+2025-07-18 20:03:11,419 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-18 20:03:11,419 - INFO - Base URL: http://localhost:5001
+2025-07-18 20:03:11,419 - INFO - Artifacts directory: test_artifacts
+2025-07-18 20:03:11,756 - INFO - Browser setup complete with video recording enabled
+2025-07-18 20:03:11,756 - INFO - Testing page: Homepage (/)
+2025-07-18 20:03:12,502 - INFO - Page load time: 507.52ms
+2025-07-18 20:03:12,671 - INFO - Screenshot saved: test_artifacts/homepage_20250718_200312.png
+2025-07-18 20:03:14,674 - INFO - ✅ Homepage: PASSED (populated in 507.52ms)
+2025-07-18 20:03:14,674 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-18 20:03:15,346 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-18 20:03:15,356 - INFO - Found element: #stocksTableBody
+2025-07-18 20:03:15,360 - INFO - Found element: #winnersList
+2025-07-18 20:03:15,362 - INFO - Found element: #losersList
+2025-07-18 20:03:15,364 - INFO - Found element: #stockAnalysisSection
+2025-07-18 20:03:17,366 - INFO - Page load time: 2631.77ms
+2025-07-18 20:03:17,576 - INFO - Screenshot saved: test_artifacts/stocks_page_20250718_200317.png
+2025-07-18 20:03:19,577 - INFO - ✅ Stocks Page: PASSED (populated in 2631.77ms)
+2025-07-18 20:03:19,577 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-18 20:03:20,171 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-18 20:03:20,179 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-18 20:03:20,963 - INFO - Found element: #cryptoCardsRow
+2025-07-18 20:03:20,965 - INFO - Found element: #sentimentChartContainer
+2025-07-18 20:03:22,968 - INFO - Page load time: 3367.71ms
+2025-07-18 20:03:23,258 - INFO - Screenshot saved: test_artifacts/crypto_page_20250718_200322.png
+2025-07-18 20:03:25,260 - INFO - ✅ Crypto Page: PASSED (populated in 3367.71ms)
+2025-07-18 20:03:25,260 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-18 20:03:26,457 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-18 20:03:26,466 - INFO - Found element: #opportunitiesSection
+2025-07-18 20:03:26,470 - INFO - Found element: #opportunitiesContainer
+2025-07-18 20:03:26,472 - INFO - Found element: #findButton
+2025-07-18 20:03:26,475 - INFO - Found element: #newsBtn
+2025-07-18 20:03:26,477 - INFO - Found element: #watchlistBtn
+2025-07-18 20:03:26,478 - INFO - Found element: #refreshBtn
+2025-07-18 20:03:26,480 - INFO - Found element: #lastUpdated
+2025-07-18 20:03:26,481 - INFO - Found element: .opportunity-card
+2025-07-18 20:03:28,484 - INFO - Page load time: 3121.75ms
+2025-07-18 20:03:28,568 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-07-18T19:59:49.516408', 'cached': True, 'count': 3, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:59:00 +0000', 'headline': 'Tech, Media & Telecom Roundup: Market Talk', 'source': 'Yahoo Finance', 'summary': 'Find insight on Netflix, Vivendi and more in the latest Market Talks covering Technology, Media and Telecom.', 'url': 'https://finance.yahoo.com/m/8b17ddaa-1cdd-3c51-b370-ce8fc057df94/tech%2C-media-%26-telecom.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:31:06 +0000', 'headline': 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning', 'source': 'Yahoo Finance', 'summary': 'Net income jumped to $3.1B, with EPS of $7.19 versus $4.88 last year', 'url': 'https://finance.yahoo.com/news/netflix-beats-earnings-expectations-revenue-213106117.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:55:22 +0000', 'headline': "One drone stock is up almost 100%. Here's why the sky might be the limit", 'source': 'Yahoo Finance', 'summary': "The week in stocks: What's next for Netflix shares, why dividend stocks may be back in fashion and the top three picks from one analyst", 'url': 'https://ca.finance.yahoo.com/news/one-drone-stock-almost-100-215522367.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': -64.93, 'change_percent': '-5.0959%', 'current_price': 1209.24, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:35.448424', 'volume': 10637726}, 'sentiment_data': {'confidence': 0.45, 'sentiment_score': -0.3, 'summary': "The news contains a mix of positive and negative sentiments related to Netflix's performance and the broader market in Technology, Media, and Telecom sectors. The headline 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning' indicates mixed sentiment with some positivity about revenue growth and negativity about margin warnings. Other headlines discuss stock movements and analyst insights without clear positive or negative bias towards specific stocks."}, 'signal_data': {'action': 'PUT', 'confidence': 0.45, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'signal_strength': 0.135}, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:38.943602', 'trade_signal': {'action': 'PUT', 'confidence': 0.45, 'current_price': 1209.24, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '❓ Lower confidence - be extra cautious'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 12.09, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 3, 'potential_gain': 3.63, 'potential_loss': 2.9, 'risk_amount': 36.28, 'risk_percent': 1.8, 'risk_reward_ratio': 1.25, 'stop_price': 11.13, 'target_price': 13.3, 'total_cost': 36.28}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'sentiment_score': -0.3, 'signal_strength': 0.135, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 1203.19, 'symbol': 'NFLX', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:05:27 +0000', 'headline': 'Opendoor stock records 180% weekly gain as retail frenzy cements meme status', 'source': 'Yahoo Finance', 'summary': "After EMJ Capital's principal posted a turnaround thesis on the iBuyer platform Opendoor, retail investors have descended on the stock, pushing it to meme status.", 'url': 'https://finance.yahoo.com/news/opendoor-stock-records-180-weekly-gain-as-retail-frenzy-cements-meme-status-200527311.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:32:38 +0000', 'headline': 'Opendoor Explodes 175% After Hedge Fund Shoutout--But Is a Crash Coming Next?', 'source': 'Yahoo Finance', 'summary': "Retail traders swarm in, short sellers panic, and options go wild--Opendoor just became the market's newest battleground.", 'url': 'https://finance.yahoo.com/news/opendoor-explodes-175-hedge-fund-213238602.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-07-18T13:37:25Z', 'headline': 'MS Report: OpenAI Targets $700 Billion TAM by 2030 - Which Listed Companies Will Benefit?', 'source': 'Reddit', 'summary': "JP Morgan just released a lengthy report stating that OpenAI's total potential market TAM could reach $700 billion by 2030, noting that it currently has 800 million monthly activations and nearly $10 billion in annualized revenues, most of which comes from subscribers. While its GPT model leadership is being eroded by competitors, consumer-side realizations and brand strength are still seen as a moat.\n\nPoints to note:\n\nChatGPT generates 75% of its revenue from consumer subscriptions\n\nGPT-4 is only 95th in LM Arena, Gemini and DeepSeek are gaining in competitiveness\n\nEstimated timeline for profitability: circa 2029\n\nAI Infra funding (H1 2025) reaches $63 billion\n\nDiscussion topics:\n\nWhich public market stocks stand to benefit most from OpenAI's long-term expansion? Discussion topic: Which public market stocks are best positioned to benefit from OpenAI's long-term expansion? Here are a few companies I'm currently following:\n\n$MSFT (OpenAI's largest shareholder, Azure enabler)\n\n$NVDA (provides training and inference power)\n\n$AMZN / $GOOGL (competitors, also building their own base models)\n\n$CRM / $NOW: AI verticals on the ground\n\nShould I also be looking at the A100/H100 supply chain? Or just bet on the “consumerization” of generative AI?\n\nHolding a small number of $MSFT and $NVDA LEAPs, not financial advice.", 'url': 'https://www.reddit.com/r/stocks/comments/1m32k1f/ms_report_openai_targets_700_billion_tam_by_2030/'}], 'news_count': 5, 'price_data': {'change': 0.6, 'change_percent': '36.3636%', 'current_price': 2.25, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:39.013517', 'volume': 547835057}, 'sentiment_data': {'confidence': 0.92, 'sentiment_score': 0.85, 'summary': "The news sentiment for the stock of Opendoor is very positive with headlines indicating significant gains and a meme status, followed by more bullish summaries about its potential market expansion. The discussion on OpenAI's long-term benefits to public markets also leans positively, suggesting favorable investment opportunities in related sectors like Azure (MSFT), NVDA, AMZN, and GOOGL. However, the special dividend announcement is viewed with some skepticism regarding short-term gains."}, 'signal_data': {'action': 'CALL', 'confidence': 0.92, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'signal_strength': 0.782}, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:46.853470', 'trade_signal': {'action': 'CALL', 'confidence': 0.92, 'current_price': 2.25, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 30% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 0.02, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 4444, 'potential_gain': 30, 'potential_loss': 15, 'risk_amount': 99.99, 'risk_percent': 5, 'risk_reward_ratio': 2, 'stop_price': 0.02, 'target_price': 0.03, 'total_cost': 99.99}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'sentiment_score': 0.85, 'signal_strength': 0.782, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 2.26, 'symbol': 'OPEN', 'target_gain_percent': 30}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 17:38:00 +0000', 'headline': 'GE’s 3 Offspring Are All Grown Up and Making Waves. The Best Is Yet to Come.', 'source': 'Yahoo Finance', 'summary': 'The former GEs should get no small amount of credit for the industrial strength of the industrial sector.', 'url': 'https://finance.yahoo.com/m/3d2ca61b-f763-3a76-960d-47f67ccaee46/ge%E2%80%99s-3-offspring-are-all.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:39:00 +0000', 'headline': 'GE Aerospace Price Targets Suggest a Record High Is Coming. How That’s Possible.', 'source': 'Yahoo Finance', 'summary': 'After  GE Aerospace  produced “blowout” second-quarter results, Wall Street reacted by raising its targets for the stock price, suggesting shares could soon reach a record high.  Wall Street was looking for operating profit of $2.1 billion and earnings per share of $1.43 on sales of $9.6 billion, according to FactSet.  Management now expects 2025 operating profit of between $8.2 billion and $8.5 billion, up from a prior range of $7.8 billion to $8.2 billion.', 'url': 'https://finance.yahoo.com/m/54e6d0b2-6d3d-354f-8f2b-b79de35edd19/ge-aerospace-price-targets.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-06-17T18:37:03Z', 'headline': "How Trump's G7 Trade Stance Will Affect U.S. Stocks", 'source': 'Reddit', 'summary': "Reuters reports that President Trump abruptly left the G7 summit after blasting the EU for not offering a “fair deal” and calling Japan “tough” in stalled talks He’s also floating new pharmaceutical and energy tariffs to boost domestic production   \n  \nTariff Risk: Trump's comments suggest he could unilaterally impose tariffs or expand tariffs on EU auto and pharmaceutical imports, and possibly even impose more tariffs - a move that has historically devastated related stock groups  \n  \nSector exposure: Watch autos (GM, F, TSLA), large-cap pharma (PFE, MRK) and industrials (CAT, GE) for increased volatility  \n  \nMarket sentiment: Despite Middle East tensions, major indices barely flinched on Monday, but a fresh bout of trade uncertainty could undermine recent gains  \n", 'url': 'https://www.reddit.com/r/stocks/comments/1ldv316/how_trumps_g7_trade_stance_will_affect_us_stocks/'}], 'news_count': 5, 'price_data': {'change': 2.99, 'change_percent': '1.1488%', 'current_price': 263.27, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:47.074590', 'volume': 8509140}, 'sentiment_data': {'confidence': 0.85, 'sentiment_score': 0.75, 'summary': "The news highlights a positive outlook for GE and its subsidiaries, with strong financial results and potential for future growth. The sentiment is predominantly positive, indicating optimism about the company's prospects and performance in various sectors such as aerospace and healthcare. There are concerns regarding trade uncertainty but overall, the tone remains optimistic."}, 'signal_data': {'action': 'CALL', 'confidence': 0.85, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'signal_strength': 0.6375}, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:49.514470', 'trade_signal': {'action': 'CALL', 'confidence': 0.85, 'current_price': 263.27, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 20% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 2.63, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 37, 'potential_gain': 19.48, 'potential_loss': 14.61, 'risk_amount': 97.41, 'risk_percent': 4.9, 'risk_reward_ratio': 1.33, 'stop_price': 2.24, 'target_price': 3.16, 'total_cost': 97.41}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'sentiment_score': 0.75, 'signal_strength': 0.6375, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 264.59, 'symbol': 'GE', 'target_gain_percent': 20}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'success': True, 'timestamp': '2025-07-18T20:03:28.561111'}, 'opportunities_count': 3}
+2025-07-18 20:03:28,573 - INFO - Found 9 opportunity cards
+2025-07-18 20:03:28,885 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200328.png
+2025-07-18 20:03:28,886 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200328.png
+2025-07-18 20:03:29,224 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250718_200328.png
+2025-07-18 20:03:31,226 - INFO - ✅ Opportunities Page: PASSED (populated in 3121.75ms)
+2025-07-18 20:03:31,226 - INFO - Testing page: System Status Page (/system_status)
+2025-07-18 20:03:32,798 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-18 20:03:32,808 - INFO - Found element: .container
+2025-07-18 20:03:32,811 - INFO - Found element: .card
+2025-07-18 20:03:32,815 - INFO - Found element: h1
+2025-07-18 20:03:34,817 - INFO - Page load time: 3546.89ms
+2025-07-18 20:03:35,063 - INFO - Screenshot saved: test_artifacts/system_status_page_20250718_200334.png
+2025-07-18 20:03:37,065 - INFO - ✅ System Status Page: PASSED (populated in 3546.89ms)
+2025-07-18 20:03:37,065 - INFO - Testing page: Logs Page (/logs)
+2025-07-18 20:03:37,678 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-18 20:03:37,687 - INFO - Found element: #logContainer
+2025-07-18 20:03:37,692 - INFO - Found element: #logStats
+2025-07-18 20:03:37,695 - INFO - Found element: .container
+2025-07-18 20:03:39,696 - INFO - Page load time: 2600.62ms
+2025-07-18 20:03:39,839 - INFO - Screenshot saved: test_artifacts/logs_page_20250718_200339.png
+2025-07-18 20:03:41,841 - INFO - ✅ Logs Page: PASSED (populated in 2600.62ms)
+2025-07-18 20:03:41,841 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-18 20:03:42,452 - INFO - Page load time: 575.50ms
+2025-07-18 20:03:42,602 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250718_200342.png
+2025-07-18 20:03:44,605 - ERROR - ❌ Portfolio Page: FAILED - []
+2025-07-18 20:03:44,605 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-18 20:03:45,213 - INFO - Page load time: 580.10ms
+2025-07-18 20:03:45,385 - INFO - Screenshot saved: test_artifacts/backtest_page_20250718_200345.png
+2025-07-18 20:03:47,387 - ERROR - ❌ Backtest Page: FAILED - []
+2025-07-18 20:03:47,387 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-18 20:03:47,987 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-18 20:03:47,995 - INFO - Found element: .container
+2025-07-18 20:03:47,998 - INFO - Found element: h1
+2025-07-18 20:03:48,000 - INFO - Found element: .card
+2025-07-18 20:03:50,002 - INFO - Page load time: 2577.96ms
+2025-07-18 20:03:50,209 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250718_200350.png
+2025-07-18 20:03:52,212 - INFO - ✅ Recommendations Page: PASSED (populated in 2577.96ms)
+2025-07-18 20:03:52,214 - INFO - Test report saved: test_artifacts/test_report_20250718_200352.json
+2025-07-18 20:03:52,214 - INFO - Text report saved: test_artifacts/test_report_20250718_200352.txt
+2025-07-18 20:03:53,393 - INFO - Browser teardown complete
+2025-07-18 20:03:59,677 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-18 20:03:59,677 - INFO - Base URL: http://localhost:5001
+2025-07-18 20:03:59,677 - INFO - Artifacts directory: test_artifacts
+2025-07-18 20:04:00,007 - INFO - Browser setup complete with video recording enabled
+2025-07-18 20:04:00,010 - INFO - Testing page: Homepage (/)
+2025-07-18 20:04:00,764 - INFO - Page load time: 510.51ms
+2025-07-18 20:04:00,938 - INFO - Screenshot saved: test_artifacts/homepage_20250718_200400.png
+2025-07-18 20:04:02,939 - INFO - ✅ Homepage: PASSED (populated in 510.51ms)
+2025-07-18 20:04:02,940 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-18 20:04:03,620 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-18 20:04:03,630 - INFO - Found element: #stocksTableBody
+2025-07-18 20:04:03,634 - INFO - Found element: #winnersList
+2025-07-18 20:04:03,636 - INFO - Found element: #losersList
+2025-07-18 20:04:03,638 - INFO - Found element: #stockAnalysisSection
+2025-07-18 20:04:05,640 - INFO - Page load time: 2639.51ms
+2025-07-18 20:04:05,877 - INFO - Screenshot saved: test_artifacts/stocks_page_20250718_200405.png
+2025-07-18 20:04:07,880 - INFO - ✅ Stocks Page: PASSED (populated in 2639.51ms)
+2025-07-18 20:04:07,880 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-18 20:04:08,482 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-18 20:04:08,491 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-18 20:04:09,274 - INFO - Found element: #cryptoCardsRow
+2025-07-18 20:04:09,276 - INFO - Found element: #sentimentChartContainer
+2025-07-18 20:04:11,279 - INFO - Page load time: 3366.54ms
+2025-07-18 20:04:11,587 - INFO - Screenshot saved: test_artifacts/crypto_page_20250718_200411.png
+2025-07-18 20:04:13,590 - INFO - ✅ Crypto Page: PASSED (populated in 3366.54ms)
+2025-07-18 20:04:13,590 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-18 20:04:14,846 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-18 20:04:14,855 - INFO - Found element: #opportunitiesSection
+2025-07-18 20:04:14,859 - INFO - Found element: #opportunitiesContainer
+2025-07-18 20:04:14,861 - INFO - Found element: #findButton
+2025-07-18 20:04:14,863 - INFO - Found element: #newsBtn
+2025-07-18 20:04:14,865 - INFO - Found element: #watchlistBtn
+2025-07-18 20:04:14,867 - INFO - Found element: #refreshBtn
+2025-07-18 20:04:14,868 - INFO - Found element: #lastUpdated
+2025-07-18 20:04:14,870 - INFO - Found element: .opportunity-card
+2025-07-18 20:04:16,871 - INFO - Page load time: 3141.00ms
+2025-07-18 20:04:16,929 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-07-18T19:59:49.516408', 'cached': True, 'count': 3, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:59:00 +0000', 'headline': 'Tech, Media & Telecom Roundup: Market Talk', 'source': 'Yahoo Finance', 'summary': 'Find insight on Netflix, Vivendi and more in the latest Market Talks covering Technology, Media and Telecom.', 'url': 'https://finance.yahoo.com/m/8b17ddaa-1cdd-3c51-b370-ce8fc057df94/tech%2C-media-%26-telecom.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:31:06 +0000', 'headline': 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning', 'source': 'Yahoo Finance', 'summary': 'Net income jumped to $3.1B, with EPS of $7.19 versus $4.88 last year', 'url': 'https://finance.yahoo.com/news/netflix-beats-earnings-expectations-revenue-213106117.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:55:22 +0000', 'headline': "One drone stock is up almost 100%. Here's why the sky might be the limit", 'source': 'Yahoo Finance', 'summary': "The week in stocks: What's next for Netflix shares, why dividend stocks may be back in fashion and the top three picks from one analyst", 'url': 'https://ca.finance.yahoo.com/news/one-drone-stock-almost-100-215522367.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': -64.93, 'change_percent': '-5.0959%', 'current_price': 1209.24, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:35.448424', 'volume': 10637726}, 'sentiment_data': {'confidence': 0.45, 'sentiment_score': -0.3, 'summary': "The news contains a mix of positive and negative sentiments related to Netflix's performance and the broader market in Technology, Media, and Telecom sectors. The headline 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning' indicates mixed sentiment with some positivity about revenue growth and negativity about margin warnings. Other headlines discuss stock movements and analyst insights without clear positive or negative bias towards specific stocks."}, 'signal_data': {'action': 'PUT', 'confidence': 0.45, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'signal_strength': 0.135}, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:38.943602', 'trade_signal': {'action': 'PUT', 'confidence': 0.45, 'current_price': 1209.24, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '❓ Lower confidence - be extra cautious'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 12.09, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 3, 'potential_gain': 3.63, 'potential_loss': 2.9, 'risk_amount': 36.28, 'risk_percent': 1.8, 'risk_reward_ratio': 1.25, 'stop_price': 11.13, 'target_price': 13.3, 'total_cost': 36.28}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'sentiment_score': -0.3, 'signal_strength': 0.135, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 1203.19, 'symbol': 'NFLX', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:05:27 +0000', 'headline': 'Opendoor stock records 180% weekly gain as retail frenzy cements meme status', 'source': 'Yahoo Finance', 'summary': "After EMJ Capital's principal posted a turnaround thesis on the iBuyer platform Opendoor, retail investors have descended on the stock, pushing it to meme status.", 'url': 'https://finance.yahoo.com/news/opendoor-stock-records-180-weekly-gain-as-retail-frenzy-cements-meme-status-200527311.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:32:38 +0000', 'headline': 'Opendoor Explodes 175% After Hedge Fund Shoutout--But Is a Crash Coming Next?', 'source': 'Yahoo Finance', 'summary': "Retail traders swarm in, short sellers panic, and options go wild--Opendoor just became the market's newest battleground.", 'url': 'https://finance.yahoo.com/news/opendoor-explodes-175-hedge-fund-213238602.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-07-18T13:37:25Z', 'headline': 'MS Report: OpenAI Targets $700 Billion TAM by 2030 - Which Listed Companies Will Benefit?', 'source': 'Reddit', 'summary': "JP Morgan just released a lengthy report stating that OpenAI's total potential market TAM could reach $700 billion by 2030, noting that it currently has 800 million monthly activations and nearly $10 billion in annualized revenues, most of which comes from subscribers. While its GPT model leadership is being eroded by competitors, consumer-side realizations and brand strength are still seen as a moat.\n\nPoints to note:\n\nChatGPT generates 75% of its revenue from consumer subscriptions\n\nGPT-4 is only 95th in LM Arena, Gemini and DeepSeek are gaining in competitiveness\n\nEstimated timeline for profitability: circa 2029\n\nAI Infra funding (H1 2025) reaches $63 billion\n\nDiscussion topics:\n\nWhich public market stocks stand to benefit most from OpenAI's long-term expansion? Discussion topic: Which public market stocks are best positioned to benefit from OpenAI's long-term expansion? Here are a few companies I'm currently following:\n\n$MSFT (OpenAI's largest shareholder, Azure enabler)\n\n$NVDA (provides training and inference power)\n\n$AMZN / $GOOGL (competitors, also building their own base models)\n\n$CRM / $NOW: AI verticals on the ground\n\nShould I also be looking at the A100/H100 supply chain? Or just bet on the “consumerization” of generative AI?\n\nHolding a small number of $MSFT and $NVDA LEAPs, not financial advice.", 'url': 'https://www.reddit.com/r/stocks/comments/1m32k1f/ms_report_openai_targets_700_billion_tam_by_2030/'}], 'news_count': 5, 'price_data': {'change': 0.6, 'change_percent': '36.3636%', 'current_price': 2.25, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:39.013517', 'volume': 547835057}, 'sentiment_data': {'confidence': 0.92, 'sentiment_score': 0.85, 'summary': "The news sentiment for the stock of Opendoor is very positive with headlines indicating significant gains and a meme status, followed by more bullish summaries about its potential market expansion. The discussion on OpenAI's long-term benefits to public markets also leans positively, suggesting favorable investment opportunities in related sectors like Azure (MSFT), NVDA, AMZN, and GOOGL. However, the special dividend announcement is viewed with some skepticism regarding short-term gains."}, 'signal_data': {'action': 'CALL', 'confidence': 0.92, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'signal_strength': 0.782}, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:46.853470', 'trade_signal': {'action': 'CALL', 'confidence': 0.92, 'current_price': 2.25, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 30% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 0.02, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 4444, 'potential_gain': 30, 'potential_loss': 15, 'risk_amount': 99.99, 'risk_percent': 5, 'risk_reward_ratio': 2, 'stop_price': 0.02, 'target_price': 0.03, 'total_cost': 99.99}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'sentiment_score': 0.85, 'signal_strength': 0.782, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 2.26, 'symbol': 'OPEN', 'target_gain_percent': 30}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 17:38:00 +0000', 'headline': 'GE’s 3 Offspring Are All Grown Up and Making Waves. The Best Is Yet to Come.', 'source': 'Yahoo Finance', 'summary': 'The former GEs should get no small amount of credit for the industrial strength of the industrial sector.', 'url': 'https://finance.yahoo.com/m/3d2ca61b-f763-3a76-960d-47f67ccaee46/ge%E2%80%99s-3-offspring-are-all.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:39:00 +0000', 'headline': 'GE Aerospace Price Targets Suggest a Record High Is Coming. How That’s Possible.', 'source': 'Yahoo Finance', 'summary': 'After  GE Aerospace  produced “blowout” second-quarter results, Wall Street reacted by raising its targets for the stock price, suggesting shares could soon reach a record high.  Wall Street was looking for operating profit of $2.1 billion and earnings per share of $1.43 on sales of $9.6 billion, according to FactSet.  Management now expects 2025 operating profit of between $8.2 billion and $8.5 billion, up from a prior range of $7.8 billion to $8.2 billion.', 'url': 'https://finance.yahoo.com/m/54e6d0b2-6d3d-354f-8f2b-b79de35edd19/ge-aerospace-price-targets.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-06-17T18:37:03Z', 'headline': "How Trump's G7 Trade Stance Will Affect U.S. Stocks", 'source': 'Reddit', 'summary': "Reuters reports that President Trump abruptly left the G7 summit after blasting the EU for not offering a “fair deal” and calling Japan “tough” in stalled talks He’s also floating new pharmaceutical and energy tariffs to boost domestic production   \n  \nTariff Risk: Trump's comments suggest he could unilaterally impose tariffs or expand tariffs on EU auto and pharmaceutical imports, and possibly even impose more tariffs - a move that has historically devastated related stock groups  \n  \nSector exposure: Watch autos (GM, F, TSLA), large-cap pharma (PFE, MRK) and industrials (CAT, GE) for increased volatility  \n  \nMarket sentiment: Despite Middle East tensions, major indices barely flinched on Monday, but a fresh bout of trade uncertainty could undermine recent gains  \n", 'url': 'https://www.reddit.com/r/stocks/comments/1ldv316/how_trumps_g7_trade_stance_will_affect_us_stocks/'}], 'news_count': 5, 'price_data': {'change': 2.99, 'change_percent': '1.1488%', 'current_price': 263.27, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:47.074590', 'volume': 8509140}, 'sentiment_data': {'confidence': 0.85, 'sentiment_score': 0.75, 'summary': "The news highlights a positive outlook for GE and its subsidiaries, with strong financial results and potential for future growth. The sentiment is predominantly positive, indicating optimism about the company's prospects and performance in various sectors such as aerospace and healthcare. There are concerns regarding trade uncertainty but overall, the tone remains optimistic."}, 'signal_data': {'action': 'CALL', 'confidence': 0.85, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'signal_strength': 0.6375}, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:49.514470', 'trade_signal': {'action': 'CALL', 'confidence': 0.85, 'current_price': 263.27, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 20% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 2.63, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 37, 'potential_gain': 19.48, 'potential_loss': 14.61, 'risk_amount': 97.41, 'risk_percent': 4.9, 'risk_reward_ratio': 1.33, 'stop_price': 2.24, 'target_price': 3.16, 'total_cost': 97.41}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'sentiment_score': 0.75, 'signal_strength': 0.6375, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 264.59, 'symbol': 'GE', 'target_gain_percent': 20}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'success': True, 'timestamp': '2025-07-18T20:04:16.923285'}, 'opportunities_count': 3}
+2025-07-18 20:04:16,933 - INFO - Found 9 opportunity cards
+2025-07-18 20:04:17,260 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200416.png
+2025-07-18 20:04:17,260 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200416.png
+2025-07-18 20:04:17,587 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250718_200417.png
+2025-07-18 20:04:19,590 - INFO - ✅ Opportunities Page: PASSED (populated in 3141.00ms)
+2025-07-18 20:04:19,590 - INFO - Testing page: System Status Page (/system_status)
+2025-07-18 20:04:21,152 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-18 20:04:21,161 - INFO - Found element: .container
+2025-07-18 20:04:21,165 - INFO - Found element: .card
+2025-07-18 20:04:21,166 - INFO - Found element: h1
+2025-07-18 20:04:23,168 - INFO - Page load time: 3536.80ms
+2025-07-18 20:04:23,395 - INFO - Screenshot saved: test_artifacts/system_status_page_20250718_200423.png
+2025-07-18 20:04:25,397 - INFO - ✅ System Status Page: PASSED (populated in 3536.80ms)
+2025-07-18 20:04:25,397 - INFO - Testing page: Logs Page (/logs)
+2025-07-18 20:04:26,006 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-18 20:04:26,015 - INFO - Found element: #logContainer
+2025-07-18 20:04:26,019 - INFO - Found element: #logStats
+2025-07-18 20:04:26,021 - INFO - Found element: .container
+2025-07-18 20:04:28,024 - INFO - Page load time: 2598.75ms
+2025-07-18 20:04:28,171 - INFO - Screenshot saved: test_artifacts/logs_page_20250718_200428.png
+2025-07-18 20:04:30,173 - INFO - ✅ Logs Page: PASSED (populated in 2598.75ms)
+2025-07-18 20:04:30,173 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-18 20:04:30,769 - INFO - Page load time: 570.67ms
+2025-07-18 20:04:30,931 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250718_200430.png
+2025-07-18 20:04:32,934 - ERROR - ❌ Portfolio Page: FAILED - []
+2025-07-18 20:04:32,934 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-18 20:04:33,541 - INFO - Page load time: 573.21ms
+2025-07-18 20:04:33,721 - INFO - Screenshot saved: test_artifacts/backtest_page_20250718_200433.png
+2025-07-18 20:04:35,723 - ERROR - ❌ Backtest Page: FAILED - []
+2025-07-18 20:04:35,724 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-18 20:04:36,347 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-18 20:04:36,354 - INFO - Found element: .container
+2025-07-18 20:04:36,358 - INFO - Found element: h1
+2025-07-18 20:04:36,360 - INFO - Found element: .card
+2025-07-18 20:04:38,362 - INFO - Page load time: 2604.56ms
+2025-07-18 20:04:38,576 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250718_200438.png
+2025-07-18 20:04:40,579 - INFO - ✅ Recommendations Page: PASSED (populated in 2604.56ms)
+2025-07-18 20:04:40,582 - INFO - Test report saved: test_artifacts/test_report_20250718_200440.json
+2025-07-18 20:04:40,583 - INFO - Text report saved: test_artifacts/test_report_20250718_200440.txt
+2025-07-18 20:04:41,737 - INFO - Browser teardown complete
+2025-07-18 20:06:47,142 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-07-18 20:06:47,143 - INFO - Base URL: http://localhost:5001
+2025-07-18 20:06:47,143 - INFO - Artifacts directory: test_artifacts
+2025-07-18 20:06:47,442 - INFO - Browser setup complete with video recording enabled
+2025-07-18 20:06:47,444 - INFO - Testing page: Homepage (/)
+2025-07-18 20:06:48,181 - INFO - Page load time: 506.50ms
+2025-07-18 20:06:48,336 - INFO - Screenshot saved: test_artifacts/homepage_20250718_200648.png
+2025-07-18 20:06:50,338 - INFO - ✅ Homepage: PASSED (populated in 506.50ms)
+2025-07-18 20:06:50,338 - INFO - Testing page: Stocks Page (/stocks)
+2025-07-18 20:06:51,010 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-18 20:06:51,019 - INFO - Found element: #stocksTableBody
+2025-07-18 20:06:51,024 - INFO - Found element: #winnersList
+2025-07-18 20:06:51,026 - INFO - Found element: #losersList
+2025-07-18 20:06:51,028 - INFO - Found element: #stockAnalysisSection
+2025-07-18 20:06:53,029 - INFO - Page load time: 2633.88ms
+2025-07-18 20:06:53,202 - INFO - Screenshot saved: test_artifacts/stocks_page_20250718_200653.png
+2025-07-18 20:06:55,204 - INFO - ✅ Stocks Page: PASSED (populated in 2633.88ms)
+2025-07-18 20:06:55,204 - INFO - Testing page: Crypto Page (/crypto)
+2025-07-18 20:06:55,800 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-18 20:06:55,807 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-18 20:06:56,590 - INFO - Found element: #cryptoCardsRow
+2025-07-18 20:06:56,593 - INFO - Found element: #sentimentChartContainer
+2025-07-18 20:06:58,594 - INFO - Page load time: 3366.54ms
+2025-07-18 20:06:58,882 - INFO - Screenshot saved: test_artifacts/crypto_page_20250718_200658.png
+2025-07-18 20:07:00,884 - INFO - ✅ Crypto Page: PASSED (populated in 3366.54ms)
+2025-07-18 20:07:00,885 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-07-18 20:07:02,118 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-18 20:07:02,126 - INFO - Found element: #opportunitiesSection
+2025-07-18 20:07:02,130 - INFO - Found element: #opportunitiesContainer
+2025-07-18 20:07:02,132 - INFO - Found element: #findButton
+2025-07-18 20:07:02,134 - INFO - Found element: #newsBtn
+2025-07-18 20:07:02,136 - INFO - Found element: #watchlistBtn
+2025-07-18 20:07:02,138 - INFO - Found element: #refreshBtn
+2025-07-18 20:07:02,139 - INFO - Found element: #lastUpdated
+2025-07-18 20:07:02,141 - INFO - Found element: .opportunity-card
+2025-07-18 20:07:04,143 - INFO - Page load time: 3121.60ms
+2025-07-18 20:07:04,210 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-07-18T19:59:49.516408', 'cached': True, 'count': 3, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:59:00 +0000', 'headline': 'Tech, Media & Telecom Roundup: Market Talk', 'source': 'Yahoo Finance', 'summary': 'Find insight on Netflix, Vivendi and more in the latest Market Talks covering Technology, Media and Telecom.', 'url': 'https://finance.yahoo.com/m/8b17ddaa-1cdd-3c51-b370-ce8fc057df94/tech%2C-media-%26-telecom.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:31:06 +0000', 'headline': 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning', 'source': 'Yahoo Finance', 'summary': 'Net income jumped to $3.1B, with EPS of $7.19 versus $4.88 last year', 'url': 'https://finance.yahoo.com/news/netflix-beats-earnings-expectations-revenue-213106117.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:55:22 +0000', 'headline': "One drone stock is up almost 100%. Here's why the sky might be the limit", 'source': 'Yahoo Finance', 'summary': "The week in stocks: What's next for Netflix shares, why dividend stocks may be back in fashion and the top three picks from one analyst", 'url': 'https://ca.finance.yahoo.com/news/one-drone-stock-almost-100-215522367.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': -64.93, 'change_percent': '-5.0959%', 'current_price': 1209.24, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:35.448424', 'volume': 10637726}, 'sentiment_data': {'confidence': 0.45, 'sentiment_score': -0.3, 'summary': "The news contains a mix of positive and negative sentiments related to Netflix's performance and the broader market in Technology, Media, and Telecom sectors. The headline 'Netflix Beats Earnings Expectations as Revenue Surges 16%, but Stock Slips on Margin Warning' indicates mixed sentiment with some positivity about revenue growth and negativity about margin warnings. Other headlines discuss stock movements and analyst insights without clear positive or negative bias towards specific stocks."}, 'signal_data': {'action': 'PUT', 'confidence': 0.45, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'signal_strength': 0.135}, 'symbol': 'NFLX', 'timestamp': '2025-07-18T19:59:38.943602', 'trade_signal': {'action': 'PUT', 'confidence': 0.45, 'current_price': 1209.24, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '❓ Lower confidence - be extra cautious'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 10% gain or better', 'stop_loss': 'Hard stop at 8% loss', 'time_stop': 'Exit before 30-120 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '30-120 minutes', 'option_price': 12.09, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 3, 'potential_gain': 3.63, 'potential_loss': 2.9, 'risk_amount': 36.28, 'risk_percent': 1.8, 'risk_reward_ratio': 1.25, 'stop_price': 11.13, 'target_price': 13.3, 'total_cost': 36.28}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.30) with high confidence (0.45)', 'sentiment_score': -0.3, 'signal_strength': 0.135, 'stop_loss_percent': 8, 'strategy_type': 'Conservative Day Trade', 'strike_price': 1203.19, 'symbol': 'NFLX', 'target_gain_percent': 10}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:05:27 +0000', 'headline': 'Opendoor stock records 180% weekly gain as retail frenzy cements meme status', 'source': 'Yahoo Finance', 'summary': "After EMJ Capital's principal posted a turnaround thesis on the iBuyer platform Opendoor, retail investors have descended on the stock, pushing it to meme status.", 'url': 'https://finance.yahoo.com/news/opendoor-stock-records-180-weekly-gain-as-retail-frenzy-cements-meme-status-200527311.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 21:32:38 +0000', 'headline': 'Opendoor Explodes 175% After Hedge Fund Shoutout--But Is a Crash Coming Next?', 'source': 'Yahoo Finance', 'summary': "Retail traders swarm in, short sellers panic, and options go wild--Opendoor just became the market's newest battleground.", 'url': 'https://finance.yahoo.com/news/opendoor-explodes-175-hedge-fund-213238602.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-07-18T13:37:25Z', 'headline': 'MS Report: OpenAI Targets $700 Billion TAM by 2030 - Which Listed Companies Will Benefit?', 'source': 'Reddit', 'summary': "JP Morgan just released a lengthy report stating that OpenAI's total potential market TAM could reach $700 billion by 2030, noting that it currently has 800 million monthly activations and nearly $10 billion in annualized revenues, most of which comes from subscribers. While its GPT model leadership is being eroded by competitors, consumer-side realizations and brand strength are still seen as a moat.\n\nPoints to note:\n\nChatGPT generates 75% of its revenue from consumer subscriptions\n\nGPT-4 is only 95th in LM Arena, Gemini and DeepSeek are gaining in competitiveness\n\nEstimated timeline for profitability: circa 2029\n\nAI Infra funding (H1 2025) reaches $63 billion\n\nDiscussion topics:\n\nWhich public market stocks stand to benefit most from OpenAI's long-term expansion? Discussion topic: Which public market stocks are best positioned to benefit from OpenAI's long-term expansion? Here are a few companies I'm currently following:\n\n$MSFT (OpenAI's largest shareholder, Azure enabler)\n\n$NVDA (provides training and inference power)\n\n$AMZN / $GOOGL (competitors, also building their own base models)\n\n$CRM / $NOW: AI verticals on the ground\n\nShould I also be looking at the A100/H100 supply chain? Or just bet on the “consumerization” of generative AI?\n\nHolding a small number of $MSFT and $NVDA LEAPs, not financial advice.", 'url': 'https://www.reddit.com/r/stocks/comments/1m32k1f/ms_report_openai_targets_700_billion_tam_by_2030/'}], 'news_count': 5, 'price_data': {'change': 0.6, 'change_percent': '36.3636%', 'current_price': 2.25, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:39.013517', 'volume': 547835057}, 'sentiment_data': {'confidence': 0.92, 'sentiment_score': 0.85, 'summary': "The news sentiment for the stock of Opendoor is very positive with headlines indicating significant gains and a meme status, followed by more bullish summaries about its potential market expansion. The discussion on OpenAI's long-term benefits to public markets also leans positively, suggesting favorable investment opportunities in related sectors like Azure (MSFT), NVDA, AMZN, and GOOGL. However, the special dividend announcement is viewed with some skepticism regarding short-term gains."}, 'signal_data': {'action': 'CALL', 'confidence': 0.92, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'signal_strength': 0.782}, 'symbol': 'OPEN', 'timestamp': '2025-07-18T19:59:46.853470', 'trade_signal': {'action': 'CALL', 'confidence': 0.92, 'current_price': 2.25, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 30% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 0.02, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 4444, 'potential_gain': 30, 'potential_loss': 15, 'risk_amount': 99.99, 'risk_percent': 5, 'risk_reward_ratio': 2, 'stop_price': 0.02, 'target_price': 0.03, 'total_cost': 99.99}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.85) with high confidence (0.92)', 'sentiment_score': 0.85, 'signal_strength': 0.782, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 2.26, 'symbol': 'OPEN', 'target_gain_percent': 30}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Fri, 18 Jul 2025 17:38:00 +0000', 'headline': 'GE’s 3 Offspring Are All Grown Up and Making Waves. The Best Is Yet to Come.', 'source': 'Yahoo Finance', 'summary': 'The former GEs should get no small amount of credit for the industrial strength of the industrial sector.', 'url': 'https://finance.yahoo.com/m/3d2ca61b-f763-3a76-960d-47f67ccaee46/ge%E2%80%99s-3-offspring-are-all.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Fri, 18 Jul 2025 20:39:00 +0000', 'headline': 'GE Aerospace Price Targets Suggest a Record High Is Coming. How That’s Possible.', 'source': 'Yahoo Finance', 'summary': 'After  GE Aerospace  produced “blowout” second-quarter results, Wall Street reacted by raising its targets for the stock price, suggesting shares could soon reach a record high.  Wall Street was looking for operating profit of $2.1 billion and earnings per share of $1.43 on sales of $9.6 billion, according to FactSet.  Management now expects 2025 operating profit of between $8.2 billion and $8.5 billion, up from a prior range of $7.8 billion to $8.2 billion.', 'url': 'https://finance.yahoo.com/m/54e6d0b2-6d3d-354f-8f2b-b79de35edd19/ge-aerospace-price-targets.html?.tsrc=rss'}, {'category': 'discussion', 'datetime': '2025-06-17T18:37:03Z', 'headline': "How Trump's G7 Trade Stance Will Affect U.S. Stocks", 'source': 'Reddit', 'summary': "Reuters reports that President Trump abruptly left the G7 summit after blasting the EU for not offering a “fair deal” and calling Japan “tough” in stalled talks He’s also floating new pharmaceutical and energy tariffs to boost domestic production   \n  \nTariff Risk: Trump's comments suggest he could unilaterally impose tariffs or expand tariffs on EU auto and pharmaceutical imports, and possibly even impose more tariffs - a move that has historically devastated related stock groups  \n  \nSector exposure: Watch autos (GM, F, TSLA), large-cap pharma (PFE, MRK) and industrials (CAT, GE) for increased volatility  \n  \nMarket sentiment: Despite Middle East tensions, major indices barely flinched on Monday, but a fresh bout of trade uncertainty could undermine recent gains  \n", 'url': 'https://www.reddit.com/r/stocks/comments/1ldv316/how_trumps_g7_trade_stance_will_affect_us_stocks/'}], 'news_count': 5, 'price_data': {'change': 2.99, 'change_percent': '1.1488%', 'current_price': 263.27, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:47.074590', 'volume': 8509140}, 'sentiment_data': {'confidence': 0.85, 'sentiment_score': 0.75, 'summary': "The news highlights a positive outlook for GE and its subsidiaries, with strong financial results and potential for future growth. The sentiment is predominantly positive, indicating optimism about the company's prospects and performance in various sectors such as aerospace and healthcare. There are concerns regarding trade uncertainty but overall, the tone remains optimistic."}, 'signal_data': {'action': 'CALL', 'confidence': 0.85, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'signal_strength': 0.6375}, 'symbol': 'GE', 'timestamp': '2025-07-18T19:59:49.514470', 'trade_signal': {'action': 'CALL', 'confidence': 0.85, 'current_price': 263.27, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '🚀 High conviction trade - sentiment strongly supports direction', '⚡ Consider larger position size within risk limits', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 1, 'direction': 'BULLISH', 'entry_strategy': {'confirmation': 'High conviction - no additional confirmation needed', 'method': 'Market order for immediate execution', 'timing': 'Enter immediately on market open or at current levels', 'volume_check': 'Ensure high option volume and tight bid-ask spread'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 20% gain or better', 'stop_loss': 'Hard stop at 15% loss', 'time_stop': 'Exit before 1-5 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '1-5 minutes', 'option_price': 2.63, 'option_type': 'call', 'position_recommendations': {'${amount}': {'contracts': 37, 'potential_gain': 19.48, 'potential_loss': 14.61, 'risk_amount': 97.41, 'risk_percent': 4.9, 'risk_reward_ratio': 1.33, 'stop_price': 2.24, 'target_price': 3.16, 'total_cost': 97.41}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.75) with high confidence (0.85)', 'sentiment_score': 0.75, 'signal_strength': 0.6375, 'stop_loss_percent': 15, 'strategy_type': 'High Conviction Scalp', 'strike_price': 264.59, 'symbol': 'GE', 'target_gain_percent': 20}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'success': True, 'timestamp': '2025-07-18T20:07:04.205498'}, 'opportunities_count': 3}
+2025-07-18 20:07:04,215 - INFO - Found 9 opportunity cards
+2025-07-18 20:07:04,547 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200704.png
+2025-07-18 20:07:04,547 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20250718_200704.png
+2025-07-18 20:07:04,850 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250718_200704.png
+2025-07-18 20:07:06,852 - INFO - ✅ Opportunities Page: PASSED (populated in 3121.60ms)
+2025-07-18 20:07:06,852 - INFO - Testing page: System Status Page (/system_status)
+2025-07-18 20:07:08,417 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-07-18 20:07:08,426 - INFO - Found element: .container
+2025-07-18 20:07:08,430 - INFO - Found element: .card
+2025-07-18 20:07:08,433 - INFO - Found element: h1
+2025-07-18 20:07:10,435 - INFO - Page load time: 3540.36ms
+2025-07-18 20:07:10,658 - INFO - Screenshot saved: test_artifacts/system_status_page_20250718_200710.png
+2025-07-18 20:07:12,660 - INFO - ✅ System Status Page: PASSED (populated in 3540.36ms)
+2025-07-18 20:07:12,661 - INFO - Testing page: Logs Page (/logs)
+2025-07-18 20:07:13,271 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-07-18 20:07:13,279 - INFO - Found element: #logContainer
+2025-07-18 20:07:13,283 - INFO - Found element: #logStats
+2025-07-18 20:07:13,285 - INFO - Found element: .container
+2025-07-18 20:07:15,288 - INFO - Page load time: 2600.20ms
+2025-07-18 20:07:15,436 - INFO - Screenshot saved: test_artifacts/logs_page_20250718_200715.png
+2025-07-18 20:07:17,439 - INFO - ✅ Logs Page: PASSED (populated in 2600.20ms)
+2025-07-18 20:07:17,439 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-07-18 20:07:18,035 - INFO - Waiting for data to load on Portfolio Page (timeout: 10000ms)
+2025-07-18 20:07:18,042 - INFO - Found element: #portfolioContainer
+2025-07-18 20:07:18,046 - INFO - Found element: #portfolioSection
+2025-07-18 20:07:18,048 - INFO - Found element: #addPositionForm
+2025-07-18 20:07:18,050 - INFO - Found element: #positionsTable
+2025-07-18 20:07:18,051 - INFO - Found element: #tradesTable
+2025-07-18 20:07:18,053 - INFO - Found element: #currentCapital
+2025-07-18 20:07:18,055 - INFO - Found element: #totalValue
+2025-07-18 20:07:18,057 - INFO - Found element: #unrealizedPnl
+2025-07-18 20:07:18,059 - INFO - Found element: #openPositions
+2025-07-18 20:07:20,060 - INFO - Page load time: 2595.92ms
+2025-07-18 20:07:20,097 - INFO - Portfolio data: {'currentCapital': '$0.00', 'totalValue': '$0.00', 'unrealizedPnl': '$0.00', 'openPositions': '0', 'hasPositions': False, 'hasTrades': False, 'positionsCount': 1, 'tradesCount': 1}
+2025-07-18 20:07:20,263 - INFO - Snapshot saved to test_artifacts/portfolio_verified_20250718_200720.png
+2025-07-18 20:07:20,264 - INFO - Portfolio snapshot saved to test_artifacts/portfolio_verified_20250718_200720.png
+2025-07-18 20:07:20,396 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250718_200720.png
+2025-07-18 20:07:22,398 - INFO - ✅ Portfolio Page: PASSED (populated in 2595.92ms)
+2025-07-18 20:07:22,398 - INFO - Testing page: Backtest Page (/backtest_page)
+2025-07-18 20:07:23,003 - INFO - Page load time: 575.11ms
+2025-07-18 20:07:23,029 - INFO - Backtest config: {'hasSymbolInput': True, 'hasDaysBackSelect': True, 'hasBacktestForm': True, 'hasResultsSection': True, 'symbolPlaceholder': 'e.g., AAPL, TSLA, MSFT', 'daysBackOptions': 4, 'formAction': 'http://localhost:5001/backtest_page', 'resultsVisible': True}
+2025-07-18 20:07:23,181 - INFO - Snapshot saved to test_artifacts/backtest_errors_20250718_200723.png
+2025-07-18 20:07:23,181 - INFO - Backtest snapshot saved to test_artifacts/backtest_errors_20250718_200723.png
+2025-07-18 20:07:23,348 - INFO - Screenshot saved: test_artifacts/backtest_page_20250718_200723.png
+2025-07-18 20:07:25,350 - ERROR - ❌ Backtest Page: FAILED - ['#symbol (empty)']
+2025-07-18 20:07:25,350 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-07-18 20:07:25,953 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-07-18 20:07:25,961 - INFO - Found element: .container
+2025-07-18 20:07:25,964 - INFO - Found element: h1
+2025-07-18 20:07:25,966 - INFO - Found element: .card
+2025-07-18 20:07:27,967 - INFO - Page load time: 2575.81ms
+2025-07-18 20:07:28,173 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250718_200727.png
+2025-07-18 20:07:30,175 - INFO - ✅ Recommendations Page: PASSED (populated in 2575.81ms)
+2025-07-18 20:07:30,176 - INFO - Testing page: Market Movers Page (/market_movers)
+2025-07-18 20:07:30,693 - INFO - Waiting for data to load on Market Movers Page (timeout: 15000ms)

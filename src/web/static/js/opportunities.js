@@ -4,6 +4,26 @@
 let currentMode = 'watchlist'; // Changed default to watchlist
 let opportunitiesData = [];
 let isRefreshing = false;
+let isRequestInProgress = false; // Add debounce flag
+let lastRequestTime = 0; // Track last request time
+
+// Debounce function to prevent rapid successive calls
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Debounced version of loadOpportunities
+const debouncedLoadOpportunities = debounce((forceRefresh) => {
+    loadOpportunities(forceRefresh);
+}, 500); // 500ms debounce
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('refreshBtn').addEventListener('click', () => {
         // Context-aware refresh based on current mode
         console.log('🔄 [REFRESH] Refresh button clicked for mode:', currentMode);
-        loadOpportunities(true); // Force refresh for current mode
+        debouncedLoadOpportunities(true); // Use debounced version with force refresh
     });
     
     // Set initial UI state for watchlist mode
@@ -31,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
     
     // Load initial data (from cache) - will load watchlist data
-    loadOpportunities(false);
+    debouncedLoadOpportunities(false); // Use debounced version
     
     // Load watchlist configuration
     loadWatchlistConfig();
@@ -60,7 +80,7 @@ function switchMode(mode) {
     document.getElementById('opportunitiesTitle').textContent = titles[mode];
     
     // Load data for current mode (use cached data)
-    loadOpportunities(false);
+    debouncedLoadOpportunities(false); // Use debounced version
 }
 
 // Utility: log fetch requests and responses
@@ -112,7 +132,27 @@ async function loggedFetch(url, options = {}) {
 
 // Load opportunities data
 async function loadOpportunities(forceRefresh = false) {
+    // Prevent multiple simultaneous requests
+    if (isRequestInProgress) {
+        console.log('⚠️ [LOAD] Request already in progress, skipping...');
+        return;
+    }
+    
+    // Check if we're making requests too frequently
+    const now = Date.now();
+    if (now - lastRequestTime < 1000) { // Minimum 1 second between requests
+        console.log('⚠️ [LOAD] Request too frequent, skipping...');
+        return;
+    }
+    
+    isRequestInProgress = true;
+    lastRequestTime = now;
+    
     console.log('🚀 [LOAD] Starting loadOpportunities for mode:', currentMode, 'forceRefresh:', forceRefresh);
+    
+    // Clear any existing error messages
+    clearAlerts();
+    
     showLoading('loadingSpinner');
     document.getElementById('refreshBtn').disabled = true;
     
@@ -140,41 +180,105 @@ async function loadOpportunities(forceRefresh = false) {
         
         console.log('🌐 [LOAD] Fetching from endpoint:', endpoint);
         
-        const response = await loggedFetch(endpoint);
-        const data = await response.json();
+        // Add timeout and retry logic
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
-        console.log('📊 [LOAD] Raw API response data:', {
-            mode: currentMode,
-            endpoint: endpoint,
-            responseStatus: response.status,
-            dataType: typeof data,
-            isArray: Array.isArray(data),
-            hasError: !!data.error,
-            errorMessage: data.error,
-            dataKeys: Object.keys(data),
-            dataStructure: JSON.stringify(data, null, 2)
-        });
-        
-        if (data.error) {
-            console.error('❌ [LOAD] API returned error:', data.error);
-            showAlert(data.error, 'danger');
-            return;
+        try {
+            const response = await loggedFetch(endpoint, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
+            const data = await response.json();
+            
+            console.log('📊 [LOAD] Raw API response data:', {
+                mode: currentMode,
+                endpoint: endpoint,
+                responseStatus: response.status,
+                dataType: typeof data,
+                isArray: Array.isArray(data),
+                hasError: !!data.error,
+                errorMessage: data.error,
+                dataKeys: Object.keys(data),
+                dataStructure: JSON.stringify(data, null, 2)
+            });
+            
+            if (data.error) {
+                console.error('❌ [LOAD] API returned error:', data.error);
+                showAlert(data.error, 'danger');
+                return;
+            }
+            
+            console.log('✅ [LOAD] API call successful, calling displayOpportunities');
+            displayOpportunities(data);
+            
+            document.getElementById('lastUpdated').textContent = 
+                `Last updated: ${new Date().toLocaleString()}`;
+                
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            
+            // Check if it's an abort error (timeout)
+            if (fetchError.name === 'AbortError') {
+                console.warn('⚠️ [LOAD] Request timed out, retrying once...');
+                // Retry once with a shorter timeout
+                const retryController = new AbortController();
+                const retryTimeoutId = setTimeout(() => retryController.abort(), 15000);
+                
+                try {
+                    const retryResponse = await loggedFetch(endpoint, {
+                        signal: retryController.signal
+                    });
+                    clearTimeout(retryTimeoutId);
+                    
+                    const retryData = await retryResponse.json();
+                    
+                    if (retryData.error) {
+                        console.error('❌ [LOAD] Retry API returned error:', retryData.error);
+                        showAlert(retryData.error, 'danger');
+                        return;
+                    }
+                    
+                    console.log('✅ [LOAD] Retry successful, calling displayOpportunities');
+                    displayOpportunities(retryData);
+                    
+                    document.getElementById('lastUpdated').textContent = 
+                        `Last updated: ${new Date().toLocaleString()}`;
+                        
+                } catch (retryError) {
+                    clearTimeout(retryTimeoutId);
+                    throw retryError;
+                }
+            } else {
+                throw fetchError;
+            }
         }
-        
-        console.log('✅ [LOAD] API call successful, calling displayOpportunities');
-        displayOpportunities(data);
-        
-        document.getElementById('lastUpdated').textContent = 
-            `Last updated: ${new Date().toLocaleString()}`;
         
     } catch (error) {
         if (window.debugPanel) window.debugPanel.setError(error.message);
         console.error('❌ [LOAD] Error in loadOpportunities:', {
             error: error.message,
             stack: error.stack,
-            mode: currentMode
+            mode: currentMode,
+            name: error.name
         });
-        showAlert('Error loading opportunities: ' + error.message, 'danger');
+        
+        // More specific error messages
+        let errorMessage = 'Error loading opportunities';
+        if (error.name === 'AbortError') {
+            errorMessage = 'Request timed out. Please try again.';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (error.message.includes('404')) {
+            errorMessage = 'Service temporarily unavailable. Please try again later.';
+        } else if (error.message.includes('500')) {
+            errorMessage = 'Server error. Please try again later.';
+        } else {
+            errorMessage = 'Error loading opportunities: ' + error.message;
+        }
+        
+        showAlert(errorMessage, 'danger');
     } finally {
         hideLoading('loadingSpinner');
         
@@ -185,6 +289,9 @@ async function loadOpportunities(forceRefresh = false) {
             refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             isRefreshing = false;
         }
+        
+        // Reset request in progress flag
+        isRequestInProgress = false;
         
         console.log('🏁 [LOAD] loadOpportunities completed');
     }
@@ -517,7 +624,7 @@ function analyzeWatchlistOpportunities() {
     switchMode('watchlist');
     
     // Then trigger a refresh to run the analysis
-    loadOpportunities(true);
+    debouncedLoadOpportunities(true); // Use debounced version with force refresh
 }
 
 // Socket.IO event handlers for real-time progress updates
@@ -578,7 +685,8 @@ if (typeof io !== 'undefined') {
 // Auto-refresh every 5 minutes
 setInterval(() => {
     if (document.visibilityState === 'visible') {
-        loadOpportunities();
+        console.log('🔄 [AUTO-REFRESH] Auto-refreshing opportunities...');
+        debouncedLoadOpportunities(false); // Use debounced version
     }
 }, 5 * 60 * 1000);
 
@@ -696,6 +804,16 @@ function showAlert(message, type = 'info') {
             alertDiv.remove();
         }
     }, 5000);
+}
+
+function clearAlerts() {
+    // Remove all existing alerts
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    });
 }
 
 function showLoading(elementId) {

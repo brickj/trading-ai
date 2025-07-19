@@ -45,16 +45,16 @@
                             <div class="col-md-6">
                                 <div class="card border-primary mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-primary">85.2%</h4>
-                                        <small>System Uptime</small>
+                                        <h4 class="text-primary" id="cpuUsage">N/A</h4>
+                                        <small>CPU Usage</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card border-success mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-success">1.2s</h4>
-                                        <small>Avg Response Time</small>
+                                        <h4 class="text-success" id="memoryUsage">N/A</h4>
+                                        <small>Memory Usage</small>
                                     </div>
                                 </div>
                             </div>
@@ -63,24 +63,23 @@
                             <div class="col-md-6">
                                 <div class="card border-info mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-info">2,847</h4>
-                                        <small>API Calls Today</small>
+                                        <h4 class="text-info" id="uptime">N/A</h4>
+                                        <small>Uptime</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card border-warning mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-warning">98.5%</h4>
-                                        <small>Success Rate</small>
+                                        <h4 class="text-warning" id="cacheHitRate">N/A</h4>
+                                        <small>Cache Hit Rate</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="alert alert-info mt-3">
+                        <div class="alert alert-info mt-3" id="performanceSummary">
                             <small>
-                                <strong>Performance Summary:</strong> System is running optimally with high uptime and fast response times. 
-                                All services are operational and responding within acceptable parameters.
+                                <strong>Performance Summary:</strong> Loading system metrics...
                             </small>
                         </div>
                     </div>
@@ -99,7 +98,7 @@
                             <div class="col-md-6">
                                 <div class="card border-success mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-success">Connected</h4>
+                                        <h4 class="text-success" id="dbStatus">Connected</h4>
                                         <small>Database Status</small>
                                     </div>
                                 </div>
@@ -107,8 +106,8 @@
                             <div class="col-md-6">
                                 <div class="card border-info mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-info">15ms</h4>
-                                        <small>Query Response</small>
+                                        <h4 class="text-info" id="activeConnections">N/A</h4>
+                                        <small>Active Connections</small>
                                     </div>
                                 </div>
                             </div>
@@ -117,24 +116,23 @@
                             <div class="col-md-6">
                                 <div class="card border-primary mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-primary">1,234</h4>
-                                        <small>Active Connections</small>
+                                        <h4 class="text-primary" id="tables">N/A</h4>
+                                        <small>Tables</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="card border-warning mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-warning">2.1GB</h4>
+                                        <h4 class="text-warning" id="cacheSize">N/A</h4>
                                         <small>Cache Size</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="alert alert-success mt-3">
+                        <div class="alert alert-success mt-3" id="databaseSummary">
                             <small>
-                                <strong>Database Summary:</strong> PostgreSQL database is healthy and responsive. 
-                                Connection pooling is working efficiently with optimal query performance.
+                                <strong>Database Summary:</strong> Loading database status...
                             </small>
                         </div>
                     </div>
@@ -468,289 +466,146 @@ async function loadSystemStatus() {
         const response = await fetch('/api/system_status');
         const data = await response.json();
         
-        if (data.error) {
-            showAlert(data.error, 'danger');
-            return;
+        if (data.status === 'ok') {
+            updateSystemMetrics(data);
+        } else {
+            console.error('System status error:', data.error);
+            showAlert('Error loading system status: ' + data.error, 'danger');
         }
-        
-        displaySystemStatus(data);
-        loadApiStatus();
-        loadDatabaseStatus();
-        
-        document.getElementById('lastUpdated').textContent = 
-            `Last updated: ${new Date().toLocaleString()}`;
-        
     } catch (error) {
+        console.error('Error loading system status:', error);
         showAlert('Error loading system status: ' + error.message, 'danger');
     }
 }
 
-function displaySystemStatus(data) {
-    const performanceMetrics = document.getElementById('performanceMetrics');
+function updateSystemMetrics(data) {
+    // Update performance metrics
+    const system = data.system || {};
     
-    let html = `
-        <div class="row">
-            <div class="col-6">
-                <div class="text-center">
-                    <h4 class="text-primary">${data.data?.cpu_usage || 'N/A'}%</h4>
-                    <small class="text-muted">CPU Usage</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="text-center">
-                    <h4 class="text-success">${data.data?.memory_usage || 'N/A'}%</h4>
-                    <small class="text-muted">Memory Usage</small>
-                </div>
-            </div>
-        </div>
-        <div class="row mt-3">
-            <div class="col-6">
-                <div class="text-center">
-                    <h4 class="text-info">${data.data?.uptime || 'N/A'}</h4>
-                    <small class="text-muted">Uptime</small>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="text-center">
-                    <h4 class="text-warning">${data.data?.cache_hit_rate || 'N/A'}%</h4>
-                    <small class="text-muted">Cache Hit Rate</small>
-                </div>
-            </div>
-        </div>
-    `;
+    // CPU Usage
+    const cpuElement = document.getElementById('cpuUsage');
+    if (system.cpu && system.cpu.system_percent !== undefined) {
+        cpuElement.textContent = system.cpu.system_percent.toFixed(1) + '%';
+        cpuElement.className = system.cpu.system_percent > 80 ? 'text-danger' : 
+                              system.cpu.system_percent > 60 ? 'text-warning' : 'text-primary';
+    }
     
-    performanceMetrics.innerHTML = html;
-}
-
-async function loadDatabaseStatus() {
-    try {
-        const response = await fetch('/api/system_status');
-        const data = await response.json();
-        
-        const databaseStatus = document.getElementById('databaseStatus');
-        
-        let html = `
-            <div class="row">
-                <div class="col-6">
-                    <div class="text-center">
-                        <h4 class="text-success">${data.data?.database?.connections || 'N/A'}</h4>
-                        <small class="text-muted">Active Connections</small>
-                    </div>
-                </div>
-                <div class="col-6">
-                    <div class="text-center">
-                        <h4 class="text-info">${data.data?.database?.tables || 'N/A'}</h4>
-                        <small class="text-muted">Tables</small>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="text-center">
-                        <span class="badge bg-success">Connected</span>
-                        <small class="d-block text-muted mt-1">PostgreSQL Database</small>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        databaseStatus.innerHTML = html;
-        
-    } catch (error) {
-        document.getElementById('databaseStatus').innerHTML = `
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle"></i> Database connection error: ${error.message}
-            </div>
-        `;
+    // Memory Usage
+    const memoryElement = document.getElementById('memoryUsage');
+    if (system.memory && system.memory.system_percent !== undefined) {
+        memoryElement.textContent = system.memory.system_percent.toFixed(1) + '%';
+        memoryElement.className = system.memory.system_percent > 80 ? 'text-danger' : 
+                                 system.memory.system_percent > 60 ? 'text-warning' : 'text-success';
     }
-}
-
-async function loadApiStatus() {
-    try {
-        // Test API endpoints
-        const apiTests = [
-            { name: 'Ollama (Local AI)', test: testOllamaApi, category: 'AI' },
-            { name: 'DeepSeek API', test: testDeepSeekApi, category: 'AI' },
-            { name: 'OpenAI API', test: testOpenAiApi, category: 'AI' },
-            { name: 'Finnhub News API', test: testFinnhubNewsApi, category: 'News' },
-            { name: 'Reddit API', test: testRedditApi, category: 'News' },
-            { name: 'Yahoo Finance API', test: testYahooFinanceApi, category: 'Price Data' },
-            { name: 'Telegram Bot API', test: testTelegramApi, category: 'Alerts' }
-        ];
-        
-        let apiStatusHtml = '';
-        
-        // Group APIs by category
-        const categories = ['AI', 'News', 'Price Data', 'Alerts'];
-        
-        for (const category of categories) {
-            const categoryApis = apiTests.filter(api => api.category === category);
-            
-            apiStatusHtml += `
-                <div class="mb-4">
-                    <h6 class="text-primary"><i class="fas fa-${getCategoryIcon(category)}"></i> ${category} APIs</h6>
-                    <div class="row">
-            `;
-            
-            for (const api of categoryApis) {
-                const status = await api.test();
-                const statusClass = status.working ? 'text-success' : 'text-danger';
-                const statusIcon = status.working ? 'fas fa-check-circle' : 'fas fa-times-circle';
-                
-                apiStatusHtml += `
-                    <div class="col-12 mb-2">
-                        <div class="d-flex align-items-center">
-                            <i class="${statusIcon} ${statusClass} me-2"></i>
-                            <div class="flex-grow-1">
-                                <strong>${api.name}</strong>
-                                <small class="d-block text-muted">${status.message}</small>
-                            </div>
-                            <span class="badge ${status.working ? 'bg-success' : 'bg-danger'}">${status.working ? 'OK' : 'Error'}</span>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            apiStatusHtml += `
-                    </div>
-                </div>
-            `;
-        }
-        
-        document.getElementById('apiStatusContainer').innerHTML = apiStatusHtml;
-        
-    } catch (error) {
-        document.getElementById('apiStatusContainer').innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i> Unable to test API endpoints: ${error.message}
-            </div>
+    
+    // Uptime (calculate from boot time)
+    const uptimeElement = document.getElementById('uptime');
+    if (system.uptime && system.uptime.boot_time) {
+        const bootTime = new Date(system.uptime.boot_time);
+        const now = new Date();
+        const uptimeMs = now - bootTime;
+        const uptimeHours = Math.floor(uptimeMs / (1000 * 60 * 60));
+        const uptimeMinutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
+        uptimeElement.textContent = `${uptimeHours}h ${uptimeMinutes}m`;
+    }
+    
+    // Cache Hit Rate (placeholder)
+    const cacheElement = document.getElementById('cacheHitRate');
+    cacheElement.textContent = 'N/A';
+    
+    // Update performance summary
+    const performanceSummary = document.getElementById('performanceSummary');
+    if (system.status === 'ok') {
+        performanceSummary.className = 'alert alert-success mt-3';
+        performanceSummary.innerHTML = `
+            <small>
+                <strong>Performance Summary:</strong> System is running optimally. 
+                CPU: ${system.cpu?.system_percent?.toFixed(1) || 'N/A'}%, 
+                Memory: ${system.memory?.system_percent?.toFixed(1) || 'N/A'}%, 
+                Platform: ${system.system?.platform || 'N/A'}
+            </small>
+        `;
+    } else {
+        performanceSummary.className = 'alert alert-warning mt-3';
+        performanceSummary.innerHTML = `
+            <small>
+                <strong>Performance Summary:</strong> Some system metrics are unavailable.
+            </small>
         `;
     }
-}
-
-function getCategoryIcon(category) {
-    switch (category) {
-        case 'AI': return 'robot';
-        case 'News': return 'newspaper';
-        case 'Price Data': return 'chart-line';
-        case 'Alerts': return 'bell';
-        default: return 'cog';
+    
+    // Update database status
+    const database = data.database || {};
+    
+    // Database Status
+    const dbStatusElement = document.getElementById('dbStatus');
+    if (database.status === 'ok' || database.status === 'connected') {
+        dbStatusElement.textContent = 'Connected';
+        dbStatusElement.className = 'text-success';
+    } else {
+        dbStatusElement.textContent = 'Error';
+        dbStatusElement.className = 'text-danger';
+    }
+    
+    // Active Connections
+    const connectionsElement = document.getElementById('activeConnections');
+    if (database.connection === true) {
+        connectionsElement.textContent = 'Active';
+    } else if (database.active_connections !== undefined) {
+        connectionsElement.textContent = database.active_connections;
+    } else {
+        connectionsElement.textContent = 'N/A';
+    }
+    
+    // Tables
+    const tablesElement = document.getElementById('tables');
+    if (database.tables && Array.isArray(database.tables)) {
+        tablesElement.textContent = database.tables.length;
+    } else if (database.tables !== undefined) {
+        tablesElement.textContent = database.tables;
+    } else {
+        tablesElement.textContent = 'N/A';
+    }
+    
+    // Cache Size
+    const cacheSizeElement = document.getElementById('cacheSize');
+    if (database.size !== undefined) {
+        cacheSizeElement.textContent = database.size;
+    } else if (database.cache_size !== undefined) {
+        cacheSizeElement.textContent = database.cache_size;
+    } else {
+        cacheSizeElement.textContent = 'N/A';
+    }
+    
+    // Update database summary
+    const databaseSummary = document.getElementById('databaseSummary');
+    if (database.status === 'ok' || database.status === 'connected') {
+        databaseSummary.className = 'alert alert-success mt-3';
+        databaseSummary.innerHTML = `
+            <small>
+                <strong>Database Summary:</strong> PostgreSQL database is healthy and responsive.
+                ${database.tables && Array.isArray(database.tables) ? `Tables: ${database.tables.length}` : ''}
+                ${database.size ? `Size: ${database.size}` : ''}
+            </small>
+        `;
+    } else {
+        databaseSummary.className = 'alert alert-warning mt-3';
+        databaseSummary.innerHTML = `
+            <small>
+                <strong>Database Summary:</strong> Database status unavailable.
+            </small>
+        `;
+    }
+    
+    // Update last updated timestamp
+    const lastUpdatedElement = document.getElementById('lastUpdated');
+    if (data.timestamp) {
+        const timestamp = new Date(data.timestamp);
+        lastUpdatedElement.textContent = `Last updated: ${timestamp.toLocaleString()}`;
     }
 }
 
-async function testOllamaApi() {
-    try {
-        const response = await fetch('http://localhost:11434/api/tags', {
-            method: 'GET',
-            timeout: 5000
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            const hasQwen = data.models && data.models.some(model => model.name.includes('qwen'));
-            return {
-                working: true,
-                message: hasQwen ? 'Running with Qwen model' : 'Running (install qwen2.5:3b model)'
-            };
-        } else {
-            return { working: false, message: 'Service not responding' };
-        }
-    } catch (error) {
-        return { 
-            working: false, 
-            message: 'Not running (start with: brew services start ollama)' 
-        };
-    }
-}
 
-async function testDeepSeekApi() {
-    try {
-        // Simple test - we'll just check if the key is configured
-        const hasKey = localStorage.getItem('aiProvider') === 'deepseek';
-        return {
-            working: true,
-            message: hasKey ? 'API key configured' : 'Available (configure key in config.py)'
-        };
-    } catch (error) {
-        return { working: false, message: 'Configuration error' };
-    }
-}
-
-async function testOpenAiApi() {
-    try {
-        return {
-            working: true,
-            message: 'API key configured (quota may be exceeded)'
-        };
-    } catch (error) {
-        return { working: false, message: 'Configuration error' };
-    }
-}
-
-async function testFinnhubNewsApi() {
-    try {
-        return {
-            working: true,
-            message: 'API key configured'
-        };
-    } catch (error) {
-        return { working: false, message: 'Configuration error' };
-    }
-}
-
-async function testRedditApi() {
-    try {
-        // Check if Reddit API is configured by testing a simple endpoint
-        // Since we can't directly test Reddit from frontend, we'll check configuration
-        return {
-            working: true,
-            message: 'Configuration status unknown (check server logs)'
-        };
-    } catch (error) {
-        return { working: false, message: 'Configuration error' };
-    }
-}
-
-async function testYahooFinanceApi() {
-    try {
-        return {
-            working: true,
-            message: 'Public API - may have rate limits'
-        };
-    } catch (error) {
-        return { working: false, message: 'Connection error' };
-    }
-}
-
-async function testTelegramApi() {
-    try {
-        const response = await fetch('/api/telegram/test', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.working) {
-                return {
-                    working: true,
-                    message: `Bot: ${data.bot_name} (@${data.username})`
-                };
-            } else {
-                return {
-                    working: false,
-                    message: data.error || 'Bot not configured'
-                };
-            }
-        } else {
-            return { working: false, message: 'API endpoint error' };
-        }
-    } catch (error) {
-        return { working: false, message: 'Connection error' };
-    }
-}
 
 async function clearCache() {
     if (!confirm('Are you sure you want to clear all cached data? This will force fresh analysis on next request.')) {
@@ -1136,6 +991,8 @@ document.getElementById('addJobScheduleForm').addEventListener('submit', async f
         showAlert('Error: ' + error.message, 'danger');
     }
 });
+
+
 
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
