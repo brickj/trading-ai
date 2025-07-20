@@ -740,3 +740,217 @@ FAILED tests/playwright_comprehensive_test.py::test_opportunities_page - Asse...
 2025-07-18 20:12:36,915 - INFO - Test report saved: test_artifacts/test_report_20250718_201236.json
 2025-07-18 20:12:36,915 - INFO - Text report saved: test_artifacts/test_report_20250718_201236.txt
 2025-07-18 20:12:59,779 - INFO - Browser teardown complete
+2025-07-19 02:16:32,788 - INFO - 🚀 Starting comprehensive page test suite
+2025-07-19 02:16:33,158 - INFO - Browser setup complete with video recording enabled
+2025-07-19 02:16:33,161 - INFO - 📄 Testing page 1/11: Homepage
+2025-07-19 02:16:33,161 - INFO - 🚀 Testing Homepage at /
+2025-07-19 02:16:33,165 - ERROR - ❌ Error testing Homepage: net::ERR_CONNECTION_REFUSED at http://localhost:5001/
+2025-07-19 02:16:33,319 - INFO - 📸 Screenshot saved: test_artifacts/Homepage_ERROR_20250719_021633.png
+2025-07-19 02:16:34,321 - INFO - 📄 Testing page 2/11: Stocks Page
+2025-07-19 02:16:34,321 - INFO - 🚀 Testing Stocks Page at /stocks
+2025-07-19 02:16:34,328 - ERROR - ❌ Error testing Stocks Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/stocks
+2025-07-19 02:16:34,453 - INFO - 📸 Screenshot saved: test_artifacts/Stocks Page_ERROR_20250719_021634.png
+2025-07-19 02:16:35,454 - INFO - 📄 Testing page 3/11: Crypto Page
+2025-07-19 02:16:35,454 - INFO - 🚀 Testing Crypto Page at /crypto
+2025-07-19 02:16:35,462 - ERROR - ❌ Error testing Crypto Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/crypto
+2025-07-19 02:16:35,584 - INFO - 📸 Screenshot saved: test_artifacts/Crypto Page_ERROR_20250719_021635.png
+2025-07-19 02:16:36,585 - INFO - 📄 Testing page 4/11: Opportunities Page
+2025-07-19 02:16:36,585 - INFO - 🚀 Testing Opportunities Page at /opportunities
+2025-07-19 02:16:36,591 - ERROR - ❌ Error testing Opportunities Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/opportunities
+2025-07-19 02:16:36,720 - INFO - 📸 Screenshot saved: test_artifacts/Opportunities Page_ERROR_20250719_021636.png
+2025-07-19 02:16:37,721 - INFO - 📄 Testing page 5/11: System Status Page
+2025-07-19 02:16:37,722 - INFO - 🚀 Testing System Status Page at /system_status
+2025-07-19 02:16:37,730 - ERROR - ❌ Error testing System Status Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/system_status
+2025-07-19 02:16:37,857 - INFO - 📸 Screenshot saved: test_artifacts/System Status Page_ERROR_20250719_021637.png
+2025-07-19 02:16:38,858 - INFO - 📄 Testing page 6/11: Logs Page
+2025-07-19 02:16:38,858 - INFO - 🚀 Testing Logs Page at /logs
+2025-07-19 02:16:38,866 - ERROR - ❌ Error testing Logs Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/logs
+2025-07-19 02:16:38,991 - INFO - 📸 Screenshot saved: test_artifacts/Logs Page_ERROR_20250719_021638.png
+2025-07-19 02:16:39,992 - INFO - 📄 Testing page 7/11: Portfolio Page
+2025-07-19 02:16:39,992 - INFO - 🚀 Testing Portfolio Page at /portfolio_page
+2025-07-19 02:16:39,998 - ERROR - ❌ Error testing Portfolio Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/portfolio_page
+2025-07-19 02:16:40,120 - INFO - 📸 Screenshot saved: test_artifacts/Portfolio Page_ERROR_20250719_021639.png
+2025-07-19 02:16:41,122 - INFO - 📄 Testing page 8/11: Backtest Page
+2025-07-19 02:16:41,122 - INFO - 🚀 Testing Backtest Page at /backtest_page
+2025-07-19 02:16:41,130 - ERROR - ❌ Error testing Backtest Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/backtest_page
+2025-07-19 02:16:41,255 - INFO - 📸 Screenshot saved: test_artifacts/Backtest Page_ERROR_20250719_021641.png
+2025-07-19 02:16:42,256 - INFO - 📄 Testing page 9/11: Recommendations Page
+2025-07-19 02:16:42,256 - INFO - 🚀 Testing Recommendations Page at /recommendations
+2025-07-19 02:16:42,263 - ERROR - ❌ Error testing Recommendations Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/recommendations
+2025-07-19 02:16:42,389 - INFO - 📸 Screenshot saved: test_artifacts/Recommendations Page_ERROR_20250719_021642.png
+2025-07-19 02:16:43,391 - INFO - 📄 Testing page 10/11: Scalping Signals Page
+2025-07-19 02:16:43,391 - INFO - 🚀 Testing Scalping Signals Page at /scalping_signals
+2025-07-19 02:16:43,398 - ERROR - ❌ Error testing Scalping Signals Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/scalping_signals
+2025-07-19 02:16:43,524 - INFO - 📸 Screenshot saved: test_artifacts/Scalping Signals Page_ERROR_20250719_021643.png
+2025-07-19 02:16:44,525 - INFO - 📄 Testing page 11/11: Reporting Page
+2025-07-19 02:16:44,525 - INFO - 🚀 Testing Reporting Page at /reporting
+2025-07-19 02:16:44,529 - ERROR - ❌ Error testing Reporting Page: net::ERR_CONNECTION_REFUSED at http://localhost:5001/reporting
+2025-07-19 02:16:44,652 - INFO - 📸 Screenshot saved: test_artifacts/Reporting Page_ERROR_20250719_021644.png
+2025-07-19 02:16:45,654 - INFO - 📊 Test report saved: test_artifacts/test_report_20250719_021645.json
+2025-07-19 02:16:45,654 - INFO - ============================================================
+2025-07-19 02:16:45,654 - INFO - 📊 COMPREHENSIVE TEST SUMMARY
+2025-07-19 02:16:45,654 - INFO - ============================================================
+2025-07-19 02:16:45,655 - INFO - Total Pages Tested: 11
+2025-07-19 02:16:45,655 - INFO - Pages Passed: 0
+2025-07-19 02:16:45,655 - INFO - Pages Failed: 11
+2025-07-19 02:16:45,655 - INFO - Success Rate: 0.0%
+2025-07-19 02:16:45,655 - INFO - ============================================================
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Homepage
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Stocks Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/stocks
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Crypto Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/crypto
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Opportunities Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/opportunities
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - System Status Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/system_status
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Logs Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/logs
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Portfolio Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/portfolio_page
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Backtest Page
+2025-07-19 02:16:45,655 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/backtest_page
+2025-07-19 02:16:45,655 - INFO - ❌ FAIL - Recommendations Page
+2025-07-19 02:16:45,656 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/recommendations
+2025-07-19 02:16:45,656 - INFO - ❌ FAIL - Scalping Signals Page
+2025-07-19 02:16:45,656 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/scalping_signals
+2025-07-19 02:16:45,656 - INFO - ❌ FAIL - Reporting Page
+2025-07-19 02:16:45,656 - INFO -     Error: net::ERR_CONNECTION_REFUSED at http://localhost:5001/reporting
+2025-07-19 02:16:45,656 - INFO - ============================================================
+2025-07-19 02:16:45,656 - INFO - 🎉 Test suite completed: 0/11 pages passed
+2025-07-19 02:16:46,293 - INFO - Browser teardown complete
+2025-07-19 02:16:46,293 - ERROR - ❌ Some tests failed!
+2025-07-19 02:17:18,178 - INFO - 🚀 Starting comprehensive page test suite
+2025-07-19 02:17:18,528 - INFO - Browser setup complete with video recording enabled
+2025-07-19 02:17:18,530 - INFO - 📄 Testing page 1/11: Homepage
+2025-07-19 02:17:18,530 - INFO - 🚀 Testing Homepage at /
+2025-07-19 02:17:19,286 - INFO - ✅ Navigated to http://localhost:5001/
+2025-07-19 02:17:19,287 - INFO - Page load completed in 0.00s
+2025-07-19 02:17:19,287 - INFO - 🔍 Verifying default elements for Homepage
+2025-07-19 02:17:24,303 - WARNING - Element #howItWorksCard not found: Timeout 5000ms exceeded.
+2025-07-19 02:17:29,311 - WARNING - Element .card not found: Timeout 5000ms exceeded.
+2025-07-19 02:17:29,311 - WARNING - ⚠️ Homepage - Missing elements: 3/5
+2025-07-19 02:17:29,311 - WARNING - ⚠️ Default elements missing for Homepage
+2025-07-19 02:17:29,311 - INFO - 🔍 Verifying page population for Homepage
+2025-07-19 02:17:29,312 - WARNING - ⚠️ Homepage - No expected data found
+2025-07-19 02:17:29,312 - WARNING - ⚠️ Data population incomplete for Homepage
+2025-07-19 02:17:29,430 - INFO - 📸 Screenshot saved: test_artifacts/Homepage_20250719_021729.png
+2025-07-19 02:17:29,430 - WARNING - ⚠️ Homepage - Test PARTIAL PASS
+2025-07-19 02:17:30,431 - INFO - 📄 Testing page 2/11: Stocks Page
+2025-07-19 02:17:30,431 - INFO - 🚀 Testing Stocks Page at /stocks
+2025-07-19 02:17:31,094 - INFO - ✅ Navigated to http://localhost:5001/stocks
+2025-07-19 02:17:31,095 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-19 02:17:31,104 - INFO - Found element: #stocksTableBody
+2025-07-19 02:17:31,108 - INFO - Found element: #winnersList
+2025-07-19 02:17:31,111 - INFO - Found element: #losersList
+2025-07-19 02:17:31,113 - INFO - Found element: #stockAnalysisSection
+2025-07-19 02:18:01,113 - WARNING - Element .stock-card not found: Timeout 30000ms exceeded.
+2025-07-19 02:18:31,114 - WARNING - Element #marketOverview not found: Timeout 30000ms exceeded.
+2025-07-19 02:18:33,115 - INFO - Page load completed in 62.02s
+2025-07-19 02:18:33,115 - INFO - 🔍 Verifying default elements for Stocks Page
+2025-07-19 02:18:38,135 - WARNING - Element .stock-card not found: Timeout 5000ms exceeded.
+2025-07-19 02:18:43,138 - WARNING - Element #marketOverview not found: Timeout 5000ms exceeded.
+2025-07-19 02:18:43,138 - WARNING - ⚠️ Stocks Page - Missing elements: 4/6
+2025-07-19 02:18:43,138 - WARNING - ⚠️ Default elements missing for Stocks Page
+2025-07-19 02:18:43,138 - INFO - 🔍 Verifying page population for Stocks Page
+2025-07-19 02:18:43,160 - INFO - ✅ Stocks Page - Data found: stock data (6 items), minimum data count met (23 >= 5)
+2025-07-19 02:18:43,337 - INFO - 📸 Screenshot saved: test_artifacts/Stocks Page_20250719_021843.png
+2025-07-19 02:18:43,337 - WARNING - ⚠️ Stocks Page - Test PARTIAL PASS
+2025-07-19 02:18:44,338 - INFO - 📄 Testing page 3/11: Crypto Page
+2025-07-19 02:18:44,338 - INFO - 🚀 Testing Crypto Page at /crypto
+2025-07-19 02:18:44,930 - INFO - ✅ Navigated to http://localhost:5001/crypto
+2025-07-19 02:18:44,931 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-19 02:18:44,939 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-19 02:19:04,941 - WARNING - Element #cryptoCardsRow not found: Timeout 20000ms exceeded.
+2025-07-19 02:19:04,945 - INFO - Found element: #sentimentChartContainer
+2025-07-19 02:19:24,946 - WARNING - Element .crypto-card not found: Timeout 20000ms exceeded.
+2025-07-19 02:19:44,947 - WARNING - Element #cryptoOverview not found: Timeout 20000ms exceeded.
+2025-07-19 02:19:46,948 - INFO - Page load completed in 62.02s
+2025-07-19 02:19:46,948 - INFO - 🔍 Verifying default elements for Crypto Page
+2025-07-19 02:19:51,956 - WARNING - Element .crypto-card not found: Timeout 5000ms exceeded.
+2025-07-19 02:19:56,956 - WARNING - Element #cryptoOverview not found: Timeout 5000ms exceeded.
+2025-07-19 02:19:56,956 - WARNING - ⚠️ Crypto Page - Missing elements: 3/5
+2025-07-19 02:19:56,956 - WARNING - ⚠️ Default elements missing for Crypto Page
+2025-07-19 02:19:56,956 - INFO - 🔍 Verifying page population for Crypto Page
+2025-07-19 02:19:56,964 - INFO - ✅ Crypto Page - Data found: crypto data (8 items), minimum data count met (14 >= 3)
+2025-07-19 02:19:57,108 - INFO - 📸 Screenshot saved: test_artifacts/Crypto Page_20250719_021956.png
+2025-07-19 02:19:57,108 - WARNING - ⚠️ Crypto Page - Test PARTIAL PASS
+2025-07-19 02:19:58,109 - INFO - 📄 Testing page 4/11: Opportunities Page
+2025-07-19 02:19:58,109 - INFO - 🚀 Testing Opportunities Page at /opportunities
+2025-07-19 02:19:59,330 - INFO - ✅ Navigated to http://localhost:5001/opportunities
+2025-07-19 02:19:59,332 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-19 02:19:59,341 - INFO - Found element: #opportunitiesSection
+2025-07-19 02:19:59,345 - INFO - Found element: #opportunitiesContainer
+2025-07-19 02:19:59,347 - INFO - Found element: #findButton
+2025-07-19 02:19:59,349 - INFO - Found element: #newsBtn
+2025-07-19 02:19:59,351 - INFO - Found element: #watchlistBtn
+2025-07-19 02:19:59,354 - INFO - Found element: #refreshBtn
+2025-07-19 02:19:59,356 - INFO - Found element: #lastUpdated
+2025-07-19 02:19:59,358 - INFO - Found element: .opportunity-card
+2025-07-19 02:20:01,359 - INFO - Page load completed in 2.03s
+2025-07-19 02:20:01,359 - INFO - 🔍 Verifying default elements for Opportunities Page
+2025-07-19 02:20:01,377 - INFO - ✅ Opportunities Page - Elements found: 8/8
+2025-07-19 02:20:01,377 - INFO - 🔍 Verifying page population for Opportunities Page
+2025-07-19 02:20:01,384 - INFO - ✅ Opportunities Page - Data found: opportunities (9 items), minimum data count met (14 >= 1)
+2025-07-19 02:20:01,384 - INFO - 🔍 Special verification for Opportunities page
+2025-07-19 02:20:04,390 - INFO - Found 9 opportunities
+2025-07-19 02:20:04,393 - INFO - ✅ News and Watchlist buttons found
+2025-07-19 02:20:04,649 - ERROR - Error in opportunities verification: Target page, context or browser has been closed
+2025-07-19 02:20:04,649 - WARNING - ⚠️ Special verification failed for Opportunities Page
+2025-07-19 02:20:04,650 - ERROR - ❌ Error testing Opportunities Page: Target page, context or browser has been closed
+2025-07-19 02:20:05,652 - INFO - 📄 Testing page 5/11: System Status Page
+2025-07-19 02:20:05,652 - INFO - 🚀 Testing System Status Page at /system_status
+2025-07-19 02:20:05,653 - ERROR - ❌ Error testing System Status Page: Target page, context or browser has been closed
+2025-07-19 02:20:06,654 - INFO - 📄 Testing page 6/11: Logs Page
+2025-07-19 02:20:06,655 - INFO - 🚀 Testing Logs Page at /logs
+2025-07-19 02:20:06,656 - ERROR - ❌ Error testing Logs Page: Target page, context or browser has been closed
+2025-07-19 02:20:07,657 - INFO - 📄 Testing page 7/11: Portfolio Page
+2025-07-19 02:20:07,657 - INFO - 🚀 Testing Portfolio Page at /portfolio_page
+2025-07-19 02:20:07,658 - ERROR - ❌ Error testing Portfolio Page: Target page, context or browser has been closed
+2025-07-19 02:20:08,660 - INFO - 📄 Testing page 8/11: Backtest Page
+2025-07-19 02:20:08,660 - INFO - 🚀 Testing Backtest Page at /backtest_page
+2025-07-19 02:20:08,661 - ERROR - ❌ Error testing Backtest Page: Target page, context or browser has been closed
+2025-07-19 02:20:09,663 - INFO - 📄 Testing page 9/11: Recommendations Page
+2025-07-19 02:20:09,663 - INFO - 🚀 Testing Recommendations Page at /recommendations
+2025-07-19 02:20:09,664 - ERROR - ❌ Error testing Recommendations Page: Target page, context or browser has been closed
+2025-07-19 02:20:10,665 - INFO - 📄 Testing page 10/11: Scalping Signals Page
+2025-07-19 02:20:10,665 - INFO - 🚀 Testing Scalping Signals Page at /scalping_signals
+2025-07-19 02:20:10,666 - ERROR - ❌ Error testing Scalping Signals Page: Target page, context or browser has been closed
+2025-07-19 02:20:11,668 - INFO - 📄 Testing page 11/11: Reporting Page
+2025-07-19 02:20:11,668 - INFO - 🚀 Testing Reporting Page at /reporting
+2025-07-19 02:20:11,669 - ERROR - ❌ Error testing Reporting Page: Target page, context or browser has been closed
+2025-07-19 02:20:12,671 - INFO - 📊 Test report saved: test_artifacts/test_report_20250719_022012.json
+2025-07-19 02:20:12,671 - INFO - ============================================================
+2025-07-19 02:20:12,671 - INFO - 📊 COMPREHENSIVE TEST SUMMARY
+2025-07-19 02:20:12,671 - INFO - ============================================================
+2025-07-19 02:20:12,671 - INFO - Total Pages Tested: 11
+2025-07-19 02:20:12,671 - INFO - Pages Passed: 0
+2025-07-19 02:20:12,671 - INFO - Pages Failed: 11
+2025-07-19 02:20:12,671 - INFO - Success Rate: 0.0%
+2025-07-19 02:20:12,671 - INFO - ============================================================
+2025-07-19 02:20:12,671 - INFO - ❌ FAIL - Homepage
+2025-07-19 02:20:12,671 - INFO -     Issue: Missing elements
+2025-07-19 02:20:12,671 - INFO -     Issue: Data not populated
+2025-07-19 02:20:12,671 - INFO - ❌ FAIL - Stocks Page
+2025-07-19 02:20:12,672 - INFO -     Issue: Missing elements
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Crypto Page
+2025-07-19 02:20:12,672 - INFO -     Issue: Missing elements
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Opportunities Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - System Status Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Logs Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Portfolio Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Backtest Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Recommendations Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Scalping Signals Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ❌ FAIL - Reporting Page
+2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
+2025-07-19 02:20:12,672 - INFO - ============================================================
+2025-07-19 02:20:12,672 - INFO - 🎉 Test suite completed: 0/11 pages passed

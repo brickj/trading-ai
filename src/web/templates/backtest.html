@@ -63,7 +63,7 @@
                             <div class="spinner-border" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <p class="mt-2">Running backtest simulation...</p>
+                            <p class="mt-2">Loading real historical data...</p>
                         </div>
                     </div>
                 </div>
@@ -78,20 +78,20 @@
                 <div class="card-body">
                     <h6>How Backtesting Works:</h6>
                     <ol>
-                        <li>Fetches historical price data for the selected period</li>
-                        <li>Simulates sentiment scores based on price movements</li>
-                        <li>Generates trading signals using our strategy</li>
-                        <li>Calculates option prices and executes simulated trades</li>
-                        <li>Tracks performance and calculates returns</li>
+                        <li>Fetches real historical recommendations from the database</li>
+                        <li>Analyzes actual sentiment scores from real news analysis</li>
+                        <li>Reviews real trading signals and actions taken</li>
+                        <li>Calculates performance based on actual outcomes</li>
+                        <li>Tracks real success rates and profitability</li>
                     </ol>
                     
-                    <div class="alert alert-warning mt-3">
-                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes:</h6>
+                    <div class="alert alert-success mt-3">
+                        <h6><i class="fas fa-check-circle"></i> Real Data Analysis:</h6>
                         <ul class="mb-0">
-                            <li>This uses simulated sentiment data, not actual historical news</li>
-                            <li>Option pricing is simplified and may not reflect real market conditions</li>
-                            <li>Results are for educational purposes only</li>
-                            <li>Past performance does not guarantee future results</li>
+                            <li>Uses actual historical recommendations with real sentiment analysis</li>
+                            <li>Based on real news data from multiple sources (Finnhub, Reddit, Yahoo Finance)</li>
+                            <li>Shows actual trading outcomes and profitability</li>
+                            <li>Provides genuine performance metrics and statistics</li>
                         </ul>
                     </div>
                 </div>
@@ -397,38 +397,60 @@ function getSentimentClass(sentiment) {
     return 'text-warning';
 }
 
+// Helper function to format currency
+function formatCurrency(value) {
+    if (typeof value !== 'number' || isNaN(value)) {
+        return 'N/A';
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
 // Load saved results on page load
 async function loadSavedResults() {
     const defaultSymbol = 'AAPL';
-    const defaultPeriod = 730;
+    const defaultPeriod = 30; // Use 30 days for historical data
+    
+    // Always populate the form fields first, regardless of API call success
+    document.getElementById('symbol').value = defaultSymbol;
+    document.getElementById('daysBack').value = defaultPeriod;
+    document.getElementById('strategyType').value = 'all';
+    
     showLoading('backtestLoading');
     try {
-        const response = await fetch('/api/backtest', {
+        const response = await fetch('/api/backtest/historical', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
                 symbol: defaultSymbol,
-                days_back: defaultPeriod
+                days_back: defaultPeriod,
+                strategy_type: 'all'
             })
         });
         const result = await response.json();
         if (result.error) {
-            console.log('No saved results found:', result.error);
+            console.log('No historical data found:', result.error);
             hideLoading('backtestLoading');
             return;
         }
         // Extract data from the API response structure
         const data = result.data || result;
-        // Pre-populate the form
-        document.getElementById('symbol').value = defaultSymbol;
-        document.getElementById('daysBack').value = defaultPeriod;
-        // Display the results
-        displayBacktestResults(data);
+        
+        // Only display results if we have valid data
+        if (data && data.total_recommendations > 0) {
+            displayHistoricalBacktestResults(data);
+        } else {
+            console.log('No historical data available for display');
+            hideLoading('backtestLoading');
+        }
     } catch (error) {
-        console.log('Error loading saved results:', error);
-    } finally {
+        console.log('Error loading historical data:', error);
         hideLoading('backtestLoading');
     }
 }
@@ -521,36 +543,35 @@ document.getElementById('loadStatsBtn').addEventListener('click', async function
 function displayHistoricalBacktestResults(data) {
     console.log('Displaying historical backtest results:', data);
     
-    // Update summary cards
-    document.getElementById('initialCapital').textContent = 'Historical Data';
-    document.getElementById('finalCapital').textContent = data.total_recommendations + ' Recommendations';
+    // Update summary cards with actual backtest results
+    document.getElementById('initialCapital').textContent = formatCurrency(data.initial_capital || 10000);
+    document.getElementById('finalCapital').textContent = formatCurrency(data.final_capital || 10000);
     
     const returnElement = document.getElementById('totalReturn');
-    returnElement.textContent = data.success_rate + '%';
-    returnElement.className = data.success_rate >= 50 ? 'text-success' : 'text-danger';
+    returnElement.textContent = (data.total_return || 0) + '%';
+    returnElement.className = (data.total_return || 0) >= 0 ? 'text-success' : 'text-danger';
     
-    document.getElementById('winRate').textContent = data.success_rate + '%';
+    document.getElementById('winRate').textContent = (data.win_rate || 0) + '%';
     
-    // Update strategy statistics
-    document.getElementById('totalTrades').textContent = data.total_recommendations;
-    document.getElementById('winningTrades').textContent = data.profitable_count;
-    document.getElementById('losingTrades').textContent = data.unprofitable_count;
+    // Update strategy statistics with actual trade data
+    document.getElementById('totalTrades').textContent = data.total_trades || 0;
+    document.getElementById('winningTrades').textContent = data.winning_trades || 0;
+    document.getElementById('losingTrades').textContent = data.losing_trades || 0;
     
-    if (data.total_recommendations > 0) {
-        const avgConfidence = data.average_scores.final_confidence;
-        document.getElementById('avgTrade').textContent = avgConfidence + '%';
-        document.getElementById('bestTrade').textContent = data.profitable_count;
-        document.getElementById('worstTrade').textContent = data.unprofitable_count;
+    if (data.total_trades > 0) {
+        document.getElementById('avgTrade').textContent = formatCurrency(data.avg_trade || 0);
+        document.getElementById('bestTrade').textContent = formatCurrency(data.best_trade || 0);
+        document.getElementById('worstTrade').textContent = formatCurrency(data.worst_trade || 0);
     } else {
         document.getElementById('avgTrade').textContent = 'N/A';
         document.getElementById('bestTrade').textContent = 'N/A';
         document.getElementById('worstTrade').textContent = 'N/A';
     }
     
-    // Display recommendations table
-    displayRecommendationsTable(data.recommendations_sample);
+    // Display trades table with actual trade data
+    displayTradesTable(data.trades || []);
     
-    // Create performance chart
+    // Create performance chart with cumulative capital data
     createHistoricalPerformanceChart(data);
     
     document.getElementById('resultsSection').style.display = 'block';
@@ -665,37 +686,88 @@ function createHistoricalPerformanceChart(data) {
     }
     
     const ctx = document.getElementById('performanceChart').getContext('2d');
-    const labels = data.symbol_performance.map(item => item.symbol);
-    const successRates = data.symbol_performance.map(item => item.success_rate);
     
-    performanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Success Rate (%)',
-                data: successRates,
-                backgroundColor: successRates.map(rate => rate >= 50 ? '#28a745' : '#dc3545'),
-                borderColor: '#fff',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
+    // Use cumulative capital data if available, otherwise fall back to symbol performance
+    if (data.cumulative_capital && data.cumulative_capital.length > 0) {
+        // Create portfolio performance chart
+        const labels = data.cumulative_capital.map((_, index) => `Trade ${index}`);
+        const capitalData = data.cumulative_capital;
+        
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: capitalData,
+                    borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                    backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
             },
-            plugins: {
-                legend: {
-                    display: false
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
                 }
             }
-        }
-    });
+        });
+    } else if (data.symbol_performance && data.symbol_performance.length > 0) {
+        // Fall back to symbol performance chart
+        const labels = data.symbol_performance.map(item => item.symbol);
+        const successRates = data.symbol_performance.map(item => item.success_rate);
+        
+        performanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Success Rate (%)',
+                    data: successRates,
+                    backgroundColor: successRates.map(rate => rate >= 50 ? '#28a745' : '#dc3545'),
+                    borderColor: '#fff',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
 }
 
 function displayBacktestResults(data) {

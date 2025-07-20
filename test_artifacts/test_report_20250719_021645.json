@@ -1,0 +1,101 @@
+{
+  "timestamp": "2025-07-19T02:16:45.654060",
+  "total_pages": 11,
+  "passed_pages": 0,
+  "failed_pages": 11,
+  "results": [
+    {
+      "page": "Homepage",
+      "route": "/",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/",
+      "screenshot": "test_artifacts/Homepage_ERROR_20250719_021633.png",
+      "timestamp": "2025-07-19T02:16:33.320074"
+    },
+    {
+      "page": "Stocks Page",
+      "route": "/stocks",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/stocks",
+      "screenshot": "test_artifacts/Stocks Page_ERROR_20250719_021634.png",
+      "timestamp": "2025-07-19T02:16:34.453477"
+    },
+    {
+      "page": "Crypto Page",
+      "route": "/crypto",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/crypto",
+      "screenshot": "test_artifacts/Crypto Page_ERROR_20250719_021635.png",
+      "timestamp": "2025-07-19T02:16:35.584163"
+    },
+    {
+      "page": "Opportunities Page",
+      "route": "/opportunities",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/opportunities",
+      "screenshot": "test_artifacts/Opportunities Page_ERROR_20250719_021636.png",
+      "timestamp": "2025-07-19T02:16:36.720388"
+    },
+    {
+      "page": "System Status Page",
+      "route": "/system_status",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/system_status",
+      "screenshot": "test_artifacts/System Status Page_ERROR_20250719_021637.png",
+      "timestamp": "2025-07-19T02:16:37.857106"
+    },
+    {
+      "page": "Logs Page",
+      "route": "/logs",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/logs",
+      "screenshot": "test_artifacts/Logs Page_ERROR_20250719_021638.png",
+      "timestamp": "2025-07-19T02:16:38.991349"
+    },
+    {
+      "page": "Portfolio Page",
+      "route": "/portfolio_page",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/portfolio_page",
+      "screenshot": "test_artifacts/Portfolio Page_ERROR_20250719_021639.png",
+      "timestamp": "2025-07-19T02:16:40.120982"
+    },
+    {
+      "page": "Backtest Page",
+      "route": "/backtest_page",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/backtest_page",
+      "screenshot": "test_artifacts/Backtest Page_ERROR_20250719_021641.png",
+      "timestamp": "2025-07-19T02:16:41.255223"
+    },
+    {
+      "page": "Recommendations Page",
+      "route": "/recommendations",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/recommendations",
+      "screenshot": "test_artifacts/Recommendations Page_ERROR_20250719_021642.png",
+      "timestamp": "2025-07-19T02:16:42.389982"
+    },
+    {
+      "page": "Scalping Signals Page",
+      "route": "/scalping_signals",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/scalping_signals",
+      "screenshot": "test_artifacts/Scalping Signals Page_ERROR_20250719_021643.png",
+      "timestamp": "2025-07-19T02:16:43.524171"
+    },
+    {
+      "page": "Reporting Page",
+      "route": "/reporting",
+      "success": false,
+      "error": "net::ERR_CONNECTION_REFUSED at http://localhost:5001/reporting",
+      "screenshot": "test_artifacts/Reporting Page_ERROR_20250719_021644.png",
+      "timestamp": "2025-07-19T02:16:44.652862"
+    }
+  ],
+  "summary": {
+    "all_passed": false,
+    "pages_with_data": 0,
+    "pages_with_elements": 0
+  }
+}
