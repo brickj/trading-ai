@@ -54,7 +54,7 @@ class ConfigTest(unittest.TestCase):
         self.assertIsInstance(Config.PAID_TIER_PAGES, list)
         expected_paid_pages = [
             "/stocks", "/crypto", "/portfolio_page",
-            "/backtest_page", "/opportunities"
+            "/backtest", "/opportunities"
         ]
 
         for page in expected_paid_pages:

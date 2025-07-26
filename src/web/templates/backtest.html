@@ -426,6 +426,9 @@ async function loadSavedResults() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
             body: JSON.stringify({ 
                 symbol: defaultSymbol,
@@ -480,6 +483,9 @@ document.getElementById('backtestForm').addEventListener('submit', async functio
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
             },
             body: JSON.stringify({ 
                 symbol: symbol,
@@ -542,6 +548,8 @@ document.getElementById('loadStatsBtn').addEventListener('click', async function
 
 function displayHistoricalBacktestResults(data) {
     console.log('Displaying historical backtest results:', data);
+    console.log('Trades array received:', data.trades);
+    console.log('First 3 trades:', data.trades ? data.trades.slice(0, 3) : 'No trades');
     
     // Update summary cards with actual backtest results
     document.getElementById('initialCapital').textContent = formatCurrency(data.initial_capital || 10000);
@@ -835,6 +843,9 @@ function displayTradesTable(trades) {
     const tbody = document.getElementById('tradesTableBody');
     tbody.innerHTML = '';
     
+    console.log('displayTradesTable called with:', trades);
+    console.log('Trades array length:', trades ? trades.length : 'No trades');
+    
     // Ensure trades is an array
     if (!Array.isArray(trades) || trades.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No trades executed</td></tr>';
@@ -843,8 +854,10 @@ function displayTradesTable(trades) {
     
     // Show only the last 10 trades
     const recentTrades = trades.slice(-10);
+    console.log('Recent trades to display:', recentTrades);
     
-    recentTrades.forEach(trade => {
+    recentTrades.forEach((trade, index) => {
+        console.log(`Processing trade ${index}:`, trade);
         const row = document.createElement('tr');
         const profitClass = (trade.profit || 0) >= 0 ? 'text-success' : 'text-danger';
         

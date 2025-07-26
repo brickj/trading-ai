@@ -7,6 +7,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import re # Added for regex fallback
 
+# Import API tracker for monitoring API usage
+from src.utils.api_tracker import api_tracker
+
 
 class SentimentAnalyzer:
     def __init__(self):
@@ -54,6 +57,10 @@ class SentimentAnalyzer:
             if response.status_code != 200:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
             result = response.json()
+            
+            # Track API usage
+            api_tracker.record_request("ollama")
+                
             # Return in the expected format for the sentiment analyzer
             return {
                 "choices": [{

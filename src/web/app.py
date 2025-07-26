@@ -988,6 +988,24 @@ def backtest_historical_recommendations():
         # Process recommendations into backtest results
         backtest_results = process_historical_recommendations(recommendations)
         
+        # Debug: Print first 3 trades from backtest_results before returning
+        print("DEBUG: First 3 trades from backtest_results before API response:")
+        if 'trades' in backtest_results and backtest_results['trades']:
+            for i, trade in enumerate(backtest_results['trades'][:3]):
+                print(f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}")
+        else:
+            print("  No trades found in backtest_results")
+        
+        # Debug: Print the full trades payload being sent to the frontend
+        import json
+        if 'trades' in backtest_results:
+            print('DEBUG: FULL TRADES PAYLOAD SENT TO FRONTEND:')
+            print(json.dumps(backtest_results['trades'][:10], indent=2, default=str))
+            sys.stdout.flush()
+        else:
+            print('DEBUG: No trades in backtest_results')
+            sys.stdout.flush()
+        
         return create_api_response(data=backtest_results)
         
     except Exception as e:
@@ -1202,11 +1220,18 @@ def process_historical_recommendations(recommendations):
             print(f"DEBUG: First recommendation: {recommendations[0]}")
             print(f"DEBUG: Length of first recommendation: {len(recommendations[0])}")
         
+        # Debug: Print first 5 actions and sentiment scores before processing
+        print("DEBUG: First 5 recommendations before processing:")
+        for i, rec in enumerate(recommendations[:5]):
+            action = rec[4] if len(rec) > 4 else "N/A"
+            sentiment = rec[11] if len(rec) > 11 else "N/A"
+            print(f"  [{i}] action: {action}, sentiment: {sentiment}")
+        
         # Initialize backtest parameters
         initial_capital = 10000  # $10,000 starting capital
         current_capital = initial_capital
         position_size = 0.02  # 2% of capital per trade
-        trades = []
+        trades = []  # Ensure trades list is empty at the start
         cumulative_capital = [initial_capital]
         
         # Process each recommendation as a trade
@@ -1219,7 +1244,10 @@ def process_historical_recommendations(recommendations):
                 skipped_trades += 1
                 continue
             try:
-                # Debug removed to reduce noise
+                # Debug: Print first 10 recommendations being processed
+                if i < 10:
+                    print(f"DEBUG: Processing recommendation [{i}]: action={rec[4]}, sentiment={rec[11]}, symbol={rec[1]}")
+                
                 try:
                     symbol = rec[1]  # symbol (index 1)
                     timestamp = rec[2]  # timestamp (index 2)
@@ -1230,8 +1258,15 @@ def process_historical_recommendations(recommendations):
                         sentiment_score = 0  # Default to neutral sentiment for NULL values
                     else:
                         try:
+                            # Convert Decimal to float (Decimal objects support float conversion)
                             sentiment_score = float(sentiment_score_raw)
+                            # Debug: Log successful conversion for non-HOLD actions
+                            if action != 'HOLD' and i < 5:  # Only log first 5 for debugging
+                                print(f"DEBUG: Successfully converted sentiment_score for {action}: {sentiment_score_raw} -> {sentiment_score}")
                         except (TypeError, ValueError) as e:
+                            # Debug: Log the error for non-HOLD actions
+                            if action != 'HOLD':
+                                print(f"DEBUG: Failed to convert sentiment_score for {action}: {sentiment_score_raw} (type: {type(sentiment_score_raw)}) - Error: {e}")
                             # Skip silently for invalid sentiment scores to reduce noise
                             skipped_trades += 1
                             continue
@@ -1251,6 +1286,10 @@ def process_historical_recommendations(recommendations):
                     # Create a small neutral trade for HOLD recommendations
                     trade_amount = current_capital * position_size * 0.1  # Smaller position for HOLD
                     shares = int(trade_amount / current_price) if current_price > 0 else 0
+                    
+                    # Ensure minimum position size of 1 share/contract for HOLD
+                    if shares == 0 and trade_amount > 0:
+                        shares = 1
                     
                     if shares == 0:
                         continue
@@ -1283,6 +1322,10 @@ def process_historical_recommendations(recommendations):
                 # Calculate position size based on confidence
                 trade_amount = current_capital * position_size * confidence
                 shares = int(trade_amount / current_price) if current_price > 0 else 0
+                
+                # Ensure minimum position size of 1 share/contract
+                if shares == 0 and trade_amount > 0:
+                    shares = 1
                 
                 if shares == 0:
                     skipped_trades += 1
@@ -1340,6 +1383,13 @@ def process_historical_recommendations(recommendations):
                 }
                 trades.append(trade)
                 processed_trades += 1
+                # Debug: Log non-HOLD trades
+                if action != 'HOLD' and processed_trades <= 5:
+                    print(f"DEBUG: Created trade for {action}: shares={shares}, sentiment={sentiment_score}, profit={profit}")
+                
+                # Debug: Print first 5 trade objects after creation
+                if processed_trades <= 5:
+                    print(f"DEBUG: Trade object [{processed_trades-1}]: action={trade['action']}, sentiment={trade['sentiment']}")
                 
             except Exception as e:
                 print(f"Error processing recommendation {i}: {e}")
@@ -1398,6 +1448,51 @@ def process_historical_recommendations(recommendations):
         # Sort symbols by success rate
         sorted_symbols = sorted(symbols.items(), key=lambda x: x[1]["success_rate"], reverse=True)
         
+        # Debug: Print first 3 trades from the main trades list before filtering
+        print("DEBUG: First 3 trades from main trades list before filtering:")
+        for i, trade in enumerate(trades[:3]):
+            print(f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}")
+        
+        # Return a mix of recent trades, prioritizing non-HOLD actions
+        # Create deep copies to avoid reference issues
+        import copy
+        trades_copy = copy.deepcopy(trades)
+        recent_trades = trades_copy[-20:]  # Last 20 trades
+        
+        # Debug: Check what happens during filtering
+        print("DEBUG: Checking trades during non-HOLD filtering:")
+        for i, t in enumerate(trades_copy[:5]):
+            print(f"  [{i}] Before filter: action={t.get('action')}, sentiment={t.get('sentiment')}")
+        
+        # Create non-hold trades manually to avoid list comprehension issues
+        non_hold_trades = []
+        for i, t in enumerate(trades_copy):
+            if t['action'] != 'HOLD':
+                # Debug: Check if trade is modified during filtering
+                print(f"DEBUG: Adding trade [{i}]: action={t.get('action')}, sentiment={t.get('sentiment')}")
+                non_hold_trades.append(t)
+                # Debug: Check if trade was modified after adding
+                print(f"DEBUG: After adding trade [{i}]: action={t.get('action')}, sentiment={t.get('sentiment')}")
+        non_hold_trades = non_hold_trades[-10:]  # Last 10 non-HOLD trades
+        
+        # Debug: Check what happens after filtering
+        print("DEBUG: After non-HOLD filtering (manual):")
+        for i, t in enumerate(non_hold_trades[:5]):
+            print(f"  [{i}] After filter: action={t.get('action')}, sentiment={t.get('sentiment')}")
+        
+        hold_trades = [t for t in recent_trades if t['action'] == 'HOLD'][-10:]  # Last 10 HOLD trades from recent
+        
+        # Debug: Print first 3 non_hold_trades
+        print("DEBUG: First 3 non_hold_trades:")
+        for i, trade in enumerate(non_hold_trades[:3]):
+            print(f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}")
+        
+        # Only include trades with actions that exist in the database (CALL, BUY, HOLD)
+        non_hold_trades = [t for t in trades if t['action'] in ('CALL', 'BUY')][-10:]
+        hold_trades = [t for t in trades if t['action'] == 'HOLD'][-10:]
+        final_trades = non_hold_trades + hold_trades
+        final_trades = final_trades[-20:]  # Ensure we don't exceed 20 trades
+        
         return {
             "initial_capital": initial_capital,
             "final_capital": current_capital,
@@ -1409,7 +1504,7 @@ def process_historical_recommendations(recommendations):
             "avg_trade": round(avg_trade, 2),
             "best_trade": round(best_trade, 2),
             "worst_trade": round(worst_trade, 2),
-            "trades": trades[-10:],  # Last 10 trades for table
+            "trades": final_trades,
             "cumulative_capital": cumulative_capital,
             "total_recommendations": len(recommendations),
             "profitable_count": winning_trades,
@@ -1724,7 +1819,7 @@ def portfolio_page():
     )
 
 
-@app.route("/backtest_page")
+@app.route("/backtest")
 def backtest_page():
     """Backtesting page"""
     return render_template(
@@ -2282,6 +2377,15 @@ def system_status():
         except Exception as e:
             log_error(f"Error getting telegram status: {str(e)}")
         
+        # Get API status information
+        api_status = {}
+        try:
+            from src.utils.api_tracker import api_tracker
+            api_status = api_tracker.get_all_api_status()
+        except Exception as e:
+            log_error(f"Error getting API status: {str(e)}")
+            api_status = {"error": str(e)}
+        
         return jsonify({
             "status": "ok",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -2289,6 +2393,7 @@ def system_status():
             "database": db_stats,
             "cache": cache_stats,
             "config": config_info,
+            "api_status": api_status,
         })
     except Exception as e:
         log_error(f"Critical error in system_status: {str(e)}")
@@ -3032,6 +3137,8 @@ def create_app(port=5001):
 preloaded_data = None
 preload_timestamp = None
 
+# API tracking is now handled by the dedicated api_tracker module
+
 # Function to preload data
 def preload_stock_data():
     import sys
@@ -3127,18 +3234,7 @@ scheduler.add_job(preload_news_opportunities, 'cron', day_of_week='mon-fri', hou
 from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
 scheduler.add_job(preload_watchlist_opportunities, 'cron', day_of_week='mon-fri', hour=9, minute=45, timezone='America/New_York')
 
-# Run at 9:55 AM on trading days for scalping analysis
-from src.core.scalping_analyzer import scalping_analyzer
-def run_scalping_analysis_job():
-    """Scheduled job to run scalping analysis"""
-    try:
-        print("[INFO] Starting scheduled scalping analysis...")
-        opportunities = scalping_analyzer.run_morning_scalping_analysis()
-        print(f"[INFO] Scalping analysis completed. Found {len(opportunities)} opportunities.")
-    except Exception as e:
-        print(f"[ERROR] Scheduled scalping analysis failed: {e}")
-
-scheduler.add_job(run_scalping_analysis_job, 'cron', day_of_week='mon-fri', hour=9, minute=55, timezone='America/New_York')
+# Scalping analysis is now handled by the database-configured job scheduler
 
 scheduler.start()
 
@@ -3152,9 +3248,6 @@ def start_preload_in_background():
     # Also preload watchlist opportunities
     preload_watchlist_thread = threading.Thread(target=preload_watchlist_opportunities, daemon=True)
     preload_watchlist_thread.start()
-    # Also run initial scalping analysis
-    scalping_thread = threading.Thread(target=run_scalping_analysis_job, daemon=True)
-    scalping_thread.start()
 
 start_preload_in_background()
 
@@ -4070,6 +4163,25 @@ def enable_job_schedule(schedule_id):
                 cur.execute('UPDATE job_schedules SET enabled = %s WHERE id = %s', (enabled, schedule_id))
                 conn.commit()
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/job_schedules/<int:schedule_id>', methods=['DELETE'])
+def delete_job_schedule(schedule_id):
+    """Delete a job schedule."""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get job name for confirmation
+                cur.execute('SELECT job_name FROM job_schedules WHERE id = %s', (schedule_id,))
+                job = cur.fetchone()
+                if not job:
+                    return jsonify({'error': 'Job schedule not found'}), 404
+                
+                # Delete the job schedule
+                cur.execute('DELETE FROM job_schedules WHERE id = %s', (schedule_id,))
+                conn.commit()
+        return jsonify({'success': True, 'message': f'Job schedule "{job[0]}" deleted successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

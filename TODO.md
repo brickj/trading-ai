@@ -1,3 +1,14 @@
+# 🎯 PORTFOLIO PAGE TRADING FUNCTIONALITY (HIGHEST PRIORITY)
+- **Task**: Implement comprehensive trading functionality for the portfolio page
+- **Requirements**: 
+  - Allow trading for stocks, crypto, and options
+  - Real-time order placement and execution
+  - Portfolio tracking and management
+  - Trade history and performance analytics
+  - Risk management controls
+- **Impact**: Core trading platform functionality for users
+- **Priority**: HIGHEST - Essential for a complete trading application
+
 # ⚠️ CRITICAL: NO MOCK DATA POLICY (HIGHEST PRIORITY)
 - **Task**: Periodically audit and remove ALL mock data from the application
 - **Why**: Mock data has been repeatedly added despite explicit instructions not to use it

@@ -130,7 +130,7 @@ class ComprehensivePageTest:
             },
             {
                 "name": "Backtest Page",
-                "route": "/backtest_page",
+                "route": "/backtest",
                 "expected_elements": [
                     "#backtestForm",  # Backtest form
                     "#daysSelector",  # Days selector

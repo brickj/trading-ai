@@ -386,11 +386,3 @@ body {
 #enhancedRecommendationsSection .card {
     height: 100% !important;
 }
-
-/* Force on all screen sizes above 768px */
-@media (min-width: 768px) {
-    #enhancedRecommendationsSection .col-lg-5,
-    #enhancedRecommendationsSection .col-lg-7 {
-        float: left !important;
-    }
-}

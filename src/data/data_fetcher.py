@@ -13,6 +13,9 @@ from src.core.logger import log_error, log_debug
 from src.core.cache import cache
 from src.core.watchlist_manager import WatchlistManager
 
+# Import API tracker for monitoring API usage
+from src.utils.api_tracker import api_tracker
+
 # Optional import for web scraping
 try:
     from bs4 import BeautifulSoup
@@ -270,6 +273,10 @@ class DataFetcher:
         }
         response = self.session.get(url, params=params, timeout=Config.API_REQUEST_TIMEOUT)
         response.raise_for_status()
+        
+        # Track API usage
+        api_tracker.record_request("finnhub")
+            
         return response.json()
 
     def get_crypto_price(self, symbol: str) -> Dict[str, Any]:
@@ -1180,6 +1187,10 @@ class DataFetcher:
                     "category": "discussion"
                 })
             print(f"[DEBUG][Reddit] Parsed {len(news)} articles for {symbol}")
+            
+            # Track API usage
+            api_tracker.record_request("reddit")
+                
             return news
         except Exception as e:
             log_error(f"Reddit API error for {symbol}: {e}")
@@ -1211,6 +1222,10 @@ class DataFetcher:
                         "category": "news"
                     })
                 print(f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}")
+                
+                # Track API usage
+                api_tracker.record_request("alpha_vantage")
+                    
                 return news_articles
             else:
                 print(f"[DEBUG][AlphaVantage] No feed found in response for {symbol}")
@@ -1328,6 +1343,10 @@ class DataFetcher:
                     continue
             
             print(f"[DEBUG][YahooFinance] Successfully parsed {len(news_articles)} articles for {symbol}")
+            
+            # Track API usage
+            api_tracker.record_request("yahoo_finance")
+                
             return news_articles
             
         except requests.exceptions.RequestException as e:

@@ -80,7 +80,7 @@ class Config:
     
     # Tier Page Access Configuration
     FREE_TIER_PAGES = ["/", "/system_status", "/logs"]
-    PAID_TIER_PAGES = ["/stocks", "/crypto", "/portfolio_page", "/backtest_page", "/opportunities", "/recommendations"]
+    PAID_TIER_PAGES = ["/stocks", "/crypto", "/portfolio_page", "/backtest", "/opportunities", "/recommendations"]
     TIER_CONTACT_INFO = {
         "email": "support@example.com",
         "message": "Contact support to upgrade to Paid Tier"

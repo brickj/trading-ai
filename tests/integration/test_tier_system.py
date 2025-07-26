@@ -192,7 +192,7 @@ class TierSystemIntegrationTest(BaseIntegrationTest):
 
         # Test that free tier is redirected from restricted pages
         restricted_pages = ['/stocks', '/crypto', '/portfolio_page',
-                          '/backtest_page', '/opportunities']
+                          '/backtest', '/opportunities']
         for page in restricted_pages:
             response = self.make_request('GET', page, allow_redirects=False)
             # Should be redirected (302) or forbidden (403)
@@ -207,7 +207,7 @@ class TierSystemIntegrationTest(BaseIntegrationTest):
 
         # Test that paid tier can access all pages
         all_pages = ['/', '/system_status', '/stocks', '/crypto',
-                    '/portfolio_page', '/backtest_page', '/opportunities']
+                    '/portfolio_page', '/backtest', '/opportunities']
         for page in all_pages:
             response = self.make_request('GET', page)
             self.assertEqual(response.status_code, 200,
