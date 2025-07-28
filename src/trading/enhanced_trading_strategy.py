@@ -745,6 +745,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 'action': 'HOLD',
                 'symbol': symbol,
                 'current_price': current_price,
+                'sentiment_score': sentiment_score,
                 'reasoning': 'Neutral sentiment suggests holding current position',
                 'base_confidence': base_confidence,
                 'confidence': base_confidence * 0.7,  # Lower confidence for holds
@@ -759,6 +760,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 'action': 'BUY',
                 'symbol': symbol,
                 'current_price': current_price,
+                'sentiment_score': sentiment_score,
                 'shares_recommended': max(1, int(1000 / current_price)),  # $1000 position
                 'target_price': current_price * 1.15,  # 15% target
                 'stop_loss_price': current_price * 0.92,  # 8% stop
@@ -777,6 +779,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                     'action': 'BUY',
                     'symbol': symbol,
                     'current_price': current_price,
+                    'sentiment_score': sentiment_score,
                     'shares_recommended': max(1, int(2000 / current_price)),  # $2000 position
                     'target_price': current_price * 1.25,  # 25% target
                     'stop_loss_price': current_price * 0.90,  # 10% stop
@@ -795,6 +798,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 'action': 'SELL_SHORT',
                 'symbol': symbol,
                 'current_price': current_price,
+                'sentiment_score': sentiment_score,
                 'shares_recommended': max(1, int(1500 / current_price)),  # $1500 position
                 'target_price': current_price * 0.85,  # 15% target drop
                 'stop_loss_price': current_price * 1.08,  # 8% stop loss
@@ -812,6 +816,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 'action': 'SELL',
                 'symbol': symbol,
                 'current_price': current_price,
+                'sentiment_score': sentiment_score,
                 'reasoning': 'Conservative position exit based on negative sentiment',
                 'base_confidence': base_confidence,
                 'confidence': base_confidence * 0.80,

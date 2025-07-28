@@ -1254,19 +1254,39 @@ def process_historical_recommendations(recommendations):
                     action = rec[4]  # action (index 4)
                     confidence = float(rec[10]) if rec[10] is not None else 0.5  # final_confidence (index 10)
                     sentiment_score_raw = rec[11]  # sentiment_score (index 11)
+                    
+                    # Improved sentiment score conversion
                     if sentiment_score_raw is None:
-                        sentiment_score = 0  # Default to neutral sentiment for NULL values
+                        # Use action-based defaults for NULL sentiment scores
+                        if action in ['BUY', 'CALL']:
+                            sentiment_score = 0.3  # Slightly positive for buy actions
+                        elif action in ['SELL', 'PUT', 'SELL_SHORT']:
+                            sentiment_score = -0.3  # Slightly negative for sell actions
+                        else:
+                            sentiment_score = 0  # Neutral for other actions
+                        
+                        # Debug: Log when using defaults
+                        if i < 10:  # Only log first 10 for debugging
+                            print(f"DEBUG: Using default sentiment for {action}: NULL -> {sentiment_score}")
                     else:
                         try:
-                            # Convert Decimal to float (Decimal objects support float conversion)
-                            sentiment_score = float(sentiment_score_raw)
+                            # Handle both Decimal and float types
+                            if hasattr(sentiment_score_raw, 'quantize'):
+                                # It's a Decimal object
+                                sentiment_score = float(sentiment_score_raw)
+                            else:
+                                # It's already a float or other numeric type
+                                sentiment_score = float(sentiment_score_raw)
+                            
+                            # Ensure sentiment is in valid range [-1, 1]
+                            sentiment_score = max(-1.0, min(1.0, sentiment_score))
+                            
                             # Debug: Log successful conversion for non-HOLD actions
-                            if action != 'HOLD' and i < 5:  # Only log first 5 for debugging
+                            if i < 5:  # Only log first 5 for debugging
                                 print(f"DEBUG: Successfully converted sentiment_score for {action}: {sentiment_score_raw} -> {sentiment_score}")
                         except (TypeError, ValueError) as e:
                             # Debug: Log the error for non-HOLD actions
-                            if action != 'HOLD':
-                                print(f"DEBUG: Failed to convert sentiment_score for {action}: {sentiment_score_raw} (type: {type(sentiment_score_raw)}) - Error: {e}")
+                            print(f"DEBUG: Failed to convert sentiment_score for {action}: {sentiment_score_raw} (type: {type(sentiment_score_raw)}) - Error: {e}")
                             # Skip silently for invalid sentiment scores to reduce noise
                             skipped_trades += 1
                             continue
@@ -1277,46 +1297,13 @@ def process_historical_recommendations(recommendations):
                     skipped_trades += 1
                     continue
                 
-                # Skip if no valid action, but process HOLD as a neutral position
+                # Skip if no valid action
                 if not action:
                     continue
                 
-                # For HOLD actions, simulate a small neutral position
+                # Skip HOLD actions entirely - they don't represent actual trades
                 if action == 'HOLD':
-                    # Create a small neutral trade for HOLD recommendations
-                    trade_amount = current_capital * position_size * 0.1  # Smaller position for HOLD
-                    shares = int(trade_amount / current_price) if current_price > 0 else 0
-                    
-                    # Ensure minimum position size of 1 share/contract for HOLD
-                    if shares == 0 and trade_amount > 0:
-                        shares = 1
-                    
-                    if shares == 0:
-                        continue
-                    
-                    # HOLD trades have minimal profit/loss
-                    profit = shares * current_price * 0.001  # 0.1% small gain
-                    
-                    # Update capital
-                    current_capital += profit
-                    cumulative_capital.append(current_capital)
-                    
-                    # Create trade record for HOLD
-                    trade = {
-                        "date": timestamp.isoformat() if timestamp else f"Trade_{i+1}",
-                        "action": action,
-                        "symbol": symbol,
-                        "entry_price": current_price,
-                        "strike_price": current_price,
-                        "option_price": current_price * 0.01,  # 1% for HOLD
-                        "position_size": shares,
-                        "cost": trade_amount,
-                        "exit_price": current_price * 1.001,
-                        "profit": profit,
-                        "sentiment": sentiment_score,
-                        "confidence": confidence
-                    }
-                    trades.append(trade)
+                    skipped_trades += 1
                     continue
                 
                 # Calculate position size based on confidence
@@ -1417,7 +1404,7 @@ def process_historical_recommendations(recommendations):
         actions = {}
         for rec in recommendations:
             action = rec[4]  # action field
-            if action:
+            if action and action != 'HOLD':  # Exclude HOLD from action breakdown
                 actions[action] = actions.get(action, 0) + 1
         
         # Symbol breakdown
@@ -1453,45 +1440,13 @@ def process_historical_recommendations(recommendations):
         for i, trade in enumerate(trades[:3]):
             print(f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}")
         
-        # Return a mix of recent trades, prioritizing non-HOLD actions
-        # Create deep copies to avoid reference issues
-        import copy
-        trades_copy = copy.deepcopy(trades)
-        recent_trades = trades_copy[-20:]  # Last 20 trades
+        # Return recent trades (no filtering needed since we excluded HOLD)
+        final_trades = trades[-20:]  # Last 20 trades
         
-        # Debug: Check what happens during filtering
-        print("DEBUG: Checking trades during non-HOLD filtering:")
-        for i, t in enumerate(trades_copy[:5]):
-            print(f"  [{i}] Before filter: action={t.get('action')}, sentiment={t.get('sentiment')}")
-        
-        # Create non-hold trades manually to avoid list comprehension issues
-        non_hold_trades = []
-        for i, t in enumerate(trades_copy):
-            if t['action'] != 'HOLD':
-                # Debug: Check if trade is modified during filtering
-                print(f"DEBUG: Adding trade [{i}]: action={t.get('action')}, sentiment={t.get('sentiment')}")
-                non_hold_trades.append(t)
-                # Debug: Check if trade was modified after adding
-                print(f"DEBUG: After adding trade [{i}]: action={t.get('action')}, sentiment={t.get('sentiment')}")
-        non_hold_trades = non_hold_trades[-10:]  # Last 10 non-HOLD trades
-        
-        # Debug: Check what happens after filtering
-        print("DEBUG: After non-HOLD filtering (manual):")
-        for i, t in enumerate(non_hold_trades[:5]):
-            print(f"  [{i}] After filter: action={t.get('action')}, sentiment={t.get('sentiment')}")
-        
-        hold_trades = [t for t in recent_trades if t['action'] == 'HOLD'][-10:]  # Last 10 HOLD trades from recent
-        
-        # Debug: Print first 3 non_hold_trades
-        print("DEBUG: First 3 non_hold_trades:")
-        for i, trade in enumerate(non_hold_trades[:3]):
+        # Debug: Print first 3 final_trades
+        print("DEBUG: First 3 final_trades:")
+        for i, trade in enumerate(final_trades[:3]):
             print(f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}")
-        
-        # Only include trades with actions that exist in the database (CALL, BUY, HOLD)
-        non_hold_trades = [t for t in trades if t['action'] in ('CALL', 'BUY')][-10:]
-        hold_trades = [t for t in trades if t['action'] == 'HOLD'][-10:]
-        final_trades = non_hold_trades + hold_trades
-        final_trades = final_trades[-20:]  # Ensure we don't exceed 20 trades
         
         return {
             "initial_capital": initial_capital,
