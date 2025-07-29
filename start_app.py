@@ -16,8 +16,11 @@ import subprocess
 import socket
 import platform
 import time
+import traceback
 from pathlib import Path
 import threading
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from pathlib import Path
 import sys
@@ -321,6 +324,8 @@ def run_scheduled_jobs():
     from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
     from src.core.database import get_db_connection, ensure_job_schedules_table
     from src.core.scalping_analyzer import scalping_analyzer
+    from datetime import datetime, timedelta
+    import calendar
     
     # Define preload_stock_data as a placeholder (will be handled by app.py scheduler)
     def preload_stock_data():
@@ -329,6 +334,10 @@ def run_scheduled_jobs():
     # Ensure job_schedules table exists
     ensure_job_schedules_table()
     
+    # Check if today is a trading day (Monday-Friday)
+    today = datetime.now()
+    is_trading_day = today.weekday() < 5  # Monday=0, Friday=4
+    
     scheduler = BackgroundScheduler()
     job_map = {
         'preload_news_opportunities': preload_news_opportunities,
@@ -336,6 +345,37 @@ def run_scheduled_jobs():
         'preload_stock_data': preload_stock_data,
         'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis()
     }
+    
+    # If it's a trading day and the app is starting, run any missed jobs from today
+    if is_trading_day:
+        print(f"[SCHEDULER] Today ({today.strftime('%A')}) is a trading day. Checking for missed jobs...")
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT id, job_name, run_time, enabled FROM job_schedules WHERE enabled = TRUE')
+                    jobs = cur.fetchall()
+                    
+                    for row in jobs:
+                        job_id, job_name, run_time, enabled = row
+                        if job_name in job_map:
+                            hour, minute, *_ = str(run_time).split(':')
+                            scheduled_time = today.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
+                            
+                            # If the scheduled time has passed today, run the job immediately
+                            if scheduled_time < today:
+                                print(f"[SCHEDULER] Running missed job: {job_name} (scheduled for {scheduled_time.strftime('%H:%M')})")
+                                try:
+                                    job_map[job_name]()
+                                    # Update last_run to now
+                                    cur.execute('UPDATE job_schedules SET last_run = NOW() WHERE id = %s', (job_id,))
+                                    conn.commit()
+                                    print(f"[SCHEDULER] Completed missed job: {job_name}")
+                                except Exception as e:
+                                    print(f"[SCHEDULER ERROR] Missed job {job_name} failed: {e}")
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] Failed to run missed jobs: {e}")
+    else:
+        print(f"[SCHEDULER] Today ({today.strftime('%A')}) is not a trading day. Skipping missed job check.")
     
     def update_last_run(job_id):
         with get_db_connection() as conn:

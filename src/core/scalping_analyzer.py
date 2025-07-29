@@ -239,7 +239,7 @@ class ScalpingAnalyzer:
             current_price = float(exchange_rate.get("5. Exchange Rate", 0))
             
             # For crypto, we'll use simplified metrics since volume data is limited
-            # In a real implementation, you'd use CoinGecko or similar API
+            # In a real implementation, you'd use Alpha Vantage or similar API
             return {
                 "ticker": ticker,
                 "price_open": current_price,  # Simplified for demo
@@ -482,24 +482,27 @@ class ScalpingAnalyzer:
     
     def get_todays_scalping_signals(self):
         """
-        Get today's scalping signals from database
+        Get most recent trading day's scalping signals
         
         Returns:
-            List of today's scalping signals
+            List of most recent trading day's scalping signals
         """
         try:
-            today = date.today()
-            
+            # Get the most recent trading day with data
             query = """
             SELECT ticker, asset_type, date, time_collected, price_open, price_now,
                    volume_ratio, price_change_pct, gap_pct, sentiment_class, 
                    recommendation, headlines_json
             FROM scalping_signals 
-            WHERE date = %s 
+            WHERE date = (
+                SELECT MAX(date) 
+                FROM scalping_signals 
+                WHERE date <= CURRENT_DATE
+            )
             ORDER BY recommendation DESC, volume_ratio DESC
             """
             
-            results = execute_query(query, (today,))
+            results = execute_query(query)
             
             signals = []
             if results is None:
@@ -560,6 +563,93 @@ class ScalpingAnalyzer:
             log_error(f"Error getting today's scalping signals: {e}")
             return []
     
+    def get_recent_scalping_signals(self) -> List[Dict[str, Any]]:
+        """
+        Get scalping signals from the last 7 days
+        
+        Returns:
+            List of signal dictionaries
+        """
+        try:
+            log_info("[SCALPING] Getting recent scalping signals (last 7 days)")
+            
+            query = """
+            SELECT 
+                ticker, asset_type, date, time_collected, price_open, price_now, 
+                volume_ratio, price_change_pct, gap_pct, sentiment_class, 
+                recommendation, headlines_json
+            FROM scalping_signals
+            WHERE date >= CURRENT_DATE - INTERVAL '7 days'
+            ORDER BY date DESC, time_collected DESC
+            LIMIT 100
+            """
+            
+            results = execute_query(query)
+            log_info(f"[SCALPING] Found {len(results)} recent signals")
+            
+            signals = []
+            for row in results:
+                if isinstance(row, dict):
+                    signal = row.copy()
+                elif isinstance(row, (tuple, list)):
+                    # Convert tuple to dict
+                    signal = {
+                        'ticker': row[0],
+                        'asset_type': row[1],
+                        'date': row[2],
+                        'time_collected': row[3],
+                        'price_open': row[4],
+                        'price_now': row[5],
+                        'volume_ratio': row[6],
+                        'price_change_pct': row[7],
+                        'gap_pct': row[8],
+                        'sentiment_class': row[9],
+                        'recommendation': row[10],
+                        'headlines_json': row[11] if len(row) > 11 else None
+                    }
+                else:
+                    continue
+                
+                # Process headlines
+                if signal.get('headlines_json'):
+                    try:
+                        if isinstance(signal['headlines_json'], str):
+                            headlines = json.loads(signal['headlines_json'])
+                        else:
+                            headlines = signal['headlines_json']
+                        signal['headlines'] = headlines
+                        signal['top_headlines'] = headlines[:3] if headlines else []
+                    except Exception:
+                        signal['headlines'] = []
+                        signal['top_headlines'] = []
+                else:
+                    signal['headlines'] = []
+                    signal['top_headlines'] = []
+                
+                # Ensure all required fields are present with correct types
+                signal['sentiment'] = signal.get('sentiment_class', 'Neutral')
+                signal['price_open'] = float(signal.get('price_open', 0)) if signal.get('price_open') is not None else 0
+                signal['price_now'] = float(signal.get('price_now', 0)) if signal.get('price_now') is not None else 0
+                signal['volume_ratio'] = float(signal.get('volume_ratio', 0)) if signal.get('volume_ratio') is not None else 0
+                signal['price_change_pct'] = float(signal.get('price_change_pct', 0)) if signal.get('price_change_pct') is not None else 0
+                
+                # Fix asset_type - set to 'stock' or 'crypto' based on ticker or other logic
+                if signal.get('asset_type') is None:
+                    # Simple logic: if ticker is in common crypto list, it's crypto, otherwise stock
+                    crypto_tickers = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'ADA', 'DOT', 'LINK', 'UNI', 'BCH', 'LTC', 'XRP']
+                    signal['asset_type'] = 'crypto' if signal.get('ticker') in crypto_tickers else 'stock'
+                
+                signals.append(signal)
+            
+            # Convert all datetime objects to strings for JSON serialization
+            signals = self._convert_datetime_objects(signals)  # type: ignore
+            
+            return signals
+            
+        except Exception as e:
+            log_error(f"Error getting recent scalping signals: {e}")
+            return []
+    
     def get_scalping_opportunities_api(self) -> Dict[str, Any]:
         """
         API endpoint function to get current scalping opportunities
@@ -569,20 +659,13 @@ class ScalpingAnalyzer:
         """
         try:
             log_info("[SCALPING] Starting get_scalping_opportunities_api")
-            # Get today's signals
+            # Get today's signals (or most recent trading day)
             signals = self.get_todays_scalping_signals()
             log_info(f"[SCALPING] Got {len(signals)} signals from database")
             
-            # Filter for actual opportunities
-            opportunities = [
-                signal for signal in signals 
-                if signal.get('recommendation') in [
-                    'Long Scalping Opportunity', 
-                    'Short Scalping Opportunity',
-                    'High Momentum - Monitor Sentiment'
-                ]
-            ]
-            log_info(f"[SCALPING] Filtered to {len(opportunities)} opportunities")
+            # Return all signals, not just opportunities (let frontend handle filtering)
+            opportunities = signals
+            log_info(f"[SCALPING] Returning all {len(opportunities)} signals (frontend will filter)")
             
             # Ensure all datetime objects are converted to strings for JSON serialization
             def convert_datetime_recursive(obj: Any) -> Any:

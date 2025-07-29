@@ -954,3 +954,311 @@ FAILED tests/playwright_comprehensive_test.py::test_opportunities_page - Asse...
 2025-07-19 02:20:12,672 - INFO -     Error: Target page, context or browser has been closed
 2025-07-19 02:20:12,672 - INFO - ============================================================
 2025-07-19 02:20:12,672 - INFO - 🎉 Test suite completed: 0/11 pages passed
+2025-07-28 13:56:20,991 - INFO - 🚀 Starting comprehensive page test suite
+2025-07-28 13:56:21,664 - INFO - Browser setup complete with video recording enabled
+2025-07-28 13:56:21,664 - INFO - 📄 Testing page 1/11: Homepage
+2025-07-28 13:56:21,664 - INFO - 🚀 Testing Homepage at /
+2025-07-28 13:56:22,473 - INFO - ✅ Navigated to http://localhost:5001/
+2025-07-28 13:56:22,477 - INFO - Page load completed in 0.00s
+2025-07-28 13:56:22,477 - INFO - 🔍 Verifying default elements for Homepage
+2025-07-28 13:56:27,505 - WARNING - Element #howItWorksCard not found: Timeout 5000ms exceeded.
+2025-07-28 13:56:32,512 - WARNING - Element .card not found: Timeout 5000ms exceeded.
+2025-07-28 13:56:32,513 - WARNING - ⚠️ Homepage - Missing elements: 3/5
+2025-07-28 13:56:32,513 - WARNING - ⚠️ Default elements missing for Homepage
+2025-07-28 13:56:32,513 - INFO - 🔍 Verifying page population for Homepage
+2025-07-28 13:56:32,513 - WARNING - ⚠️ Homepage - No expected data found
+2025-07-28 13:56:32,513 - WARNING - ⚠️ Data population incomplete for Homepage
+2025-07-28 13:56:32,626 - INFO - 📸 Screenshot saved: test_artifacts/Homepage_20250728_135632.png
+2025-07-28 13:56:32,626 - WARNING - ⚠️ Homepage - Test PARTIAL PASS
+2025-07-28 13:56:33,628 - INFO - 📄 Testing page 2/11: Stocks Page
+2025-07-28 13:56:33,628 - INFO - 🚀 Testing Stocks Page at /stocks
+2025-07-28 13:56:34,293 - INFO - ✅ Navigated to http://localhost:5001/stocks
+2025-07-28 13:56:34,295 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-07-28 13:56:34,303 - INFO - Found element: #stocksTableBody
+2025-07-28 13:56:34,306 - INFO - Found element: #winnersList
+2025-07-28 13:56:34,308 - INFO - Found element: #losersList
+2025-07-28 13:56:34,310 - INFO - Found element: #stockAnalysisSection
+2025-07-28 13:57:04,311 - WARNING - Element .stock-card not found: Timeout 30000ms exceeded.
+2025-07-28 13:57:34,317 - WARNING - Element #marketOverview not found: Timeout 30000ms exceeded.
+2025-07-28 13:57:36,318 - INFO - Page load completed in 62.02s
+2025-07-28 13:57:36,319 - INFO - 🔍 Verifying default elements for Stocks Page
+2025-07-28 13:57:41,344 - WARNING - Element .stock-card not found: Timeout 5000ms exceeded.
+2025-07-28 13:57:46,347 - WARNING - Element #marketOverview not found: Timeout 5000ms exceeded.
+2025-07-28 13:57:46,347 - WARNING - ⚠️ Stocks Page - Missing elements: 4/6
+2025-07-28 13:57:46,347 - WARNING - ⚠️ Default elements missing for Stocks Page
+2025-07-28 13:57:46,347 - INFO - 🔍 Verifying page population for Stocks Page
+2025-07-28 13:57:46,365 - INFO - ✅ Stocks Page - Data found: stock data (6 items), minimum data count met (23 >= 5)
+2025-07-28 13:57:46,498 - INFO - 📸 Screenshot saved: test_artifacts/Stocks Page_20250728_135746.png
+2025-07-28 13:57:46,498 - WARNING - ⚠️ Stocks Page - Test PARTIAL PASS
+2025-07-28 13:57:47,499 - INFO - 📄 Testing page 3/11: Crypto Page
+2025-07-28 13:57:47,499 - INFO - 🚀 Testing Crypto Page at /crypto
+2025-07-28 13:57:48,084 - INFO - ✅ Navigated to http://localhost:5001/crypto
+2025-07-28 13:57:48,086 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-07-28 13:57:48,093 - INFO - Found element: #cryptoAnalysisContainer
+2025-07-28 13:58:08,095 - WARNING - Element #cryptoCardsRow not found: Timeout 20000ms exceeded.
+2025-07-28 13:58:08,098 - INFO - Found element: #sentimentChartContainer
+2025-07-28 13:58:28,098 - WARNING - Element .crypto-card not found: Timeout 20000ms exceeded.
+2025-07-28 13:58:48,099 - WARNING - Element #cryptoOverview not found: Timeout 20000ms exceeded.
+2025-07-28 13:58:50,100 - INFO - Page load completed in 62.02s
+2025-07-28 13:58:50,100 - INFO - 🔍 Verifying default elements for Crypto Page
+2025-07-28 13:58:55,109 - WARNING - Element .crypto-card not found: Timeout 5000ms exceeded.
+2025-07-28 13:59:00,111 - WARNING - Element #cryptoOverview not found: Timeout 5000ms exceeded.
+2025-07-28 13:59:00,111 - WARNING - ⚠️ Crypto Page - Missing elements: 3/5
+2025-07-28 13:59:00,111 - WARNING - ⚠️ Default elements missing for Crypto Page
+2025-07-28 13:59:00,111 - INFO - 🔍 Verifying page population for Crypto Page
+2025-07-28 13:59:00,126 - INFO - ✅ Crypto Page - Data found: crypto data (7 items), minimum data count met (13 >= 3)
+2025-07-28 13:59:00,269 - INFO - 📸 Screenshot saved: test_artifacts/Crypto Page_20250728_135900.png
+2025-07-28 13:59:00,269 - WARNING - ⚠️ Crypto Page - Test PARTIAL PASS
+2025-07-28 13:59:01,270 - INFO - 📄 Testing page 4/11: Opportunities Page
+2025-07-28 13:59:01,270 - INFO - 🚀 Testing Opportunities Page at /opportunities
+2025-07-28 13:59:02,492 - INFO - ✅ Navigated to http://localhost:5001/opportunities
+2025-07-28 13:59:02,493 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-07-28 13:59:02,501 - INFO - Found element: #opportunitiesSection
+2025-07-28 13:59:02,505 - INFO - Found element: #opportunitiesContainer
+2025-07-28 13:59:02,507 - INFO - Found element: #findButton
+2025-07-28 13:59:02,509 - INFO - Found element: #newsBtn
+2025-07-28 13:59:02,510 - INFO - Found element: #watchlistBtn
+2025-07-28 13:59:02,512 - INFO - Found element: #refreshBtn
+2025-07-28 13:59:02,514 - INFO - Found element: #lastUpdated
+2025-07-28 13:59:02,516 - INFO - Found element: .opportunity-card
+2025-07-28 13:59:04,517 - INFO - Page load completed in 2.02s
+2025-07-28 13:59:04,517 - INFO - 🔍 Verifying default elements for Opportunities Page
+2025-07-28 13:59:04,532 - INFO - ✅ Opportunities Page - Elements found: 8/8
+2025-07-28 13:59:04,532 - INFO - 🔍 Verifying page population for Opportunities Page
+2025-07-28 13:59:04,539 - INFO - ✅ Opportunities Page - Data found: opportunities (12 items), minimum data count met (17 >= 1)
+2025-07-28 13:59:04,539 - INFO - 🔍 Special verification for Opportunities page
+2025-07-28 13:59:07,546 - INFO - Found 12 opportunities
+2025-07-28 13:59:07,549 - INFO - ✅ News and Watchlist buttons found
+2025-07-28 13:59:08,083 - INFO - Console: 🚀 [LOAD] Starting loadOpportunities for mode: news forceRefresh: false
+2025-07-28 13:59:08,083 - INFO - Console: 🌐 [LOAD] Fetching from endpoint: /api/news_opportunities
+2025-07-28 13:59:08,084 - INFO - Console: 🌐 [FETCH] Request: {url: /api/news_opportunities, signal: AbortSignal}
+2025-07-28 13:59:08,111 - INFO - Console: 🌐 [FETCH] Response: {url: /api/news_opportunities, status: 200, statusText: OK, headers: Object, dataStructure: Object}
+2025-07-28 13:59:08,112 - INFO - Console: 📊 [LOAD] Raw API response data: {mode: news, endpoint: /api/news_opportunities, responseStatus: 200, dataType: object, isArray: false}
+2025-07-28 13:59:08,112 - INFO - Console: ✅ [LOAD] API call successful, calling displayOpportunities
+2025-07-28 13:59:08,112 - INFO - Console: [DIAG] [DISPLAY] Starting displayOpportunities {data: Object}
+2025-07-28 13:59:08,112 - INFO - Console: [DIAG] [DISPLAY] Current mode: news
+2025-07-28 13:59:08,112 - INFO - Console: [DIAG] [DISPLAY] Raw responseData: {cache_timestamp: 2025-07-28T13:23:37.525628, cached: true, count: 2, opportunities: Array(2)}
+2025-07-28 13:59:08,113 - INFO - Console: [DIAG] [DISPLAY] NEWS mode - News opportunities: [Object, Object]
+2025-07-28 13:59:08,113 - INFO - Console: [DIAG] [DISPLAY] Opportunities array length: 2
+2025-07-28 13:59:08,113 - INFO - Console: [DIAG] [DISPLAY] Opportunity 1: {articles: Array(3), news_count: 5, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:08,114 - INFO - Console: [DIAG] [DISPLAY] Opportunity 2: {articles: Array(3), news_count: 5, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:08,115 - INFO - Console: 🔍 [DISPLAY] Final opportunities array: [Object, Object]
+2025-07-28 13:59:08,115 - INFO - Console: 🔍 [DISPLAY] Opportunities array length: 2
+2025-07-28 13:59:08,115 - INFO - Console: 🔍 [FILTER] Filtering FBSI: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:08,115 - INFO - Console: 🔍 [FILTER] Filtering GSK: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:08,116 - INFO - Console: 🔍 [DISPLAY] Filtered opportunities: {total: 2, meaningful: 2, filtered: 0}
+2025-07-28 13:59:08,116 - INFO - Console: ✅ [DISPLAY] Found meaningful opportunities, creating cards...
+2025-07-28 13:59:08,116 - INFO - Console: 🔍 [DISPLAY] Creating card 1 for: {symbol: FBSI, type: stock, action: CALL}
+2025-07-28 13:59:08,116 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: FBSI, type: stock, trigger: news_driven, fullOpportunity: Object}
+2025-07-28 13:59:08,116 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: FBSI, trigger: news_driven, type: stock, action: CALL, sentimentScore: 0.6}
+2025-07-28 13:59:08,117 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: News-Driven, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:08,117 - INFO - Console: ✅ [CARD] Card created successfully for: FBSI
+2025-07-28 13:59:08,117 - INFO - Console: ✅ [DISPLAY] Card 1 added to container successfully
+2025-07-28 13:59:08,117 - INFO - Console: 🔍 [DISPLAY] Creating card 2 for: {symbol: GSK, type: stock, action: CALL}
+2025-07-28 13:59:08,117 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: GSK, type: stock, trigger: news_driven, fullOpportunity: Object}
+2025-07-28 13:59:08,117 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: GSK, trigger: news_driven, type: stock, action: CALL, sentimentScore: 0.65}
+2025-07-28 13:59:08,118 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: News-Driven, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:08,118 - INFO - Console: ✅ [CARD] Card created successfully for: GSK
+2025-07-28 13:59:08,118 - INFO - Console: ✅ [DISPLAY] Card 2 added to container successfully
+2025-07-28 13:59:08,118 - INFO - Console: ✅ [DISPLAY] displayOpportunities completed successfully
+2025-07-28 13:59:08,118 - INFO - Console: 🏁 [LOAD] loadOpportunities completed
+2025-07-28 13:59:08,118 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:08,119 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,117 - INFO - Console: 🚀 [LOAD] Starting loadOpportunities for mode: watchlist forceRefresh: false
+2025-07-28 13:59:10,117 - INFO - Console: 🌐 [LOAD] Fetching from endpoint: /api/watchlist_opportunities
+2025-07-28 13:59:10,117 - INFO - Console: 🌐 [FETCH] Request: {url: /api/watchlist_opportunities, signal: AbortSignal}
+2025-07-28 13:59:10,146 - INFO - Console: 🌐 [FETCH] Response: {url: /api/watchlist_opportunities, status: 200, statusText: OK, headers: Object, dataStructure: Object}
+2025-07-28 13:59:10,146 - INFO - Console: 📊 [LOAD] Raw API response data: {mode: watchlist, endpoint: /api/watchlist_opportunities, responseStatus: 200, dataType: object, isArray: false}
+2025-07-28 13:59:10,147 - INFO - Console: ✅ [LOAD] API call successful, calling displayOpportunities
+2025-07-28 13:59:10,147 - INFO - Console: [DIAG] [DISPLAY] Starting displayOpportunities {data: Object}
+2025-07-28 13:59:10,149 - INFO - Console: [DIAG] [DISPLAY] Current mode: watchlist
+2025-07-28 13:59:10,149 - INFO - Console: [DIAG] [DISPLAY] Raw responseData: {cache_timestamp: 2025-07-28T13:25:21.346092, cached: true, count: 12, errors_count: 0, opportunities: Array(12)}
+2025-07-28 13:59:10,150 - INFO - Console: [DIAG] [DISPLAY] WATCHLIST mode - Watchlist opportunities: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]
+2025-07-28 13:59:10,151 - INFO - Console: [DIAG] [DISPLAY] Opportunities array length: 12
+2025-07-28 13:59:10,152 - INFO - Console: [DIAG] [DISPLAY] Opportunity 1: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,152 - INFO - Console: [DIAG] [DISPLAY] Opportunity 2: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,153 - INFO - Console: [DIAG] [DISPLAY] Opportunity 3: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,153 - INFO - Console: [DIAG] [DISPLAY] Opportunity 4: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,153 - INFO - Console: [DIAG] [DISPLAY] Opportunity 5: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,153 - INFO - Console: [DIAG] [DISPLAY] Opportunity 6: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,154 - INFO - Console: [DIAG] [DISPLAY] Opportunity 7: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,154 - INFO - Console: [DIAG] [DISPLAY] Opportunity 8: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,154 - INFO - Console: [DIAG] [DISPLAY] Opportunity 9: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,154 - INFO - Console: [DIAG] [DISPLAY] Opportunity 10: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,155 - INFO - Console: [DIAG] [DISPLAY] Opportunity 11: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,155 - INFO - Console: [DIAG] [DISPLAY] Opportunity 12: {articles: Array(3), news_count: 20, price_data: Object, sentiment_data: Object, signal_data: Object}
+2025-07-28 13:59:10,155 - INFO - Console: 🔍 [DISPLAY] Final opportunities array: [Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object, Object]
+2025-07-28 13:59:10,155 - INFO - Console: 🔍 [DISPLAY] Opportunities array length: 12
+2025-07-28 13:59:10,155 - INFO - Console: 🔍 [FILTER] Filtering AAPL: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,156 - INFO - Console: 🔍 [FILTER] Filtering AMZN: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,156 - INFO - Console: 🔍 [FILTER] Filtering DIS: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,156 - INFO - Console: 🔍 [FILTER] Filtering GOOGL: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,156 - INFO - Console: 🔍 [FILTER] Filtering JPM: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,157 - INFO - Console: 🔍 [FILTER] Filtering META: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,157 - INFO - Console: 🔍 [FILTER] Filtering NFLX: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,157 - INFO - Console: 🔍 [FILTER] Filtering NVDA: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,157 - INFO - Console: 🔍 [FILTER] Filtering PLTR: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,157 - INFO - Console: 🔍 [FILTER] Filtering TSLA: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,158 - INFO - Console: 🔍 [FILTER] Filtering UNH: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,158 - INFO - Console: 🔍 [FILTER] Filtering V: {hasSymbol: true, hasPrice: true, hasSentiment: true, hasSignal: true, hasNews: true}
+2025-07-28 13:59:10,158 - INFO - Console: 🔍 [DISPLAY] Filtered opportunities: {total: 12, meaningful: 12, filtered: 0}
+2025-07-28 13:59:10,158 - INFO - Console: ✅ [DISPLAY] Found meaningful opportunities, creating cards...
+2025-07-28 13:59:10,158 - INFO - Console: 🔍 [DISPLAY] Creating card 1 for: {symbol: AAPL, type: stock, action: CALL}
+2025-07-28 13:59:10,159 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: AAPL, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,159 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: AAPL, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.9}
+2025-07-28 13:59:10,159 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,159 - INFO - Console: ✅ [CARD] Card created successfully for: AAPL
+2025-07-28 13:59:10,160 - INFO - Console: ✅ [DISPLAY] Card 1 added to container successfully
+2025-07-28 13:59:10,160 - INFO - Console: 🔍 [DISPLAY] Creating card 2 for: {symbol: AMZN, type: stock, action: PUT}
+2025-07-28 13:59:10,160 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: AMZN, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,160 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: AMZN, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.5}
+2025-07-28 13:59:10,160 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-warning}
+2025-07-28 13:59:10,161 - INFO - Console: ✅ [CARD] Card created successfully for: AMZN
+2025-07-28 13:59:10,161 - INFO - Console: ✅ [DISPLAY] Card 2 added to container successfully
+2025-07-28 13:59:10,161 - INFO - Console: 🔍 [DISPLAY] Creating card 3 for: {symbol: DIS, type: stock, action: CALL}
+2025-07-28 13:59:10,161 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: DIS, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,161 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: DIS, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.8}
+2025-07-28 13:59:10,161 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,161 - INFO - Console: ✅ [CARD] Card created successfully for: DIS
+2025-07-28 13:59:10,162 - INFO - Console: ✅ [DISPLAY] Card 3 added to container successfully
+2025-07-28 13:59:10,162 - INFO - Console: 🔍 [DISPLAY] Creating card 4 for: {symbol: GOOGL, type: stock, action: PUT}
+2025-07-28 13:59:10,162 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: GOOGL, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,162 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: GOOGL, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.5}
+2025-07-28 13:59:10,162 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-warning}
+2025-07-28 13:59:10,162 - INFO - Console: ✅ [CARD] Card created successfully for: GOOGL
+2025-07-28 13:59:10,162 - INFO - Console: ✅ [DISPLAY] Card 4 added to container successfully
+2025-07-28 13:59:10,163 - INFO - Console: 🔍 [DISPLAY] Creating card 5 for: {symbol: JPM, type: stock, action: CALL}
+2025-07-28 13:59:10,163 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: JPM, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,163 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: JPM, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.6}
+2025-07-28 13:59:10,163 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,163 - INFO - Console: ✅ [CARD] Card created successfully for: JPM
+2025-07-28 13:59:10,163 - INFO - Console: ✅ [DISPLAY] Card 5 added to container successfully
+2025-07-28 13:59:10,163 - INFO - Console: 🔍 [DISPLAY] Creating card 6 for: {symbol: META, type: stock, action: PUT}
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: META, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: META, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.2}
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-muted}
+2025-07-28 13:59:10,164 - INFO - Console: ✅ [CARD] Card created successfully for: META
+2025-07-28 13:59:10,164 - INFO - Console: ✅ [DISPLAY] Card 6 added to container successfully
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [DISPLAY] Creating card 7 for: {symbol: NFLX, type: stock, action: CALL}
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: NFLX, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,164 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: NFLX, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.85}
+2025-07-28 13:59:10,165 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,165 - INFO - Console: ✅ [CARD] Card created successfully for: NFLX
+2025-07-28 13:59:10,165 - INFO - Console: ✅ [DISPLAY] Card 7 added to container successfully
+2025-07-28 13:59:10,165 - INFO - Console: 🔍 [DISPLAY] Creating card 8 for: {symbol: NVDA, type: stock, action: CALL}
+2025-07-28 13:59:10,165 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: NVDA, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,165 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: NVDA, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.85}
+2025-07-28 13:59:10,166 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,166 - INFO - Console: ✅ [CARD] Card created successfully for: NVDA
+2025-07-28 13:59:10,166 - INFO - Console: ✅ [DISPLAY] Card 8 added to container successfully
+2025-07-28 13:59:10,166 - INFO - Console: 🔍 [DISPLAY] Creating card 9 for: {symbol: PLTR, type: stock, action: PUT}
+2025-07-28 13:59:10,166 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: PLTR, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,166 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: PLTR, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.2}
+2025-07-28 13:59:10,167 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-muted}
+2025-07-28 13:59:10,167 - INFO - Console: ✅ [CARD] Card created successfully for: PLTR
+2025-07-28 13:59:10,167 - INFO - Console: ✅ [DISPLAY] Card 9 added to container successfully
+2025-07-28 13:59:10,167 - INFO - Console: 🔍 [DISPLAY] Creating card 10 for: {symbol: TSLA, type: stock, action: PUT}
+2025-07-28 13:59:10,167 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: TSLA, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,167 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: TSLA, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.5}
+2025-07-28 13:59:10,167 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-warning}
+2025-07-28 13:59:10,168 - INFO - Console: ✅ [CARD] Card created successfully for: TSLA
+2025-07-28 13:59:10,168 - INFO - Console: ✅ [DISPLAY] Card 10 added to container successfully
+2025-07-28 13:59:10,168 - INFO - Console: 🔍 [DISPLAY] Creating card 11 for: {symbol: UNH, type: stock, action: PUT}
+2025-07-28 13:59:10,168 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: UNH, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,168 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: UNH, trigger: watchlist_scan, type: stock, action: PUT, sentimentScore: -0.2}
+2025-07-28 13:59:10,168 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: PUT, sentimentClass: text-muted}
+2025-07-28 13:59:10,168 - INFO - Console: ✅ [CARD] Card created successfully for: UNH
+2025-07-28 13:59:10,168 - INFO - Console: ✅ [DISPLAY] Card 11 added to container successfully
+2025-07-28 13:59:10,169 - INFO - Console: 🔍 [DISPLAY] Creating card 12 for: {symbol: V, type: stock, action: CALL}
+2025-07-28 13:59:10,174 - INFO - Console: 🔍 [CARD] Creating card for opportunity: {symbol: V, type: stock, trigger: watchlist_scan, fullOpportunity: Object}
+2025-07-28 13:59:10,174 - INFO - Console: 🔍 [CARD] Extracted values: {symbol: V, trigger: watchlist_scan, type: stock, action: CALL, sentimentScore: 0.6}
+2025-07-28 13:59:10,175 - INFO - Console: 🔍 [CARD] Generated badges: {triggerBadge: Watchlist, typeBadge: Stock, actionBadge: CALL, sentimentClass: text-success}
+2025-07-28 13:59:10,175 - INFO - Console: ✅ [CARD] Card created successfully for: V
+2025-07-28 13:59:10,175 - INFO - Console: ✅ [DISPLAY] Card 12 added to container successfully
+2025-07-28 13:59:10,175 - INFO - Console: ✅ [DISPLAY] displayOpportunities completed successfully
+2025-07-28 13:59:10,175 - INFO - Console: 🏁 [LOAD] loadOpportunities completed
+2025-07-28 13:59:10,175 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,175 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,175 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,175 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,176 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,177 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:10,177 - INFO - Console: Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+2025-07-28 13:59:11,613 - INFO - ✅ Mode switching working
+2025-07-28 13:59:11,615 - INFO - ✅ Refresh button found
+2025-07-28 13:59:11,619 - INFO - ✅ Last updated: Last updated: 7/28/2025, 1:59:10 PM
+2025-07-28 13:59:11,811 - ERROR - ❌ Error testing Opportunities Page: Target page, context or browser has been closed
+2025-07-28 13:59:12,813 - INFO - 📄 Testing page 5/11: System Status Page
+2025-07-28 13:59:12,813 - INFO - 🚀 Testing System Status Page at /system_status
+2025-07-28 13:59:12,814 - ERROR - ❌ Error testing System Status Page: Target page, context or browser has been closed
+2025-07-28 13:59:13,815 - INFO - 📄 Testing page 6/11: Logs Page
+2025-07-28 13:59:13,815 - INFO - 🚀 Testing Logs Page at /logs
+2025-07-28 13:59:13,816 - ERROR - ❌ Error testing Logs Page: Target page, context or browser has been closed
+2025-07-28 13:59:14,818 - INFO - 📄 Testing page 7/11: Portfolio Page
+2025-07-28 13:59:14,818 - INFO - 🚀 Testing Portfolio Page at /portfolio_page
+2025-07-28 13:59:14,819 - ERROR - ❌ Error testing Portfolio Page: Target page, context or browser has been closed
+2025-07-28 13:59:15,820 - INFO - 📄 Testing page 8/11: Backtest Page
+2025-07-28 13:59:15,821 - INFO - 🚀 Testing Backtest Page at /backtest
+2025-07-28 13:59:15,821 - ERROR - ❌ Error testing Backtest Page: Target page, context or browser has been closed
+2025-07-28 13:59:16,823 - INFO - 📄 Testing page 9/11: Recommendations Page
+2025-07-28 13:59:16,823 - INFO - 🚀 Testing Recommendations Page at /recommendations
+2025-07-28 13:59:16,824 - ERROR - ❌ Error testing Recommendations Page: Target page, context or browser has been closed
+2025-07-28 13:59:17,826 - INFO - 📄 Testing page 10/11: Scalping Signals Page
+2025-07-28 13:59:17,826 - INFO - 🚀 Testing Scalping Signals Page at /scalping_signals
+2025-07-28 13:59:17,827 - ERROR - ❌ Error testing Scalping Signals Page: Target page, context or browser has been closed
+2025-07-28 13:59:18,828 - INFO - 📄 Testing page 11/11: Reporting Page
+2025-07-28 13:59:18,829 - INFO - 🚀 Testing Reporting Page at /reporting
+2025-07-28 13:59:18,829 - ERROR - ❌ Error testing Reporting Page: Target page, context or browser has been closed
+2025-07-28 13:59:19,831 - INFO - 📊 Test report saved: test_artifacts/test_report_20250728_135919.json
+2025-07-28 13:59:19,831 - INFO - ============================================================
+2025-07-28 13:59:19,831 - INFO - 📊 COMPREHENSIVE TEST SUMMARY
+2025-07-28 13:59:19,831 - INFO - ============================================================
+2025-07-28 13:59:19,831 - INFO - Total Pages Tested: 11
+2025-07-28 13:59:19,832 - INFO - Pages Passed: 0
+2025-07-28 13:59:19,832 - INFO - Pages Failed: 11
+2025-07-28 13:59:19,832 - INFO - Success Rate: 0.0%
+2025-07-28 13:59:19,832 - INFO - ============================================================
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Homepage
+2025-07-28 13:59:19,832 - INFO -     Issue: Missing elements
+2025-07-28 13:59:19,832 - INFO -     Issue: Data not populated
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Stocks Page
+2025-07-28 13:59:19,832 - INFO -     Issue: Missing elements
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Crypto Page
+2025-07-28 13:59:19,832 - INFO -     Issue: Missing elements
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Opportunities Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - System Status Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Logs Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Portfolio Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Backtest Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Recommendations Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Scalping Signals Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ❌ FAIL - Reporting Page
+2025-07-28 13:59:19,832 - INFO -     Error: Target page, context or browser has been closed
+2025-07-28 13:59:19,832 - INFO - ============================================================
+2025-07-28 13:59:19,832 - INFO - 🎉 Test suite completed: 0/11 pages passed

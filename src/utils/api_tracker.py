@@ -91,7 +91,7 @@ class APITracker:
 
     def get_all_api_status(self) -> Dict[str, Dict[str, Any]]:
         """Get status for all tracked APIs"""
-        apis = ["yahoo_finance", "alpha_vantage", "finnhub", "reddit", "ollama"]
+        apis = ["yahoo_finance", "alpha_vantage", "finnhub", "reddit", "ollama", "cryptopanic", "newsapi"]
         return {api: self.get_api_status(api) for api in apis}
 
 

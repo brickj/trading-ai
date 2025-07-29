@@ -80,7 +80,7 @@ class TestCryptoPage(unittest.TestCase):
         self.assertFalse(self._validate_crypto_data(invalid_data))
     
     def test_crypto_symbol_mapping(self):
-        """Test crypto symbol mapping to CoinGecko IDs"""
+        """Test crypto symbol mapping to Alpha Vantage IDs"""
         from src.data.data_fetcher import DataFetcher
         fetcher = DataFetcher()
         

@@ -32,8 +32,8 @@ class Config:
     # Yahoo Finance API (free, no key required)
     YAHOO_FINANCE_ENABLED = True
     
-    # CoinGecko API (free, no key required)
-    COINGECKO_ENABLED = True
+    # CoinGecko API removed due to rate limiting issues
+    COINGECKO_ENABLED = False
     
     # Reddit API (free, no key required for basic usage)
     REDDIT_ENABLED = True

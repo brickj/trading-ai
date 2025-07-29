@@ -4297,7 +4297,7 @@ def generate_real_report_data(start_date, end_date, report_type):
                 "note": "🔴 MOCK DATA - API response times not tracked"
             },
             "provider_reliability": {
-                "labels": ["Alpha Vantage", "Yahoo Finance", "CoinGecko", "NewsAPI"],
+                "labels": ["Alpha Vantage", "Yahoo Finance", "NewsAPI"],
                 "values": [0.92, 0.95, 0.88, 0.90],
                 "note": "🔴 MOCK DATA - Provider reliability not tracked"
             }
