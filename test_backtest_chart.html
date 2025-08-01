@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backtest Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chart-container { width: 600px; height: 400px; margin: 20px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Backtest Performance Chart Test</h1>
+    
+    <div>
+        <h3>Main Performance Chart</h3>
+        <div class="chart-container">
+            <canvas id="mainPerformanceChart" width="600" height="400" style="border: 1px solid #ccc;"></canvas>
+        </div>
+    </div>
+    
+    <div>
+        <h3>Backtest Performance Chart</h3>
+        <div class="chart-container">
+            <canvas id="backtestPerformanceChart" width="600" height="400" style="border: 1px solid #ccc;"></canvas>
+        </div>
+    </div>
+    
+    <div id="status"></div>
+
+    <script>
+        function formatCurrency(value) {
+            if (typeof value !== 'number' || isNaN(value)) {
+                return 'N/A';
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+
+        function createMainPerformanceChart(data) {
+            console.log('Creating main performance chart with data:', data);
+            
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (!canvas) {
+                console.error('Main performance chart canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Could not get 2D context from main canvas!');
+                return;
+            }
+            
+            if (data.cumulative_capital && data.cumulative_capital.length > 0) {
+                console.log('Creating portfolio performance chart with cumulative capital data');
+                console.log('Capital data length:', data.cumulative_capital.length);
+                
+                const labels = data.cumulative_capital.map((_, index) => `Trade ${index}`);
+                const capitalData = data.cumulative_capital;
+                
+                try {
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Portfolio Value',
+                                data: capitalData,
+                                borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                                backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatCurrency(value);
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                    console.log('Main portfolio performance chart created successfully');
+                    canvas.style.border = '2px solid green';
+                    canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                    document.getElementById('status').innerHTML += '<p class="success">✓ Main performance chart created successfully</p>';
+                } catch (error) {
+                    console.error('Error creating main portfolio performance chart:', error);
+                    canvas.style.border = '2px solid red';
+                    canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+                    document.getElementById('status').innerHTML += '<p class="error">✗ Error creating main performance chart: ' + error.message + '</p>';
+                }
+            } else {
+                console.warn('No cumulative_capital data available for main chart');
+                document.getElementById('status').innerHTML += '<p class="error">✗ No cumulative_capital data available</p>';
+            }
+        }
+
+        function createBacktestPerformanceChart(data) {
+            console.log('Creating backtest performance chart with data:', data);
+            
+            const canvas = document.getElementById('backtestPerformanceChart');
+            if (!canvas) {
+                console.error('Backtest performance chart canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Could not get 2D context from backtest canvas!');
+                return;
+            }
+            
+            if (data.cumulative_capital && data.cumulative_capital.length > 0) {
+                console.log('Creating backtest portfolio performance chart with cumulative capital data');
+                console.log('Capital data length:', data.cumulative_capital.length);
+                
+                const labels = data.cumulative_capital.map((_, index) => `Trade ${index}`);
+                const capitalData = data.cumulative_capital;
+                
+                try {
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Portfolio Value',
+                                data: capitalData,
+                                borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                                backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatCurrency(value);
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                    console.log('Backtest portfolio performance chart created successfully');
+                    canvas.style.border = '2px solid green';
+                    canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                    document.getElementById('status').innerHTML += '<p class="success">✓ Backtest performance chart created successfully</p>';
+                } catch (error) {
+                    console.error('Error creating backtest portfolio performance chart:', error);
+                    canvas.style.border = '2px solid red';
+                    canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+                    document.getElementById('status').innerHTML += '<p class="error">✗ Error creating backtest performance chart: ' + error.message + '</p>';
+                }
+            } else {
+                console.warn('No cumulative_capital data available for backtest chart');
+                document.getElementById('status').innerHTML += '<p class="error">✗ No cumulative_capital data available for backtest chart</p>';
+            }
+        }
+
+        // Test the charts with real API data
+        async function testCharts() {
+            try {
+                document.getElementById('status').innerHTML = '<p>Testing charts with real API data...</p>';
+                
+                const response = await fetch('http://localhost:5001/api/backtest/historical', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        symbol: 'AAPL',
+                        days_back: 30,
+                        strategy_type: 'all'
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                if (result.data) {
+                    const data = result.data;
+                    console.log('Chart data:', {
+                        total_return: data.total_return,
+                        win_rate: data.win_rate,
+                        total_trades: data.total_trades,
+                        cumulative_capital_length: data.cumulative_capital ? data.cumulative_capital.length : 0
+                    });
+                    
+                    document.getElementById('status').innerHTML += '<p class="success">✓ API data received successfully</p>';
+                    
+                    // Create both charts
+                    createMainPerformanceChart(data);
+                    createBacktestPerformanceChart(data);
+                } else {
+                    document.getElementById('status').innerHTML += '<p class="error">✗ No data received from API</p>';
+                }
+            } catch (error) {
+                console.error('Error testing charts:', error);
+                document.getElementById('status').innerHTML += '<p class="error">✗ Error testing charts: ' + error.message + '</p>';
+            }
+        }
+
+        // Run the test when page loads
+        document.addEventListener('DOMContentLoaded', testCharts);
+    </script>
+</body>
+</html> 

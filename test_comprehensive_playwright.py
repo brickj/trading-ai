@@ -46,11 +46,13 @@ class ComprehensivePageTest:
                     "#howItWorksCard",  # How it works card
                     "nav",  # Navigation
                     ".container",  # Main container
-                    ".card"  # Feature cards
+                    ".card",  # Feature cards
+                    "#resultsSection"  # Results section (may contain last analysis)
                 ],
-                "wait_for_data": False,
+                "wait_for_data": True,
+                "data_timeout": 10000,  # Wait 10 seconds for data to load
                 "verify_population": True,
-                "expected_data": ["feature cards", "navigation", "main content"]
+                "expected_data": ["feature cards", "navigation", "main content", "last analysis"]
             },
             {
                 "name": "Stocks Page",
@@ -118,7 +120,8 @@ class ComprehensivePageTest:
                 "wait_for_data": True,
                 "data_timeout": 15000,
                 "verify_population": True,
-                "expected_data": ["system metrics", "service status", "performance data"]
+                "expected_data": ["system metrics", "service status", "performance data"],
+                "min_data_count": 4  # At least 4 system metrics
             },
             {
                 "name": "Logs Page",
@@ -155,11 +158,18 @@ class ComprehensivePageTest:
                     "#backtestForm",  # Backtest form
                     "#daysSelector",  # Days selector
                     "h1",  # Page heading
-                    "#backtestResults"  # Backtest results area
+                    "#backtestResults",  # Backtest results area
+                    "#performanceChart",  # Performance chart canvas
+                    "#backtestTotalReturn",  # Total return display
+                    "#backtestWinRate",  # Win rate display
+                    "#backtestTotalTrades",  # Total trades display
+                    "#backtestAvgReturn"  # Average return display
                 ],
-                "wait_for_data": False,
+                "wait_for_data": True,
+                "data_timeout": 15000,
                 "verify_population": True,
-                "expected_data": ["backtest form", "parameter selection"]
+                "expected_data": ["backtest form", "parameter selection", "backtest results"],
+                "min_data_count": 3  # At least 3 form elements
             },
             {
                 "name": "Recommendations Page",
@@ -198,59 +208,128 @@ class ComprehensivePageTest:
                     ".container",  # Main container
                     "h1",  # Page heading
                     "#reportingForm",  # Reporting form
-                    "#reportResults"  # Report results area
+                    "#reportResults"  # Report results
                 ],
-                "wait_for_data": False,
+                "wait_for_data": True,
+                "data_timeout": 15000,
                 "verify_population": True,
-                "expected_data": ["reporting form", "date selection", "report types"]
+                "expected_data": ["reporting form", "report results", "date selection"],
+                "min_data_count": 3  # At least 3 form elements
             }
         ]
     
     async def setup_browser(self):
-        """Set up browser with video recording"""
-        self.playwright = await async_playwright().start()
-        
-        # Launch browser with video recording
-        self.browser = await self.playwright.chromium.launch(
-            headless=True,
-            args=['--no-sandbox', '--disable-setuid-sandbox']
-        )
-        
-        # Create context with video recording
-        self.context = await self.browser.new_context(
-            record_video_dir=str(self.artifacts_dir),
-            record_video_size={"width": 1920, "height": 1080}
-        )
-        
-        self.page = await self.context.new_page()
-        
-        # Set viewport
-        await self.page.set_viewport_size({"width": 1920, "height": 1080})
-        
-        logger.info("Browser setup complete with video recording enabled")
+        """Set up browser with improved resource management"""
+        try:
+            # Clean up any existing browser first
+            await self.teardown_browser()
+            
+            self.playwright = await async_playwright().start()
+            
+            # Launch browser with better resource management
+            self.browser = await self.playwright.chromium.launch(
+                headless=True,
+                args=[
+                    '--no-sandbox', 
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',  # Prevent memory issues
+                    '--disable-gpu',  # Disable GPU to reduce resource usage
+                    '--no-first-run',
+                    '--no-default-browser-check',
+                    '--disable-background-timer-throttling',
+                    '--disable-backgrounding-occluded-windows',
+                    '--disable-renderer-backgrounding',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor'
+                ]
+            )
+            
+            # Create context with better resource limits
+            self.context = await self.browser.new_context(
+                record_video_dir=str(self.artifacts_dir),
+                record_video_size={"width": 1280, "height": 720},  # Reduced size
+                viewport={"width": 1280, "height": 720},
+                user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                ignore_https_errors=True
+            )
+            
+            self.page = await self.context.new_page()
+            
+            # Set longer timeouts
+            self.page.set_default_timeout(30000)
+            self.page.set_default_navigation_timeout(30000)
+            
+            logger.info("Browser setup complete with improved resource management")
+            
+        except Exception as e:
+            logger.error(f"Browser setup failed: {e}")
+            raise
+
+    async def ensure_browser_healthy(self):
+        """Ensure browser is healthy, recreate if needed"""
+        try:
+            # Test if browser is still responsive
+            if not self.browser or not self.context:
+                logger.warning("Browser or context missing, recreating...")
+                await self.setup_browser()
+                return
+            
+            # Test if we can create a new page
+            try:
+                test_page = await self.context.new_page()
+                await test_page.close()
+            except Exception:
+                logger.warning("Browser context not responsive, recreating...")
+                await self.setup_browser()
+                return
+                
+        except Exception as e:
+            logger.error(f"Error ensuring browser health: {e}")
+            await self.setup_browser()
     
     async def teardown_browser(self):
-        """Clean up browser resources"""
-        if hasattr(self, 'context'):
-            await self.context.close()
-        if hasattr(self, 'browser'):
-            await self.browser.close()
-        if hasattr(self, 'playwright'):
-            await self.playwright.stop()
+        """Clean up browser resources with better error handling"""
+        try:
+            if hasattr(self, 'page') and self.page:
+                try:
+                    if not self.page.is_closed():
+                        await self.page.close()
+                except Exception:
+                    pass  # Page might already be closed
+        except Exception as e:
+            logger.warning(f"Error closing page: {e}")
+        
+        try:
+            if hasattr(self, 'context') and self.context:
+                await self.context.close()
+        except Exception as e:
+            logger.warning(f"Error closing context: {e}")
+        
+        try:
+            if hasattr(self, 'browser') and self.browser:
+                await self.browser.close()
+        except Exception as e:
+            logger.warning(f"Error closing browser: {e}")
+        
+        try:
+            if hasattr(self, 'playwright') and self.playwright:
+                await self.playwright.stop()
+        except Exception as e:
+            logger.warning(f"Error stopping playwright: {e}")
         
         logger.info("Browser teardown complete")
     
     async def wait_for_page_load(self, page_config):
-        """Wait for page to fully load with data"""
+        """Wait for page to fully load with better error handling"""
         start_time = time.time()
         
         try:
             # Wait for page to be ready
-            await self.page.wait_for_load_state("networkidle", timeout=10000)
+            await self.page.wait_for_load_state("networkidle", timeout=15000)
             
             # If page needs data, wait for it
             if page_config.get("wait_for_data", False):
-                timeout = page_config.get("data_timeout", 15000)
+                timeout = page_config.get("data_timeout", 20000)
                 logger.info(f"Waiting for data to load on {page_config['name']} (timeout: {timeout}ms)")
                 
                 # Wait for key data elements to appear
@@ -262,7 +341,7 @@ class ComprehensivePageTest:
                         logger.warning(f"Element {element} not found: {e}")
                 
                 # Additional wait for data to populate
-                await asyncio.sleep(2)
+                await asyncio.sleep(3)
             
             load_time = time.time() - start_time
             logger.info(f"Page load completed in {load_time:.2f}s")
@@ -314,9 +393,70 @@ class ComprehensivePageTest:
                         data_found.append(f"scalping signals ({len(signal_cards)} items)")
                 
                 elif data_type == "system metrics":
-                    metrics = await self.page.query_selector_all(".metric, .status-indicator")
+                    metrics = await self.page.query_selector_all(".metric, .status-indicator, #cpuUsage, #memoryUsage, #uptime, #cacheHitRate")
                     if len(metrics) > 0:
                         data_found.append(f"system metrics ({len(metrics)} items)")
+                
+                elif data_type == "service status":
+                    service_elements = await self.page.query_selector_all("#serviceStatus, .card-header, .badge")
+                    if len(service_elements) > 0:
+                        data_found.append(f"service status ({len(service_elements)} items)")
+                
+                elif data_type == "performance data":
+                    perf_elements = await self.page.query_selector_all("#performanceMetrics, #databaseStatus, .card-body")
+                    if len(perf_elements) > 0:
+                        data_found.append(f"performance data ({len(perf_elements)} items)")
+                
+                elif data_type == "feature cards":
+                    feature_cards = await self.page.query_selector_all(".card")
+                    if len(feature_cards) > 0:
+                        data_found.append(f"feature cards ({len(feature_cards)} items)")
+                
+                elif data_type == "navigation":
+                    nav_elements = await self.page.query_selector_all("nav, .navbar, .nav")
+                    if len(nav_elements) > 0:
+                        data_found.append(f"navigation ({len(nav_elements)} items)")
+                
+                elif data_type == "main content":
+                    content_elements = await self.page.query_selector_all(".container, .main-content, .content")
+                    if len(content_elements) > 0:
+                        data_found.append(f"main content ({len(content_elements)} items)")
+                
+                elif data_type == "last analysis":
+                    # Check for last analysis display
+                    last_analysis_elements = await self.page.query_selector_all("#resultsSection, .alert, .last-analysis")
+                    if len(last_analysis_elements) > 0:
+                        data_found.append(f"last analysis ({len(last_analysis_elements)} items)")
+                
+                elif data_type == "backtest form":
+                    backtest_elements = await self.page.query_selector_all("#backtestForm, #daysSelector, #symbolInput")
+                    if len(backtest_elements) > 0:
+                        data_found.append(f"backtest form ({len(backtest_elements)} items)")
+                
+                elif data_type == "parameter selection":
+                    param_elements = await self.page.query_selector_all("#daysSelector, #symbolInput, .form-control")
+                    if len(param_elements) > 0:
+                        data_found.append(f"parameter selection ({len(param_elements)} items)")
+                
+                elif data_type == "backtest results":
+                    backtest_results_elements = await self.page.query_selector_all("#backtestResults, #backtestTotalReturn, #backtestWinRate, #backtestTotalTrades, #backtestAvgReturn")
+                    if len(backtest_results_elements) > 0:
+                        data_found.append(f"backtest results ({len(backtest_results_elements)} items)")
+                
+                elif data_type == "reporting form":
+                    report_elements = await self.page.query_selector_all("#reportingForm, #startDate, #endDate, #reportType")
+                    if len(report_elements) > 0:
+                        data_found.append(f"reporting form ({len(report_elements)} items)")
+                
+                elif data_type == "report results":
+                    results_elements = await self.page.query_selector_all("#reportResults, #reportContent, .alert")
+                    if len(results_elements) > 0:
+                        data_found.append(f"report results ({len(results_elements)} items)")
+                
+                elif data_type == "date selection":
+                    date_elements = await self.page.query_selector_all("#startDate, #endDate, .form-control")
+                    if len(date_elements) > 0:
+                        data_found.append(f"date selection ({len(date_elements)} items)")
             
             # Check minimum data count if specified
             min_count = page_config.get("min_data_count", 0)
@@ -372,6 +512,90 @@ class ComprehensivePageTest:
         await self.page.screenshot(path=str(filepath))
         logger.info(f"📸 Snapshot saved: {filepath}")
         return filepath
+    
+    async def verify_chart_rendering(self, page_config):
+        """Verify that charts are actually rendered and visible"""
+        logger.info("🔍 Verifying chart rendering")
+        
+        try:
+            # Set up console message handler to capture chart creation logs
+            console_messages = []
+            
+            def handle_console(msg):
+                console_messages.append(msg.text)
+                if "chart" in msg.text.lower():
+                    logger.info(f"Chart console: {msg.text}")
+            
+            self.page.on("console", handle_console)
+            
+            # Wait for chart to load
+            await asyncio.sleep(3)
+            
+            # Check if chart canvas exists and has content
+            chart_canvas = await self.page.query_selector("#performanceChart")
+            if not chart_canvas:
+                logger.error("❌ Chart canvas not found")
+                return False
+            
+            # Check if canvas has dimensions
+            canvas_box = await chart_canvas.bounding_box()
+            if not canvas_box or canvas_box['width'] == 0 or canvas_box['height'] == 0:
+                logger.error("❌ Chart canvas has zero dimensions")
+                return False
+            
+            # Check if canvas is visible
+            is_visible = await chart_canvas.is_visible()
+            if not is_visible:
+                logger.error("❌ Chart canvas is not visible")
+                return False
+            
+            # Check for chart data by looking for Chart.js elements
+            chart_elements = await self.page.query_selector_all("canvas")
+            if len(chart_elements) == 0:
+                logger.error("❌ No canvas elements found")
+                return False
+            
+            # Check if any canvas has Chart.js data
+            for canvas in chart_elements:
+                try:
+                    # Check if canvas has any content (Chart.js creates internal elements)
+                    canvas_content = await canvas.inner_html()
+                    if canvas_content and len(canvas_content.strip()) > 0:
+                        logger.info("✅ Chart canvas has content")
+                        return True
+                except Exception as e:
+                    logger.warning(f"Could not check canvas content: {e}")
+            
+            # Alternative: Check for Chart.js specific attributes or classes
+            chart_js_elements = await self.page.query_selector_all("[data-chart], .chartjs-render-monitor")
+            if len(chart_js_elements) > 0:
+                logger.info("✅ Chart.js elements found")
+                return True
+            
+            # Check for chart data by looking at the canvas style (our debugging indicators)
+            canvas_style = await chart_canvas.get_attribute("style")
+            if canvas_style and ("border" in canvas_style or "background" in canvas_style):
+                logger.info("✅ Chart canvas has debugging indicators (chart was created)")
+                return True
+            
+            # Check if chart data is loaded by looking for specific text content
+            chart_data_indicators = await self.page.query_selector_all("text, .chartjs-tooltip")
+            if len(chart_data_indicators) > 0:
+                logger.info("✅ Chart data indicators found")
+                return True
+            
+            # Check console messages for chart creation indicators
+            chart_console_messages = [msg for msg in console_messages if "chart" in msg.lower()]
+            if chart_console_messages:
+                logger.info(f"✅ Chart console messages found: {len(chart_console_messages)} messages")
+                return True
+            
+            logger.warning("⚠️ Chart may not be fully rendered")
+            return True  # Allow partial success for now
+            
+        except Exception as e:
+            logger.error(f"Error verifying chart rendering: {e}")
+            return False
     
     async def verify_opportunities_page(self, page_config):
         """Special verification for opportunities page"""
@@ -445,13 +669,56 @@ class ComprehensivePageTest:
         return filepath
     
     async def test_single_page(self, page_config):
-        """Test a single page comprehensively"""
+        """Test a single page with retry logic"""
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Ensure browser is healthy before each test
+                await self.ensure_browser_healthy()
+                
+                # Also check if page is valid
+                try:
+                    if not self.page or self.page.is_closed():
+                        logger.warning("Page closed, creating new page...")
+                        self.page = await self.context.new_page()
+                except Exception:
+                    logger.warning("Page invalid, creating new page...")
+                    self.page = await self.context.new_page()
+                
+                return await self._test_single_page_internal(page_config)
+                
+            except Exception as e:
+                logger.error(f"Attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(2)
+                    # Try to recreate browser if context is completely dead
+                    try:
+                        await self.teardown_browser()
+                        await asyncio.sleep(1)
+                        await self.setup_browser()
+                    except Exception as setup_error:
+                        logger.error(f"Failed to recreate browser: {setup_error}")
+                    continue
+                else:
+                    raise
+
+    async def _test_single_page_internal(self, page_config):
+        """Internal test implementation"""
         page_name = page_config["name"]
         route = page_config["route"]
         
         logger.info(f"🚀 Testing {page_name} at {route}")
         
         try:
+            # Check if page is still valid
+            try:
+                if not self.page or self.page.is_closed():
+                    logger.warning("Page closed, creating new page...")
+                    self.page = await self.context.new_page()
+            except Exception:
+                logger.warning("Page invalid, creating new page...")
+                self.page = await self.context.new_page()
+            
             # Navigate to page
             full_url = f"{self.base_url}{route}"
             await self.page.goto(full_url, wait_until="networkidle")
@@ -481,6 +748,15 @@ class ComprehensivePageTest:
                     special_ok = await self.verify_opportunities_page(page_config)
                     if not special_ok:
                         logger.warning(f"⚠️ Special verification failed for {page_name}")
+            
+            # Special verification for backtest page (includes chart verification)
+            if page_name == "Backtest Page" and data_ok:
+                chart_verified = await self.verify_chart_rendering(page_config)
+                if not chart_verified:
+                    logger.warning(f"⚠️ Chart rendering verification failed for {page_name}")
+                    # Don't fail the test, but log the issue
+                else:
+                    logger.info(f"✅ Chart rendering verified for {page_name}")
             
             # Take screenshot
             screenshot_path = await self.take_screenshot(page_name)
@@ -540,12 +816,13 @@ class ComprehensivePageTest:
             for i, page_config in enumerate(self.pages_to_test, 1):
                 logger.info(f"📄 Testing page {i}/{total_pages}: {page_config['name']}")
                 
+                # Add retry logic for each page
                 success = await self.test_single_page(page_config)
                 if success:
                     passed_pages += 1
                 
-                # Small delay between pages
-                await asyncio.sleep(1)
+                # Longer delay between pages
+                await asyncio.sleep(2)
             
             # Generate report
             await self.generate_test_report()

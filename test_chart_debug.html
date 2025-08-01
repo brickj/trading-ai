@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chart Debug Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 600px;
+            height: 400px;
+            margin: 20px;
+            border: 2px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chart Debug Test</h1>
+    <div class="chart-container">
+        <canvas id="mainPerformanceChart" width="600" height="400" style="border: 1px solid blue;"></canvas>
+    </div>
+    
+    <div id="debug-info"></div>
+    
+    <script>
+        // Test the exact same chart creation code
+        async function testChartCreation() {
+            try {
+                console.log('=== TESTING CHART CREATION ===');
+                
+                // Fetch real data from API
+                const response = await fetch('/api/backtest/historical', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        symbol: 'AAPL',
+                        days_back: 30,
+                        strategy_type: 'all'
+                    })
+                });
+                
+                const result = await response.json();
+                const data = result.data || result;
+                
+                console.log('API Response:', data);
+                console.log('cumulative_capital length:', data.cumulative_capital ? data.cumulative_capital.length : 'N/A');
+                console.log('First 5 values:', data.cumulative_capital ? data.cumulative_capital.slice(0, 5) : 'N/A');
+                
+                // Test the exact same chart creation code
+                const canvas = document.getElementById('mainPerformanceChart');
+                if (!canvas) {
+                    console.error('Canvas not found!');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    console.error('Could not get 2D context!');
+                    return;
+                }
+                
+                console.log('Canvas and context obtained successfully');
+                
+                if (data.cumulative_capital && data.cumulative_capital.length > 0) {
+                    console.log('Creating portfolio performance chart with cumulative capital data');
+                    
+                    const labels = data.cumulative_capital.map((_, index) => `Trade ${index}`);
+                    const capitalData = data.cumulative_capital;
+                    
+                    console.log('Labels length:', labels.length);
+                    console.log('Data length:', capitalData.length);
+                    console.log('First 5 labels:', labels.slice(0, 5));
+                    console.log('First 5 data points:', capitalData.slice(0, 5));
+                    
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Portfolio Value',
+                                data: capitalData,
+                                borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                                backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: false,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '$' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Portfolio Value: $' + context.parsed.y.toLocaleString();
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    display: false
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log('Chart created successfully!');
+                    console.log('Chart instance:', chart);
+                    
+                    // Add visual indicator
+                    canvas.style.border = '3px solid green';
+                    canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                    
+                    document.getElementById('debug-info').innerHTML = `
+                        <h3>✅ Chart Created Successfully!</h3>
+                        <p>Data points: ${capitalData.length}</p>
+                        <p>First value: $${capitalData[0]}</p>
+                        <p>Last value: $${capitalData[capitalData.length - 1]}</p>
+                        <p>Total return: ${data.total_return}%</p>
+                    `;
+                    
+                } else {
+                    console.error('No cumulative_capital data available');
+                    document.getElementById('debug-info').innerHTML = `
+                        <h3>❌ No Chart Data</h3>
+                        <p>cumulative_capital: ${data.cumulative_capital ? 'Available' : 'Missing'}</p>
+                        <p>Available keys: ${Object.keys(data).join(', ')}</p>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error in test:', error);
+                document.getElementById('debug-info').innerHTML = `
+                    <h3>❌ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        // Run the test when page loads
+        document.addEventListener('DOMContentLoaded', testChartCreation);
+    </script>
+</body>
+</html> 

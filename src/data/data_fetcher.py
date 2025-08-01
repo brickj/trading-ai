@@ -332,13 +332,7 @@ class DataFetcher:
 
         return {"symbol": symbol, "current_price": 0, "error": "Failed to fetch price"}
 
-    def get_coingecko_status_updates(self, coin_id: str, days_back: int = 7) -> list:
-        """
-        CoinGecko status updates removed due to rate limiting issues.
-        Returns empty list as fallback.
-        """
-        log_debug(f"[CoinGecko] Status updates disabled for {coin_id} (CoinGecko removed)")
-        return []
+
 
     def get_crypto_news(self, days_back: int = 7) -> list:
         """
@@ -561,18 +555,18 @@ class DataFetcher:
         except Exception as e:
             log_debug(f"S&P 500 symbols database not available: {e}")
 
-        # Try to load from CSV file
+        # Try to fetch from Wikipedia API
         try:
-            csv_symbols = self.load_sp500_from_csv()
-            if csv_symbols:
-                symbols = [s["symbol"] for s in csv_symbols]
+            wiki_symbols = self.check_sp500_updates_from_wikipedia()
+            if wiki_symbols:
+                symbols = [s["symbol"] for s in wiki_symbols]
                 # Validate symbols are proper stock symbols
                 valid_symbols = [s for s in symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()]
                 if valid_symbols:
                     cache.set(cache_key, valid_symbols, ttl=86400)
                     return valid_symbols
         except Exception as e:
-            log_error(f"Failed to load S&P 500 symbols from CSV: {e}")
+            log_error(f"Failed to load S&P 500 symbols from Wikipedia: {e}")
 
         # Fallback to hardcoded list if all else fails
         log_error("All S&P 500 sources failed, using fallback list")
@@ -582,61 +576,7 @@ class DataFetcher:
         cache.set(cache_key, valid_symbols, ttl=3600)  # Cache for 1 hour
         return valid_symbols
 
-    def _scrape_slickcharts_sp500(self) -> List[str]:
-        """Scrape S&P 500 symbols from SlickCharts"""
-        try:
-            import requests
-            from bs4 import BeautifulSoup
-            
-            response = requests.get("https://www.slickcharts.com/sp500", timeout=10)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            symbols = []
-            
-            # Find the table with S&P 500 data
-            table = soup.find('table', {'class': 'table'})
-            if table:
-                rows = table.find_all('tr')[1:]  # Skip header
-                for row in rows:
-                    cells = row.find_all('td')
-                    if len(cells) >= 2:
-                        symbol = cells[1].get_text(strip=True)
-                        if symbol and len(symbol) <= 5:  # Valid stock symbols
-                            symbols.append(symbol)
-            
-            return symbols[:500]  # Limit to 500 symbols
-        except Exception as e:
-            log_error(f"Error scraping SlickCharts: {e}")
-            return []
 
-    def _scrape_wikipedia_sp500(self) -> List[str]:
-        """Scrape S&P 500 symbols from Wikipedia"""
-        try:
-            import requests
-            from bs4 import BeautifulSoup
-            
-            response = requests.get("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies", timeout=10)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, 'html.parser')
-            symbols = []
-            
-            # Find the main table
-            table = soup.find('table', {'class': 'wikitable'})
-            if table:
-                rows = table.find_all('tr')[1:]  # Skip header
-                for row in rows:
-                    cells = row.find_all('td')
-                    if len(cells) >= 1:
-                        symbol = cells[0].get_text(strip=True)
-                        if symbol and len(symbol) <= 5:  # Valid stock symbols
-                            symbols.append(symbol)
-            
-            return symbols[:500]  # Limit to 500 symbols
-        except Exception as e:
-            log_error(f"Error scraping Wikipedia: {e}")
-            return []
 
     def get_sp500_winners_losers(self) -> Dict[str, List[Dict]]:
         """
@@ -690,32 +630,7 @@ class DataFetcher:
             log_error(f"Error getting S&P 500 winners/losers: {e}")
             return {"winners": [], "losers": []}
 
-    def load_sp500_from_csv(self) -> List[Dict[str, str]]:
-        """
-        Load S&P 500 symbols from the local CSV file.
-        Returns a list of dicts: {symbol, name}
-        """
-        import csv
-        import os
-        
-        csv_path = "sp500.csv"
-        if not os.path.exists(csv_path):
-            log_error(f"CSV file not found: {csv_path}")
-            return []
-            
-        symbols = []
-        try:
-            with open(csv_path, 'r') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    symbols.append({
-                        "symbol": row["Symbol"].strip(),
-                        "name": row["Security"].strip()
-                    })
-            return symbols
-        except Exception as e:
-            log_error(f"Failed to load S&P 500 symbols from CSV: {e}")
-            return []
+
 
     def check_sp500_updates_from_wikipedia(self) -> List[Dict[str, str]]:
         """
@@ -740,66 +655,24 @@ class DataFetcher:
             log_error(f"Failed to fetch S&P 500 symbols from Wikipedia: {e}")
             return []
 
-    def fetch_sp500_symbols_finnhub(self) -> List[Dict[str, str]]:
-        """
-        Fetch S&P 500 symbols from Finnhub API.
-        Returns a list of dicts: {symbol, name}
-        """
-        from src.core.config import Config
-        api_key = Config.FINNHUB_API_KEY
-        url = f"https://finnhub.io/api/v1/index/constituents?symbol=^GSPC&token={api_key}"
-        try:
-            response = self.session.get(url, timeout=10)
-            response.raise_for_status()
-            data = response.json()
-            constituents = data.get("constituents", [])
-            return [{"symbol": s, "name": ""} for s in constituents]
-        except Exception as e:
-            log_error(f"Failed to fetch S&P 500 symbols from Finnhub: {e}")
-            return []
+
 
     def update_sp500_symbols_table(self):
         """
-        Update S&P 500 symbols table.
-        First load from CSV if table is empty, then check for updates from Wikipedia.
+        Update S&P 500 symbols table using Wikipedia API.
+        Always fetches fresh data from Wikipedia and updates the database.
         """
         from src.core.database import get_db_connection
         
-        # Check if table is empty
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT COUNT(*) FROM sp500_symbols")
-                    count = cur.fetchone()[0]
-                    
-                    if count == 0:
-                        # Table is empty, load from CSV
-                        print("📊 Loading S&P 500 symbols from CSV file...")
-                        symbols = self.load_sp500_from_csv()
-                        if symbols:
-                            for symbol_data in symbols:
-                                cur.execute(
-                                    "INSERT INTO sp500_symbols (symbol, name) VALUES (%s, %s) ON CONFLICT (symbol) DO NOTHING",
-                                    (symbol_data["symbol"], symbol_data["name"])
-                                )
-                            conn.commit()
-                            print(f"✅ Loaded {len(symbols)} S&P 500 symbols from CSV")
-                        else:
-                            print("❌ Failed to load symbols from CSV")
-                            return
-                    else:
-                        print(f"📊 Found {count} existing S&P 500 symbols in database")
-        except Exception as e:
-            log_debug(f"S&P 500 symbols table update not available: {e}")
-            return
-        
-        # Now check for updates from Wikipedia
-        print("🔄 Checking for S&P 500 updates from Wikipedia...")
+        # Always fetch fresh data from Wikipedia
+        print("🔄 Fetching S&P 500 symbols from Wikipedia...")
         new_symbols = self.check_sp500_updates_from_wikipedia()
         if not new_symbols:
             log_error("No S&P 500 symbols fetched from Wikipedia.")
             return
-            
+        
+        print(f"📊 Retrieved {len(new_symbols)} S&P 500 symbols from Wikipedia")
+        
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -1038,15 +911,7 @@ class DataFetcher:
             log_error(f"get_alpha_vantage_news error for {symbol}: {e}")
             return []
 
-    def get_crypto_data(self) -> list:
-        """Get cryptocurrency data using Alpha Vantage (CoinGecko removed due to rate limiting)"""
-        # TODO: Implement actual crypto data fetching with Alpha Vantage
-        return []
 
-    def get_sp500_data(self) -> list:
-        """Get S&P 500 data - placeholder for future implementation"""
-        # TODO: Implement actual S&P 500 data fetching
-        return []
 
     def get_yahoo_finance_news(self, symbol: str, limit: int = 5) -> list:
         """

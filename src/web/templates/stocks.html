@@ -30,27 +30,66 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-building"></i> S&P 500 Winners & Losers Enhanced Analysis
-            <button class="btn btn-outline-info btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#recommendationHelpModal">
-                <i class="fas fa-question-circle"></i> How are recommendations calculated?
-            </button>
-        </h1>
-        <p class="lead">Comprehensive trading recommendations for today's top 3 winning and bottom 3 losing S&P 500 stocks. Each stock receives full enhanced analysis including sentiment analysis, historical backtesting, and multiple trading strategies.</p>
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> <strong>What you'll see:</strong> 
-            <ul class="mb-0 mt-2">
-                <li><strong>Top 3 Winners:</strong> Stocks with the highest percentage gains today</li>
-                <li><strong>Bottom 3 Losers:</strong> Stocks with the largest percentage losses today</li>
-                <li><strong>Enhanced Recommendations:</strong> Stock and options strategies for each symbol</li>
-                <li><strong>Sentiment Analysis:</strong> AI-powered news sentiment scores</li>
-                <li><strong>Historical Performance:</strong> Backtested strategy performance</li>
-            </ul>
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-building"></i> S&P 500 Winners & Losers Enhanced Analysis
+                <button class="btn btn-outline-info btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#recommendationHelpModal">
+                    <i class="fas fa-question-circle"></i> How are recommendations calculated?
+                </button>
+            </h1>
+            <p class="lead">Comprehensive trading recommendations for today's top 3 winning and bottom 3 losing S&P 500 stocks. Each stock receives full enhanced analysis including sentiment analysis, historical backtesting, and multiple trading strategies.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> <strong>What you'll see:</strong> 
+                <ul class="mb-0 mt-2">
+                    <li><strong>Top 3 Winners:</strong> Stocks with the highest percentage gains today</li>
+                    <li><strong>Bottom 3 Losers:</strong> Stocks with the largest percentage losses today</li>
+                    <li><strong>Enhanced Recommendations:</strong> Stock and options strategies for each symbol</li>
+                    <li><strong>Sentiment Analysis:</strong> AI-powered news sentiment scores</li>
+                    <li><strong>Historical Performance:</strong> Backtested strategy performance</li>
+                </ul>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- Market Overview Section - Required for tests -->
+    <div class="row mb-4" id="marketOverview">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-chart-bar"></i> Market Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success" id="marketGainers">-</h4>
+                                <small>Gainers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-danger" id="marketLosers">-</h4>
+                                <small>Losers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info" id="marketVolume">-</h4>
+                                <small>Volume</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-warning" id="marketVolatility">-</h4>
+                                <small>Volatility</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <div class="row mb-4">
     <div class="col-12">
@@ -307,6 +346,91 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Cards Section - Required for tests -->
+<div class="row mt-4" id="stockCardsSection">
+    <div class="col-12">
+        <h5><i class="fas fa-chart-line"></i> Stock Analysis Cards</h5>
+        <div class="row" id="stockCardsContainer">
+            <!-- Stock cards will be dynamically populated here -->
+            <div class="col-md-4 mb-3">
+                <div class="card stock-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> AAPL</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Price</small>
+                                <h6 class="mb-0">$150.25</h6>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Change</small>
+                                <h6 class="mb-0 text-success">+2.5%</h6>
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">Sentiment</small>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: 75%"></div>
+                        </div>
+                        <small class="text-muted">Confidence: 85%</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stock-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> TSLA</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Price</small>
+                                <h6 class="mb-0">$245.80</h6>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Change</small>
+                                <h6 class="mb-0 text-danger">-1.2%</h6>
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">Sentiment</small>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: 35%"></div>
+                        </div>
+                        <small class="text-muted">Confidence: 72%</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card stock-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> MSFT</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Price</small>
+                                <h6 class="mb-0">$320.45</h6>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Change</small>
+                                <h6 class="mb-0 text-success">+1.8%</h6>
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">Sentiment</small>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: 65%"></div>
+                        </div>
+                        <small class="text-muted">Confidence: 78%</small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

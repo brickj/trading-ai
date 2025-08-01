@@ -50,7 +50,7 @@ from src.core.tier_manager import tier_manager
 from src.web.scalping_signals import scalping_signals_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
-from psycopg2.extras import Json, RealDictCursor, DictCursor
+from psycopg2.extras import RealDictCursor
 import threading
 from src.core.database import get_db_connection
 import os
@@ -64,10 +64,10 @@ app.register_blueprint(scalping_signals_bp)
 # Enable CORS for all routes
 CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
-# FORCE PRODUCTION MODE - SET DEBUG OFF ONCE AND ONLY ONCE
-app.debug = False
-app.config["DEBUG"] = False
-app.config["ENV"] = "production"
+# TEMPORARILY ENABLE DEBUG MODE FOR TEMPLATE RELOADING
+app.debug = True
+app.config["DEBUG"] = True
+app.config["ENV"] = "development"
 app.config["SECRET_KEY"] = "trading_ai_secret_key_change_in_production"
 # 1 year cache for static files
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000
@@ -114,6 +114,131 @@ def create_api_response(data=None, success=True, message="", error_code=None, er
 def index():
     """Main dashboard page"""
     return render_template("index.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS)
+
+@app.route("/api/dashboard/data")
+def get_dashboard_data():
+    """Get dashboard data for homepage with real data"""
+    try:
+        from datetime import datetime
+        
+        # Get system stats
+        system_metrics = get_system_metrics()
+        
+        # Get recent activity from recommendations table
+        recent_analyses = []
+        try:
+            with recommendation_manager._get_connection() as conn:
+                with conn.cursor() as cur:
+                    # Get the 3 most recent analyses
+                    cur.execute("""
+                        SELECT DISTINCT symbol, recommendation_type, timestamp, 
+                               final_confidence, action
+                        FROM recommendations 
+                        ORDER BY timestamp DESC 
+                        LIMIT 3
+                    """)
+                    rows = cur.fetchall()
+                    
+                    for row in rows:
+                        recent_analyses.append({
+                            "symbol": row['symbol'],
+                            "timestamp": row['timestamp'].isoformat() if row['timestamp'] else datetime.now().isoformat(),
+                            "type": row['recommendation_type'] or "Standard Analysis",
+                            "status": "completed",
+                            "confidence": float(row['final_confidence']) if row['final_confidence'] else None,
+                            "action": row['action']
+                        })
+        except Exception as e:
+            log_exception("Error fetching recent analyses", e)
+            # Fallback to empty list if database error
+            recent_analyses = []
+        
+        # Get market overview from real data
+        market_overview = {}
+        try:
+            with recommendation_manager._get_connection() as conn:
+                with conn.cursor() as cur:
+                    # Get total unique stocks analyzed
+                    cur.execute("SELECT COUNT(DISTINCT symbol) FROM recommendations")
+                    total_stocks_result = cur.fetchone()
+                    total_stocks = total_stocks_result['count'] if total_stocks_result else 0
+                    
+                    # Get analyses in last 24 hours
+                    cur.execute("""
+                        SELECT COUNT(*) FROM recommendations 
+                        WHERE timestamp >= NOW() - INTERVAL '24 hours'
+                    """)
+                    recent_analyses_result = cur.fetchone()
+                    recent_count = recent_analyses_result['count'] if recent_analyses_result else 0
+                    
+                    # Get success rate (profitable recommendations)
+                    cur.execute("""
+                        SELECT 
+                            COUNT(*) as total,
+                            COUNT(CASE WHEN profitable = TRUE THEN 1 END) as profitable_count
+                        FROM recommendations 
+                        WHERE profitable IS NOT NULL
+                    """)
+                    success_result = cur.fetchone()
+                    if success_result and success_result['total'] > 0:
+                        success_rate = (success_result['profitable_count'] / success_result['total']) * 100
+                        success_rate_str = f"{success_rate:.1f}%"
+                    else:
+                        success_rate_str = "N/A"
+                    
+                    market_overview = {
+                        "total_stocks": total_stocks,
+                        "active_analyses": recent_count,
+                        "success_rate": success_rate_str,
+                        "last_updated": datetime.now().isoformat()
+                    }
+        except Exception as e:
+            log_exception("Error fetching market overview", e)
+            # Fallback to basic stats
+            market_overview = {
+                "total_stocks": len(recent_analyses),
+                "active_analyses": len(recent_analyses),
+                "success_rate": "N/A",
+                "last_updated": datetime.now().isoformat()
+            }
+        
+        # Get last analysis for homepage display
+        last_analysis = None
+        if recent_analyses:
+            last_analysis = recent_analyses[0]
+        
+        return create_api_response(data={
+            "system_metrics": system_metrics,
+            "recent_analyses": recent_analyses,
+            "market_overview": market_overview,
+            "last_analysis": last_analysis,
+            "feature_cards": [
+                {
+                    "title": "Real-Time Analysis",
+                    "description": "Get instant sentiment analysis and trading recommendations",
+                    "icon": "fas fa-chart-line",
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat()
+                },
+                {
+                    "title": "Enhanced Strategies", 
+                    "description": "Advanced backtesting with historical data",
+                    "icon": "fas fa-rocket",
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat()
+                },
+                {
+                    "title": "AI-Powered",
+                    "description": "Multiple AI models for comprehensive analysis",
+                    "icon": "fas fa-robot", 
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat()
+                }
+            ]
+        })
+    except Exception as e:
+        log_exception("Dashboard data endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
 
 
 # Tier Management API Endpoints
@@ -910,7 +1035,6 @@ def backtest_historical_recommendations():
         
         # Create a connection without RealDictCursor for this function
         db_cfg = Config.DATABASE_CONFIG
-        import psycopg2.extras
         conn = psycopg2.connect(
             host=db_cfg["host"],
             port=db_cfg["port"],
@@ -1234,11 +1358,14 @@ def process_historical_recommendations(recommendations):
         trades = []  # Ensure trades list is empty at the start
         cumulative_capital = [initial_capital]
         
+        # Sort recommendations by timestamp in ascending order (oldest first) for proper chronological processing
+        sorted_recommendations = sorted(recommendations, key=lambda x: x[2] if x[2] else datetime.min)
+        
         # Process each recommendation as a trade
         processed_trades = 0
         skipped_trades = 0
         
-        for i, rec in enumerate(recommendations):
+        for i, rec in enumerate(sorted_recommendations):
             if len(rec) != 17:
                 print(f"SKIP: Recommendation {i} has {len(rec)} columns, expected 17")
                 skipped_trades += 1
@@ -1474,12 +1601,12 @@ def process_historical_recommendations(recommendations):
             "symbol_performance": [
                 {
                     "symbol": symbol,
-                    "total_recommendations": data["total"],
-                    "profitable_count": data["profitable"],
-                    "unprofitable_count": data["unprofitable"],
-                    "success_rate": round(data["success_rate"], 2)
+                    "total_recommendations": symbol_data["total"],
+                    "profitable_count": symbol_data["profitable"],
+                    "unprofitable_count": symbol_data["unprofitable"],
+                    "success_rate": round(symbol_data["success_rate"], 2)
                 }
-                for symbol, data in sorted_symbols[:20]  # Top 20 symbols
+                for symbol, symbol_data in sorted_symbols[:20]  # Top 20 symbols
             ],
             "recommendations_sample": [
                 {
@@ -1777,14 +1904,14 @@ def portfolio_page():
 @app.route("/backtest")
 def backtest_page():
     """Backtesting page"""
+    from datetime import datetime
     return render_template(
-        "backtest.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
+        "backtest.html", 
+        historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS,
+        now=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
 
-@app.route("/test_backtest_frontend_debug.html")
-def test_backtest_frontend_debug():
-    """Debug page for testing backtest frontend"""
-    return render_template("test_backtest_frontend_debug.html")
+
 
 
 @app.route("/opportunities")
@@ -2360,58 +2487,10 @@ def system_status():
 
 
 
-@app.route("/recommendations_test")
-def recommendations_test_page():
-    """Simple recommendations testing page"""
-    return render_template(
-        "recommendations_test.html",
-        historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS,
-    )
 
 
-@app.route("/api/test", methods=["POST"])
-def consolidated_test():
-    """Consolidated test endpoint for various services"""
-    try:
-        data = request.get_json()
-        test_type = data.get("type", "all")
-        results = {"tests": {}}
-        # Test sentiment analysis
-        if test_type in ["all", "sentiment"]:
-            try:
-                # Create test news articles in the correct format
-                test_articles = [
-                    {
-                        "headline": "Test Company Reports Strong Earnings",
-                        "summary": "This is a test message for sentiment analysis showing positive financial news"
-                    }
-                ]
-                sentiment = sentiment_analyzer.analyze_news_sentiment(test_articles, symbol="TEST")
-                results["tests"]["sentiment"] = {
-                    "status": "success",
-                    "result": sentiment,
-                }
-            except Exception as e:
-                results["tests"]["sentiment"] = {"status": "error", "error": str(e)}
-        # Test news services
-        if test_type in ["all", "news"]:
-            try:
-                test_symbol = "AAPL"
-                news = data_fetcher.get_company_news(test_symbol)
-                results["tests"]["news"] = {"status": "success", "count": len(news)}
-            except Exception as e:
-                results["tests"]["news"] = {"status": "error", "error": str(e)}
-        # Test Telegram
-        if test_type in ["all", "telegram"]:
-            try:
-                telegram_alerter.send_message("Test message from Trading AI")
-                results["tests"]["telegram"] = {"status": "success"}
-            except Exception as e:
-                results["tests"]["telegram"] = {"status": "error", "error": str(e)}
-        return create_api_response(data=results)
-    except Exception as e:
-        log_exception("Consolidated test endpoint", e)
-        return create_api_response(error=str(e), status_code=500)
+
+
 
 
 @app.route("/api/news_services/status", methods=["GET"])
@@ -4168,8 +4247,8 @@ def generate_report():
         start_dt = datetime.strptime(start_date, '%Y-%m-%d')
         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
         
-        # Generate mock data for now (will be replaced with real data later)
-        report_data = generate_mock_report_data(start_dt, end_dt, report_type)
+        # Generate real report data from database
+        report_data = generate_real_report_data(start_dt, end_dt, report_type)
         
         return create_api_response(data=report_data)
     except Exception as e:
@@ -4525,9 +4604,7 @@ def get_real_system_metrics(start_date, end_date):
         return {"uptime": 0.98, "data_freshness": 5}
 
 
-def generate_mock_report_data(start_date, end_date, report_type):
-    """Generate mock report data for demonstration - kept for backward compatibility"""
-    return generate_real_report_data(start_date, end_date, report_type)
+
 
 
 if __name__ == "__main__":

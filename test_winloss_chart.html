@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Win/Loss Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .chart-container { width: 400px; height: 300px; margin: 20px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Win/Loss Distribution Chart Test</h1>
+    
+    <div>
+        <h3>Win/Loss Distribution</h3>
+        <div class="chart-container">
+            <canvas id="winLossChart" width="400" height="300" style="border: 1px solid #ccc;"></canvas>
+        </div>
+    </div>
+    
+    <div id="status"></div>
+
+    <script>
+        function createWinLossChart(data) {
+            console.log('=== CREATE WIN/LOSS CHART CALLED ===');
+            console.log('Data received:', data);
+            console.log('Win/Loss data:', {
+                winning_trades: data.winning_trades,
+                losing_trades: data.losing_trades,
+                total_trades: data.total_trades,
+                win_rate: data.win_rate
+            });
+            
+            // Get the win/loss chart canvas
+            const canvas = document.getElementById('winLossChart');
+            if (!canvas) {
+                console.error('Win/Loss chart canvas not found!');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                console.error('Could not get 2D context from win/loss canvas!');
+                return;
+            }
+            
+            console.log('Win/Loss canvas and context obtained successfully');
+            
+            // Prepare data for win/loss distribution
+            const winningTrades = data.winning_trades || 0;
+            const losingTrades = data.losing_trades || 0;
+            
+            if (winningTrades === 0 && losingTrades === 0) {
+                console.warn('No trade data available for win/loss chart');
+                document.getElementById('status').innerHTML += '<p class="error">✗ No trade data available</p>';
+                return;
+            }
+            
+            try {
+                const chart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Winning Trades', 'Losing Trades'],
+                        datasets: [{
+                            data: [winningTrades, losingTrades],
+                            backgroundColor: ['#28a745', '#dc3545'],
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    usePointStyle: true
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = winningTrades + losingTrades;
+                                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                        return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log('Win/Loss distribution chart created successfully');
+                
+                // Add success indicator
+                canvas.style.border = '2px solid green';
+                canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                document.getElementById('status').innerHTML += '<p class="success">✓ Win/Loss distribution chart created successfully</p>';
+            } catch (error) {
+                console.error('Error creating win/loss distribution chart:', error);
+                
+                // Add error indicator
+                canvas.style.border = '2px solid red';
+                canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+                document.getElementById('status').innerHTML += '<p class="error">✗ Error creating win/loss chart: ' + error.message + '</p>';
+            }
+        }
+
+        // Test the chart with real API data
+        async function testWinLossChart() {
+            try {
+                document.getElementById('status').innerHTML = '<p>Testing win/loss chart with real API data...</p>';
+                
+                const response = await fetch('http://localhost:5001/api/backtest/historical', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        symbol: 'AAPL',
+                        days_back: 30,
+                        strategy_type: 'all'
+                    })
+                });
+                
+                const result = await response.json();
+                console.log('API Response:', result);
+                
+                if (result.data) {
+                    const data = result.data;
+                    console.log('Win/Loss data:', {
+                        winning_trades: data.winning_trades,
+                        losing_trades: data.losing_trades,
+                        total_trades: data.total_trades,
+                        win_rate: data.win_rate
+                    });
+                    
+                    document.getElementById('status').innerHTML += '<p class="success">✓ API data received successfully</p>';
+                    
+                    // Create the win/loss chart
+                    createWinLossChart(data);
+                } else {
+                    document.getElementById('status').innerHTML += '<p class="error">✗ No data received from API</p>';
+                }
+            } catch (error) {
+                console.error('Error testing win/loss chart:', error);
+                document.getElementById('status').innerHTML += '<p class="error">✗ Error testing win/loss chart: ' + error.message + '</p>';
+            }
+        }
+
+        // Run the test when page loads
+        document.addEventListener('DOMContentLoaded', testWinLossChart);
+    </script>
+</body>
+</html> 

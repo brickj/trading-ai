@@ -73,6 +73,9 @@ console.log('Dashboard JS loaded');
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Dashboard DOM loaded, initializing...');
     
+    // Load dashboard data
+    loadDashboardData();
+    
     // Add event listeners
     if (document.getElementById('stockSymbol')) {
         document.getElementById('stockSymbol').addEventListener('keypress', function(e) {
@@ -88,6 +91,90 @@ document.addEventListener('DOMContentLoaded', function() {
         debugPanel.style.display = 'block';
     }
 });
+
+// Add dashboard data loading
+async function loadDashboardData() {
+    try {
+        console.log('Loading dashboard data...');
+        const response = await fetch('/api/dashboard/data');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            updateFeatureCards(data.data.feature_cards);
+            updateSystemMetrics(data.data.system_metrics);
+            updateRecentActivity(data.data.recent_analyses);
+            
+            // Display last analysis if available
+            if (data.data.last_analysis) {
+                displayLastAnalysis(data.data.last_analysis);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+    }
+}
+
+function updateFeatureCards(featureCards) {
+    if (!featureCards || !Array.isArray(featureCards)) return;
+    
+    featureCards.forEach((card, index) => {
+        const cardIndex = index + 1;
+        const titleElement = document.getElementById(`featureTitle${cardIndex}`);
+        const descElement = document.getElementById(`featureDesc${cardIndex}`);
+        const statusElement = document.getElementById(`featureStatus${cardIndex}`);
+        
+        if (titleElement) titleElement.textContent = card.title;
+        if (descElement) descElement.textContent = card.description;
+        if (statusElement) statusElement.textContent = `Status: ${card.status}`;
+    });
+}
+
+function updateSystemMetrics(systemMetrics) {
+    // Update system metrics if needed
+    console.log('System metrics updated:', systemMetrics);
+}
+
+function updateRecentActivity(recentAnalyses) {
+    // Update recent activity if needed
+    console.log('Recent activity updated:', recentAnalyses);
+}
+
+function displayLastAnalysis(lastAnalysis) {
+    console.log('Displaying last analysis:', lastAnalysis);
+    
+    // Update the stock symbol input with the last analyzed symbol
+    const stockSymbolInput = document.getElementById('stockSymbol');
+    if (stockSymbolInput && lastAnalysis.symbol) {
+        stockSymbolInput.value = lastAnalysis.symbol;
+    }
+    
+    // Show a notification about the last analysis
+    const resultsSection = document.getElementById('resultsSection');
+    if (resultsSection) {
+        const timestamp = new Date(lastAnalysis.timestamp).toLocaleString();
+        const confidence = lastAnalysis.confidence ? `(${(lastAnalysis.confidence * 100).toFixed(1)}% confidence)` : '';
+        const action = lastAnalysis.action ? ` - ${lastAnalysis.action.toUpperCase()}` : '';
+        
+        const content = `
+            <div class="alert alert-info">
+                <h6><i class="fas fa-history"></i> Last Analysis</h6>
+                <p class="mb-2">
+                    <strong>${lastAnalysis.symbol}</strong> ${action} ${confidence}
+                    <br><small class="text-muted">Analyzed on ${timestamp}</small>
+                </p>
+                <button class="btn btn-sm btn-primary" onclick="doStandardAnalysis()">
+                    <i class="fas fa-refresh"></i> Re-analyze
+                </button>
+                <button class="btn btn-sm btn-success" onclick="doEnhancedAnalysis()">
+                    <i class="fas fa-rocket"></i> Enhanced Analysis
+                </button>
+            </div>
+        `;
+        
+        resultsSection.style.display = 'block';
+        resultsSection.innerHTML = content;
+    }
+}
 
 function doStandardAnalysis() {
     console.log('[DEBUG] doStandardAnalysis called');

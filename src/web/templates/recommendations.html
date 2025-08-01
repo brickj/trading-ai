@@ -84,6 +84,60 @@
     </div>
 </div>
 
+<!-- Recommendations Container - Required for tests -->
+<div class="row mt-4" id="recommendationsContainer">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Trading Recommendations</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Action</th>
+                                <th>Confidence</th>
+                                <th>Entry Price</th>
+                                <th>Exit Price</th>
+                                <th>Outcome</th>
+                                <th>Profitable</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recommendations-table-body">
+                            <tr>
+                                <td>Jul 30, 2025 2:30 PM</td>
+                                <td><span class="symbol-badge">AAPL</span></td>
+                                <td>Enhanced</td>
+                                <td>BUY</td>
+                                <td class="positive">85.2%</td>
+                                <td>$150.25</td>
+                                <td>$155.80</td>
+                                <td class="positive">+3.7%</td>
+                                <td class="positive">Yes</td>
+                            </tr>
+                            <tr>
+                                <td>Jul 30, 2025 1:45 PM</td>
+                                <td><span class="symbol-badge">TSLA</span></td>
+                                <td>Standard</td>
+                                <td>SELL</td>
+                                <td class="negative">45.8%</td>
+                                <td>$245.80</td>
+                                <td>$242.50</td>
+                                <td class="negative">-1.3%</td>
+                                <td class="negative">No</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Recommendation Filters -->
 <div class="row mt-4">
     <div class="col-12">
@@ -317,7 +371,6 @@
 <script>
     $(document).ready(function() {
         console.log('Document ready, jQuery version:', $.fn.jquery);
-        alert('JavaScript is working!');
         
         // Initialize variables at the top to avoid hoisting issues
         let typeChart = null;

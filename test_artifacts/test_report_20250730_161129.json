@@ -1,0 +1,107 @@
+{
+  "timestamp": "2025-07-30T16:11:29.639992",
+  "total_pages": 11,
+  "passed_pages": 2,
+  "failed_pages": 9,
+  "results": [
+    {
+      "page": "Homepage",
+      "route": "/",
+      "success": false,
+      "load_success": true,
+      "elements_ok": true,
+      "data_ok": false,
+      "screenshot": "test_artifacts/Homepage_20250730_161101.png",
+      "timestamp": "2025-07-30T16:11:01.450461"
+    },
+    {
+      "page": "Stocks Page",
+      "route": "/stocks",
+      "success": true,
+      "load_success": true,
+      "elements_ok": true,
+      "data_ok": true,
+      "screenshot": "test_artifacts/Stocks Page_20250730_161105.png",
+      "timestamp": "2025-07-30T16:11:05.316516"
+    },
+    {
+      "page": "Crypto Page",
+      "route": "/crypto",
+      "success": true,
+      "load_success": true,
+      "elements_ok": true,
+      "data_ok": true,
+      "screenshot": "test_artifacts/Crypto Page_20250730_161113.png",
+      "timestamp": "2025-07-30T16:11:14.083495"
+    },
+    {
+      "page": "Opportunities Page",
+      "route": "/opportunities",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:21.610717"
+    },
+    {
+      "page": "System Status Page",
+      "route": "/system_status",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:22.613473"
+    },
+    {
+      "page": "Logs Page",
+      "route": "/logs",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:23.616036"
+    },
+    {
+      "page": "Portfolio Page",
+      "route": "/portfolio_page",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:24.618697"
+    },
+    {
+      "page": "Backtest Page",
+      "route": "/backtest",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:25.622792"
+    },
+    {
+      "page": "Recommendations Page",
+      "route": "/recommendations",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:26.627216"
+    },
+    {
+      "page": "Scalping Signals Page",
+      "route": "/scalping_signals",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:27.632343"
+    },
+    {
+      "page": "Reporting Page",
+      "route": "/reporting",
+      "success": false,
+      "error": "Target page, context or browser has been closed",
+      "screenshot": "screenshot_failed",
+      "timestamp": "2025-07-30T16:11:28.638797"
+    }
+  ],
+  "summary": {
+    "all_passed": false,
+    "pages_with_data": 2,
+    "pages_with_elements": 3
+  }
+}

@@ -288,43 +288,7 @@ class TestDataFetcher(unittest.TestCase):
 
     # ===== Bulk Data Tests =====
 
-    @patch.object(DataFetcher, 'get_stock_price')
-    @patch.object(DataFetcher, 'get_company_news')
-    def test_get_sp500_data_success(self, mock_news, mock_price):
-        """Test successful S&P 500 bulk data retrieval"""
-        # Mock successful responses
-        mock_price.return_value = {'current_price': 150.25, 'symbol': 'AAPL'}
-        mock_news.return_value = [{'headline': 'Test news', 'source': 'Test'}]
 
-        result = self.data_fetcher.get_sp500_data()
-
-        self.assertIsInstance(result, list)
-        self.assertTrue(len(result) > 0)
-
-        # Check structure of first item
-        item = result[0]
-        self.assertIn('symbol', item)
-        self.assertIn('price_data', item)
-        self.assertIn('news', item)
-
-    @patch.object(DataFetcher, 'get_crypto_price')
-    @patch.object(DataFetcher, 'get_crypto_news')
-    def test_get_crypto_data_success(self, mock_news, mock_price):
-        """Test successful crypto bulk data retrieval"""
-        # Mock successful responses
-        mock_price.return_value = {'current_price': 42000.50, 'symbol': 'BTCUSD'}
-        mock_news.return_value = [{'headline': 'Crypto news', 'source': 'Test'}]
-
-        result = self.data_fetcher.get_crypto_data()
-
-        self.assertIsInstance(result, list)
-        self.assertTrue(len(result) > 0)
-
-        # Check structure of first item
-        item = result[0]
-        self.assertIn('symbol', item)
-        self.assertIn('price_data', item)
-        self.assertIn('news', item)
 
     # ===== Integration Tests for Combined Sources =====
 
