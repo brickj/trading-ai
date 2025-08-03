@@ -1,3 +1,4 @@
+# IBKR Analysis: Examining codebase structure
 #!/usr/bin/env python3
 """
 Trading AI - Cross-Platform App Starter with Enhanced Logging

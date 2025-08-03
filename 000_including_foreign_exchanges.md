@@ -1,4 +1,6 @@
-# Including Foreign Exchanges in Your Analysis
+# IBKR Foreign Exchange Integration Analysis
+
+# Analyzing existing foreign exchange documentation
 
 To include foreign exchanges you primarily adjust the configuration and let the existing data‑fetcher handle the new symbols.
 
