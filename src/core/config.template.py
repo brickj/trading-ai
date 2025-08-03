@@ -3,16 +3,18 @@ Configuration Manager for Trading AI Platform.
 Centralized configuration management with environment variable support.
 """
 
-import os
 import sys
 
 print(f"[DEBUG] Loaded config from: {__file__}")
+
 
 class Config:
     """Centralized configuration for the Trading AI platform"""
 
     # Database Configuration
-    DATABASE_URL = "postgresql://trading_user:trading_password@localhost:5432/trading_db"
+    DATABASE_URL = (
+        "postgresql://trading_user:trading_password@localhost:5432/trading_db"
+    )
     DATABASE_CONFIG = {
         "host": "localhost",
         "port": 5432,
@@ -28,13 +30,14 @@ class Config:
     FINNHUB_API_KEY = "your_finnhub_api_key_here"
     NEWS_API_KEY = "your_news_api_key_here"
     OPENAI_API_KEY = "your_openai_api_key_here"
-    
+    CRYPTOPANIC_API_KEY = "your_cryptopanic_api_key_here"
+
     # Yahoo Finance API (free, no key required)
     YAHOO_FINANCE_ENABLED = True
-    
+
     # CoinGecko API removed due to rate limiting issues
     COINGECKO_ENABLED = False
-    
+
     # Reddit API (free, no key required for basic usage)
     REDDIT_ENABLED = True
     REDDIT_CLIENT_ID = "your_reddit_client_id_here"
@@ -69,21 +72,25 @@ class Config:
     # Default Crypto Symbols
     DEFAULT_CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "SOLUSD"]
     CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "DOTUSD", "LINKUSD"]
-    
+
     # Tier Configuration
     DEFAULT_TIER = "free"
     CURRENT_TIER = "free"
-    TIER_NAMES = {
-        "free": "Free Tier",
-        "paid": "Paid Tier"
-    }
-    
+    TIER_NAMES = {"free": "Free Tier", "paid": "Paid Tier"}
+
     # Tier Page Access Configuration
     FREE_TIER_PAGES = ["/", "/system_status", "/logs"]
-    PAID_TIER_PAGES = ["/stocks", "/crypto", "/portfolio_page", "/backtest", "/opportunities", "/recommendations"]
+    PAID_TIER_PAGES = [
+        "/stocks",
+        "/crypto",
+        "/portfolio_page",
+        "/backtest",
+        "/opportunities",
+        "/recommendations",
+    ]
     TIER_CONTACT_INFO = {
         "email": "support@example.com",
-        "message": "Contact support to upgrade to Paid Tier"
+        "message": "Contact support to upgrade to Paid Tier",
     }
 
     # Logging Configuration
@@ -114,9 +121,9 @@ class Config:
     # Go Service Configuration
     GO_SERVICE_TIMEOUT = 30  # seconds
     GO_SERVICE_RETRY_COUNT = 3  # number of retries
-    GO_NEWS_SERVICE_URL = "http://localhost:8081"    # News microservice
+    GO_NEWS_SERVICE_URL = "http://localhost:8081"  # News microservice
     GO_SIGNAL_SERVICE_URL = "http://localhost:8082"  # Signal microservice
-    GO_RISK_SERVICE_URL = "http://localhost:8083"    # Risk microservice
+    GO_RISK_SERVICE_URL = "http://localhost:8083"  # Risk microservice
     GO_PORTFOLIO_SERVICE_URL = "http://localhost:8084"  # Portfolio microservice
     GO_DATA_SERVICE_URL = "http://localhost:8085"  # Data microservice
 
@@ -127,7 +134,16 @@ class Config:
 
     # Test Configuration
     SP500_STOCKS = [
-        "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "V", "UNH"
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "AMZN",
+        "TSLA",
+        "META",
+        "NVDA",
+        "JPM",
+        "V",
+        "UNH",
     ]
     BULK_ANALYSIS_CACHE_DURATION = 600
     MAX_POSITION_SIZE = 10000
@@ -152,12 +168,17 @@ class Config:
         """
         # Check if API keys are set in config file
         if not cls.ALPHA_VANTAGE_API_KEY or not cls.FINNHUB_API_KEY:
-            print("❌ Missing API keys in config file. Please set ALPHA_VANTAGE_API_KEY and FINNHUB_API_KEY.")
+            print(
+                "❌ Missing API keys in config file. Please set ALPHA_VANTAGE_API_KEY and FINNHUB_API_KEY."
+            )
             return False
-            
-        if cls.ALPHA_VANTAGE_API_KEY == "your_alpha_vantage_api_key_here" and cls.FINNHUB_API_KEY == "your_finnhub_api_key_here":
+
+        if (
+            cls.ALPHA_VANTAGE_API_KEY == "your_alpha_vantage_api_key_here"
+            and cls.FINNHUB_API_KEY == "your_finnhub_api_key_here"
+        ):
             print("⚠️  Using demo API keys. Some features may be limited.")
-            
+
         return True
 
     @classmethod
@@ -200,7 +221,10 @@ class Config:
         """Get configuration value by key - compatibility method for tests"""
         return getattr(cls, key, default)
 
+
 # Validate configuration on import
 if not Config.validate():
-    print("❌ Configuration validation failed. Please check your environment variables.")
-    sys.exit(1) 
+    print(
+        "❌ Configuration validation failed. Please check your environment variables."
+    )
+    sys.exit(1)

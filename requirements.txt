@@ -12,3 +12,7 @@ apscheduler
 psutil
 beautifulsoup4
 lxml
+bandit
+ruff
+vulture
+unimport

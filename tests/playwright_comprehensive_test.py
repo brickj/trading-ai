@@ -143,6 +143,26 @@ class ComprehensivePageTest:
                 "verify_function": "verify_backtest_page"
             },
             {
+                "name": "Weekly Plan Page",
+                "route": "/weekly_plan",
+                "expected_elements": [
+                    "h1",  # Page heading with calendar icon
+                    "#weekSelector",  # Week date selector
+                    "#weeklyCalendar",  # Weekly calendar container
+                    "#eventSummary",  # Event summary cards
+                    "#loadingIndicator",  # Loading indicator
+                    "#filterEarnings",  # Earnings filter checkbox
+                    "#filterFed",  # Fed events filter checkbox
+                    "#filterEconomic",  # Economic data filter checkbox
+                    "#filterOptions",  # Options expiration filter checkbox
+                    "#filterHolidays",  # Market holidays filter checkbox
+                    ".card"  # Filter and navigation cards
+                ],
+                "wait_for_data": True,
+                "data_timeout": 15000,
+                "verify_function": "verify_weekly_plan_page"
+            },
+            {
                 "name": "Recommendations Page",
                 "route": "/recommendations",
                 "expected_elements": [
@@ -860,6 +880,149 @@ class ComprehensivePageTest:
         except Exception as e:
             logger.error(f"Failed to take screenshot: {e}")
             return None
+    
+    async def verify_weekly_plan_page(self, page_config):
+        """Verify that weekly plan page is fully populated with data"""
+        result = {
+            "is_populated": False,
+            "missing_elements": [],
+            "loading_indicators": 0,
+            "error_messages": 0,
+            "page_content_length": 0,
+            "weekly_plan_data": {}
+        }
+        
+        try:
+            # Check for console errors
+            console_errors = []
+            def handle_console(msg):
+                if msg.type == "error":
+                    console_errors.append({
+                        "text": msg.text,
+                        "url": msg.location.get("url", "unknown"),
+                        "line": msg.location.get("lineNumber", 0),
+                        "col": msg.location.get("columnNumber", 0)
+                    })
+            
+            # Add console listener
+            self.page.on("console", handle_console)
+            
+            # First, do the default verification
+            default_result = await self.verify_default_page_population(page_config)
+            result.update(default_result)
+            
+            # Check for weekly plan specific elements
+            try:
+                # Check if weekly plan data is loaded
+                weekly_plan_data = await self.page.evaluate("""async () => {
+                    try {
+                        // Check if weekly plan calendar exists
+                        const calendar = document.getElementById('weeklyCalendar');
+                        const weekSelector = document.getElementById('weekSelector');
+                        const eventSummary = document.getElementById('eventSummary');
+                        const filters = document.querySelectorAll('input[type="checkbox"]');
+                        
+                        // Check for page title
+                        const h1Elements = document.querySelectorAll('h1');
+                        const hasWeeklyPlanTitle = Array.from(h1Elements).some(h1 => 
+                            h1.textContent.toLowerCase().includes('weekly') && 
+                            h1.textContent.toLowerCase().includes('plan')
+                        );
+                        
+                        // Check if filter checkboxes are present
+                        const earningsFilter = document.getElementById('filterEarnings');
+                        const fedFilter = document.getElementById('filterFed');
+                        const economicFilter = document.getElementById('filterEconomic');
+                        const optionsFilter = document.getElementById('filterOptions');
+                        const holidaysFilter = document.getElementById('filterHolidays');
+                        
+                        // Check for navigation buttons
+                        const prevWeekBtn = document.querySelector('button[onclick*="changeWeek(-1)"]');
+                        const nextWeekBtn = document.querySelector('button[onclick*="changeWeek(1)"]');
+                        
+                        // Check for summary cards
+                        const summaryCards = document.querySelectorAll('#eventSummary .card');
+                        
+                        return {
+                            hasCalendar: !!calendar,
+                            hasWeekSelector: !!weekSelector,
+                            hasEventSummary: !!eventSummary,
+                            hasWeeklyPlanTitle: hasWeeklyPlanTitle,
+                            filtersCount: filters.length,
+                            hasEarningsFilter: !!earningsFilter,
+                            hasFedFilter: !!fedFilter,
+                            hasEconomicFilter: !!economicFilter,
+                            hasOptionsFilter: !!optionsFilter,
+                            hasHolidaysFilter: !!holidaysFilter,
+                            hasPrevWeekBtn: !!prevWeekBtn,
+                            hasNextWeekBtn: !!nextWeekBtn,
+                            summaryCardsCount: summaryCards.length,
+                            pageTitle: document.title,
+                            hasLoadingIndicator: !!document.getElementById('loadingIndicator')
+                        };
+                    } catch (error) {
+                        return { error: error.message };
+                    }
+                }""")
+                
+                result["weekly_plan_data"] = weekly_plan_data
+                
+                # Check if essential elements are present
+                missing_critical_elements = []
+                
+                if not weekly_plan_data.get("hasWeeklyPlanTitle"):
+                    missing_critical_elements.append("Weekly Plan page title")
+                
+                if not weekly_plan_data.get("hasCalendar"):
+                    missing_critical_elements.append("Weekly calendar container")
+                
+                if not weekly_plan_data.get("hasWeekSelector"):
+                    missing_critical_elements.append("Week selector input")
+                
+                if not weekly_plan_data.get("hasEventSummary"):
+                    missing_critical_elements.append("Event summary section")
+                
+                # Check if at least 5 filter checkboxes exist (main event types)
+                if weekly_plan_data.get("filtersCount", 0) < 5:
+                    missing_critical_elements.append("Event filter checkboxes")
+                
+                if not weekly_plan_data.get("hasLoadingIndicator"):
+                    missing_critical_elements.append("Loading indicator")
+                
+                result["missing_elements"].extend(missing_critical_elements)
+                
+                # Consider page populated if all critical elements are present
+                result["is_populated"] = len(missing_critical_elements) == 0
+                
+                # Log successful verification
+                if result["is_populated"]:
+                    logger.info(f"✅ Weekly Plan page verification passed:")
+                    logger.info(f"   - Calendar container: {'✅' if weekly_plan_data.get('hasCalendar') else '❌'}")
+                    logger.info(f"   - Week selector: {'✅' if weekly_plan_data.get('hasWeekSelector') else '❌'}")
+                    logger.info(f"   - Event filters: {weekly_plan_data.get('filtersCount', 0)}")
+                    logger.info(f"   - Summary cards: {weekly_plan_data.get('summaryCardsCount', 0)}")
+                    logger.info(f"   - Navigation buttons: {'✅' if weekly_plan_data.get('hasPrevWeekBtn') and weekly_plan_data.get('hasNextWeekBtn') else '❌'}")
+                else:
+                    logger.warning(f"❌ Weekly Plan page missing elements: {missing_critical_elements}")
+                
+            except Exception as e:
+                logger.error(f"Error verifying weekly plan specific elements: {e}")
+                result["error_messages"] += 1
+                result["missing_elements"].append(f"Weekly plan verification error: {str(e)}")
+            
+            # Log console errors if any
+            if console_errors:
+                logger.warning(f"Console errors found on weekly plan page:")
+                for error in console_errors[:3]:  # Log first 3 errors
+                    logger.warning(f"  - {error['text']} at {error['url']}:{error['line']}")
+                result["console_errors"] = console_errors
+                
+        except Exception as e:
+            logger.error(f"Critical error in weekly plan page verification: {e}")
+            result["error_messages"] += 1
+            result["missing_elements"].append(f"Critical verification error: {str(e)}")
+        
+        return result
     
     async def test_single_page(self, page_config):
         """Test a single page for full population"""

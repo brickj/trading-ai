@@ -53,7 +53,9 @@ class WatchlistManager:
                     return False
                 with conn.cursor() as cursor:
                     # Default stocks from config
-                    default_stocks = Config.DEFAULT_CRYPTO_SYMBOLS  # Using crypto symbols as stocks for now
+                    default_stocks = (
+                        Config.DEFAULT_CRYPTO_SYMBOLS
+                    )  # Using crypto symbols as stocks for now
                     default_crypto = Config.DEFAULT_CRYPTO_SYMBOLS
 
                     # Insert stocks
@@ -97,7 +99,9 @@ class WatchlistManager:
                 if conn is None:
                     return []
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("SELECT symbol FROM watchlists WHERE type = 'stock' ORDER BY symbol")
+                    cursor.execute(
+                        "SELECT symbol FROM watchlists WHERE type = 'stock' ORDER BY symbol"
+                    )
                     stocks = [row["symbol"] for row in cursor.fetchall()]
                     return stocks
         except Exception as e:
@@ -111,7 +115,9 @@ class WatchlistManager:
                 if conn is None:
                     return []
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("SELECT symbol FROM watchlists WHERE type = 'crypto' ORDER BY symbol")
+                    cursor.execute(
+                        "SELECT symbol FROM watchlists WHERE type = 'crypto' ORDER BY symbol"
+                    )
                     cryptos = [row["symbol"] for row in cursor.fetchall()]
                     return cryptos
         except Exception as e:
@@ -207,7 +213,9 @@ class WatchlistManager:
                 if conn is None:
                     return []
                 with conn.cursor(cursor_factory=RealDictCursor) as cursor:
-                    cursor.execute("SELECT symbol, type FROM watchlists ORDER BY type, symbol")
+                    cursor.execute(
+                        "SELECT symbol, type FROM watchlists ORDER BY type, symbol"
+                    )
                     symbols = cursor.fetchall()
                     return symbols
         except Exception as e:

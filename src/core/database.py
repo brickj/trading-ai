@@ -15,6 +15,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 def convert_numpy_values(value):
     """Convert numpy values to Python native types for database storage"""
     if isinstance(value, (np.integer, np.floating)):
@@ -26,6 +27,7 @@ def convert_numpy_values(value):
     else:
         return value
 
+
 def convert_numpy_in_dict(data):
     """Convert all numpy types in a nested dictionary structure"""
     if isinstance(data, dict):
@@ -35,21 +37,21 @@ def convert_numpy_in_dict(data):
     else:
         return convert_numpy_values(data)
 
+
 @contextmanager
 def get_db_connection():
     """
     Get a PostgreSQL database connection with automatic cleanup.
-    
+
     Yields:
         Connection: PostgreSQL database connection
     """
     conn = None
     try:
         # Use individual connection parameters or DATABASE_URL if available
-        if hasattr(Config, 'DATABASE_URL') and Config.DATABASE_URL:
+        if hasattr(Config, "DATABASE_URL") and Config.DATABASE_URL:
             conn = psycopg2.connect(
-                Config.DATABASE_URL,
-                cursor_factory=psycopg2.extras.RealDictCursor
+                Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
             )
         else:
             # Use individual connection parameters from Config.DATABASE_CONFIG
@@ -60,9 +62,9 @@ def get_db_connection():
                 database=db_cfg["database"],
                 user=db_cfg["user"],
                 password=db_cfg["password"],
-                cursor_factory=psycopg2.extras.RealDictCursor
+                cursor_factory=psycopg2.extras.RealDictCursor,
             )
-        
+
         yield conn
     except psycopg2.Error as e:
         logger.error(f"Database connection error: {e}")
@@ -73,22 +75,22 @@ def get_db_connection():
         if conn:
             conn.close()
 
+
 @contextmanager
 def get_db_connection_silent():
     """
     Get a PostgreSQL database connection with automatic cleanup (silent version).
     Returns None if connection fails instead of raising an exception.
-    
+
     Yields:
         Connection or None: PostgreSQL database connection or None if failed
     """
     conn = None
     try:
         # Use individual connection parameters or DATABASE_URL if available
-        if hasattr(Config, 'DATABASE_URL') and Config.DATABASE_URL:
+        if hasattr(Config, "DATABASE_URL") and Config.DATABASE_URL:
             conn = psycopg2.connect(
-                Config.DATABASE_URL,
-                cursor_factory=psycopg2.extras.RealDictCursor
+                Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
             )
         else:
             # Use individual connection parameters from Config.DATABASE_CONFIG
@@ -99,9 +101,9 @@ def get_db_connection_silent():
                 database=db_cfg["database"],
                 user=db_cfg["user"],
                 password=db_cfg["password"],
-                cursor_factory=psycopg2.extras.RealDictCursor
+                cursor_factory=psycopg2.extras.RealDictCursor,
             )
-        
+
         yield conn
     except psycopg2.Error as e:
         logger.error(f"Database connection error: {e}")
@@ -112,11 +114,12 @@ def get_db_connection_silent():
         if conn:
             conn.close()
 
+
 # Module-level function to check database connection
 def check_database_connection():
     """
     Check if database connection is working.
-    
+
     Returns:
         bool: True if connection successful, False otherwise
     """
@@ -129,16 +132,17 @@ def check_database_connection():
         logger.error(f"Database connection check failed: {e}")
         return False
 
+
 # Module-level function to execute a query and return results
 def execute_query(query, params=None, fetch_all=True):
     """
     Execute a database query and return results.
-    
+
     Args:
         query (str): SQL query to execute
         params (tuple, optional): Query parameters
         fetch_all (bool): Whether to fetch all results or just one
-    
+
     Returns:
         list or dict: Query results
     """
@@ -146,12 +150,16 @@ def execute_query(query, params=None, fetch_all=True):
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params or ())
-                
+
                 # For non-SELECT queries (INSERT, UPDATE, DELETE), commit and return None
-                if query.strip().upper().startswith(('INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP')):
+                if (
+                    query.strip()
+                    .upper()
+                    .startswith(("INSERT", "UPDATE", "DELETE", "CREATE", "DROP"))
+                ):
                     conn.commit()
                     return None
-                
+
                 # For SELECT queries, fetch results
                 if fetch_all:
                     return cur.fetchall()
@@ -161,17 +169,18 @@ def execute_query(query, params=None, fetch_all=True):
         logger.error(f"Query execution error: {e}")
         raise
 
+
 def get_database_connection():
     """Get a connection to the PostgreSQL database."""
     try:
         conn = psycopg2.connect(
-            Config.DATABASE_URL,
-            cursor_factory=psycopg2.extras.RealDictCursor
+            Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
         )
         return conn
     except Exception as e:
         logger.error(f"Database connection error: {str(e)}")
         return None
+
 
 def get_database_stats() -> Dict[str, Any]:
     """Get database statistics and health information."""
@@ -180,29 +189,37 @@ def get_database_stats() -> Dict[str, Any]:
         "connection": False,
         "tables": [],
         "size": "0 bytes",
-        "version": "Unknown"
+        "version": "Unknown",
     }
-    
+
     conn = get_database_connection()
     if not conn:
         return stats
-    
+
     try:
         with conn.cursor() as cur:
             # Check connection
             stats["connection"] = True
             stats["status"] = "connected"
-            
+
             # Get PostgreSQL version
             cur.execute("SELECT version()")
             version_info = cur.fetchone()
-            stats["version"] = version_info.get("version") if version_info and isinstance(version_info, dict) else "Unknown"
-            
+            stats["version"] = (
+                version_info.get("version")
+                if version_info and isinstance(version_info, dict)
+                else "Unknown"
+            )
+
             # Get database size
             cur.execute("SELECT pg_size_pretty(pg_database_size(current_database()))")
             size_info = cur.fetchone()
-            stats["size"] = size_info.get("pg_size_pretty") if size_info and isinstance(size_info, dict) else "0 bytes"
-            
+            stats["size"] = (
+                size_info.get("pg_size_pretty")
+                if size_info and isinstance(size_info, dict)
+                else "0 bytes"
+            )
+
             # Get table information
             cur.execute("""
                 SELECT table_name, 
@@ -213,15 +230,19 @@ def get_database_stats() -> Dict[str, Any]:
             """)
             tables = cur.fetchall()
             stats["tables"] = [dict(table) for table in tables]
-            
+
             # Count rows in cache table if it exists
             try:
                 cur.execute("SELECT COUNT(*) as count FROM cache")
                 cache_info = cur.fetchone()
-                stats["cache_entries"] = cache_info.get("count") if cache_info and isinstance(cache_info, dict) else 0
+                stats["cache_entries"] = (
+                    cache_info.get("count")
+                    if cache_info and isinstance(cache_info, dict)
+                    else 0
+                )
             except:
                 stats["cache_entries"] = 0
-                
+
             return stats
     except Exception as e:
         logger.error(f"Error getting database stats: {str(e)}")
@@ -230,6 +251,7 @@ def get_database_stats() -> Dict[str, Any]:
     finally:
         if conn:
             conn.close()
+
 
 def get_system_flag(flag_name: str) -> Optional[str]:
     """
@@ -241,16 +263,21 @@ def get_system_flag(flag_name: str) -> Optional[str]:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT flag_value FROM system_flags WHERE flag_name = %s",
-                    (flag_name,)
+                    (flag_name,),
                 )
                 result = cur.fetchone()
                 if result:
                     # result can be a dict or tuple depending on cursor_factory
-                    return result[0] if isinstance(result, (list, tuple)) else result.get("flag_value")
+                    return (
+                        result[0]
+                        if isinstance(result, (list, tuple))
+                        else result.get("flag_value")
+                    )
                 return None
     except Exception as e:
         logger.error(f"Error getting system flag '{flag_name}': {e}")
         return None
+
 
 def set_system_flag(flag_name: str, flag_value: str, description: Optional[str] = None):
     """
@@ -266,11 +293,12 @@ def set_system_flag(flag_name: str, flag_value: str, description: Optional[str] 
                     ON CONFLICT (flag_name)
                     DO UPDATE SET flag_value = EXCLUDED.flag_value, description = EXCLUDED.description, updated_at = NOW()
                     """,
-                    (flag_name, flag_value, description)
+                    (flag_name, flag_value, description),
                 )
                 conn.commit()
     except Exception as e:
-        logger.error(f"Error setting system flag '{flag_name}': {e}") 
+        logger.error(f"Error setting system flag '{flag_name}': {e}")
+
 
 def save_backtest_result(result_dict):
     """
@@ -316,16 +344,16 @@ def get_latest_backtest(symbol, period_days):
             # Use .update() to avoid direct item assignment
             result.update({"trades": trades_json})
         return result
-    return None 
+    return None
+
 
 def ensure_job_schedules_table():
     """
     Ensure the job_schedules table exists for backend job scheduling.
     """
-    from psycopg2 import sql
     with get_db_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute('''
+            cur.execute("""
                 CREATE TABLE IF NOT EXISTS job_schedules (
                     id SERIAL PRIMARY KEY,
                     job_name TEXT NOT NULL,
@@ -334,5 +362,5 @@ def ensure_job_schedules_table():
                     last_run TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            ''')
-            conn.commit() 
+            """)
+            conn.commit()

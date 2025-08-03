@@ -1,16 +1,13 @@
 import finnhub
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Dict, Set
-from collections import defaultdict
 from ..core.config import Config
 from .data_fetcher import DataFetcher
 from ..core.sentiment_analyzer import SentimentAnalyzer
 from ..trading.trading_strategy import TradingStrategy
 from ..core.go_service_client import GoServiceClient
-from src.core.recommendation_manager import get_recommendation_manager
-import time # Added for time.time()
 import logging
-import os
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -32,33 +29,36 @@ class NewsMonitor:
             go_result = self.go_client.process_trending_news(hours_back)
             if go_result:
                 return go_result.get("trending_symbols", {})
-        
+
         # Use Marketaux API to get trending stocks
         try:
             print("🔍 Getting trending stocks from Marketaux API...")
             trending_stocks = self.data_fetcher.get_marketaux_trending_stocks(limit=5)
-            
+
             if not trending_stocks:
                 print("❌ No trending stocks from Marketaux API")
                 return {}
-            
+
             print(f"📈 Marketaux trending stocks: {trending_stocks}")
-            
+
             # Get comprehensive news for trending stocks from all sources
             print("📰 Fetching comprehensive news for trending stocks...")
             trending_symbols = self.data_fetcher.get_comprehensive_news_for_symbols(
-                symbols=trending_stocks, 
-                limit_per_symbol=5
+                symbols=trending_stocks, limit_per_symbol=5
             )
-            
+
             # Filter out symbols with no news
-            trending_symbols = {symbol: news for symbol, news in trending_symbols.items() if news}
-            
-            print(f"✅ Found news for {len(trending_symbols)} trending symbols: {list(trending_symbols.keys())}")
-            
+            trending_symbols = {
+                symbol: news for symbol, news in trending_symbols.items() if news
+            }
+
+            print(
+                f"✅ Found news for {len(trending_symbols)} trending symbols: {list(trending_symbols.keys())}"
+            )
+
             # Return only the trending symbols with news
             return dict(trending_symbols)
-                
+
         except Exception as e:
             print(f"❌ Marketaux integration failed: {e}")
             return {}
@@ -69,17 +69,18 @@ class NewsMonitor:
         """
         text_upper = text.upper()
         mentioned_symbols = set()
-        
+
         # Get stocks from database watchlist
         from ..core.watchlist_manager import WatchlistManager
+
         watchlist_manager = WatchlistManager()
         watchlist_stocks = watchlist_manager.get_stocks()
-        
+
         # Check for watchlist stocks
         for symbol in watchlist_stocks:
             if symbol in text_upper or self._check_company_name(symbol, text_upper):
                 mentioned_symbols.add(symbol)
-                
+
         return mentioned_symbols
 
     def _check_company_name(self, symbol: str, text: str) -> bool:
@@ -127,14 +128,20 @@ class NewsMonitor:
         names = crypto_names.get(symbol, [symbol])
         return any(name in text for name in names)
 
-    def analyze_news_driven_opportunities(self, trending_symbols: Dict[str, List[dict]]) -> List[dict]:
+    def analyze_news_driven_opportunities(
+        self, trending_symbols: Dict[str, List[dict]]
+    ) -> List[dict]:
         """
         Analyze trending news and generate news-driven opportunities
         """
-        logging.info(f"[DEBUG] analyze_news_driven_opportunities called with symbols: {list(trending_symbols.keys())}")
+        logging.info(
+            f"[DEBUG] analyze_news_driven_opportunities called with symbols: {list(trending_symbols.keys())}"
+        )
         opportunities = []
         for symbol, news_list in trending_symbols.items():
-            logging.info(f"[DEBUG] Processing symbol: {symbol}, news count: {len(news_list)}")
+            logging.info(
+                f"[DEBUG] Processing symbol: {symbol}, news count: {len(news_list)}"
+            )
             if not news_list:
                 logging.info(f"[DEBUG] Skipping {symbol}: no news articles")
                 continue
@@ -147,40 +154,62 @@ class NewsMonitor:
                 # Analyze sentiment
                 try:
                     if news_list and len(news_list) > 0:
-                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(news_list)
+                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
+                            news_list
+                        )
                     else:
                         # Fallback to price-based sentiment analysis
-                        logging.info(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
-                        sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                        logging.info(
+                            f"📊 No news articles for {symbol}, using price-based sentiment analysis..."
+                        )
+                        sentiment_data = (
+                            self.sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                 except Exception as e:
                     # If news sentiment fails, try price-based analysis
-                    logging.info(f"📊 News sentiment analysis failed for {symbol}: {str(e)}")
-                    logging.info(f"📊 Falling back to price-based sentiment analysis...")
+                    logging.info(
+                        f"📊 News sentiment analysis failed for {symbol}: {str(e)}"
+                    )
+                    logging.info("📊 Falling back to price-based sentiment analysis...")
                     try:
-                        sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                        sentiment_data = (
+                            self.sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                     except Exception as price_error:
-                        logging.info(f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}")
+                        logging.info(
+                            f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}"
+                        )
                         # Create a minimal sentiment data to continue processing
                         sentiment_data = {
                             "sentiment_score": 0.0,
                             "confidence": 0.1,
                             "summary": f"Analysis failed for {symbol}",
-                            "provider": "fallback"
+                            "provider": "fallback",
                         }
                 # Apply news-specific thresholds (lowered for testing)
-                min_confidence = min(Config.NEWS_CONFIDENCE_THRESHOLD, 0.1)  # Use lower of config or 0.1
-                min_sentiment = min(Config.NEWS_SENTIMENT_THRESHOLD, 0.05)  # Use lower of config or 0.05
-                
+                min_confidence = min(
+                    Config.NEWS_CONFIDENCE_THRESHOLD, 0.1
+                )  # Use lower of config or 0.1
+                min_sentiment = min(
+                    Config.NEWS_SENTIMENT_THRESHOLD, 0.05
+                )  # Use lower of config or 0.05
+
                 if (
                     sentiment_data["confidence"] < min_confidence
                     or abs(sentiment_data["sentiment_score"]) < min_sentiment
                 ):
-                    logging.info(f"[DEBUG] Skipping {symbol}: sentiment data below thresholds (confidence: {sentiment_data['confidence']}, sentiment: {sentiment_data['sentiment_score']})")
+                    logging.info(
+                        f"[DEBUG] Skipping {symbol}: sentiment data below thresholds (confidence: {sentiment_data['confidence']}, sentiment: {sentiment_data['sentiment_score']})"
+                    )
                     continue
-                
+
                 # Generate trading signals for stocks
                 signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
-                
+
                 # Generate trade recommendations
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
@@ -200,7 +229,9 @@ class NewsMonitor:
                     }
                     opportunities.append(opportunity)
                 else:
-                    logging.info(f"[DEBUG] Skipping {symbol}: signal_data action is HOLD")
+                    logging.info(
+                        f"[DEBUG] Skipping {symbol}: signal_data action is HOLD"
+                    )
             except Exception as e:
                 logging.info(f"Error analyzing {symbol}: {e}")
                 continue
@@ -212,12 +243,13 @@ class NewsMonitor:
         Analyze opportunities for all symbols in watchlists regardless of news
         """
         opportunities = []
-        
+
         # Get stocks from database watchlist
         from ..core.watchlist_manager import WatchlistManager
+
         watchlist_manager = WatchlistManager()
         watchlist_stocks = watchlist_manager.get_stocks()
-        
+
         # Analyze watchlist stocks
         for symbol in watchlist_stocks:
             try:
@@ -228,30 +260,46 @@ class NewsMonitor:
                 # Analyze sentiment with fallback
                 try:
                     if news_data and len(news_data) >= 2:
-                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(news_data)
+                        sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
+                            news_data
+                        )
                     else:
                         # Fallback to price-based sentiment analysis
-                        logging.info(f"📊 No news articles for {symbol}, using price-based sentiment analysis...")
-                        sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                        logging.info(
+                            f"📊 No news articles for {symbol}, using price-based sentiment analysis..."
+                        )
+                        sentiment_data = (
+                            self.sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                 except Exception as e:
                     # If news sentiment fails, try price-based analysis
-                    logging.info(f"📊 News sentiment analysis failed for {symbol}: {str(e)}")
-                    logging.info(f"📊 Falling back to price-based sentiment analysis...")
+                    logging.info(
+                        f"📊 News sentiment analysis failed for {symbol}: {str(e)}"
+                    )
+                    logging.info("📊 Falling back to price-based sentiment analysis...")
                     try:
-                        sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                        sentiment_data = (
+                            self.sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                     except Exception as price_error:
-                        logging.info(f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}")
+                        logging.info(
+                            f"❌ Price-based analysis also failed for {symbol}: {str(price_error)}"
+                        )
                         # Create a minimal sentiment data to continue processing
                         sentiment_data = {
                             "sentiment_score": 0.0,
                             "confidence": 0.1,
                             "summary": f"Analysis failed for {symbol}",
-                            "provider": "fallback"
+                            "provider": "fallback",
                         }
-                
+
                 # Use standard trading signal for stocks
                 signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
-                
+
                 if signal_data["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
                         symbol, price_data["current_price"], sentiment_data, signal_data
@@ -271,7 +319,5 @@ class NewsMonitor:
             except Exception as e:
                 logging.info(f"Error analyzing stock {symbol}: {e}")
                 continue
-                
+
         return opportunities
-
-

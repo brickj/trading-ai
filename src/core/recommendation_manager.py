@@ -16,13 +16,11 @@ If you need to make changes:
 Any changes here affect ALL trading recommendations across the entire
 application.
 """
-import psycopg2
-import psycopg2.extras
+
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
 from contextlib import contextmanager
-from .config import Config
 import numpy as np
 from src.core.database import get_db_connection
 
@@ -54,7 +52,6 @@ class RecommendationManager:
     @contextmanager
     def _get_connection(self):
         """Get database connection with automatic cleanup."""
-        from src.core.database import get_db_connection
         with get_db_connection() as conn:
             yield conn
 
@@ -73,18 +70,30 @@ class RecommendationManager:
                     symbol = recommendation.get("symbol", "")
                     recommendation_type = recommendation.get("recommendation_type", "")
                     action = recommendation.get("action", "")
-                    strike_price = convert_numpy_values(recommendation.get("strike_price"))
-                    days_to_expiry = convert_numpy_values(recommendation.get("days_to_expiry"))
-                    option_price = convert_numpy_values(recommendation.get("option_price"))
+                    strike_price = convert_numpy_values(
+                        recommendation.get("strike_price")
+                    )
+                    days_to_expiry = convert_numpy_values(
+                        recommendation.get("days_to_expiry")
+                    )
+                    option_price = convert_numpy_values(
+                        recommendation.get("option_price")
+                    )
                     sentiment_confidence = convert_numpy_values(
                         recommendation.get("base_confidence")
                     )
                     historical_confidence = convert_numpy_values(
                         recommendation.get("historical_confidence")
                     )
-                    final_confidence = convert_numpy_values(recommendation.get("confidence"))
-                    sentiment_score = convert_numpy_values(recommendation.get("sentiment_score"))
-                    current_stock_price = convert_numpy_values(recommendation.get("current_price"))
+                    final_confidence = convert_numpy_values(
+                        recommendation.get("confidence")
+                    )
+                    sentiment_score = convert_numpy_values(
+                        recommendation.get("sentiment_score")
+                    )
+                    current_stock_price = convert_numpy_values(
+                        recommendation.get("current_price")
+                    )
                     reasoning = recommendation.get("reasoning", "")
                     # Insert recommendation
                     cur.execute(
@@ -115,20 +124,24 @@ class RecommendationManager:
                     )
                     result = cur.fetchone()
                     if result:
-                        recommendation_id = result["id"]  # Ensure result is a dictionary
+                        recommendation_id = result[
+                            "id"
+                        ]  # Ensure result is a dictionary
                         conn.commit()
-                        logger.info(f"Saved recommendation {recommendation_id} for {symbol}")
+                        logger.info(
+                            f"Saved recommendation {recommendation_id} for {symbol}"
+                        )
                         # Add logging for when a request is made
-                        logger.debug('Requesting stock recommendations');
+                        logger.debug("Requesting stock recommendations")
 
                         # Log input parameters
-                        logger.debug(f'Input parameters: {recommendation}');
+                        logger.debug(f"Input parameters: {recommendation}")
 
                         # Log whether the API request succeeded or failed
-                        logger.debug('API request succeeded');
+                        logger.debug("API request succeeded")
 
                         # Log the API response
-                        logger.debug(f'API response: {result}');
+                        logger.debug(f"API response: {result}")
                         return True
                     else:
                         logger.error(f"Failed to save recommendation for {symbol}")
@@ -189,8 +202,12 @@ class RecommendationManager:
                     cur.execute(query, params)
                     results = cur.fetchall()
                     # Calculate overall statistics
-                    total_recs = sum(row["total_recommendations"] for row in results if row)
-                    total_profitable = sum(row["profitable_count"] for row in results if row)
+                    total_recs = sum(
+                        row["total_recommendations"] for row in results if row
+                    )
+                    total_profitable = sum(
+                        row["profitable_count"] for row in results if row
+                    )
                     if total_recs > 0:
                         overall_win_rate = (total_profitable / total_recs) * 100
                     else:
@@ -199,8 +216,12 @@ class RecommendationManager:
                     all_outcomes = []
                     for row in results:
                         if row and row["avg_outcome"] is not None:
-                            all_outcomes.extend([row["avg_outcome"]] * row["total_recommendations"])
-                    avg_outcome = sum(all_outcomes) / len(all_outcomes) if all_outcomes else 0
+                            all_outcomes.extend(
+                                [row["avg_outcome"]] * row["total_recommendations"]
+                            )
+                    avg_outcome = (
+                        sum(all_outcomes) / len(all_outcomes) if all_outcomes else 0
+                    )
                     return {
                         "symbol": symbol,
                         "total_recommendations": total_recs,
@@ -213,9 +234,11 @@ class RecommendationManager:
                                 "recommendation_type": row["recommendation_type"],
                                 "total_recommendations": row["total_recommendations"],
                                 "profitable_count": row["profitable_count"],
-                                "avg_outcome": row["avg_outcome"]
-                            } for row in results if row
-                        ]
+                                "avg_outcome": row["avg_outcome"],
+                            }
+                            for row in results
+                            if row
+                        ],
                     }
         except Exception as e:
             logger.error(f"Error retrieving historical performance: {e}")
@@ -249,7 +272,9 @@ class RecommendationManager:
                 action = "HOLD"
                 recommendation_type = "crypto_neutral"
             # Get historical performance for this crypto
-            historical_performance = self.get_historical_performance(symbol, days_back=30)
+            historical_performance = self.get_historical_performance(
+                symbol, days_back=30
+            )
             # Adjust confidence based on historical performance
             historical_confidence = historical_performance.get("win_rate", 50) / 100
             adjusted_confidence = (confidence * 0.4) + (historical_confidence * 0.6)
@@ -321,15 +346,21 @@ class RecommendationManager:
         # Historical performance
         if total_recs > 0:
             if win_rate > 60:
-                reasoning_parts.append("Strong historical performance ({win_rate}% win rate)")
+                reasoning_parts.append(
+                    "Strong historical performance ({win_rate}% win rate)"
+                )
             elif win_rate > 45:
-                reasoning_parts.append("Moderate historical performance ({win_rate}% win rate)")
+                reasoning_parts.append(
+                    "Moderate historical performance ({win_rate}% win rate)"
+                )
             else:
                 reasoning_parts.append(
                     "Poor historical performance ({win_rate}% win rate) - exercise caution"
                 )
         else:
-            reasoning_parts.append("No historical data available - using sentiment only")
+            reasoning_parts.append(
+                "No historical data available - using sentiment only"
+            )
         # Crypto-specific factors
         reasoning_parts.append(
             "Crypto markets are highly volatile - consider smaller position sizes"
@@ -390,15 +421,23 @@ class RecommendationManager:
                     )
                     top_cryptos = cur.fetchall()
                     return {
-                        "total_crypto_recommendations": crypto_stats["total_crypto_recs"] or 0,
-                        "profitable_crypto_recommendations": crypto_stats["profitable_crypto"] or 0,
+                        "total_crypto_recommendations": crypto_stats[
+                            "total_crypto_recs"
+                        ]
+                        or 0,
+                        "profitable_crypto_recommendations": crypto_stats[
+                            "profitable_crypto"
+                        ]
+                        or 0,
                         "crypto_win_rate": round(
                             (crypto_stats["profitable_crypto"] or 0)
                             / max(crypto_stats["total_crypto_recs"] or 1, 1)
                             * 100,
                             1,
                         ),
-                        "avg_crypto_outcome": round(crypto_stats["avg_crypto_outcome"] or 0, 3),
+                        "avg_crypto_outcome": round(
+                            crypto_stats["avg_crypto_outcome"] or 0, 3
+                        ),
                         "avg_crypto_confidence": round(
                             crypto_stats["avg_crypto_confidence"] or 0, 3
                         ),
@@ -490,31 +529,40 @@ class RecommendationManager:
                                     if action == "buy":
                                         # For buy recommendations, positive
                                         # outcome means price went up
-                                        outcome = (current_price - original_price) / original_price
+                                        outcome = (
+                                            current_price - original_price
+                                        ) / original_price
                                         profitable = outcome > 0
                                     elif action == "sell":
                                         # For sell recommendations, positive
                                         # outcome means price went down
-                                        outcome = (original_price - current_price) / original_price
+                                        outcome = (
+                                            original_price - current_price
+                                        ) / original_price
                                         profitable = outcome > 0
                                     else:
                                         # Hold or other actions
                                         outcome = (
-                                            abs(current_price - original_price) / original_price
+                                            abs(current_price - original_price)
+                                            / original_price
                                         )
-                                        profitable = (action == "hold" and abs(outcome) < 0.05) or (
-                                            action != "hold" and outcome > 0
-                                        )
+                                        profitable = (
+                                            action == "hold" and abs(outcome) < 0.05
+                                        ) or (action != "hold" and outcome > 0)
                                 elif rec_type == "option" and strike_price is not None:
                                     if action == "call":
                                         # For call options, positive outcome if
                                         # price > strike
-                                        outcome = (current_price - strike_price) / strike_price
+                                        outcome = (
+                                            current_price - strike_price
+                                        ) / strike_price
                                         profitable = current_price > strike_price
                                     elif action == "put":
                                         # For put options, positive outcome if
                                         # price < strike
-                                        outcome = (strike_price - current_price) / strike_price
+                                        outcome = (
+                                            strike_price - current_price
+                                        ) / strike_price
                                         profitable = current_price < strike_price
                                 # Update the recommendation with outcome
                                 cur.execute(
@@ -534,14 +582,20 @@ class RecommendationManager:
                                     "outcome={outcome:.4f}, profitable={profitable}"
                                 )
                             except Exception:
-                                logger.error("Error getting current price for {symbol}: {e}")
+                                logger.error(
+                                    "Error getting current price for {symbol}: {e}"
+                                )
                                 error_count += 1
                                 continue
                         except Exception:
-                            logger.error("Error updating recommendation {rec['id']}: {e}")
+                            logger.error(
+                                "Error updating recommendation {rec['id']}: {e}"
+                            )
                             error_count += 1
                             continue
-            logger.info("Successfully updated {updated_count} recommendations with outcomes")
+            logger.info(
+                "Successfully updated {updated_count} recommendations with outcomes"
+            )
             if error_count > 0:
                 logger.warning("Failed to update {error_count} recommendations")
             return updated_count
@@ -621,11 +675,16 @@ class RecommendationManager:
                                 performance["profitable_count"] if performance else 0
                             ),
                             "win_rate": (
-                                (performance["profitable_count"] / performance["total_evaluated"])
+                                (
+                                    performance["profitable_count"]
+                                    / performance["total_evaluated"]
+                                )
                                 if performance and performance["total_evaluated"] > 0
                                 else 0
                             ),
-                            "avg_outcome": (performance["avg_outcome"] if performance else 0),
+                            "avg_outcome": (
+                                performance["avg_outcome"] if performance else 0
+                            ),
                         },
                     }
         except Exception as e:

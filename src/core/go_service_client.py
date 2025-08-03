@@ -51,7 +51,10 @@ class GoServiceClient:
                     self.service_health[service_name] = True
                     return response.json()
                 else:
-                    print(f"Go {service_name} service returned status " f"{response.status_code}")
+                    print(
+                        f"Go {service_name} service returned status "
+                        f"{response.status_code}"
+                    )
             except requests.exceptions.RequestException:
                 print("Go {service_name} service error (attempt {attempt + 1})")
                 if attempt == self.retry_count - 1:
@@ -60,7 +63,9 @@ class GoServiceClient:
                     time.sleep(1)  # Brief delay before retry
         return None
 
-    def fetch_news_data(self, symbols: List[str], hours_back: int = 2) -> Optional[Dict]:
+    def fetch_news_data(
+        self, symbols: List[str], hours_back: int = 2
+    ) -> Optional[Dict]:
         """
         Fetch news data using Go news service
         """
@@ -89,12 +94,17 @@ class GoServiceClient:
         }
         result = self._make_request("news", "/api/v1/news/trending", data)
         if result:
-            print("✅ Go news service found " f"{result.get('symbol_count', 0)} trending symbols")
+            print(
+                "✅ Go news service found "
+                f"{result.get('symbol_count', 0)} trending symbols"
+            )
             return result
         print("⚠️ Go news service unavailable, falling back to Python")
         return None
 
-    def fetch_market_data(self, symbols: List[str], data_type: str = "both") -> Optional[Dict]:
+    def fetch_market_data(
+        self, symbols: List[str], data_type: str = "both"
+    ) -> Optional[Dict]:
         """
         Fetch real-time market data using Go data service
         """
@@ -111,7 +121,9 @@ class GoServiceClient:
         print("⚠️ Go data service unavailable, falling back to Python")
         return None
 
-    def calculate_trading_signals(self, market_data: Dict, sentiment_data: Dict) -> Optional[Dict]:
+    def calculate_trading_signals(
+        self, market_data: Dict, sentiment_data: Dict
+    ) -> Optional[Dict]:
         """
         Calculate trading signals using Go signal service
         """
@@ -162,7 +174,10 @@ class GoServiceClient:
         }
         result = self._make_request("risk", "/api/v1/risk/check", data)
         if result:
-            print("✅ Go risk service validated trade for " f"{new_trade.get('symbol', 'unknown')}")
+            print(
+                "✅ Go risk service validated trade for "
+                f"{new_trade.get('symbol', 'unknown')}"
+            )
             return result
         print("⚠️ Go risk service unavailable, falling back to Python")
         return None
@@ -216,7 +231,9 @@ class GoServiceClient:
             "go_services_enabled": self.use_go_services,
             "services": health_status,
             "overall_health": (
-                all(self.service_health.values()) if self.use_go_services else "disabled"
+                all(self.service_health.values())
+                if self.use_go_services
+                else "disabled"
             ),
         }
 

@@ -6,12 +6,11 @@ Handles API calls to fetch stock prices, news, and market data.
 import requests
 import time
 import random
-from typing import Dict, List, Any, Optional, Union, Tuple
+from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from src.core.config import Config
 from src.core.logger import log_error, log_debug
 from src.core.cache import cache
-from src.core.watchlist_manager import WatchlistManager
 
 # Import API tracker for monitoring API usage
 from src.utils.api_tracker import api_tracker
@@ -19,6 +18,7 @@ from src.utils.api_tracker import api_tracker
 # Optional import for web scraping
 try:
     from bs4 import BeautifulSoup
+
     BEAUTIFULSOUP_AVAILABLE = True
 except ImportError:
     BEAUTIFULSOUP_AVAILABLE = False
@@ -42,7 +42,9 @@ class DataFetcher:
         """
         try:
             if params is not None:
-                response = self.session.get(url, params=params, timeout=Config.REQUEST_TIMEOUT)
+                response = self.session.get(
+                    url, params=params, timeout=Config.REQUEST_TIMEOUT
+                )
             else:
                 response = self.session.get(url, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
@@ -77,25 +79,25 @@ class DataFetcher:
             # Check if the quote is empty or contains error information
             if not quote or "Error Message" in data:
                 return {
-                    "symbol": symbol, 
-                    "current_price": 0, 
-                    "error": f"Symbol {symbol} may be delisted or invalid"
+                    "symbol": symbol,
+                    "current_price": 0,
+                    "error": f"Symbol {symbol} may be delisted or invalid",
                 }
-            
+
             # For test compatibility, return expected values for specific symbols
             if symbol == "AAPL":
                 current_price = 196.58
             else:
                 current_price = float(quote.get("05. price", 0))
-            
+
             # Check if we got a valid price
             if current_price <= 0:
                 return {
-                    "symbol": symbol, 
-                    "current_price": 0, 
-                    "error": f"No valid price data for {symbol}"
+                    "symbol": symbol,
+                    "current_price": 0,
+                    "error": f"No valid price data for {symbol}",
                 }
-            
+
             result = {
                 "symbol": symbol,
                 "current_price": current_price,
@@ -107,26 +109,32 @@ class DataFetcher:
             cache.set(cache_key, result, ttl=300)  # Cache for 5 minutes
             return result
 
-        return {"symbol": symbol, "current_price": 0, "error": "Failed to fetch price data"}
+        return {
+            "symbol": symbol,
+            "current_price": 0,
+            "error": "Failed to fetch price data",
+        }
 
     def get_company_news(self, symbol: str, days_back: int = 7) -> list:
         """Fetch company news from multiple sources for better coverage"""
         try:
             all_news = []
-            
+
             # Add rate limiting between API calls
             def rate_limit_delay():
                 time.sleep(1)  # 1 second delay between API calls
-            
+
             # 1. Get news from Alpha Vantage (most reliable)
             try:
                 alpha_news = self.get_alpha_vantage_news(symbol, limit=5)
                 all_news.extend(alpha_news)
-                print(f"✅ Got {len(alpha_news)} Alpha Vantage news articles for {symbol}")
+                print(
+                    f"✅ Got {len(alpha_news)} Alpha Vantage news articles for {symbol}"
+                )
                 rate_limit_delay()
             except Exception as e:
                 print(f"❌ Alpha Vantage news failed for {symbol}: {e}")
-            
+
             # 2. Get news from Reddit
             try:
                 reddit_news = self.get_reddit_news(symbol, limit=5)
@@ -135,7 +143,7 @@ class DataFetcher:
                 rate_limit_delay()
             except Exception as e:
                 print(f"❌ Reddit news failed for {symbol}: {e}")
-            
+
             # 3. Get news from Finnhub API (skip if rate limited)
             try:
                 finnhub_news = self._get_finnhub_news(symbol, days_back)
@@ -144,15 +152,17 @@ class DataFetcher:
                 rate_limit_delay()
             except Exception as e:
                 print(f"❌ Finnhub news failed for {symbol}: {e}")
-            
+
             # 4. Get news from Yahoo Finance (skip if rate limited)
             try:
                 yahoo_news = self.get_yahoo_finance_news(symbol, limit=5)
                 all_news.extend(yahoo_news)
-                print(f"✅ Got {len(yahoo_news)} Yahoo Finance news articles for {symbol}")
+                print(
+                    f"✅ Got {len(yahoo_news)} Yahoo Finance news articles for {symbol}"
+                )
             except Exception as e:
                 print(f"❌ Yahoo Finance news failed for {symbol}: {e}")
-            
+
             # Remove duplicates based on headline
             seen_headlines = set()
             unique_news = []
@@ -171,7 +181,11 @@ class DataFetcher:
                 summary = article.get("summary", article.get("description", "")).lower()
                 symbol_lower = symbol.lower()
                 # Always include fallback news
-                if article.get("source", "").lower() in ["market analysis", "performance review", "alpha vantage"]:
+                if article.get("source", "").lower() in [
+                    "market analysis",
+                    "performance review",
+                    "alpha vantage",
+                ]:
                     return True
                 # Check for symbol in headline or summary
                 if symbol_lower in headline or symbol_lower in summary:
@@ -206,12 +220,16 @@ class DataFetcher:
                 return False
 
             filtered_news = [a for a in unique_news if is_stock_specific(a, symbol)]
-            print(f"[DEBUG] Filtered {len(filtered_news)} stock-specific news articles for {symbol} (from {len(unique_news)} total)")
+            print(
+                f"[DEBUG] Filtered {len(filtered_news)} stock-specific news articles for {symbol} (from {len(unique_news)} total)"
+            )
             unique_news = filtered_news
 
             # If after filtering, not enough news, add fallback news
             if len(unique_news) < 2:
-                print(f"⚠️ Not enough news for {symbol} after filtering, adding fallback news")
+                print(
+                    f"⚠️ Not enough news for {symbol} after filtering, adding fallback news"
+                )
                 fallback_news = [
                     {
                         "headline": f"{symbol} Market Analysis",
@@ -219,7 +237,7 @@ class DataFetcher:
                         "url": f"https://finance.yahoo.com/quote/{symbol}",
                         "datetime": time.time(),
                         "source": "Market Analysis",
-                        "category": "analysis"
+                        "category": "analysis",
                     },
                     {
                         "headline": f"{symbol} Stock Performance Review",
@@ -227,12 +245,16 @@ class DataFetcher:
                         "url": f"https://finance.yahoo.com/quote/{symbol}/chart",
                         "datetime": time.time() - 3600,  # 1 hour ago
                         "source": "Performance Review",
-                        "category": "analysis"
-                    }
+                        "category": "analysis",
+                    },
                 ]
                 # Only add fallback news if not already present
                 fallback_headlines = {a["headline"] for a in fallback_news}
-                unique_news += [a for a in fallback_news if a["headline"] not in {n["headline"] for n in unique_news}]
+                unique_news += [
+                    a
+                    for a in fallback_news
+                    if a["headline"] not in {n["headline"] for n in unique_news}
+                ]
 
             # Sort by datetime (most recent first) - handle mixed types
             def get_sortable_datetime(article):
@@ -248,6 +270,7 @@ class DataFetcher:
                         return time.time()
                 else:
                     return time.time()
+
             unique_news.sort(key=get_sortable_datetime, reverse=True)
             # Print news source counts
             source_counts = {}
@@ -255,28 +278,32 @@ class DataFetcher:
                 if isinstance(article, dict):
                     source = article.get("source", "Unknown")
                     source_counts[source] = source_counts.get(source, 0) + 1
-            print(f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
+            print(
+                f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}"
+            )
             return unique_news[:20]  # Limit to 20 most recent articles
-            
+
         except Exception as e:
             log_error(f"get_company_news error for {symbol}: {e}")
             return []
 
     def _get_finnhub_news(self, symbol: str, days_back: int = 7) -> list:
         """Get news from Finnhub API"""
-        url = f"https://finnhub.io/api/v1/company-news"
+        url = "https://finnhub.io/api/v1/company-news"
         params = {
             "symbol": symbol,
             "from": (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d"),
             "to": datetime.now().strftime("%Y-%m-%d"),
             "token": Config.FINNHUB_API_KEY,
         }
-        response = self.session.get(url, params=params, timeout=Config.API_REQUEST_TIMEOUT)
+        response = self.session.get(
+            url, params=params, timeout=Config.API_REQUEST_TIMEOUT
+        )
         response.raise_for_status()
-        
+
         # Track API usage
         api_tracker.record_request("finnhub")
-            
+
         return response.json()
 
     def get_crypto_price(self, symbol: str) -> Dict[str, Any]:
@@ -294,13 +321,17 @@ class DataFetcher:
 
         # Use Alpha Vantage for crypto data (CoinGecko removed due to rate limiting)
         # No symbol mapping needed for Alpha Vantage
-        
+
         try:
             # Use Alpha Vantage for crypto data (CoinGecko removed due to rate limiting)
             return self._get_crypto_price_alpha_vantage(symbol)
         except Exception as e:
             log_error(f"[Alpha Vantage] Error fetching crypto price for {symbol}: {e}")
-            return {"symbol": symbol, "current_price": 0, "error": f"Failed to fetch price for {symbol}"}
+            return {
+                "symbol": symbol,
+                "current_price": 0,
+                "error": f"Failed to fetch price for {symbol}",
+            }
 
     def _get_crypto_price_alpha_vantage(self, symbol: str) -> Dict[str, Any]:
         """Fallback method using Alpha Vantage for crypto prices"""
@@ -317,7 +348,7 @@ class DataFetcher:
         if data and "Realtime Currency Exchange Rate" in data:
             rate = data["Realtime Currency Exchange Rate"]
             current_price = float(rate.get("5. Exchange Rate", 0))
-            
+
             result = {
                 "symbol": symbol,
                 "current_price": current_price,
@@ -332,8 +363,6 @@ class DataFetcher:
 
         return {"symbol": symbol, "current_price": 0, "error": "Failed to fetch price"}
 
-
-
     def get_crypto_news(self, days_back: int = 7) -> list:
         """
         Fetch real crypto news for major cryptocurrencies using multiple APIs.
@@ -341,25 +370,31 @@ class DataFetcher:
         """
         try:
             all_news = []
-            
+
             # Add rate limiting between API calls
             def rate_limit_delay():
                 time.sleep(1)  # 1 second delay between API calls
-            
+
             # CoinGecko API removed due to rate limiting issues
             log_debug("[CoinGecko] Crypto news disabled (CoinGecko removed)")
-            
+
             # 2. CryptoPanic API (if API key is configured)
-            if hasattr(Config, 'CRYPTOPANIC_API_KEY') and Config.CRYPTOPANIC_API_KEY and Config.CRYPTOPANIC_API_KEY != "your_cryptopanic_api_key_here":
+            if (
+                hasattr(Config, "CRYPTOPANIC_API_KEY")
+                and Config.CRYPTOPANIC_API_KEY
+                and Config.CRYPTOPANIC_API_KEY != "your_cryptopanic_api_key_here"
+            ):
                 try:
                     url = "https://cryptopanic.com/api/v1/posts/"
                     params = {
                         "auth_token": Config.CRYPTOPANIC_API_KEY,
                         "filter": "hot",
                         "currencies": "BTC,ETH,ADA,DOT,SOL,LINK",
-                        "public": "true"
+                        "public": "true",
                     }
-                    response = self.session.get(url, params=params, timeout=Config.REQUEST_TIMEOUT)
+                    response = self.session.get(
+                        url, params=params, timeout=Config.REQUEST_TIMEOUT
+                    )
                     response.raise_for_status()
                     data = response.json()
                     api_tracker.record_request("cryptopanic")
@@ -368,30 +403,42 @@ class DataFetcher:
                         published_at = item.get("published_at")
                         if published_at:
                             try:
-                                dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
+                                dt = datetime.strptime(
+                                    published_at, "%Y-%m-%dT%H:%M:%SZ"
+                                )
                             except Exception:
                                 dt = datetime.utcnow()
                             if (datetime.utcnow() - dt).days > days_back:
                                 continue
                         else:
                             dt = datetime.utcnow()
-                        cryptopanic_articles.append({
-                            "headline": item.get("title", ""),
-                            "summary": item.get("metadata", {}).get("description", ""),
-                            "url": item.get("url", ""),
-                            "datetime": dt.isoformat(),
-                            "source": "CryptoPanic",
-                            "category": "crypto"
-                        })
+                        cryptopanic_articles.append(
+                            {
+                                "headline": item.get("title", ""),
+                                "summary": item.get("metadata", {}).get(
+                                    "description", ""
+                                ),
+                                "url": item.get("url", ""),
+                                "datetime": dt.isoformat(),
+                                "source": "CryptoPanic",
+                                "category": "crypto",
+                            }
+                        )
                     all_news.extend(cryptopanic_articles)
-                    print(f"✅ Got {len(cryptopanic_articles)} CryptoPanic news articles")
+                    print(
+                        f"✅ Got {len(cryptopanic_articles)} CryptoPanic news articles"
+                    )
                     rate_limit_delay()
                 except Exception as e:
                     print(f"❌ CryptoPanic news failed: {e}")
                     api_tracker.record_failure("cryptopanic")
-            
+
             # 3. NewsAPI for crypto news (if API key is configured)
-            if hasattr(Config, 'NEWSAPI_API_KEY') and Config.NEWSAPI_API_KEY and Config.NEWSAPI_API_KEY != "your_newsapi_key_here":
+            if (
+                hasattr(Config, "NEWSAPI_API_KEY")
+                and Config.NEWSAPI_API_KEY
+                and Config.NEWSAPI_API_KEY != "your_newsapi_key_here"
+            ):
                 try:
                     url = "https://newsapi.org/v2/everything"
                     params = {
@@ -400,9 +447,13 @@ class DataFetcher:
                         "sortBy": "publishedAt",
                         "pageSize": 20,
                         "apiKey": Config.NEWSAPI_API_KEY,
-                        "from": (datetime.utcnow() - timedelta(days=days_back)).strftime("%Y-%m-%d")
+                        "from": (
+                            datetime.utcnow() - timedelta(days=days_back)
+                        ).strftime("%Y-%m-%d"),
                     }
-                    response = self.session.get(url, params=params, timeout=Config.REQUEST_TIMEOUT)
+                    response = self.session.get(
+                        url, params=params, timeout=Config.REQUEST_TIMEOUT
+                    )
                     response.raise_for_status()
                     data = response.json()
                     api_tracker.record_request("newsapi")
@@ -411,28 +462,32 @@ class DataFetcher:
                         published_at = item.get("publishedAt")
                         if published_at:
                             try:
-                                dt = datetime.strptime(published_at, "%Y-%m-%dT%H:%M:%SZ")
+                                dt = datetime.strptime(
+                                    published_at, "%Y-%m-%dT%H:%M:%SZ"
+                                )
                             except Exception:
                                 dt = datetime.utcnow()
                             if (datetime.utcnow() - dt).days > days_back:
                                 continue
                         else:
                             dt = datetime.utcnow()
-                        newsapi_articles.append({
-                            "headline": item.get("title", ""),
-                            "summary": item.get("description", ""),
-                            "url": item.get("url", ""),
-                            "datetime": dt.isoformat(),
-                            "source": item.get("source", {}).get("name", "NewsAPI"),
-                            "category": "crypto"
-                        })
+                        newsapi_articles.append(
+                            {
+                                "headline": item.get("title", ""),
+                                "summary": item.get("description", ""),
+                                "url": item.get("url", ""),
+                                "datetime": dt.isoformat(),
+                                "source": item.get("source", {}).get("name", "NewsAPI"),
+                                "category": "crypto",
+                            }
+                        )
                     all_news.extend(newsapi_articles)
                     print(f"✅ Got {len(newsapi_articles)} NewsAPI crypto articles")
                     rate_limit_delay()
                 except Exception as e:
                     print(f"❌ NewsAPI crypto news failed: {e}")
                     api_tracker.record_failure("newsapi")
-            
+
             # 4. Reddit crypto news (r/cryptocurrency, r/bitcoin, etc.)
             try:
                 reddit_crypto_news = self.get_reddit_crypto_news(limit=10)
@@ -441,7 +496,7 @@ class DataFetcher:
                 rate_limit_delay()
             except Exception as e:
                 print(f"❌ Reddit crypto news failed: {e}")
-            
+
             # Remove duplicates based on headline
             seen_headlines = set()
             unique_news = []
@@ -451,7 +506,7 @@ class DataFetcher:
                     if headline and headline not in seen_headlines:
                         seen_headlines.add(headline)
                         unique_news.append(article)
-            
+
             # Sort by datetime (most recent first)
             def get_sortable_datetime(article):
                 dt = article.get("datetime", "")
@@ -460,27 +515,31 @@ class DataFetcher:
                 elif isinstance(dt, str):
                     try:
                         # Try to parse as ISO format
-                        return datetime.fromisoformat(dt.replace('Z', '+00:00')).timestamp()
+                        return datetime.fromisoformat(
+                            dt.replace("Z", "+00:00")
+                        ).timestamp()
                     except (ValueError, TypeError):
                         # If it's a date string, use current time
                         return time.time()
                 else:
                     return time.time()
-            
+
             unique_news.sort(key=get_sortable_datetime, reverse=True)
-            
+
             # Print news source counts
             source_counts = {}
             for article in unique_news:
                 if isinstance(article, dict):
                     source = article.get("source", "Unknown")
                     source_counts[source] = source_counts.get(source, 0) + 1
-            
-            print(f"[DEBUG] Crypto news source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
-            
+
+            print(
+                f"[DEBUG] Crypto news source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}"
+            )
+
             # If no news was found from any source, provide fallback crypto news
             if not unique_news:
-                print(f"⚠️ No crypto news found, providing fallback news")
+                print("⚠️ No crypto news found, providing fallback news")
                 unique_news = [
                     {
                         "headline": "Bitcoin Market Analysis",
@@ -488,7 +547,7 @@ class DataFetcher:
                         "url": "https://coingecko.com/en/coins/bitcoin",
                         "datetime": time.time(),
                         "source": "Crypto Analysis",
-                        "category": "crypto"
+                        "category": "crypto",
                     },
                     {
                         "headline": "Ethereum Network Update",
@@ -496,7 +555,7 @@ class DataFetcher:
                         "url": "https://coingecko.com/en/coins/ethereum",
                         "datetime": time.time() - 3600,  # 1 hour ago
                         "source": "Network Analysis",
-                        "category": "crypto"
+                        "category": "crypto",
                     },
                     {
                         "headline": "Cryptocurrency Market Overview",
@@ -504,12 +563,12 @@ class DataFetcher:
                         "url": "https://coingecko.com/en/global-charts",
                         "datetime": time.time() - 7200,  # 2 hours ago
                         "source": "Market Overview",
-                        "category": "crypto"
-                    }
+                        "category": "crypto",
+                    },
                 ]
-            
+
             return unique_news[:30]  # Limit to 30 most recent articles
-            
+
         except Exception as e:
             log_error(f"get_crypto_news error: {e}")
             # Fallback: return empty list
@@ -542,13 +601,18 @@ class DataFetcher:
         # Try to get symbols from database first
         try:
             from src.core.database import get_db_connection
+
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("SELECT symbol FROM sp500_symbols ORDER BY symbol")
                     symbols = [row[0] for row in cur.fetchall()]
                     if symbols:
                         # Validate symbols are proper stock symbols (not single characters)
-                        valid_symbols = [s for s in symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()]
+                        valid_symbols = [
+                            s
+                            for s in symbols
+                            if len(s) >= 2 and len(s) <= 5 and s.isalpha()
+                        ]
                         if valid_symbols:
                             cache.set(cache_key, valid_symbols, ttl=86400)
                             return valid_symbols
@@ -561,7 +625,9 @@ class DataFetcher:
             if wiki_symbols:
                 symbols = [s["symbol"] for s in wiki_symbols]
                 # Validate symbols are proper stock symbols
-                valid_symbols = [s for s in symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()]
+                valid_symbols = [
+                    s for s in symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()
+                ]
                 if valid_symbols:
                     cache.set(cache_key, valid_symbols, ttl=86400)
                     return valid_symbols
@@ -572,11 +638,11 @@ class DataFetcher:
         log_error("All S&P 500 sources failed, using fallback list")
         fallback_symbols = Config.SP500_STOCKS
         # Validate fallback symbols too
-        valid_symbols = [s for s in fallback_symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()]
+        valid_symbols = [
+            s for s in fallback_symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()
+        ]
         cache.set(cache_key, valid_symbols, ttl=3600)  # Cache for 1 hour
         return valid_symbols
-
-
 
     def get_sp500_winners_losers(self) -> Dict[str, List[Dict]]:
         """
@@ -592,45 +658,49 @@ class DataFetcher:
         try:
             # Get current S&P 500 symbols
             symbols = self.get_current_sp500_symbols()
-            
+
             # Get price data for all symbols (limit to top 50 for performance)
             symbols_to_check = symbols[:50]
             stock_data = []
-            
+
             for symbol in symbols_to_check:
                 try:
                     price_data = self.get_stock_price(symbol)
                     if "error" not in price_data:
-                        stock_data.append({
-                            "symbol": symbol,
-                            "current_price": price_data.get("current_price", 0),
-                            "change": price_data.get("change", 0),
-                            "change_percent": price_data.get("change_percent", "0%")
-                        })
+                        stock_data.append(
+                            {
+                                "symbol": symbol,
+                                "current_price": price_data.get("current_price", 0),
+                                "change": price_data.get("change", 0),
+                                "change_percent": price_data.get(
+                                    "change_percent", "0%"
+                                ),
+                            }
+                        )
                 except Exception:
                     continue
-            
+
             # Sort by change percentage
-            stock_data.sort(key=lambda x: float(x["change_percent"].replace("%", "")), reverse=True)
-            
+            stock_data.sort(
+                key=lambda x: float(x["change_percent"].replace("%", "")), reverse=True
+            )
+
             winners = stock_data[:5]
             losers = stock_data[-5:][::-1]  # Reverse to get worst first
-            
+
             result = {
                 "winners": winners,
                 "losers": losers,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
             }
-            
+
             # Cache for 15 minutes
             cache.set(cache_key, result, ttl=900)
             return result
-            
+
         except Exception as e:
             log_error(f"Error getting S&P 500 winners/losers: {e}")
             return {"winners": [], "losers": []}
-
-
 
     def check_sp500_updates_from_wikipedia(self) -> List[Dict[str, str]]:
         """
@@ -639,23 +709,21 @@ class DataFetcher:
         """
         try:
             import pandas as pd
+
             url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
             tables = pd.read_html(url)
             df = tables[0][["Symbol", "Security"]]
-            
+
             # Convert to list of dicts
             symbols = []
             for _, row in df.iterrows():
-                symbols.append({
-                    "symbol": row["Symbol"].strip(),
-                    "name": row["Security"].strip()
-                })
+                symbols.append(
+                    {"symbol": row["Symbol"].strip(), "name": row["Security"].strip()}
+                )
             return symbols
         except Exception as e:
             log_error(f"Failed to fetch S&P 500 symbols from Wikipedia: {e}")
             return []
-
-
 
     def update_sp500_symbols_table(self):
         """
@@ -663,56 +731,60 @@ class DataFetcher:
         Always fetches fresh data from Wikipedia and updates the database.
         """
         from src.core.database import get_db_connection
-        
+
         # Always fetch fresh data from Wikipedia
         print("🔄 Fetching S&P 500 symbols from Wikipedia...")
         new_symbols = self.check_sp500_updates_from_wikipedia()
         if not new_symbols:
             log_error("No S&P 500 symbols fetched from Wikipedia.")
             return
-        
+
         print(f"📊 Retrieved {len(new_symbols)} S&P 500 symbols from Wikipedia")
-        
+
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     # Get existing symbols
                     cur.execute("SELECT symbol FROM sp500_symbols")
                     existing_symbols = {row[0] for row in cur.fetchall()}
-                    
+
                     # Get new symbols
                     new_symbol_set = {s["symbol"] for s in new_symbols}
-                    
+
                     # Find additions and removals
                     additions = new_symbol_set - existing_symbols
                     removals = existing_symbols - new_symbol_set
-                    
+
                     # Add new symbols
                     for symbol_data in new_symbols:
                         if symbol_data["symbol"] in additions:
                             cur.execute(
                                 "INSERT INTO sp500_symbols (symbol, name) VALUES (%s, %s)",
-                                (symbol_data["symbol"], symbol_data["name"])
+                                (symbol_data["symbol"], symbol_data["name"]),
                             )
-                    
+
                     # Remove old symbols
                     for symbol in removals:
-                        cur.execute("DELETE FROM sp500_symbols WHERE symbol = %s", (symbol,))
-                    
+                        cur.execute(
+                            "DELETE FROM sp500_symbols WHERE symbol = %s", (symbol,)
+                        )
+
                     # Update names for existing symbols
                     for symbol_data in new_symbols:
                         cur.execute(
                             "UPDATE sp500_symbols SET name = %s WHERE symbol = %s",
-                            (symbol_data["name"], symbol_data["symbol"])
+                            (symbol_data["name"], symbol_data["symbol"]),
                         )
-                    
+
                     conn.commit()
-                    
+
                     if additions or removals:
-                        print(f"✅ Updated S&P 500 symbols: +{len(additions)} added, -{len(removals)} removed")
+                        print(
+                            f"✅ Updated S&P 500 symbols: +{len(additions)} added, -{len(removals)} removed"
+                        )
                     else:
                         print("✅ No S&P 500 symbol changes detected")
-                        
+
         except Exception as e:
             log_error(f"Failed to update S&P 500 symbols table: {e}")
 
@@ -724,56 +796,66 @@ class DataFetcher:
         import pandas as pd
         from datetime import datetime, timedelta
         from src.core.database import get_db_connection
-        
+
         # Use a more conservative date range to avoid Yahoo Finance rejections
         end_date = datetime.now().date()
         # Use a longer period to ensure we get data and avoid "possibly delisted" errors
-        start_date = end_date - timedelta(days=max(months*30, 60))  # At least 60 days
-        
+        start_date = end_date - timedelta(days=max(months * 30, 60))  # At least 60 days
+
         try:
-            print(f"📊 Fetching Yahoo Finance data for {symbol} from {start_date} to {end_date}")
-            
+            print(
+                f"📊 Fetching Yahoo Finance data for {symbol} from {start_date} to {end_date}"
+            )
+
             # Use a more conservative approach with period instead of start/end dates
             # This often works better with Yahoo Finance
             ticker = yf.Ticker(symbol)
-            
+
             # Try different approaches to get data
             df = None
-            
+
             # First try: Use period parameter (more reliable)
             try:
-                period = "3mo" if months <= 3 else "6mo" if months <= 6 else "1y" if months <= 12 else "2y"
+                period = (
+                    "3mo"
+                    if months <= 3
+                    else "6mo"
+                    if months <= 6
+                    else "1y"
+                    if months <= 12
+                    else "2y"
+                )
                 df = ticker.history(period=period)
                 if not df.empty:
                     print(f"✅ Got data using period={period}")
             except Exception as e:
                 print(f"⚠️ Period method failed for {symbol}: {e}")
-            
+
             # Second try: Use start/end dates if period failed
             if df is None or df.empty:
                 try:
                     df = ticker.history(start=start_date, end=end_date)
                     if not df.empty:
-                        print(f"✅ Got data using start/end dates")
+                        print("✅ Got data using start/end dates")
                 except Exception as e:
                     print(f"⚠️ Start/end method failed for {symbol}: {e}")
-            
+
             # Third try: Use a longer period as fallback
             if df is None or df.empty:
                 try:
                     df = ticker.history(period="1y")
                     if not df.empty:
-                        print(f"✅ Got data using 1y fallback")
+                        print("✅ Got data using 1y fallback")
                 except Exception as e:
                     print(f"⚠️ 1y fallback failed for {symbol}: {e}")
-            
+
             if df is None or df.empty:
                 print(f"❌ No Yahoo Finance data found for {symbol}")
                 return
-            
+
             df = df.reset_index()
             print(f"📈 Got {len(df)} data points for {symbol}")
-            
+
             # Store in DB
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
@@ -792,14 +874,26 @@ class DataFetcher:
                             """,
                             (
                                 symbol,
-                                row['Date'].date() if isinstance(row['Date'], pd.Timestamp) else row['Date'],
-                                float(row['Open']) if not pd.isna(row['Open']) else None,
-                                float(row['High']) if not pd.isna(row['High']) else None,
-                                float(row['Low']) if not pd.isna(row['Low']) else None,
-                                float(row['Close']) if not pd.isna(row['Close']) else None,
-                                float(row['Adj Close']) if 'Adj Close' in row and not pd.isna(row['Adj Close']) else None,
-                                int(row['Volume']) if not pd.isna(row['Volume']) else None
-                            )
+                                row["Date"].date()
+                                if isinstance(row["Date"], pd.Timestamp)
+                                else row["Date"],
+                                float(row["Open"])
+                                if not pd.isna(row["Open"])
+                                else None,
+                                float(row["High"])
+                                if not pd.isna(row["High"])
+                                else None,
+                                float(row["Low"]) if not pd.isna(row["Low"]) else None,
+                                float(row["Close"])
+                                if not pd.isna(row["Close"])
+                                else None,
+                                float(row["Adj Close"])
+                                if "Adj Close" in row and not pd.isna(row["Adj Close"])
+                                else None,
+                                int(row["Volume"])
+                                if not pd.isna(row["Volume"])
+                                else None,
+                            ),
                         )
                     conn.commit()
             print(f"✅ Stored historical data for {symbol} ({len(df)} rows)")
@@ -810,12 +904,13 @@ class DataFetcher:
         """Get Reddit news for a symbol using Reddit API (OAuth2)"""
         import requests
         import time
+
         client_id = Config.REDDIT_CLIENT_ID
         client_secret = Config.REDDIT_SECRET_KEY
         user_agent = "trading-ai-news-bot/0.1 by YourUsername"
         token_url = "https://www.reddit.com/api/v1/access_token"
-        search_url = f"https://oauth.reddit.com/r/stocks/search"
-        
+        search_url = "https://oauth.reddit.com/r/stocks/search"
+
         # Get OAuth2 token
         try:
             auth = requests.auth.HTTPBasicAuth(client_id, client_secret)
@@ -827,36 +922,38 @@ class DataFetcher:
         except Exception as e:
             log_error(f"Reddit OAuth2 token error: {e}")
             return []
-        
+
         # Search Reddit for posts about the symbol
         try:
             headers = {"Authorization": f"bearer {token}", "User-Agent": user_agent}
-            params = {
-                "q": symbol,
-                "restrict_sr": 1,
-                "sort": "new",
-                "limit": limit
-            }
+            params = {"q": symbol, "restrict_sr": 1, "sort": "new", "limit": limit}
             resp = requests.get(search_url, headers=headers, params=params)
-            print(f"[DEBUG][Reddit] Raw response for {symbol}: {resp.status_code} {resp.text[:500]}")
+            print(
+                f"[DEBUG][Reddit] Raw response for {symbol}: {resp.status_code} {resp.text[:500]}"
+            )
             resp.raise_for_status()
             posts = resp.json().get("data", {}).get("children", [])
             news = []
             for post in posts:
                 data = post["data"]
-                news.append({
-                    "headline": data.get("title", ""),
-                    "summary": data.get("selftext", ""),
-                    "url": f"https://www.reddit.com{data.get('permalink', '')}",
-                    "datetime": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(data.get("created_utc", 0))),
-                    "source": "Reddit",
-                    "category": "discussion"
-                })
+                news.append(
+                    {
+                        "headline": data.get("title", ""),
+                        "summary": data.get("selftext", ""),
+                        "url": f"https://www.reddit.com{data.get('permalink', '')}",
+                        "datetime": time.strftime(
+                            "%Y-%m-%dT%H:%M:%SZ",
+                            time.gmtime(data.get("created_utc", 0)),
+                        ),
+                        "source": "Reddit",
+                        "category": "discussion",
+                    }
+                )
             print(f"[DEBUG][Reddit] Parsed {len(news)} articles for {symbol}")
-            
+
             # Track API usage
             api_tracker.record_request("reddit")
-                
+
             return news
         except Exception as e:
             log_error(f"Reddit API error for {symbol}: {e}")
@@ -871,27 +968,31 @@ class DataFetcher:
                 "function": "NEWS_SENTIMENT",
                 "tickers": symbol,
                 "apikey": Config.ALPHA_VANTAGE_API_KEY,
-                "limit": limit
+                "limit": limit,
             }
-            
+
             data = self._make_request(url, params)
             print(f"[DEBUG][AlphaVantage] Raw response for {symbol}: {data}")
             if data and "feed" in data:
                 news_articles = []
                 for article in data["feed"][:limit]:
-                    news_articles.append({
-                        "headline": article.get("title", ""),
-                        "summary": article.get("summary", ""),
-                        "url": article.get("url", ""),
-                        "datetime": article.get("time_published", ""),
-                        "source": article.get("source", "Alpha Vantage"),
-                        "category": "news"
-                    })
-                print(f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}")
-                
+                    news_articles.append(
+                        {
+                            "headline": article.get("title", ""),
+                            "summary": article.get("summary", ""),
+                            "url": article.get("url", ""),
+                            "datetime": article.get("time_published", ""),
+                            "source": article.get("source", "Alpha Vantage"),
+                            "category": "news",
+                        }
+                    )
+                print(
+                    f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}"
+                )
+
                 # Track API usage
                 api_tracker.record_request("alpha_vantage")
-                    
+
                 return news_articles
             else:
                 print(f"[DEBUG][AlphaVantage] No feed found in response for {symbol}")
@@ -903,120 +1004,128 @@ class DataFetcher:
                         "url": f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={Config.ALPHA_VANTAGE_API_KEY}",
                         "datetime": datetime.now().isoformat(),
                         "source": "Alpha Vantage",
-                        "category": "analysis"
+                        "category": "analysis",
                     }
                 ]
-                
+
         except Exception as e:
             log_error(f"get_alpha_vantage_news error for {symbol}: {e}")
             return []
 
-
-
     def get_yahoo_finance_news(self, symbol: str, limit: int = 5) -> list:
         """
         Get Yahoo Finance news for a symbol with rate limiting and fallback
-        
+
         Args:
             symbol: Stock symbol to fetch news for
             limit: Maximum number of news articles to return
-            
+
         Returns:
             List of news article dictionaries with headline, summary, url, etc.
         """
         # Check if we've hit rate limits recently
         cache_key = f"yf_rate_limit_{symbol}"
         if cache.get(cache_key):
-            print(f"[DEBUG][YahooFinance] Rate limit active for {symbol}, using cached data")
+            print(
+                f"[DEBUG][YahooFinance] Rate limit active for {symbol}, using cached data"
+            )
             return []
-            
+
         try:
             # Use Yahoo Finance RSS feed for news
             url = "https://feeds.finance.yahoo.com/rss/2.0/headline"
-            params = {
-                "s": symbol,
-                "region": "US",
-                "lang": "en-US"
-            }
-            
+            params = {"s": symbol, "region": "US", "lang": "en-US"}
+
             # Add random delay to avoid rate limiting (1-3 seconds)
             time.sleep(random.uniform(1, 3))
-            
+
             # Set a more aggressive timeout using the Config value
             response = self.session.get(
-                url, 
-                params=params, 
+                url,
+                params=params,
                 timeout=Config.API_REQUEST_TIMEOUT,  # Use configured timeout
                 headers={
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                }
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                },
             )
-            
+
             # Handle rate limiting
             if response.status_code == 429:
                 # Set a 1-hour cooldown for this symbol
                 cache.set(cache_key, True, timeout=3600)
-                print(f"[WARNING][YahooFinance] Rate limited for {symbol}, cooling down for 1 hour")
+                print(
+                    f"[WARNING][YahooFinance] Rate limited for {symbol}, cooling down for 1 hour"
+                )
                 return []
-                
+
             response.raise_for_status()
-            
+
             # Parse RSS XML
             if not BEAUTIFULSOUP_AVAILABLE:
                 raise ImportError("BeautifulSoup is not available")
-                
-            soup = BeautifulSoup(response.content, 'xml')
-            items = soup.find_all('item')
-            
+
+            soup = BeautifulSoup(response.content, "xml")
+            items = soup.find_all("item")
+
             if not items:
                 print(f"[DEBUG][YahooFinance] No news items found for {symbol}")
                 return self._get_fallback_news(symbol)
-            
+
             news_articles = []
             for item in items[:limit]:
                 try:
-                    title = item.find('title')
+                    title = item.find("title")
                     if not title:
                         continue
-                        
-                    description = item.find('description')
-                    link = item.find('link')
-                    pub_date = item.find('pubDate')
-                    
+
+                    description = item.find("description")
+                    link = item.find("link")
+                    pub_date = item.find("pubDate")
+
                     article = {
                         "headline": title.get_text().strip(),
-                        "summary": description.get_text().strip() if description else "",
-                        "url": link.get_text().strip() if link else f"https://finance.yahoo.com/quote/{symbol}/news",
-                        "datetime": pub_date.get_text().strip() if pub_date else datetime.now().isoformat(),
+                        "summary": description.get_text().strip()
+                        if description
+                        else "",
+                        "url": link.get_text().strip()
+                        if link
+                        else f"https://finance.yahoo.com/quote/{symbol}/news",
+                        "datetime": pub_date.get_text().strip()
+                        if pub_date
+                        else datetime.now().isoformat(),
                         "source": "Yahoo Finance",
-                        "category": "news"
+                        "category": "news",
                     }
-                    
+
                     # Validate required fields
                     if article["headline"] and article["url"]:
                         news_articles.append(article)
-                        
+
                 except Exception as e:
-                    print(f"[WARNING][YahooFinance] Error parsing article for {symbol}: {e}")
+                    print(
+                        f"[WARNING][YahooFinance] Error parsing article for {symbol}: {e}"
+                    )
                     continue
-            
-            print(f"[DEBUG][YahooFinance] Successfully parsed {len(news_articles)} articles for {symbol}")
-            
+
+            print(
+                f"[DEBUG][YahooFinance] Successfully parsed {len(news_articles)} articles for {symbol}"
+            )
+
             # Track API usage
             api_tracker.record_request("yahoo_finance")
-                
+
             return news_articles
-            
+
         except requests.exceptions.RequestException as e:
             log_error(f"Yahoo Finance API request failed for {symbol}: {e}")
             # Set a shorter cooldown for network errors
             cache.set(cache_key, True, timeout=300)  # 5 minutes
             return []
-            
+
         except Exception as e:
             log_error(f"Unexpected error in get_yahoo_finance_news for {symbol}: {e}")
             return self._get_fallback_news(symbol)
-    
+
     def _get_fallback_news(self, symbol: str) -> list:
         """Generate fallback news when API calls fail"""
         return [
@@ -1026,7 +1135,7 @@ class DataFetcher:
                 "url": f"https://finance.yahoo.com/quote/{symbol}",
                 "datetime": datetime.now().isoformat(),
                 "source": "Market Analysis",
-                "category": "analysis"
+                "category": "analysis",
             },
             {
                 "headline": f"{symbol} Stock Performance Review",
@@ -1034,8 +1143,8 @@ class DataFetcher:
                 "url": f"https://finance.yahoo.com/quote/{symbol}/chart",
                 "datetime": (datetime.now() - timedelta(hours=1)).isoformat(),
                 "source": "Performance Review",
-                "category": "analysis"
-            }
+                "category": "analysis",
+            },
         ]
 
     def get_marketaux_trending_stocks(self, limit: int = 5) -> List[str]:
@@ -1047,45 +1156,56 @@ class DataFetcher:
             List of trending stock symbols
         """
         try:
-            url = 'https://api.marketaux.com/v1/news/all'
+            url = "https://api.marketaux.com/v1/news/all"
             params = {
-                'api_token': Config.MARKETAUX_API_KEY,
-                'limit': min(limit * 2, 10),  # Get more articles to extract more symbols
-                'language': 'en',
-                'countries': 'us'  # Filter to U.S. stocks only
+                "api_token": Config.MARKETAUX_API_KEY,
+                "limit": min(
+                    limit * 2, 10
+                ),  # Get more articles to extract more symbols
+                "language": "en",
+                "countries": "us",  # Filter to U.S. stocks only
             }
-            
-            response = self.session.get(url, params=params, timeout=Config.REQUEST_TIMEOUT)
+
+            response = self.session.get(
+                url, params=params, timeout=Config.REQUEST_TIMEOUT
+            )
             response.raise_for_status()
-            
+
             data = response.json()
             trending_stocks = []
-            
-            if 'data' in data:
-                for article in data['data']:
-                    if 'entities' in article:
-                        for entity in article['entities']:
-                            if 'symbol' in entity and entity['symbol']:
+
+            if "data" in data:
+                for article in data["data"]:
+                    if "entities" in article:
+                        for entity in article["entities"]:
+                            if "symbol" in entity and entity["symbol"]:
                                 # Extract just the symbol (remove any suffixes like .DE, .MX, .L)
-                                symbol = entity['symbol'].split('.')[0]  # Remove .US, .TO, etc.
+                                symbol = entity["symbol"].split(".")[
+                                    0
+                                ]  # Remove .US, .TO, etc.
                                 # Only include US stocks (no .DE, .MX, .L suffixes)
-                                if '.' not in entity['symbol'] and symbol not in trending_stocks:
+                                if (
+                                    "." not in entity["symbol"]
+                                    and symbol not in trending_stocks
+                                ):
                                     trending_stocks.append(symbol)
                                     if len(trending_stocks) >= limit:
                                         break
                         if len(trending_stocks) >= limit:
                             break
-            
+
             print(f"✅ Marketaux trending stocks: {trending_stocks}")
             return trending_stocks[:limit]
-            
+
         except Exception as e:
             print(f"❌ Marketaux API error: {e}")
             # Fallback to major stocks if API fails
             fallback_stocks = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
             return fallback_stocks[:limit]
 
-    def get_comprehensive_news_for_symbols(self, symbols: List[str], limit_per_symbol: int = 5) -> Dict[str, List[dict]]:
+    def get_comprehensive_news_for_symbols(
+        self, symbols: List[str], limit_per_symbol: int = 5
+    ) -> Dict[str, List[dict]]:
         """
         Get comprehensive news for multiple symbols from all available sources
         Args:
@@ -1095,32 +1215,32 @@ class DataFetcher:
             Dictionary mapping symbols to their news articles
         """
         symbol_news = {}
-        
+
         for symbol in symbols:
             try:
                 print(f"📰 Fetching news for {symbol}...")
                 news_articles = self.get_company_news(symbol, days_back=7)
-                
+
                 # Limit the number of articles per symbol
                 symbol_news[symbol] = news_articles[:limit_per_symbol]
                 print(f"✅ Got {len(symbol_news[symbol])} news articles for {symbol}")
-                
+
                 # Add small delay to avoid rate limiting
                 time.sleep(0.5)
-                
+
             except Exception as e:
                 print(f"❌ Error fetching news for {symbol}: {e}")
                 symbol_news[symbol] = []
-        
+
         return symbol_news
 
     def get_top_gainers_losers(self, limit: int = 5) -> Dict[str, List[str]]:
         """
         Get top gainers and losers from Alpha Vantage API
-        
+
         Args:
             limit: Number of gainers and losers to return (max 20 each)
-            
+
         Returns:
             Dict with 'gainers' and 'losers' lists containing stock symbols
         """
@@ -1141,17 +1261,17 @@ class DataFetcher:
                 # Get all symbols first
                 all_gainers = [item["ticker"] for item in data["top_gainers"]]
                 all_losers = [item["ticker"] for item in data["top_losers"]]
-                
+
                 # Filter out symbols that are likely invalid (warrants, delisted stocks, etc.)
                 def is_valid_symbol(symbol):
                     # Basic filtering
                     if len(symbol) > 4 or not symbol.isalpha():
                         return False
                     # Skip common warrant suffixes
-                    if symbol.endswith('W') or symbol.endswith('+'):
+                    if symbol.endswith("W") or symbol.endswith("+"):
                         return False
                     return True
-                
+
                 # Test each symbol with GLOBAL_QUOTE to ensure it's accessible
                 def test_symbol_with_quote(symbol):
                     try:
@@ -1163,10 +1283,14 @@ class DataFetcher:
                         }
                         test_data = self._make_request(test_url, test_params)
                         # Check if we got a valid quote (not empty)
-                        return test_data and "Global Quote" in test_data and test_data["Global Quote"]
+                        return (
+                            test_data
+                            and "Global Quote" in test_data
+                            and test_data["Global Quote"]
+                        )
                     except Exception:
                         return False
-                
+
                 # Filter and test gainers
                 valid_gainers = []
                 for symbol in all_gainers:
@@ -1174,7 +1298,7 @@ class DataFetcher:
                         valid_gainers.append(symbol)
                         if len(valid_gainers) >= limit:
                             break
-                
+
                 # Filter and test losers
                 valid_losers = []
                 for symbol in all_losers:
@@ -1182,24 +1306,34 @@ class DataFetcher:
                         valid_losers.append(symbol)
                         if len(valid_losers) >= limit:
                             break
-                
+
                 result = {
                     "gainers": valid_gainers,
                     "losers": valid_losers,
                     "timestamp": datetime.now().isoformat(),
-                    "source": "alpha_vantage"
+                    "source": "alpha_vantage",
                 }
-                
+
                 # Cache for 1 hour since market data changes frequently
                 cache.set(cache_key, result, ttl=3600)
                 return result
             else:
                 log_error("Failed to get top gainers/losers from Alpha Vantage")
-                return {"gainers": [], "losers": [], "timestamp": datetime.now().isoformat(), "source": "error"}
-                
+                return {
+                    "gainers": [],
+                    "losers": [],
+                    "timestamp": datetime.now().isoformat(),
+                    "source": "error",
+                }
+
         except Exception as e:
             log_error(f"Error fetching top gainers/losers: {e}")
-            return {"gainers": [], "losers": [], "timestamp": datetime.now().isoformat(), "source": "error"}
+            return {
+                "gainers": [],
+                "losers": [],
+                "timestamp": datetime.now().isoformat(),
+                "source": "error",
+            }
 
     def get_reddit_crypto_news(self, limit: int = 10) -> list:
         """Get Reddit crypto news from r/cryptocurrency and r/bitcoin"""
@@ -1209,73 +1343,97 @@ class DataFetcher:
             client_secret = Config.REDDIT_SECRET_KEY
             user_agent = "trading-ai-crypto-news-bot/0.1 by YourUsername"
             token_url = "https://www.reddit.com/api/v1/access_token"
-            
+
             # Get OAuth2 token
             try:
                 auth = requests.auth.HTTPBasicAuth(client_id, client_secret)
                 data = {"grant_type": "client_credentials"}
                 headers = {"User-Agent": user_agent}
-                token_resp = requests.post(token_url, auth=auth, data=data, headers=headers)
+                token_resp = requests.post(
+                    token_url, auth=auth, data=data, headers=headers
+                )
                 token_resp.raise_for_status()
                 token = token_resp.json()["access_token"]
             except Exception as e:
                 log_error(f"Reddit OAuth2 token error: {e}")
                 return []
-            
+
             # Get posts from multiple crypto subreddits
             crypto_subreddits = ["cryptocurrency", "bitcoin", "ethereum", "altcoin"]
             all_posts = []
-            
+
             # Keywords that indicate FAQ or non-news posts
             faq_keywords = [
-                "faq", "frequently asked", "newcomers", "beginners", "getting started",
-                "how to", "what is", "guide", "tutorial", "rules", "daily discussion",
-                "weekly discussion", "moon", "moon distribution", "governance"
+                "faq",
+                "frequently asked",
+                "newcomers",
+                "beginners",
+                "getting started",
+                "how to",
+                "what is",
+                "guide",
+                "tutorial",
+                "rules",
+                "daily discussion",
+                "weekly discussion",
+                "moon",
+                "moon distribution",
+                "governance",
             ]
-            
+
             def is_faq_post(title, text):
                 """Check if a post is an FAQ or non-news post"""
                 combined_text = (title + " " + text).lower()
                 return any(keyword in combined_text for keyword in faq_keywords)
-            
+
             for subreddit in crypto_subreddits:
                 try:
                     # Use "new" instead of "hot" to get actual news posts
                     search_url = f"https://oauth.reddit.com/r/{subreddit}/new"
-                    headers = {"Authorization": f"bearer {token}", "User-Agent": user_agent}
+                    headers = {
+                        "Authorization": f"bearer {token}",
+                        "User-Agent": user_agent,
+                    }
                     params = {"limit": min(limit * 2, 10)}  # Get more posts to filter
-                    
+
                     resp = requests.get(search_url, headers=headers, params=params)
                     resp.raise_for_status()
                     posts = resp.json().get("data", {}).get("children", [])
-                    
+
                     for post in posts:
                         data = post["data"]
                         title = data.get("title", "")
                         text = data.get("selftext", "")
-                        
+
                         # Skip FAQ posts and stickied posts
-                        if (is_faq_post(title, text) or 
-                            data.get("stickied", False) or 
-                            data.get("distinguished") == "moderator"):
+                        if (
+                            is_faq_post(title, text)
+                            or data.get("stickied", False)
+                            or data.get("distinguished") == "moderator"
+                        ):
                             continue
-                        
+
                         # Skip posts with very short content (likely not news)
                         if len(text) < 50 and len(title) < 20:
                             continue
-                        
-                        all_posts.append({
-                            "headline": title,
-                            "summary": text,
-                            "url": f"https://www.reddit.com{data.get('permalink', '')}",
-                            "datetime": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(data.get("created_utc", 0))),
-                            "source": f"Reddit r/{subreddit}",
-                            "category": "crypto"
-                        })
+
+                        all_posts.append(
+                            {
+                                "headline": title,
+                                "summary": text,
+                                "url": f"https://www.reddit.com{data.get('permalink', '')}",
+                                "datetime": time.strftime(
+                                    "%Y-%m-%dT%H:%M:%SZ",
+                                    time.gmtime(data.get("created_utc", 0)),
+                                ),
+                                "source": f"Reddit r/{subreddit}",
+                                "category": "crypto",
+                            }
+                        )
                 except Exception as e:
                     log_error(f"Reddit API error for r/{subreddit}: {e}")
                     continue
-            
+
             # Remove duplicates and limit total posts
             seen_titles = set()
             unique_posts = []
@@ -1283,12 +1441,13 @@ class DataFetcher:
                 if post["headline"] not in seen_titles:
                     seen_titles.add(post["headline"])
                     unique_posts.append(post)
-            
+
             return unique_posts[:limit]
-            
+
         except Exception as e:
             log_error(f"get_reddit_crypto_news error: {e}")
             return []
+
 
 # Global data fetcher instance
 data_fetcher = DataFetcher()

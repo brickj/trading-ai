@@ -10,6 +10,7 @@ Usage:
     python news_scanner.py --save results.json  # Save to JSON file
     python news_scanner.py --continuous         # Run continuously with updates
 """
+
 import argparse
 import json
 import time
@@ -50,19 +51,24 @@ class NewsScanner:
         try:
             if mode == "news":
                 trending_symbols = self.monitor.scan_trending_news()
-                opportunities = self.monitor.analyze_news_driven_opportunities(trending_symbols)
+                opportunities = self.monitor.analyze_news_driven_opportunities(
+                    trending_symbols
+                )
                 results = {"news_driven": opportunities, "watchlist": []}
             elif mode == "watchlist":
                 opportunities = self.monitor.analyze_watchlist_opportunities()
                 results = {"news_driven": [], "watchlist": opportunities}
             else:  # all - combine both manually
                 trending_symbols = self.monitor.scan_trending_news()
-                news_opportunities = self.monitor.analyze_news_driven_opportunities(trending_symbols)
+                news_opportunities = self.monitor.analyze_news_driven_opportunities(
+                    trending_symbols
+                )
                 watchlist_opportunities = self.monitor.analyze_watchlist_opportunities()
                 results = {
                     "news_driven": news_opportunities,
                     "watchlist": watchlist_opportunities,
-                    "total_opportunities": len(news_opportunities) + len(watchlist_opportunities),
+                    "total_opportunities": len(news_opportunities)
+                    + len(watchlist_opportunities),
                     "timestamp": datetime.now().isoformat(),
                 }
             if verbose:
@@ -108,10 +114,15 @@ class NewsScanner:
         print("📈 {symbol} - {action}")
         print("   💰 Price: ${price:.2f} → Strike: ${strike:.2f}")
         print("   🧠 Sentiment: {sentiment:.3f} (Confidence: {confidence:.1%})")
-        print("   💵 Total Cost: ${cost:.2f} ({opp['trade_signal']['position_size']} contracts)")
+        print(
+            "   💵 Total Cost: ${cost:.2f} ({opp['trade_signal']['position_size']} contracts)"
+        )
         print("   📰 News Articles: {opp['news_count']}")
         if opp.get("articles"):
-            print("   📄 Latest: " f"{opp['articles'][0].get('headline', 'No headline')[:60]}...")
+            print(
+                "   📄 Latest: "
+                f"{opp['articles'][0].get('headline', 'No headline')[:60]}..."
+            )
         print()
 
     def _save_results(self, results, filename):
@@ -180,7 +191,9 @@ Examples:
         help="Type of opportunities to scan for (default: all)",
     )
     parser.add_argument("--save", metavar="FILE", help="Save results to JSON file")
-    parser.add_argument("--continuous", action="store_true", help="Run continuous scanning")
+    parser.add_argument(
+        "--continuous", action="store_true", help="Run continuous scanning"
+    )
     parser.add_argument(
         "--interval",
         type=int,
@@ -201,7 +214,9 @@ Examples:
     if args.continuous:
         scanner.continuous_scan(interval_minutes=args.interval, mode=args.mode)
     else:
-        scanner.scan_opportunities(mode=args.mode, save_file=args.save, verbose=not args.quiet)
+        scanner.scan_opportunities(
+            mode=args.mode, save_file=args.save, verbose=not args.quiet
+        )
 
 
 if __name__ == "__main__":

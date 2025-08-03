@@ -4,7 +4,7 @@ Tracks API usage across the application for monitoring and rate limiting
 """
 
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, Any
 import logging
 
@@ -13,19 +13,19 @@ logger = logging.getLogger(__name__)
 
 class APITracker:
     """Singleton API tracker for monitoring API usage"""
-    
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(APITracker, cls).__new__(cls)
             cls._instance._initialized = False
         return cls._instance
-    
+
     def __init__(self):
         if self._initialized:
             return
-            
+
         self.max_requests = 100
         self.time_window = 60  # seconds
         self.request_history: Dict[str, list] = {}
@@ -66,34 +66,47 @@ class APITracker:
         # Open circuit after 5 consecutive failures
         if circuit["failures"] >= 5:
             circuit["state"] = "open"
-            logger.error(f"Circuit breaker opened for {api_name} after {circuit['failures']} failures")
+            logger.error(
+                f"Circuit breaker opened for {api_name} after {circuit['failures']} failures"
+            )
 
     def get_api_status(self, api_name: str) -> Dict[str, Any]:
         """Get status information for an API"""
         self._cleanup_old_requests(api_name)
-        
+
         current_requests = len(self.request_history.get(api_name, []))
-        
-        circuit = self.circuit_breaker.get(api_name, {
-            "failures": 0,
-            "last_failure": None,
-            "state": "closed",
-        })
-        
+
+        circuit = self.circuit_breaker.get(
+            api_name,
+            {
+                "failures": 0,
+                "last_failure": None,
+                "state": "closed",
+            },
+        )
+
         return {
             "rate_limit": {
                 "current_requests": current_requests,
                 "max_requests": self.max_requests,
-                "time_window": self.time_window
+                "time_window": self.time_window,
             },
-            "circuit_breaker": circuit
+            "circuit_breaker": circuit,
         }
 
     def get_all_api_status(self) -> Dict[str, Dict[str, Any]]:
         """Get status for all tracked APIs"""
-        apis = ["yahoo_finance", "alpha_vantage", "finnhub", "reddit", "ollama", "cryptopanic", "newsapi"]
+        apis = [
+            "yahoo_finance",
+            "alpha_vantage",
+            "finnhub",
+            "reddit",
+            "ollama",
+            "cryptopanic",
+            "newsapi",
+        ]
         return {api: self.get_api_status(api) for api in apis}
 
 
 # Global instance
-api_tracker = APITracker() 
+api_tracker = APITracker()

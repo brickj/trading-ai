@@ -324,12 +324,26 @@ def run_scheduled_jobs():
     from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
     from src.core.database import get_db_connection, ensure_job_schedules_table
     from src.core.scalping_analyzer import scalping_analyzer
+    from src.data.weekly_plan_populator import WeeklyPlanPopulator
     from datetime import datetime, timedelta
     import calendar
     
     # Define preload_stock_data as a placeholder (will be handled by app.py scheduler)
     def preload_stock_data():
         print("[SCHEDULER] preload_stock_data called - this will be handled by the main app scheduler")
+    
+    def populate_weekly_plan_job():
+        """Populate weekly market plan data using WeeklyPlanPopulator"""
+        print("[SCHEDULER] Starting weekly plan population...")
+        try:
+            populator = WeeklyPlanPopulator()
+            results = populator.populate_advance_data()
+            total_events = sum(results.values())
+            print(f"[SCHEDULER] Weekly plan population completed successfully: {total_events} events")
+            print(f"[SCHEDULER] Event breakdown: {results}")
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] Weekly plan population failed: {e}")
+            traceback.print_exc()
     
     # Ensure job_schedules table exists
     ensure_job_schedules_table()
@@ -343,7 +357,8 @@ def run_scheduled_jobs():
         'preload_news_opportunities': preload_news_opportunities,
         'preload_watchlist_opportunities': preload_watchlist_opportunities,
         'preload_stock_data': preload_stock_data,
-        'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis()
+        'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis(),
+        'populate_weekly_plan': lambda: populate_weekly_plan_job()
     }
     
     # If it's a trading day and the app is starting, run any missed jobs from today
@@ -356,7 +371,10 @@ def run_scheduled_jobs():
                     jobs = cur.fetchall()
                     
                     for row in jobs:
-                        job_id, job_name, run_time, enabled = row
+                        job_id = row['id']
+                        job_name = row['job_name']
+                        run_time = row['run_time']
+                        enabled = row['enabled']
                         if job_name in job_map:
                             hour, minute, *_ = str(run_time).split(':')
                             scheduled_time = today.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
@@ -404,7 +422,10 @@ def run_scheduled_jobs():
                         print("[SCHEDULER ERROR] Could not import job setup script")
                 
                 for row in jobs:
-                    job_id, job_name, run_time, enabled = row
+                    job_id = row['id']
+                    job_name = row['job_name']
+                    run_time = row['run_time'] 
+                    enabled = row['enabled']
                     if job_name in job_map:
                         hour, minute, *_ = str(run_time).split(':')
                         def job_wrapper(jid=job_id, jname=job_name):

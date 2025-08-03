@@ -3,6 +3,7 @@
 Cache Manager for Trading AI Platform.
 Provides high-performance caching for API responses and analysis results.
 """
+
 import json
 from typing import Dict, Any
 from datetime import datetime, timedelta
@@ -69,9 +70,9 @@ class Cache:
 
                     if result:
                         # Handle RealDictRow from RealDictCursor
-                        data = result['data']
-                        expires_at = result['expires_at']
-                        
+                        data = result["data"]
+                        expires_at = result["expires_at"]
+
                         # Update access stats
                         cursor.execute(
                             """
@@ -83,7 +84,7 @@ class Cache:
                             (key,),
                         )
                         conn.commit()
-                        
+
                         # Deserialize JSON data - ensure we always get proper data structure
                         try:
                             if isinstance(data, str):
@@ -91,28 +92,37 @@ class Cache:
                             else:
                                 # If it's already a dict/object from JSONB, use it directly
                                 deserialized = data
-                            
+
                             # Validate that stock price data has the expected structure
-                            if key.startswith('stock_price_') and isinstance(deserialized, dict):
+                            if key.startswith("stock_price_") and isinstance(
+                                deserialized, dict
+                            ):
                                 # Ensure it has required fields for stock price
-                                if 'symbol' in deserialized and 'current_price' in deserialized:
+                                if (
+                                    "symbol" in deserialized
+                                    and "current_price" in deserialized
+                                ):
                                     return deserialized
                                 else:
-                                    log_error(f"Invalid stock price data structure in cache for key '{key}': {deserialized}")
+                                    log_error(
+                                        f"Invalid stock price data structure in cache for key '{key}': {deserialized}"
+                                    )
                                     # Delete invalid cache entry
                                     self.delete(key)
                                     return default
-                            
+
                             return deserialized
-                            
+
                         except (json.JSONDecodeError, TypeError) as e:
-                            log_error(f"Failed to deserialize cache data for key '{key}': {e}")
+                            log_error(
+                                f"Failed to deserialize cache data for key '{key}': {e}"
+                            )
                             # Delete corrupted cache entry
                             self.delete(key)
                             return default
-                    
+
                     return default
-                    
+
         except Exception as e:
             log_error(f"Cache get error for key '{key}': {e}")
             return default
@@ -130,7 +140,7 @@ class Cache:
         try:
             expires_at = datetime.now() + timedelta(seconds=ttl)
             serialized_data = json.dumps(value)
-            
+
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
                     # Insert or update the cache entry
@@ -220,8 +230,12 @@ class Cache:
                             "expired_entries": result[2],
                             "avg_access_count": float(result[3] or 0),
                             "max_access_count": result[4] or 0,
-                            "oldest_entry": (result[5].isoformat() if result[5] else None),
-                            "newest_entry": (result[6].isoformat() if result[6] else None),
+                            "oldest_entry": (
+                                result[5].isoformat() if result[5] else None
+                            ),
+                            "newest_entry": (
+                                result[6].isoformat() if result[6] else None
+                            ),
                         }
                     return {}
         except Exception as e:

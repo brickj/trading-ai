@@ -10,6 +10,7 @@ Features:
 - Provides progress tracking and statistics
 - Handles rate limiting gracefully
 """
+
 from src.core.logger import log_info, log_error, log_system_event
 from src.core.database import get_db_connection
 from src.core.config import Config
@@ -22,7 +23,9 @@ from typing import Dict, Optional, Tuple
 import requests
 
 # Add project root to path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.insert(0, project_root)
 
 
@@ -38,7 +41,9 @@ class HistoricalDataPopulator:
         #         self.api_calls_made = 0
         self.api_calls_saved = 0
 
-    def get_existing_data_range(self, symbol: str) -> Tuple[Optional[datetime], Optional[datetime]]:
+    def get_existing_data_range(
+        self, symbol: str
+    ) -> Tuple[Optional[datetime], Optional[datetime]]:
         """Get the date range of existing data for a symbol."""
         try:
             with get_db_connection() as conn:
@@ -139,11 +144,15 @@ class HistoricalDataPopulator:
                         "3. low": str(row.get("Low", 0)),
                         "4. close": str(row.get("Close", 0)),
                         "5. volume": str(int(row.get("Volume", 0))),
-                        "5. adjusted close": str(row.get("Adj Close", row.get("Close", 0))),
+                        "5. adjusted close": str(
+                            row.get("Adj Close", row.get("Close", 0))
+                        ),
                         "7. dividend amount": str(row.get("Dividends", 0)),
                         "8. split coefficient": str(row.get("Stock Splits", 1)),
                     }
-                print(f"    ✅ Fetched {len(data)} days of Yahoo Finance data for {symbol}")
+                print(
+                    f"    ✅ Fetched {len(data)} days of Yahoo Finance data for {symbol}"
+                )
                 return data
             else:
                 print(f"    ❌ No Yahoo Finance data found for {symbol}")
@@ -170,13 +179,17 @@ class HistoricalDataPopulator:
                 "apikey": self.alpha_vantage_api_key,
                 "outputsize": "full",  # Get full history
             }
-            response = requests.get(self.alpha_vantage_base_url, params=params, timeout=30)
+            response = requests.get(
+                self.alpha_vantage_base_url, params=params, timeout=30
+            )
             self.api_calls_made += 1
             if response.status_code == 200:
                 data = response.json()
                 # Check for API errors
                 if "Error Message" in data:
-                    log_error(f"Alpha Vantage API error for {symbol}: {data['Error Message']}")
+                    log_error(
+                        f"Alpha Vantage API error for {symbol}: {data['Error Message']}"
+                    )
                     return None
                 if "Note" in data:
                     log_error(f"Alpha Vantage rate limit for {symbol}: {data['Note']}")
@@ -198,7 +211,9 @@ class HistoricalDataPopulator:
                 )
                 return filtered_data
             else:
-                log_error(f"Alpha Vantage API request failed for {symbol}: {response.status_code}")
+                log_error(
+                    f"Alpha Vantage API request failed for {symbol}: {response.status_code}"
+                )
                 return None
         except Exception as e:
             log_error(f"Error fetching Alpha Vantage data for {symbol}: {e}")
@@ -220,9 +235,15 @@ class HistoricalDataPopulator:
                                 low_price = float(values.get("3. low", 0))
                                 close_price = float(values.get("4. close", 0))
                                 volume = int(values.get("5. volume", 0))
-                                adjusted_close = float(values.get("5. adjusted close", close_price))
-                                dividend_amount = float(values.get("7. dividend amount", 0))
-                                split_coefficient = float(values.get("8. split coefficient", 1))
+                                adjusted_close = float(
+                                    values.get("5. adjusted close", close_price)
+                                )
+                                dividend_amount = float(
+                                    values.get("7. dividend amount", 0)
+                                )
+                                split_coefficient = float(
+                                    values.get("8. split coefficient", 1)
+                                )
                             else:
                                 # Yahoo Finance format (pandas DataFrame
                                 # converted to dict)
@@ -231,7 +252,9 @@ class HistoricalDataPopulator:
                                 low_price = float(values.get("Low", 0))
                                 close_price = float(values.get("Close", 0))
                                 volume = int(values.get("Volume", 0))
-                                adjusted_close = float(values.get("Adj Close", close_price))
+                                adjusted_close = float(
+                                    values.get("Adj Close", close_price)
+                                )
                                 dividend_amount = float(values.get("Dividends", 0))
                                 split_coefficient = float(values.get("Stock Splits", 1))
                             # Check if record already exists
@@ -266,7 +289,9 @@ class HistoricalDataPopulator:
                                 )
                                 stored_count += 1
                         except Exception as e:
-                            log_error(f"Error storing data for {symbol} on {date_str}: {e}")
+                            log_error(
+                                f"Error storing data for {symbol} on {date_str}: {e}"
+                            )
                             print(f"    DEBUG - Error details: {e}")
                             print(f"    DEBUG - Date: {date_str}, Values: {values}")
                             continue
@@ -287,7 +312,9 @@ class HistoricalDataPopulator:
             # No existing data, fetch full range
             return target_start, today
         # Convert to date objects for comparison
-        existing_start = start_date.date() if isinstance(start_date, datetime) else start_date
+        existing_start = (
+            start_date.date() if isinstance(start_date, datetime) else start_date
+        )
         existing_end = end_date.date() if isinstance(end_date, datetime) else end_date
         # Determine what's missing
         fetch_start = target_start
@@ -421,7 +448,9 @@ def ensure_historical_data_up_to_date(months_back: int = 6):
     """
     from src.core.config import Config
 
-    print("\n🚀 [STARTUP] Checking and updating S&P 500 historical data in the database...")
+    print(
+        "\n🚀 [STARTUP] Checking and updating S&P 500 historical data in the database..."
+    )
     symbols = Config.SP500_STOCKS
     today = date.today()
     populator = HistoricalDataPopulator()
@@ -472,7 +501,9 @@ def ensure_historical_data_up_to_date(months_back: int = 6):
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(description="Populate database with S&P 500 historical data")
+    parser = argparse.ArgumentParser(
+        description="Populate database with S&P 500 historical data"
+    )
     parser.add_argument(
         "--max-symbols",
         type=int,

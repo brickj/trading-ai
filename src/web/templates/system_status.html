@@ -34,14 +34,13 @@
     </div>
 
     <div class="row">
-        <div class="col-6">
-            <div class="card">
+        <div class="col-md-6">
+            <div class="card h-100">
                 <div class="card-header">
                     <h5><i class="fas fa-chart-bar"></i> Performance Metrics</h5>
                 </div>
                 <div class="card-body">
-                    <div id="systemMetrics">
-                        <div id="performanceMetrics">
+                    <div id="performanceMetrics">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card border-primary mb-3">
@@ -88,8 +87,8 @@
             </div>
         </div>
         
-        <div class="col-6">
-            <div class="card">
+        <div class="col-md-6">
+            <div class="card h-100">
                 <div class="card-header">
                     <h5><i class="fas fa-database"></i> Database Status</h5>
                 </div>
@@ -388,25 +387,6 @@
                                 <tr><td colspan="5" class="text-center text-muted">Loading schedules...</td></tr>
                             </tbody>
                         </table>
-                        <form id="addJobScheduleForm" class="row g-2 align-items-end mt-3">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" id="newJobName" placeholder="Job Name (e.g. preload_news_opportunities)" required>
-                            </div>
-                            <div class="col-md-3">
-                                <input type="time" class="form-control" id="newJobTime" required>
-                            </div>
-                            <div class="col-md-2">
-                                <select class="form-select" id="newJobEnabled">
-                                    <option value="true" selected>Enabled</option>
-                                    <option value="false">Disabled</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-plus"></i> Add/Update Job
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -1000,6 +980,17 @@ async function loadJobSchedules() {
         }
         tbody.innerHTML = '';
         data.schedules.forEach(sch => {
+            // Format last_run date properly
+            let lastRunDisplay = '-';
+            if (sch.last_run) {
+                try {
+                    const lastRunDate = new Date(sch.last_run);
+                    lastRunDisplay = lastRunDate.toLocaleDateString() + ' ' + lastRunDate.toLocaleTimeString();
+                } catch (e) {
+                    lastRunDisplay = sch.last_run.replace('T', ' ').slice(0, 19);
+                }
+            }
+            
             tbody.innerHTML += `
                 <tr data-id="${sch.id}">
                     <td>${sch.job_name}</td>
@@ -1007,10 +998,9 @@ async function loadJobSchedules() {
                     <td>
                         <input type="checkbox" ${sch.enabled ? 'checked' : ''} onchange="toggleJobSchedule(${sch.id}, this.checked)">
                     </td>
-                    <td>${sch.last_run ? sch.last_run.replace('T', ' ').slice(0, 19) : '-'}</td>
+                    <td>${lastRunDisplay}</td>
                     <td>
                         <button class="btn btn-outline-primary btn-sm" onclick="updateJobScheduleTime(${sch.id}, document.querySelector('#jobSchedulesTableBody tr[data-id=\'${sch.id}\'] input[type=time]').value)"><i class="fas fa-save"></i> Save</button>
-                        <button class="btn btn-outline-danger btn-sm ms-1" onclick="deleteJobSchedule(${sch.id}, '${sch.job_name}')"><i class="fas fa-trash"></i> Delete</button>
                     </td>
                 </tr>
             `;
@@ -1061,53 +1051,7 @@ async function toggleJobSchedule(id, enabled) {
     }
 }
 
-async function deleteJobSchedule(id, jobName) {
-    if (!confirm(`Are you sure you want to delete the job schedule "${jobName}"?`)) {
-        return;
-    }
-    try {
-        const response = await fetch(`/api/job_schedules/${id}`, {
-            method: 'DELETE'
-        });
-        const data = await response.json();
-        if (data.success) {
-            showAlert(data.message || 'Job schedule deleted successfully', 'success');
-            loadJobSchedules();
-        } else {
-            showAlert('Error deleting job: ' + data.error, 'danger');
-        }
-    } catch (error) {
-        showAlert('Error deleting job: ' + error.message, 'danger');
-    }
-}
 
-document.getElementById('addJobScheduleForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const jobName = document.getElementById('newJobName').value.trim();
-    const runTime = document.getElementById('newJobTime').value;
-    const enabled = document.getElementById('newJobEnabled').value === 'true';
-    if (!jobName || !runTime) {
-        showAlert('Please enter job name and time', 'warning');
-        return;
-    }
-    try {
-        const response = await fetch('/api/job_schedules', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ job_name: jobName, run_time: runTime, enabled })
-        });
-        const data = await response.json();
-        if (data.success) {
-            showAlert('Job schedule added/updated', 'success');
-            document.getElementById('addJobScheduleForm').reset();
-            loadJobSchedules();
-        } else {
-            showAlert('Error: ' + data.error, 'danger');
-        }
-    } catch (error) {
-        showAlert('Error: ' + error.message, 'danger');
-    }
-});
 
 
 

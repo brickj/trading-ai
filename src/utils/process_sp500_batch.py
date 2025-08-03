@@ -3,17 +3,19 @@
 Script to process a batch of S&P 500 stocks and add their recommendations to the database.
 This demonstrates how to process multiple stocks efficiently and store recommendations.
 """
+
 from src.trading.enhanced_trading_strategy import EnhancedTradingStrategy
 from src.core.sentiment_analyzer import SentimentAnalyzer
 from src.data.data_fetcher import DataFetcher
-from src.core.config import Config
 import time
 import sys
 import os
 import argparse
 
 # Add project root to path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.insert(0, project_root)
 
 
@@ -24,7 +26,9 @@ def process_sp500_batch(batch_size=50, ai_provider="ollama"):
         batch_size: Number of stocks to process (default: 50)
         ai_provider: AI provider to use for sentiment analysis (default: ollama)
     """
-    print(f"🚀 Processing top {batch_size} S&P 500 stocks for recommendation database...")
+    print(
+        f"🚀 Processing top {batch_size} S&P 500 stocks for recommendation database..."
+    )
     print("=" * 60)
     # Initialize components
     data_fetcher = DataFetcher()
@@ -33,7 +37,9 @@ def process_sp500_batch(batch_size=50, ai_provider="ollama"):
     #     recommendation_manager = get_recommendation_manager()
     # Get stock symbols (limited to batch_size)
     sp500_symbols = data_fetcher.get_current_sp500_symbols()[:batch_size]
-    print(f"📋 Processing {len(sp500_symbols)} stocks: {', '.join(sp500_symbols[:5])}...")
+    print(
+        f"📋 Processing {len(sp500_symbols)} stocks: {', '.join(sp500_symbols[:5])}..."
+    )
     print()
     # Keep track of success and failures
     successful = []
@@ -62,13 +68,27 @@ def process_sp500_batch(batch_size=50, ai_provider="ollama"):
                         )
                     else:
                         # Fallback to price-based sentiment analysis
-                        print(f"  📊 No news articles for {symbol}, using price-based sentiment analysis...")
-                        sentiment_data = sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                        print(
+                            f"  📊 No news articles for {symbol}, using price-based sentiment analysis..."
+                        )
+                        sentiment_data = (
+                            sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                 except Exception as e:
                     # If news sentiment fails, try price-based analysis
-                    if "No news articles provided for analysis" in str(e) or "No valid news content found" in str(e):
-                        print(f"  📊 News analysis failed for {symbol}, falling back to price-based analysis...")
-                        sentiment_data = sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                    if "No news articles provided for analysis" in str(
+                        e
+                    ) or "No valid news content found" in str(e):
+                        print(
+                            f"  📊 News analysis failed for {symbol}, falling back to price-based analysis..."
+                        )
+                        sentiment_data = (
+                            sentiment_analyzer.analyze_price_based_sentiment(
+                                price_data, symbol
+                            )
+                        )
                     else:
                         # Re-raise other types of errors
                         raise e
@@ -93,8 +113,10 @@ def process_sp500_batch(batch_size=50, ai_provider="ollama"):
             )
             # Step 5: Generate comprehensive recommendations
             try:
-                comprehensive_result = enhanced_trading_strategy.get_comprehensive_recommendations(
-                    symbol, price_data["current_price"], sentiment_data, signal_data
+                comprehensive_result = (
+                    enhanced_trading_strategy.get_comprehensive_recommendations(
+                        symbol, price_data["current_price"], sentiment_data, signal_data
+                    )
                 )
                 # Get recommendations
                 comprehensive_result.get("all_recommendations", [])

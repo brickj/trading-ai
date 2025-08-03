@@ -49,20 +49,26 @@ class TradingStrategy:
             return {
                 "symbol": symbol,
                 "action": "HOLD",
-                "reasoning": signal_data.get("reasoning", "No clear trading signal available"),
+                "reasoning": signal_data.get(
+                    "reasoning", "No clear trading signal available"
+                ),
                 "trading_strategy": "No position recommended - wait for clearer signals",
             }
         # Day trading specific parameters based on sentiment strength
         if abs(sentiment_score) >= 0.7 and confidence >= 0.8:
             # High conviction scalp (1-5 minutes)
             hold_time = "1-5 minutes"
-            target_gain = 0.3 if abs(sentiment_score) >= 0.8 else 0.2  # 20-30% gain target
+            target_gain = (
+                0.3 if abs(sentiment_score) >= 0.8 else 0.2
+            )  # 20-30% gain target
             stop_loss = 0.15  # 15% stop loss
             strategy_type = "High Conviction Scalp"
         elif abs(sentiment_score) >= 0.5 and confidence >= 0.7:
             # Medium conviction day trade (15-60 minutes)
             hold_time = "15-60 minutes"
-            target_gain = 0.25 if abs(sentiment_score) >= 0.6 else 0.15  # 15-25% gain target
+            target_gain = (
+                0.25 if abs(sentiment_score) >= 0.6 else 0.15
+            )  # 15-25% gain target
             stop_loss = 0.12  # 12% stop loss
             strategy_type = "Day Trade"
         elif abs(sentiment_score) >= 0.3 and confidence >= 0.6:
@@ -103,7 +109,9 @@ class TradingStrategy:
             risk_percent = (
                 0.05
                 if abs(sentiment_score) >= 0.7
-                else 0.03 if abs(sentiment_score) >= 0.5 else 0.02
+                else 0.03
+                if abs(sentiment_score) >= 0.5
+                else 0.02
             )
             max_risk = amount * risk_percent
             # Calculate contracts (minimum 1)
@@ -123,12 +131,16 @@ class TradingStrategy:
                 "potential_gain": round(potential_gain, 2),
                 "potential_loss": round(potential_loss, 2),
                 "risk_reward_ratio": (
-                    round(potential_gain / potential_loss, 2) if potential_loss > 0 else 0
+                    round(potential_gain / potential_loss, 2)
+                    if potential_loss > 0
+                    else 0
                 ),
                 "risk_percent": round((total_cost / amount) * 100, 1),
             }
         # Generate specific entry and exit strategy
-        entry_strategy = self._generate_entry_strategy(sentiment_score, confidence, current_price)
+        entry_strategy = self._generate_entry_strategy(
+            sentiment_score, confidence, current_price
+        )
         exit_strategy = self._generate_exit_strategy(target_gain, stop_loss, hold_time)
         return {
             "symbol": symbol,
@@ -147,7 +159,9 @@ class TradingStrategy:
             "confidence": signal_data.get("confidence", 0.5),
             "sentiment_score": sentiment_score,
             # Default position size for execute_trade
-            "position_size": position_recommendations.get("$1000", {}).get("contracts", 1),
+            "position_size": position_recommendations.get("$1000", {}).get(
+                "contracts", 1
+            ),
             "position_recommendations": position_recommendations,
             "entry_strategy": entry_strategy,
             "exit_strategy": exit_strategy,
@@ -183,11 +197,13 @@ class TradingStrategy:
                 "volume_check": "Only trade highly liquid options",
             }
 
-    def _generate_exit_strategy(self, target_gain: float, stop_loss: float, hold_time: str) -> Dict:
+    def _generate_exit_strategy(
+        self, target_gain: float, stop_loss: float, hold_time: str
+    ) -> Dict:
         """Generate specific exit strategy for day trading"""
         return {
-            "profit_target": f"Exit at {target_gain*100:.0f}% gain or better",
-            "stop_loss": f"Hard stop at {stop_loss*100:.0f}% loss",
+            "profit_target": f"Exit at {target_gain * 100:.0f}% gain or better",
+            "stop_loss": f"Hard stop at {stop_loss * 100:.0f}% loss",
             "time_stop": f"Exit before {hold_time} regardless of P&L if no momentum",
             "trailing_stop": "Consider trailing stop after 50% of target is reached",
             "market_close": "Close all positions 30 minutes before market close",
@@ -208,7 +224,9 @@ class TradingStrategy:
             "📈 Consider market conditions: trending vs. choppy markets affect success rates",
         ]
         if abs(sentiment_score) >= 0.7:
-            notes.append("🚀 High conviction trade - sentiment strongly supports direction")
+            notes.append(
+                "🚀 High conviction trade - sentiment strongly supports direction"
+            )
             notes.append("⚡ Consider larger position size within risk limits")
         elif abs(sentiment_score) >= 0.5:
             notes.append("📊 Moderate conviction - wait for technical confirmation")
@@ -315,11 +333,13 @@ class TradingStrategy:
                         future_price = hist.iloc[i + 5]["Close"]
                         if action == "CALL":
                             profit = (
-                                max(0, future_price - strike_price) * position_size - trade_cost
+                                max(0, future_price - strike_price) * position_size
+                                - trade_cost
                             )
                         else:  # PUT
                             profit = (
-                                max(0, strike_price - future_price) * position_size - trade_cost
+                                max(0, strike_price - future_price) * position_size
+                                - trade_cost
                             )
                         capital += profit
                         trades.append(
@@ -337,7 +357,11 @@ class TradingStrategy:
                             }
                         )
             total_return = ((capital - 10000) / 10000) * 100
-            win_rate = len([t for t in trades if t["profit"] > 0]) / len(trades) if trades else 0
+            win_rate = (
+                len([t for t in trades if t["profit"] > 0]) / len(trades)
+                if trades
+                else 0
+            )
             return {
                 "symbol": symbol,
                 "initial_capital": 10000,
@@ -363,7 +387,8 @@ class TradingStrategy:
             "positions_value": round(total_positions_value, 2),
             "total_value": round(self.current_capital + total_positions_value, 2),
             "unrealized_pnl": round(
-                total_positions_value - sum([pos["total_cost"] for pos in self.positions]),
+                total_positions_value
+                - sum([pos["total_cost"] for pos in self.positions]),
                 2,
             ),
             "open_positions": len(self.positions),
@@ -387,7 +412,9 @@ class TradingStrategy:
                 "reasoning": "No clear signal available",
             }
         # Use the existing generate_trade_signal method
-        return self.generate_trade_signal(symbol, current_price, sentiment_data, signal_data)
+        return self.generate_trade_signal(
+            symbol, current_price, sentiment_data, signal_data
+        )
 
     def get_options_recommendation(
         self, symbol: str, current_price: float, sentiment_data: Dict
@@ -403,7 +430,9 @@ class TradingStrategy:
             "reasoning": "No clear signal available",
         }
         # Use the existing generate_trade_signal method
-        return self.generate_trade_signal(symbol, current_price, sentiment_data, signal_data)
+        return self.generate_trade_signal(
+            symbol, current_price, sentiment_data, signal_data
+        )
 
     def _get_conviction_level(self, sentiment_score: float) -> str:
         """Get the conviction level based on sentiment score."""
@@ -428,7 +457,9 @@ class TradingStrategy:
             "📈 Consider market conditions: trending vs. choppy markets affect success rates",
         ]
         if abs(sentiment_score) >= 0.7:
-            notes.append("🚀 High conviction trade - sentiment strongly supports direction")
+            notes.append(
+                "🚀 High conviction trade - sentiment strongly supports direction"
+            )
             notes.append("⚡ Consider larger position size within risk limits")
         elif abs(sentiment_score) >= 0.5:
             notes.append("📊 Moderate conviction - wait for technical confirmation")

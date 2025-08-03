@@ -71,9 +71,9 @@ class APIManager:
         circuit = self.circuit_breaker[api_name]
         # If circuit is open, check if it's time to try again
         if circuit["state"] == "open":
-            if circuit["last_failure"] and datetime.now() - circuit["last_failure"] > timedelta(
-                minutes=5
-            ):
+            if circuit["last_failure"] and datetime.now() - circuit[
+                "last_failure"
+            ] > timedelta(minutes=5):
                 circuit["state"] = "half-open"
                 circuit["failures"] = 0
                 return True

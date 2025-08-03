@@ -4,6 +4,7 @@ Application Startup Module
 Handles daily updates of historical stock data when the application starts.
 Checks if data is current and updates missing data with clear progress messages.
 """
+
 from src.data.data_fetcher import DataFetcher
 from src.utils.populate_historical_data import HistoricalDataPopulator
 from src.core.logger import log_error, log_system_event, log_debug
@@ -19,10 +20,11 @@ import time
 import requests
 import yfinance as yf
 from .database import get_system_flag, set_system_flag
-import pandas as pd
 
 # Add project root to path
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+project_root = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.insert(0, project_root)
 
 
@@ -50,12 +52,12 @@ def get_last_trading_day() -> date:
 
     # Fallback to basic logic if both API and Ollama fail
     print("[DEBUG] Using basic logic for last trading day")
-    
+
     # If today is Saturday (5) or Sunday (6), go back to Friday
     if today.weekday() >= 5:  # Saturday = 5, Sunday = 6
         days_back = today.weekday() - 4  # Go back to Friday
         return today - timedelta(days=days_back)
-    
+
     # If today is a weekday, check if it's before market close (4 PM ET)
     if now.hour < 16:  # Before 4 PM ET
         # Use previous trading day
@@ -63,7 +65,7 @@ def get_last_trading_day() -> date:
             return today - timedelta(days=3)  # Go back to Friday
         else:
             return today - timedelta(days=1)
-    
+
     # After market close, today is the last trading day
     return today
 
@@ -74,35 +76,39 @@ def get_last_trading_day_from_api() -> Optional[date]:
         # Try Yahoo Finance API to get the last trading day
         # Use SPY (S&P 500 ETF) to get the last trading day
         print("[DEBUG] Trying Yahoo Finance API for last trading day...")
-        
+
         # Get SPY data for the last few days to find the last trading day
         spy = yf.Ticker("SPY")
-        
+
         # Get data for the last 10 days to ensure we find the last trading day
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=10)
-        
+
         hist = spy.history(start=start_date, end=end_date)
-        
+
         if not hist.empty:
             # Get the last date with actual trading data
             # Handle pandas timestamp index properly
             if len(hist.index) > 0:
                 # Convert to string first to avoid pandas-specific method issues
                 last_date_str = str(hist.index[-1])
-                last_trading_date = datetime.strptime(last_date_str[:10], '%Y-%m-%d').date()
+                last_trading_date = datetime.strptime(
+                    last_date_str[:10], "%Y-%m-%d"
+                ).date()
             else:
                 # Fallback in case of unexpected index format
                 last_trading_date = datetime.now().date() - timedelta(days=1)
-            print(f"[DEBUG] Yahoo Finance returned last trading day: {last_trading_date}")
+            print(
+                f"[DEBUG] Yahoo Finance returned last trading day: {last_trading_date}"
+            )
             return last_trading_date
         else:
             print("[DEBUG] No data returned from Yahoo Finance")
             return None
-            
+
     except Exception as e:
         print(f"⚠️ Yahoo Finance API call for last trading day failed: {e}")
-        
+
         # Fallback: Try Alpha Vantage API for market status
         try:
             api_key = Config.ALPHA_VANTAGE_API_KEY
@@ -112,27 +118,31 @@ def get_last_trading_day_from_api() -> Optional[date]:
                 if response.status_code == 200:
                     data = response.json()
                     print(f"[DEBUG] Alpha Vantage fallback response: {data}")
-                    
-                    if 'markets' in data:
+
+                    if "markets" in data:
                         # Find US market
-                        for market in data['markets']:
-                            if market.get('region') == 'United States':
-                                current_status = market.get('current_status', '')
-                                print(f"[DEBUG] US Market status from Alpha Vantage: {current_status}")
-                                
+                        for market in data["markets"]:
+                            if market.get("region") == "United States":
+                                current_status = market.get("current_status", "")
+                                print(
+                                    f"[DEBUG] US Market status from Alpha Vantage: {current_status}"
+                                )
+
                                 # If market is closed, we need to determine the last trading day
-                                if current_status == 'closed':
-                                    print("[DEBUG] Market is closed, but Alpha Vantage doesn't provide last trading day")
+                                if current_status == "closed":
+                                    print(
+                                        "[DEBUG] Market is closed, but Alpha Vantage doesn't provide last trading day"
+                                    )
                                     return None
-                                
+
                                 # If market is open, use today's date
-                                elif current_status == 'open':
+                                elif current_status == "open":
                                     today = datetime.now().date()
                                     print(f"[DEBUG] Market open, using today: {today}")
                                     return today
         except Exception as e2:
             print(f"⚠️ Alpha Vantage fallback also failed: {e2}")
-    
+
     return None
 
 
@@ -140,7 +150,7 @@ def get_last_trading_day_from_ollama() -> Optional[date]:
     """Use Ollama to determine the last trading day."""
     try:
         from src.core.sentiment_analyzer import SentimentAnalyzer
-        
+
         # Create a simple prompt to get the last trading day
         prompt = """
         What was the last trading day for the US stock market? 
@@ -150,28 +160,29 @@ def get_last_trading_day_from_ollama() -> Optional[date]:
         - Today's date is {today}
         
         Please respond with just the date in YYYY-MM-DD format, nothing else.
-        """.format(today=datetime.now().strftime('%Y-%m-%d'))
-        
+        """.format(today=datetime.now().strftime("%Y-%m-%d"))
+
         # Use the sentiment analyzer's Ollama client
         sentiment_analyzer = SentimentAnalyzer()
-        
+
         # Try to get response from Ollama using the internal method
         messages = [{"role": "user", "content": prompt}]
         response_data = sentiment_analyzer._call_ollama_api(messages, max_tokens=50)
-        
-        if response_data and 'choices' in response_data:
-            response = response_data['choices'][0]['message']['content']
-            
+
+        if response_data and "choices" in response_data:
+            response = response_data["choices"][0]["message"]["content"]
+
             # Parse the response to extract the date
             import re
-            date_match = re.search(r'\d{4}-\d{2}-\d{2}', response)
+
+            date_match = re.search(r"\d{4}-\d{2}-\d{2}", response)
             if date_match:
                 date_str = date_match.group()
-                return datetime.strptime(date_str, '%Y-%m-%d').date()
-        
+                return datetime.strptime(date_str, "%Y-%m-%d").date()
+
     except Exception as e:
         print(f"⚠️ Ollama call for last trading day failed: {e}")
-    
+
     return None
 
 
@@ -202,8 +213,7 @@ class StartupManager:
         try:
             # Use direct connection instead of connection pool to avoid KeyError: 0
             conn = psycopg2.connect(
-                Config.get_database_url(), 
-                cursor_factory=psycopg2.extras.RealDictCursor
+                Config.get_database_url(), cursor_factory=psycopg2.extras.RealDictCursor
             )
             with conn.cursor() as cur:
                 cur.execute(
@@ -215,24 +225,30 @@ class StartupManager:
                     (symbol,),
                 )
                 result = cur.fetchone()
-                log_debug(f"get_latest_data_date for {symbol}: result={result}, type={type(result)}")
+                log_debug(
+                    f"get_latest_data_date for {symbol}: result={result}, type={type(result)}"
+                )
                 if result:
                     if isinstance(result, dict):
                         log_debug(f"Result is dict, keys={list(result.keys())}")
-                        return result.get('max')
+                        return result.get("max")
                     elif isinstance(result, (tuple, list)):
-                        log_debug(f"Result is tuple/list, length={len(result)}, value={result}")
+                        log_debug(
+                            f"Result is tuple/list, length={len(result)}, value={result}"
+                        )
                         return result[0]
                     else:
                         log_debug(f"Result is unknown type: {type(result)}")
                         return result
                 return None
         except Exception as e:
-            log_debug(f"Exception in get_latest_data_date for {symbol}: type={type(e)}, value={e}")
+            log_debug(
+                f"Exception in get_latest_data_date for {symbol}: type={type(e)}, value={e}"
+            )
             log_error(f"Error getting latest data date for {symbol}: {e}")
             return None
         finally:
-            if 'conn' in locals():
+            if "conn" in locals():
                 conn.close()
 
     def needs_update(self, symbol: str) -> bool:
@@ -283,12 +299,14 @@ class StartupManager:
                 # Fetch only missing data
                 start_date = latest_date + timedelta(days=1)
                 last_trading_day = get_last_trading_day()
-                
+
                 # If start date falls on a weekend, adjust to the next Monday
                 if start_date.weekday() >= 5:  # Saturday or Sunday
                     days_to_monday = (7 - start_date.weekday()) % 7
                     next_monday = start_date + timedelta(days=days_to_monday)
-                    print(f"    ⏭️ {symbol} next update scheduled for next trading day: {next_monday}")
+                    print(
+                        f"    ⏭️ {symbol} next update scheduled for next trading day: {next_monday}"
+                    )
                     # Continue with the update using the next trading day
                     start_date = next_monday
 
@@ -300,13 +318,17 @@ class StartupManager:
                 # Ensure we're not trying to fetch a very small date range
                 days_diff = (last_trading_day - start_date).days
                 if days_diff < 1:
-                    print(f"    ✅ {symbol} is already up to date (only {days_diff} days difference)")
+                    print(
+                        f"    ✅ {symbol} is already up to date (only {days_diff} days difference)"
+                    )
                     result["status"] = "skipped"
                     return result
 
                 # Only fetch if we have actual trading days to fetch
                 if start_date <= last_trading_day:
-                    print(f"    🔄 Fetching missing data from {start_date} to {last_trading_day} ({days_diff} days)")
+                    print(
+                        f"    🔄 Fetching missing data from {start_date} to {last_trading_day} ({days_diff} days)"
+                    )
                     data = self.populator.fetch_yahoo_finance_data(
                         symbol,
                         datetime.combine(start_date, datetime.min.time()),
@@ -344,9 +366,11 @@ class StartupManager:
                     old_symbols = {row[0] for row in cur.fetchall()}
         except Exception as e:
             log_debug(f"S&P 500 symbols table not available: {e}")
-            print("⚠️ S&P 500 symbols table not available - using Alpha Vantage TOP_GAINERS_LOSERS instead")
+            print(
+                "⚠️ S&P 500 symbols table not available - using Alpha Vantage TOP_GAINERS_LOSERS instead"
+            )
             return  # Exit early if table is not available
-        
+
         self.data_fetcher.update_sp500_symbols_table()
         # Get new symbols after update
         new_symbols = set()
@@ -358,12 +382,14 @@ class StartupManager:
         except Exception as e:
             log_debug(f"Failed to get updated symbols: {e}")
             return
-        
+
         added_symbols = new_symbols - old_symbols
         if added_symbols:
             print(f"🆕 New S&P 500 symbols detected: {added_symbols}")
             for symbol in added_symbols:
-                self.data_fetcher.fetch_and_store_historical_data_for_symbol(symbol, months=12)
+                self.data_fetcher.fetch_and_store_historical_data_for_symbol(
+                    symbol, months=12
+                )
         else:
             print("✅ No new S&P 500 symbols.")
 
@@ -403,15 +429,19 @@ class StartupManager:
         failed = 0
         skipped = 0
         total_records = 0
-        
+
         # Limit the number of symbols to process to prevent memory issues
         max_symbols_to_process = 50  # Process only first 50 symbols
         symbols_to_process = symbols_needing_update[:max_symbols_to_process]
-        
+
         if len(symbols_needing_update) > max_symbols_to_process:
-            print(f"⚠️ Limiting processing to first {max_symbols_to_process} symbols to prevent memory issues")
-            print(f"📊 Remaining {len(symbols_needing_update) - max_symbols_to_process} symbols will be processed in next run")
-        
+            print(
+                f"⚠️ Limiting processing to first {max_symbols_to_process} symbols to prevent memory issues"
+            )
+            print(
+                f"📊 Remaining {len(symbols_needing_update) - max_symbols_to_process} symbols will be processed in next run"
+            )
+
         for i, symbol in enumerate(symbols_to_process, 1):
             print(f"[{i}/{len(symbols_to_process)}] ", end="")
             result = self.update_symbol_data(symbol)
@@ -470,55 +500,75 @@ class StartupManager:
         """
         flag_name = "historical_data_2year_update_date"
         today = datetime.now().strftime("%Y-%m-%d")
-        
+
         # Check if we already ran today using database flag
         last_update = get_system_flag(flag_name)
         if last_update == today:
             print(f"✅ 2-year historical data check already performed today ({today})")
-            log_system_event(f"2-year historical data check skipped (already updated today: {today})")
+            log_system_event(
+                f"2-year historical data check skipped (already updated today: {today})"
+            )
             return
-        
+
         print("\n" + "=" * 80)
         print("📊 ENSURING 2-YEAR HISTORICAL DATA FOR ALL S&P 500 SYMBOLS")
         print("=" * 80)
-        
+
         try:
             # Get symbols missing 2 years of data
             missing_symbols = self.get_missing_symbols_for_2_years()
-            
+
             if not missing_symbols:
                 print("✅ All S&P 500 symbols already have 2 years of historical data!")
                 # Still mark as completed today in database
-                set_system_flag(flag_name, today, "Date when 2-year historical data check was last performed")
-                log_system_event(f"2-year historical data check completed - all symbols up to date for {today}")
+                set_system_flag(
+                    flag_name,
+                    today,
+                    "Date when 2-year historical data check was last performed",
+                )
+                log_system_event(
+                    f"2-year historical data check completed - all symbols up to date for {today}"
+                )
                 return
-            
-            print(f"📊 Found {len(missing_symbols)} S&P 500 symbols missing 2 years of historical data")
+
+            print(
+                f"📊 Found {len(missing_symbols)} S&P 500 symbols missing 2 years of historical data"
+            )
             print("🔄 Loading historical data for the last 2 years (730 days)...")
-            
+
             success_count = 0
             error_count = 0
-            
+
             for i, symbol in enumerate(missing_symbols, 1):
                 try:
-                    print(f"[{i}/{len(missing_symbols)}] Loading 2 years of data for {symbol}...")
-                    self.data_fetcher.fetch_and_store_historical_data_for_symbol(symbol, months=24)
+                    print(
+                        f"[{i}/{len(missing_symbols)}] Loading 2 years of data for {symbol}..."
+                    )
+                    self.data_fetcher.fetch_and_store_historical_data_for_symbol(
+                        symbol, months=24
+                    )
                     success_count += 1
                     print(f"✅ Loaded data for {symbol}")
                 except Exception as e:
                     error_count += 1
                     print(f"❌ Failed to load data for {symbol}: {e}")
-            
-            print(f"\n📈 2-Year Historical Data Summary:")
+
+            print("\n📈 2-Year Historical Data Summary:")
             print(f"   ✅ Successfully loaded: {success_count} symbols")
             print(f"   ❌ Failed to load: {error_count} symbols")
             print(f"   📊 Total processed: {len(missing_symbols)} symbols")
-            
+
             # Mark as completed today in database
-            set_system_flag(flag_name, today, "Date when 2-year historical data check was last performed")
-            
-            log_system_event(f"2-year historical data update completed for {today}: {success_count} success, {error_count} failed")
-            
+            set_system_flag(
+                flag_name,
+                today,
+                "Date when 2-year historical data check was last performed",
+            )
+
+            log_system_event(
+                f"2-year historical data update completed for {today}: {success_count} success, {error_count} failed"
+            )
+
         except Exception as e:
             log_error(f"2-year historical data update failed: {e}")
             print(f"❌ 2-year historical data update failed: {e}")
@@ -533,7 +583,8 @@ class StartupManager:
                     return missing_symbols
                 with conn.cursor() as cur:
                     two_years_ago = (datetime.now() - timedelta(days=730)).date()
-                    cur.execute("""
+                    cur.execute(
+                        """
                         SELECT s.symbol
                         FROM sp500_symbols s
                         LEFT JOIN (
@@ -543,7 +594,9 @@ class StartupManager:
                             GROUP BY symbol
                         ) h ON s.symbol = h.symbol
                         WHERE h.symbol IS NULL OR h.min_date > %s OR h.max_date < %s OR h.cnt < 500
-                    """, (two_years_ago, two_years_ago, datetime.now().date()))
+                    """,
+                        (two_years_ago, two_years_ago, datetime.now().date()),
+                    )
                     missing_symbols = [row[0] for row in cur.fetchall()]
         except Exception as e:
             log_error(f"Error getting missing symbols for 2 years: {e}")
@@ -556,27 +609,35 @@ def run_startup_checks():
         startup_manager = StartupManager()
         # Ensure database is ready
         startup_manager.ensure_database_ready()
-        
+
         # Ensure 2-year historical data (runs once per day)
         startup_manager.ensure_2_year_historical_data()
-        
+
         # Run daily update
         update_result = startup_manager.run_daily_update()
-        
+
         print("🔄 Checking/updating S&P 500 symbols from Wikipedia (once per day)...")
         sp500_flag_name = "sp500_update_date"
         today = datetime.now().strftime("%Y-%m-%d")
         last_update = get_system_flag(sp500_flag_name)
-        
+
         if last_update != today:
             fetcher = DataFetcher()
             fetcher.update_sp500_symbols_table()
-            set_system_flag(sp500_flag_name, today, "Date when S&P 500 symbols table was last updated")
+            set_system_flag(
+                sp500_flag_name,
+                today,
+                "Date when S&P 500 symbols table was last updated",
+            )
             print(f"✅ S&P 500 table updated for {today}")
-            log_system_event(f"S&P 500 update check performed and table updated for {today}")
+            log_system_event(
+                f"S&P 500 update check performed and table updated for {today}"
+            )
         else:
             print(f"✅ S&P 500 table already updated today ({today})")
-            log_system_event(f"S&P 500 update check performed but skipped (already updated today: {today})")
+            log_system_event(
+                f"S&P 500 update check performed but skipped (already updated today: {today})"
+            )
         return update_result
     except Exception as e:
         log_error("Startup process failed: {e}")

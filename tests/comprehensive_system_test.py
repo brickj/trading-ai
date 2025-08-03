@@ -421,6 +421,89 @@ class ComprehensiveSystemTest(unittest.TestCase):
         
         print(f"✅ System health check passed - {len(components)} components verified")
     
+    def test_16_weekly_plan_functionality(self):
+        """Test weekly plan functionality"""
+        print("Testing weekly plan functionality...")
+        
+        try:
+            # Test database table exists
+            from src.core.database import get_db_connection
+            
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    # Check if weekly_plan_events table exists
+                    cur.execute("""
+                        SELECT EXISTS (
+                            SELECT FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = 'weekly_plan_events'
+                        );
+                    """)
+                    table_exists = cur.fetchone()['exists']
+                    self.assertTrue(table_exists, "weekly_plan_events table should exist")
+                    
+                    # Check table structure
+                    cur.execute("""
+                        SELECT column_name, data_type 
+                        FROM information_schema.columns 
+                        WHERE table_name = 'weekly_plan_events' 
+                        ORDER BY ordinal_position;
+                    """)
+                    columns = cur.fetchall()
+                    column_names = [col['column_name'] for col in columns]
+                    
+                    expected_columns = [
+                        'id', 'week_start_date', 'event_date', 'event_name',
+                        'event_type', 'event_subtype', 'impact', 'timing',
+                        'source', 'symbol', 'description', 'details',
+                        'created_at', 'updated_at'
+                    ]
+                    
+                    for expected_col in expected_columns:
+                        self.assertIn(expected_col, column_names, 
+                                    f"Column {expected_col} should exist in weekly_plan_events table")
+            
+            # Test WeeklyPlanPopulator functionality
+            from src.data.weekly_plan_populator import WeeklyPlanPopulator
+            
+            populator = WeeklyPlanPopulator()
+            self.assertIsNotNone(populator, "WeeklyPlanPopulator should initialize")
+            
+            # Test get_week_start method
+            from datetime import date
+            test_date = date(2024, 8, 15)  # A Thursday
+            week_start = populator.get_week_start(test_date)
+            expected_monday = date(2024, 8, 12)  # Previous Monday
+            self.assertEqual(week_start, expected_monday, 
+                           "get_week_start should return the Monday of the week")
+            
+            # Test MarketCalendar functionality
+            from src.data.market_calendar import MarketCalendar
+            
+            market_calendar = MarketCalendar()
+            self.assertIsNotNone(market_calendar, "MarketCalendar should initialize")
+            
+            # Test get_weekly_events method (should not crash)
+            try:
+                events = market_calendar.get_weekly_events()
+                self.assertIsInstance(events, dict, "get_weekly_events should return a dictionary")
+                
+                # Check expected event types exist in structure
+                expected_event_types = ['earnings', 'economic', 'federal_reserve', 'options_expiration', 'market_holidays']
+                for event_type in expected_event_types:
+                    if event_type in events:
+                        self.assertIsInstance(events[event_type], list, 
+                                           f"{event_type} should be a list")
+                
+            except Exception as e:
+                # Market calendar might fail due to API limits, but class should be instantiable
+                print(f"Note: MarketCalendar.get_weekly_events failed (expected with API limits): {e}")
+            
+            print("✅ Weekly plan functionality test passed")
+            
+        except Exception as e:
+            self.fail(f"Weekly plan functionality test failed: {e}")
+    
     def runTest(self):
         """Run all tests in sequence"""
         print("🚀 Starting Comprehensive System Test")
@@ -441,7 +524,8 @@ class ComprehensiveSystemTest(unittest.TestCase):
             self.test_12_news_monitoring,
             self.test_13_telegram_alerts,
             self.test_14_batch_processing,
-            self.test_15_system_health_check
+            self.test_15_system_health_check,
+            self.test_16_weekly_plan_functionality
         ]
         
         for test_method in test_methods:

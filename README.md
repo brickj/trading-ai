@@ -22,7 +22,7 @@ A comprehensive **Python application** that uses AI-powered sentiment analysis t
   - **News-Driven**: Automatically detects trending stocks/cryptos in recent news
   - **Watchlist-Based**: Systematic analysis of predefined symbol lists
 - **🤖 AI-Powered Analysis**: Multiple sentiment analysis options (OpenAI GPT, Ollama local)
-- **📊 Real-time Data**: Multi-source news aggregation (Finnhub, Yahoo Finance, Alpha Vantage, Reddit)
+- **📊 Real-time Data**: Multi-source news aggregation (Finnhub, Yahoo Finance, Alpha Vantage, Reddit, CryptoPanic)
 - **📈 Options Trading Signals**: Generates CALL/PUT/HOLD signals with confidence levels
 - **💼 Portfolio Management**: Track simulated trades and portfolio performance
 - **🔧 Easy Startup**: One-click startup scripts with comprehensive health checks
@@ -584,20 +584,92 @@ The application enforces several limits and provides performance metrics for all
 
 ## Code Formatting & Linting
 
-This project uses [black](https://black.readthedocs.io/en/stable/) for automatic code formatting and [flake8](https://flake8.pycqa.org/en/latest/) for linting and code quality checks.
+This project supports multiple approaches for code quality:
 
-### How to format and lint your code
+### 🚀 Recommended: Use Ruff (Modern All-in-One)
 
-- **Format with black:**
-  ```sh
-  python3 -m black --line-length=100 src/
-  ```
-- **Lint with flake8:**
-  ```sh
-  python3 -m flake8 src/ --max-line-length=100 --extend-ignore=E203,W503
-  ```
+**[Ruff](https://docs.astral.sh/ruff/)** is a modern, extremely fast Python linter and formatter that **replaces multiple tools:**
 
-You should run these tools before committing code to ensure consistency and code quality.
+```sh
+# Lint and auto-fix issues (replaces flake8 + autopep8 + isort)
+python3 -m ruff check src/ --fix
+
+# Auto-format code (replaces black)
+python3 -m ruff format src/
+
+# Security scan (still use bandit for comprehensive coverage)
+python3 -m bandit src/ -r --format txt
+```
+
+**⚡ Why Ruff?**
+- **14x faster** than flake8 (0.042s vs 0.577s on this codebase)
+- **More comprehensive** - finds issues flake8 misses (30+ unused imports, undefined variables)
+- **Auto-formatting** - replaces black with compatible styling
+- **Import sorting** - replaces isort automatically
+- **One tool** instead of 3-4 separate tools
+
+### 📦 Alternative: Traditional Tools
+
+If you prefer individual tools:
+- **[black](https://black.readthedocs.io/en/stable/)** - Automatic code formatting
+- **[flake8](https://flake8.pycqa.org/en/latest/)** - Linting and code quality checks  
+- **[bandit](https://bandit.readthedocs.io/en/latest/)** - Security scanning
+
+```sh
+# Format with black
+python3 -m black --line-length=100 src/
+
+# Lint with flake8
+python3 -m flake8 src/ --max-line-length=100 --extend-ignore=E203,W503
+
+# Security scan with bandit
+python3 -m bandit src/ -r --format txt
+```
+
+**💡 Migration tip:** You can use ruff **instead of** black + flake8 + isort + autopep8. Just keep bandit for security.
+
+## 🧹 Code Cleanup & Analysis
+
+Additional tools for maintaining clean, efficient code:
+
+### Unused Code Detection
+
+- **[vulture](https://github.com/jendrikseipp/vulture)** - Finds unused functions, classes, variables, and imports
+- **[unimport](https://github.com/hakancelik96/unimport)** - Specialized tool for finding unused imports
+- **ruff** - Also detects unused imports (F401 errors) as part of linting
+
+```sh
+# Find unused code with high confidence
+python3 -m vulture src/ --min-confidence 80
+
+# Find unused imports specifically  
+python3 -m unimport --check src/
+
+# Ruff also catches unused imports
+python3 -m ruff check src/ | grep F401
+```
+
+### Duplicate Code Detection
+
+- **pylint** - Built-in duplicate code detection
+- **ruff** - Some overlap detection capabilities
+
+```sh
+# Detect duplicate code blocks
+python3 -m pylint --disable=all --enable=duplicate-code src/ --min-similarity-lines=5
+```
+
+### Results from Your Codebase
+
+**Vulture found unused code:**
+- 10+ unused imports in various files
+- Unused variables in `go_service_client.py`, `news_scanner.py`
+- Unused Flask imports: `flash`, `redirect`, `send_file`
+
+**Recommendations:**
+1. Run `vulture` to identify unused code for removal
+2. Use `unimport --remove-all` to automatically clean unused imports  
+3. Run `pylint` duplicate detection to find code that can be refactored
 
 # Trading AI Platform
 
@@ -623,6 +695,7 @@ Advanced trading platform with enhanced analysis capabilities.
    OPENAI_API_KEY = "your_openai_api_key_here"
    
    # Optional API Keys
+   CRYPTOPANIC_API_KEY = "your_cryptopanic_api_key_here"
    TELEGRAM_API_KEY = "your_telegram_api_key_here"
    REDDIT_CLIENT_ID = "your_reddit_client_id_here"
    REDDIT_SECRET_KEY = "your_reddit_secret_key_here"
@@ -634,6 +707,7 @@ Advanced trading platform with enhanced analysis capabilities.
    - **Alpha Vantage**: Free at [alphavantage.co](https://alphavantage.co) (optional)
    - **OpenAI**: At [platform.openai.com](https://platform.openai.com) (optional if using Ollama)
    - **News API**: At [newsapi.org](https://newsapi.org) (optional)
+   - **CryptoPanic**: Free at [cryptopanic.com](https://cryptopanic.com) (optional for crypto news)
    - **Telegram**: Create bot at [@BotFather](https://t.me/botfather) (optional)
 
 ### Files Not in GitHub

@@ -58,7 +58,9 @@ class TelegramAlerts:
                     "parse_mode": parse_mode,
                     "disable_web_page_preview": True,
                 }
-                response = requests.post(f"{self.base_url}/sendMessage", json=payload, timeout=10)
+                response = requests.post(
+                    f"{self.base_url}/sendMessage", json=payload, timeout=10
+                )
                 if response.status_code == 200:
                     success_count += 1
                     successful_recipients.append(chat_id)
@@ -71,11 +73,15 @@ class TelegramAlerts:
         # Log the message
         # Just the first line as preview
         message_preview = message.split("\n")[0]
-        log_telegram_message(f"Message sent to {success_count}/{total_chats} recipients. Preview: {message_preview}")
+        log_telegram_message(
+            f"Message sent to {success_count}/{total_chats} recipients. Preview: {message_preview}"
+        )
         # Return True if at least one message was sent successfully
         success = success_count > 0
         if success:
-            log_info(f"Telegram message sent to {success_count}/{total_chats} recipients")
+            log_info(
+                f"Telegram message sent to {success_count}/{total_chats} recipients"
+            )
         return success
 
     def should_send_alert(self, symbol: str) -> bool:
@@ -115,7 +121,9 @@ class TelegramAlerts:
 {reasoning[:300]}{'...' if len(reasoning) > 300 else ''}
 ⏰ <i>Alert sent at {datetime.now().strftime('%H:%M:%S')}</i>
         """.strip()
-        success = self.send_message(message, message_type="trading_alert", symbol=symbol)
+        success = self.send_message(
+            message, message_type="trading_alert", symbol=symbol
+        )
         if success:
             self.last_alerts[symbol] = datetime.now()
             log_info("Telegram alert sent for {symbol}", "telegram")
@@ -204,12 +212,12 @@ class TelegramAlerts:
         message = f"""
 🚀 <b>ENHANCED ANALYSIS ALERT</b> 🚀
 📊 <b>Symbol:</b> {symbol}
-💰 <b>Price:</b> ${enhanced_result.get('price_data', {}).get('current_price', 'N/A'):.2f}
-😊 <b>Sentiment:</b> {enhanced_result.get('sentiment_data', {}).get('sentiment_score', 0):+.2f}
-📰 <b>News Articles Analyzed:</b> {enhanced_result.get('news_count', 0)}
+💰 <b>Price:</b> ${enhanced_result.get("price_data", {}).get("current_price", "N/A"):.2f}
+😊 <b>Sentiment:</b> {enhanced_result.get("sentiment_data", {}).get("sentiment_score", 0):+.2f}
+📰 <b>News Articles Analyzed:</b> {enhanced_result.get("news_count", 0)}
 📈 <b>Historical Data:</b> {HISTORICAL_LOOKBACK_DAYS // 365}-year analysis included
 <b>TOP RECOMMENDATION:</b>
-🎯 {trade_signal.get('action', 'HOLD')} with {trade_signal.get('confidence', 0):.1%} confidence
+🎯 {trade_signal.get("action", "HOLD")} with {trade_signal.get("confidence", 0):.1%} confidence
 <b>STOCK STRATEGIES:</b>
 """
         # Add stock recommendations
@@ -245,10 +253,14 @@ class TelegramAlerts:
         # Add reasoning if available
         reasoning = enhanced_result.get("sentiment_data", {}).get("reasoning", "")
         if reasoning:
-            reasoning_preview = reasoning[:250] + ('...' if len(reasoning) > 250 else '')
+            reasoning_preview = reasoning[:250] + (
+                "..." if len(reasoning) > 250 else ""
+            )
             message += f"\n<b>ANALYSIS SUMMARY:</b>\n{reasoning_preview}\n"
         message += f"\n⏰ <i>Enhanced analysis sent at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</i>"
-        success = self.send_message(message, message_type="enhanced_analysis", symbol=symbol)
+        success = self.send_message(
+            message, message_type="enhanced_analysis", symbol=symbol
+        )
         if success:
             self.last_alerts["enhanced_{symbol}"] = datetime.now()
         return success

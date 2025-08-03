@@ -767,7 +767,49 @@ This file contains critical recommendation logic used throughout the application
 
 ## 🎯 HIGH PRIORITY
 
-### 5. **✅ POSTGRESQL CACHE IMPLEMENTED & TESTED**
+### 5. **WEEKLY MARKET PLAN SCREEN**
+- **Status**: NEW - Essential market calendar feature needed
+- **Action**: Implement Weekly Plan screen that displays key market events for the upcoming week
+- **Features**:
+  - **Earnings Reports**: Company earnings releases with dates and expected timing
+  - **Federal Reserve Events**: FOMC meetings, policy announcements, rate decisions
+  - **Economic Data Releases**: GDP, inflation data, unemployment reports, retail sales
+  - **Dividend Ex-Dates**: Important dividend dates for tracked stocks
+  - **Options Expiration**: Weekly and monthly options expiration calendar
+  - **Market Holidays**: Stock market closures and early close days
+  - **Sector Events**: Industry conferences, product launches, regulatory announcements
+  - **IPO Launches**: New public offerings and direct listings
+- **Data Sources**:
+  - Economic calendar APIs (Alpha Vantage, Finnhub, Yahoo Finance)
+  - Earnings calendar integration
+  - Federal Reserve official calendar
+  - Market holiday calendar (NYSE/NASDAQ)
+- **UI Requirements**:
+  - Weekly calendar view with daily event breakdown
+  - Event categorization with color coding (earnings=blue, fed=red, economic=green)
+  - Impact level indicators (high/medium/low market impact)
+  - Quick filtering by event type and impact level
+  - Integration with existing stock watchlist for personalized events
+  - Mobile-responsive calendar layout
+- **Implementation Steps**:
+  1. Create `src/data/market_calendar.py` for fetching calendar data
+  2. Add database schema for storing calendar events
+  3. Create `/weekly_plan` route and template
+  4. Build calendar UI component with event display
+  5. Add filtering and personalization features
+  6. Integrate with existing watchlist for relevant events
+- **API Endpoints**:
+  - `/api/weekly_events` - Get events for current/specified week
+  - `/api/market_calendar/{date}` - Get events for specific date
+  - `/api/earnings_calendar` - Upcoming earnings for watchlist stocks
+- **Impact**: 
+  - **Better Trade Planning**: Users can anticipate market-moving events
+  - **Risk Management**: Avoid trading before major announcements
+  - **Opportunity Identification**: Plan entries/exits around key events
+  - **Market Awareness**: Stay informed about economic and corporate catalysts
+- **Priority**: HIGH - Critical for informed trading decisions and market timing
+
+### 6. **✅ POSTGRESQL CACHE IMPLEMENTED & TESTED**
 - **Status**: ✅ COMPLETED - PostgreSQL caching system fully implemented and tested
 - **Performance Results**: 
   - Fresh analysis: ~53 seconds

@@ -7,20 +7,20 @@ import time
 from pathlib import Path
 import json
 import hashlib
-from typing import Optional, Dict, Any
 
 
 class DatabaseHandler(logging.Handler):
     """Database handler for saving logs to PostgreSQL database"""
-    
+
     def __init__(self, level=logging.NOTSET):
         super().__init__(level)
         self._ensure_logs_table()
-    
+
     def _ensure_logs_table(self):
         """Ensure the logs table exists"""
         try:
             from src.core.database import get_db_connection
+
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("""
@@ -44,58 +44,64 @@ class DatabaseHandler(logging.Handler):
         except Exception as e:
             # Don't raise here to avoid breaking logging
             print(f"Warning: Could not create logs table: {e}")
-    
+
     def emit(self, record):
         """Emit a log record to the database"""
         try:
             from src.core.database import get_db_connection
-            
+
             # Extract information from the log record
             log_data = {
-                'level': record.levelname,
-                'logger': record.name,
-                'module': record.module,
-                'function': record.funcName,
-                'line': record.lineno,
-                'message': record.getMessage(),
-                'exception': None,
-                'traceback': None,
-                'extra': None,
-                'category': getattr(record, 'category', 'app'),
-                'session_id': getattr(record, 'session_id', None)
+                "level": record.levelname,
+                "logger": record.name,
+                "module": record.module,
+                "function": record.funcName,
+                "line": record.lineno,
+                "message": record.getMessage(),
+                "exception": None,
+                "traceback": None,
+                "extra": None,
+                "category": getattr(record, "category", "app"),
+                "session_id": getattr(record, "session_id", None),
             }
-            
+
             # Handle exception info
             if record.exc_info:
-                log_data['exception'] = str(record.exc_info[1])
+                log_data["exception"] = str(record.exc_info[1])
                 import traceback
-                log_data['traceback'] = ''.join(traceback.format_exception(*record.exc_info))
-            
+
+                log_data["traceback"] = "".join(
+                    traceback.format_exception(*record.exc_info)
+                )
+
             # Extra fields can be added here if needed in the future
-            
+
             # Save to database
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute("""
+                    cur.execute(
+                        """
                         INSERT INTO logs 
                         (timestamp, level, logger, module, function, line, message, exception, traceback, extra, category, session_id)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        datetime.fromtimestamp(record.created),
-                        log_data['level'],
-                        log_data['logger'],
-                        log_data['module'],
-                        log_data['function'],
-                        log_data['line'],
-                        log_data['message'],
-                        log_data['exception'],
-                        log_data['traceback'],
-                        log_data['extra'],
-                        log_data['category'],
-                        log_data['session_id']
-                    ))
+                    """,
+                        (
+                            datetime.fromtimestamp(record.created),
+                            log_data["level"],
+                            log_data["logger"],
+                            log_data["module"],
+                            log_data["function"],
+                            log_data["line"],
+                            log_data["message"],
+                            log_data["exception"],
+                            log_data["traceback"],
+                            log_data["extra"],
+                            log_data["category"],
+                            log_data["session_id"],
+                        ),
+                    )
                     conn.commit()
-                    
+
         except Exception as e:
             # Don't raise here to avoid breaking logging
             print(f"Warning: Could not save log to database: {e}")
@@ -134,7 +140,8 @@ class TradingLogger:
             "errors.log",
             level=logging.ERROR,
             format_str=(
-                "%(asctime)s | %(levelname)-8s | ERROR | " "%(name)s:%(lineno)d | %(message)s"
+                "%(asctime)s | %(levelname)-8s | ERROR | "
+                "%(name)s:%(lineno)d | %(message)s"
             ),
         )
         # Performance logger (timing and metrics)
@@ -173,33 +180,35 @@ class TradingLogger:
         # Prevent duplicate handlers
         if logger.handlers:
             return logger
-        
+
         # File handler with rotation
         file_handler = logging.handlers.RotatingFileHandler(
-            self.log_dir / filename, maxBytes=10 * 1024 * 1024, backupCount=5  # 10MB
+            self.log_dir / filename,
+            maxBytes=10 * 1024 * 1024,
+            backupCount=5,  # 10MB
         )
         file_handler.setLevel(level)
-        
+
         # Console handler
         console_handler = logging.StreamHandler(sys.stdout)
         # Only warnings and errors to console
         console_handler.setLevel(logging.WARNING)
-        
+
         # Database handler
         db_handler = DatabaseHandler(level=level)
-        
+
         # Formatter
         if format_str is None:
             format_str = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
         formatter = logging.Formatter(format_str)
         file_handler.setFormatter(formatter)
         console_handler.setFormatter(formatter)
-        
+
         # Add handlers
         logger.addHandler(file_handler)
         logger.addHandler(console_handler)
         logger.addHandler(db_handler)
-        
+
         return logger
 
     # Main logging methods
@@ -208,9 +217,7 @@ class TradingLogger:
         """Log info message"""
         logger = getattr(self, f"{category}_logger", self.app_logger)
         # Add category to the record
-        record = logger.makeRecord(
-            logger.name, logging.INFO, "", 0, message, (), None
-        )
+        record = logger.makeRecord(logger.name, logging.INFO, "", 0, message, (), None)
         record.category = category
         logger.handle(record)
 
@@ -235,9 +242,7 @@ class TradingLogger:
     def debug(self, message, category="app"):
         """Log debug message"""
         logger = getattr(self, f"{category}_logger", self.app_logger)
-        record = logger.makeRecord(
-            logger.name, logging.DEBUG, "", 0, message, (), None
-        )
+        record = logger.makeRecord(logger.name, logging.DEBUG, "", 0, message, (), None)
         record.category = category
         logger.handle(record)
 
@@ -254,9 +259,12 @@ class TradingLogger:
         error=None,
     ):
         """Log API call details"""
-        status = "SUCCESS" if response_status and 200 <= response_status < 300 else "ERROR"
+        status = (
+            "SUCCESS" if response_status and 200 <= response_status < 300 else "ERROR"
+        )
         message = (
-            f"{status} | {method} {url} | Status: {response_status} | " f"Time: {response_time}ms"
+            f"{status} | {method} {url} | Status: {response_status} | "
+            f"Time: {response_time}ms"
         )
         if error:
             message += f" | Error: {error}"
@@ -333,9 +341,14 @@ class TradingLogger:
         if message_preview:
             # Log only first few chars to avoid sensitive data
             log_data["message_preview"] = (
-                message_preview[:50] + "..." if len(message_preview) > 50 else message_preview
+                message_preview[:50] + "..."
+                if len(message_preview) > 50
+                else message_preview
             )
-        message = f"{message_type} | Symbol: {symbol} | " f"Sent: {success_count}/{len(recipients)}"
+        message = (
+            f"{message_type} | Symbol: {symbol} | "
+            f"Sent: {success_count}/{len(recipients)}"
+        )
         self.telegram_logger.info(message)
         self.telegram_logger.debug(f"Details: {json.dumps(log_data, indent=2)}")
 
@@ -382,10 +395,14 @@ def log_user_actions(logger_instance):
                 symbol = kwargs["symbol"]
             try:
                 result = func(*args, **kwargs)
-                logger_instance.log_user_action(operation, symbol=symbol, details="SUCCESS")
+                logger_instance.log_user_action(
+                    operation, symbol=symbol, details="SUCCESS"
+                )
                 return result
             except Exception:
-                logger_instance.log_user_action(operation, symbol=symbol, details="ERROR: {str(e)}")
+                logger_instance.log_user_action(
+                    operation, symbol=symbol, details="ERROR: {str(e)}"
+                )
                 raise
 
         return wrapper
@@ -441,7 +458,9 @@ def log_debug(message, category="app"):
 def log_api_call(
     url, method="GET", params=None, response_status=None, response_time=None, error=None
 ):
-    trading_logger.log_api_call(url, method, params, None, response_status, response_time, error)
+    trading_logger.log_api_call(
+        url, method, params, None, response_status, response_time, error
+    )
 
 
 def log_user_action(action, symbol=None, details=None, user_ip=None):

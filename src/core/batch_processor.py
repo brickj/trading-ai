@@ -4,7 +4,6 @@ Batch Processor for Trading AI Platform.
 Handles concurrent processing of multiple symbols for analysis.
 """
 
-import concurrent.futures
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from ..core.config import Config
@@ -35,7 +34,9 @@ class BatchProcessor:
         Returns:
             List of crypto analysis results
         """
-        days_back = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+        days_back = (
+            days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+        )
         shared_crypto_news = self.data_fetcher.get_crypto_news(days_back=days_back)
         results = [
             self._process_single_crypto(symbol, shared_crypto_news, days_back)
@@ -61,16 +62,23 @@ class BatchProcessor:
 
             # --- Improved news matching ---
             symbol_map = {
-                "BTCUSD": ["BTC", "Bitcoin"], "ETHUSD": ["ETH", "Ethereum"],
-                "ADAUSD": ["ADA", "Cardano"], "DOTUSD": ["DOT", "Polkadot"],
-                "LINKUSD": ["LINK", "Chainlink"], "SOLUSD": ["SOL", "Solana"],
+                "BTCUSD": ["BTC", "Bitcoin"],
+                "ETHUSD": ["ETH", "Ethereum"],
+                "ADAUSD": ["ADA", "Cardano"],
+                "DOTUSD": ["DOT", "Polkadot"],
+                "LINKUSD": ["LINK", "Chainlink"],
+                "SOLUSD": ["SOL", "Solana"],
             }
             names = symbol_map.get(symbol.upper(), [symbol.replace("USD", ""), symbol])
-            
+
             crypto_news = [
-                news for news in shared_news
-                if any(name.lower() in news.get("headline", "").lower() or \
-                       name.lower() in news.get("summary", "").lower() for name in names)
+                news
+                for news in shared_news
+                if any(
+                    name.lower() in news.get("headline", "").lower()
+                    or name.lower() in news.get("summary", "").lower()
+                    for name in names
+                )
             ]
 
             if not crypto_news:
@@ -79,37 +87,59 @@ class BatchProcessor:
             # Analyze sentiment
             try:
                 if crypto_news and len(crypto_news) > 0:
-                    sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(crypto_news)
+                    sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
+                        crypto_news
+                    )
                 else:
-                    sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                    sentiment_data = (
+                        self.sentiment_analyzer.analyze_price_based_sentiment(
+                            price_data, symbol
+                        )
+                    )
             except Exception as e:
                 if "No news articles" in str(e):
-                    sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                    sentiment_data = (
+                        self.sentiment_analyzer.analyze_price_based_sentiment(
+                            price_data, symbol
+                        )
+                    )
                 else:
                     raise e
 
             from src.core.recommendation_manager import get_recommendation_manager
-            crypto_recommendation = get_recommendation_manager().get_crypto_specific_recommendations(
-                symbol, sentiment_data, price_data
+
+            crypto_recommendation = (
+                get_recommendation_manager().get_crypto_specific_recommendations(
+                    symbol, sentiment_data, price_data
+                )
             )
-            
+
             signal_data = {
                 "action": crypto_recommendation.get("action", "HOLD"),
-                "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0)) * crypto_recommendation.get("confidence", 0),
+                "signal_strength": abs(crypto_recommendation.get("sentiment_score", 0))
+                * crypto_recommendation.get("confidence", 0),
                 "confidence": crypto_recommendation.get("confidence", 0),
-                "reasoning": crypto_recommendation.get("reasoning", "No reasoning provided")
+                "reasoning": crypto_recommendation.get(
+                    "reasoning", "No reasoning provided"
+                ),
             }
 
             return {
-                "symbol": symbol, "price_data": price_data, "news_data": crypto_news,
-                "sentiment_data": sentiment_data, "signal_data": signal_data,
-                "type": "crypto", "timestamp": datetime.now().isoformat(),
+                "symbol": symbol,
+                "price_data": price_data,
+                "news_data": crypto_news,
+                "sentiment_data": sentiment_data,
+                "signal_data": signal_data,
+                "type": "crypto",
+                "timestamp": datetime.now().isoformat(),
             }
         except Exception as e:
             print(f"Error analyzing {symbol}: {e}")
             return None
 
-    def get_opportunities_only(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def get_opportunities_only(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """
         Filter results to only include strong trading opportunities
         """
@@ -134,7 +164,7 @@ class BatchProcessor:
             task_id = task.get("task_id", f"task_{i}")
             func = task.get("function")
             args = task.get("args", [])
-            
+
             try:
                 result = func(*args)
                 results[task_id] = result
@@ -152,7 +182,7 @@ class BatchProcessor:
 
         end_time = datetime.now()
         time_taken = (end_time - start_time).total_seconds()
-        
+
         return {
             "results": results,
             "stats": {
@@ -170,11 +200,19 @@ class BatchProcessor:
         Returns a nested opportunity dict matching the news-driven structure.
         """
         try:
-            days_back = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+            days_back = (
+                days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+            )
 
             price_data = self.data_fetcher.get_stock_price(symbol)
-            if not price_data or price_data.get("current_price") is None or price_data.get("current_price") == 0:
-                log_error(f"Analysis skipped for {symbol}", "Missing critical price data")
+            if (
+                not price_data
+                or price_data.get("current_price") is None
+                or price_data.get("current_price") == 0
+            ):
+                log_error(
+                    f"Analysis skipped for {symbol}", "Missing critical price data"
+                )
                 return {"symbol": symbol, "error": "Missing critical price data"}
 
             news = self.data_fetcher.get_company_news(symbol, days_back)
@@ -184,26 +222,49 @@ class BatchProcessor:
             sentiment_data = None
             try:
                 if news and len(news) > 0:
-                    sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(news, symbol=symbol)
+                    sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
+                        news, symbol=symbol
+                    )
                 else:
-                    sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                    sentiment_data = (
+                        self.sentiment_analyzer.analyze_price_based_sentiment(
+                            price_data, symbol
+                        )
+                    )
             except Exception as e:
                 log_error(f"News sentiment analysis for {symbol} failed", str(e))
                 try:
-                    sentiment_data = self.sentiment_analyzer.analyze_price_based_sentiment(price_data, symbol)
+                    sentiment_data = (
+                        self.sentiment_analyzer.analyze_price_based_sentiment(
+                            price_data, symbol
+                        )
+                    )
                 except Exception as price_e:
-                    log_error(f"Price-based sentiment for {symbol} also failed", str(price_e))
-                    return {"symbol": symbol, "error": f"Full analysis failed. See logs for details."}
+                    log_error(
+                        f"Price-based sentiment for {symbol} also failed", str(price_e)
+                    )
+                    return {
+                        "symbol": symbol,
+                        "error": "Full analysis failed. See logs for details.",
+                    }
 
             if sentiment_data is None:
-                return {"symbol": symbol, "error": "Sentiment analysis returned no data"}
+                return {
+                    "symbol": symbol,
+                    "error": "Sentiment analysis returned no data",
+                }
 
             signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
             from ..trading.trading_strategy import TradingStrategy
+
             trading_strategy = TradingStrategy()
-            trade_signal = trading_strategy.generate_trade_signal(
-                symbol, price_data["current_price"], sentiment_data, signal_data
-            ) if signal_data and signal_data.get("action") != "HOLD" else {}
+            trade_signal = (
+                trading_strategy.generate_trade_signal(
+                    symbol, price_data["current_price"], sentiment_data, signal_data
+                )
+                if signal_data and signal_data.get("action") != "HOLD"
+                else {}
+            )
 
             if signal_data and signal_data.get("action") != "HOLD":
                 return {
@@ -227,7 +288,9 @@ class BatchProcessor:
     def analyze_crypto(self, symbol: str, days_back: Optional[int] = None):
         """New simplified crypto analysis function for batch processing"""
         try:
-            days_back_int = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+            days_back_int = (
+                days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
+            )
             shared_news = self.data_fetcher.get_crypto_news(days_back=days_back_int)
             return self._process_single_crypto(symbol, shared_news, days_back_int)
         except Exception as e:
@@ -239,10 +302,12 @@ class BatchProcessor:
 batch_processor_instance = BatchProcessor()
 
 
-def create_crypto_analysis_tasks(crypto_symbols: List[str], days_back: Optional[int] = None) -> List[Dict[str, Any]]:
+def create_crypto_analysis_tasks(
+    crypto_symbols: List[str], days_back: Optional[int] = None
+) -> List[Dict[str, Any]]:
     """Create a list of tasks for crypto analysis"""
     days_back = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
-    
+
     return [
         {
             "task_id": symbol,
@@ -253,10 +318,12 @@ def create_crypto_analysis_tasks(crypto_symbols: List[str], days_back: Optional[
     ]
 
 
-def create_watchlist_tasks(symbols: List[str], days_back: Optional[int] = None) -> List[Dict[str, Any]]:
+def create_watchlist_tasks(
+    symbols: List[str], days_back: Optional[int] = None
+) -> List[Dict[str, Any]]:
     """Create a list of tasks for watchlist analysis"""
     days_back = days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
-    
+
     return [
         {
             "task_id": symbol,
@@ -264,4 +331,4 @@ def create_watchlist_tasks(symbols: List[str], days_back: Optional[int] = None) 
             "args": [symbol, days_back],
         }
         for symbol in symbols
-    ] 
+    ]
