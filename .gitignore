@@ -38,6 +38,13 @@ ENV/
 logs/
 *.log
 app.log
+app_restart.log
+app_restart_final.log
+app_startup.log
+fixed_startup.log
+test_opportunities.log
+thread_test.log
+thread_test2.log
 flask.log
 server.log
 populate_market_movers.py.log
