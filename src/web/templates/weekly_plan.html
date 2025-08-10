@@ -460,7 +460,7 @@ function renderCalendarWithFilters(filters) {
         const isToday = dateStr === formatDate(new Date());
         
         calendarHTML += `
-            <div class="col-md-${i < 5 ? '2' : '1'} mb-3">
+            <div class="col-md-${i === 6 ? '2' : i < 5 ? '2' : '1'} mb-3">
                 <div class="card weekly-calendar-card ${isToday ? 'border-primary' : ''} ${isWeekend ? 'bg-light' : ''}">
                     <div class="card-header text-center ${isToday ? 'bg-primary text-white' : ''}">
                         <h6 class="mb-0">${dayName}</h6>
