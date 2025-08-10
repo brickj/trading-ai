@@ -183,20 +183,20 @@ let allEvents = {};
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    // Set initial week to current week
+    // Set initial week to current week (handle Sunday correctly)
     const today = new Date();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - today.getDay() + 1); // Get Monday
-    
+    const monday = getMondayForDate(today);
     currentWeekStart = monday;
     document.getElementById('weekSelector').value = formatDate(monday);
-    
     // Load initial week
     loadWeeklyEvents();
 });
 
 function formatDate(date) {
-    return date.toISOString().split('T')[0];
+    // Format YYYY-MM-DD in local time to avoid UTC offset issues (esp. Sundays)
+    const d = new Date(date);
+    const tzAdjusted = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return tzAdjusted.toISOString().split('T')[0];
 }
 
 function changeWeek(direction) {
@@ -209,9 +209,10 @@ function changeWeek(direction) {
 
 function selectWeek() {
     const selectedDate = new Date(document.getElementById('weekSelector').value);
-    const monday = new Date(selectedDate);
-    monday.setDate(selectedDate.getDate() - selectedDate.getDay() + 1);
+    const monday = getMondayForDate(selectedDate);
     currentWeekStart = monday;
+    // Normalize the date input to the computed Monday to avoid off-by-one on Sundays
+    document.getElementById('weekSelector').value = formatDate(monday);
     loadWeeklyEvents();
 }
 
@@ -241,6 +242,15 @@ function loadWeeklyEvents() {
             calendar.innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load events</div></div>';
             calendar.style.display = 'block';
         });
+}
+
+// Compute Monday for any given date with correct handling on Sundays
+function getMondayForDate(inputDate) {
+    const date = new Date(inputDate);
+    const day = date.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const diff = (day === 0 ? -6 : 1) - day; // If Sunday, go back 6 days; else move to Monday
+    date.setDate(date.getDate() + diff);
+    return date;
 }
 
 function renderCalendar() {
