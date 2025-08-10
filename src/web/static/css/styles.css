@@ -386,3 +386,100 @@ body {
 #enhancedRecommendationsSection .card {
     height: 100% !important;
 }
+
+/* Weekly Calendar Card Styles */
+.weekly-calendar-card {
+    min-height: 120px;
+    height: 100%;
+}
+
+.weekly-calendar-card .card-body {
+    padding: 0.5rem !important;
+    overflow: hidden;
+}
+
+.weekly-calendar-card .card-header {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.weekly-calendar-card .card-header h6 {
+    font-size: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.weekly-calendar-card .card-header small {
+    font-size: 0.7rem;
+}
+
+.event-item {
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.event-item small {
+    font-size: 0.65rem;
+    line-height: 1.1;
+    display: block;
+    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+}
+
+.event-item .badge {
+    font-size: 0.6rem;
+    padding: 0.2em 0.4em;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.event-item i {
+    font-size: 0.6rem;
+    margin-right: 0.2rem;
+    vertical-align: middle;
+}
+
+/* Weekend cards - simple fix for Sunday */
+.col-md-1 .weekly-calendar-card {
+    min-height: 140px;
+}
+
+.col-md-1 .weekly-calendar-card .card-body {
+    padding: 0.5rem !important;
+    overflow: visible;
+}
+
+.col-md-1 .weekly-calendar-card .event-item {
+    margin-bottom: 0.25rem;
+    text-align: center;
+}
+
+.col-md-1 .weekly-calendar-card .event-item i {
+    display: block;
+    margin-bottom: 0.2rem;
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+.col-md-1 .weekly-calendar-card .event-item .badge {
+    font-size: 0.6rem;
+    padding: 0.2em 0.4em;
+    text-align: center;
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.1;
+    display: block;
+}
+
+.col-md-1 .weekly-calendar-card .event-item small {
+    text-align: center;
+    font-size: 0.65rem;
+    line-height: 1.1;
+}

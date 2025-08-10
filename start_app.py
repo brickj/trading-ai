@@ -495,12 +495,12 @@ def main():
     # Print application information
     print_app_info()
 
-    # Start the job scheduler
-    run_scheduled_jobs()
-
-    # Start the application (web server)
+    # Start the application (web server) first
     if not start_app():
         sys.exit(1)
+    
+    # Note: Job scheduler is now handled by the Flask app itself
+    # The run_scheduled_jobs() call has been moved to the Flask app startup
 
 if __name__ == "__main__":
     try:

@@ -356,6 +356,7 @@ class WeeklyPlanPopulator:
                             ),
                         )
 
+                    conn.commit()
                     return len(events)
         except Exception as e:
             self.logger.error(f"Error inserting events: {e}")
@@ -398,23 +399,23 @@ class WeeklyPlanPopulator:
 
                     for row in rows:
                         event = {
-                            "date": row[0].isoformat(),
-                            "name": row[1],
-                            "event_type": row[2],
-                            "event_subtype": row[3],
-                            "impact": row[4],
-                            "timing": row[5],
-                            "source": row[6],
-                            "symbol": row[7],
-                            "description": row[8],
-                            "details": json.loads(row[9]) if row[9] else {},
+                            "date": row["event_date"].isoformat(),
+                            "name": row["event_name"],
+                            "event_type": row["event_type"],
+                            "event_subtype": row["event_subtype"],
+                            "impact": row["impact"],
+                            "timing": row["timing"],
+                            "source": row["source"],
+                            "symbol": row["symbol"],
+                            "description": row["description"],
+                            "details": row["details"] if row["details"] else {},
                         }
 
                         # Map to correct group
-                        if row[2] == "economic_data":
+                        if row["event_type"] == "economic_data":
                             grouped_events["economic"].append(event)
                         else:
-                            grouped_events[row[2]].append(event)
+                            grouped_events[row["event_type"]].append(event)
 
                     return grouped_events
 

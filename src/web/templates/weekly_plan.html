@@ -275,7 +275,12 @@ function getAllEventsForDate(dateStr) {
     return events;
 }
 
-function renderDayEvents(events) {
+function truncateText(text, maxLength = 20) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
+}
+
+function renderDayEvents(events, isWeekend = false) {
     if (events.length === 0) {
         return '<small class="text-muted">No events</small>';
     }
@@ -284,11 +289,15 @@ function renderDayEvents(events) {
     events.forEach(event => {
         const badge = getEventBadge(event);
         const icon = getEventIcon(event);
+        const eventText = event.name || event.symbol || 'Event';
+        const maxLength = isWeekend ? 15 : 25;
+        const displayText = truncateText(eventText, maxLength);
+        
         html += `
-            <div class="mb-1">
-                <small class="d-block">
+            <div class="event-item">
+                <small>
                     <i class="${icon}"></i>
-                    <span class="${badge}">${event.name || event.symbol}</span>
+                    <span class="${badge}" title="${eventText}">${displayText}</span>
                 </small>
             </div>
         `;
@@ -426,7 +435,7 @@ function filterEvents() {
 
 function renderCalendarWithFilters(filters) {
     const calendar = document.getElementById('weeklyCalendar');
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Sat', 'Sun'];
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     
     let calendarHTML = '';
     
@@ -442,13 +451,13 @@ function renderCalendarWithFilters(filters) {
         
         calendarHTML += `
             <div class="col-md-${i < 5 ? '2' : '1'} mb-3">
-                <div class="card ${isToday ? 'border-primary' : ''} ${isWeekend ? 'bg-light' : ''}">
+                <div class="card weekly-calendar-card ${isToday ? 'border-primary' : ''} ${isWeekend ? 'bg-light' : ''}">
                     <div class="card-header text-center ${isToday ? 'bg-primary text-white' : ''}">
                         <h6 class="mb-0">${dayName}</h6>
                         <small>${date.getMonth() + 1}/${date.getDate()}</small>
                     </div>
-                    <div class="card-body p-2">
-                        ${renderDayEvents(dayEvents)}
+                    <div class="card-body">
+                        ${renderDayEvents(dayEvents, isWeekend)}
                     </div>
                 </div>
             </div>

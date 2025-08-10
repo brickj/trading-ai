@@ -3815,6 +3815,7 @@ def create_app(port=5001):
         port (int): Port number to run the server on (default: 5001)
     """
     import sys
+    import threading
 
     print(f"[DEBUG] Entered create_app() with port={port}")
     try:
@@ -3822,6 +3823,19 @@ def create_app(port=5001):
 
         log_info(f"Starting Flask application on port {port}", "system")
         log_system_event(f"Flask application starting on port {port}", "INFO")
+        
+        # Start job scheduler in background thread
+        def start_job_scheduler():
+            try:
+                from start_app import run_scheduled_jobs
+                print("[DEBUG] Starting job scheduler in background...")
+                run_scheduled_jobs()
+            except Exception as e:
+                print(f"[DEBUG] Job scheduler failed to start: {e}")
+        
+        scheduler_thread = threading.Thread(target=start_job_scheduler, daemon=True)
+        scheduler_thread.start()
+        
         print(f"[DEBUG] About to start socketio.run() on 0.0.0.0:{port}")
         sys.stdout.flush()
         # Start the SocketIO server
