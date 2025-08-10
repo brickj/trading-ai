@@ -109,11 +109,55 @@ class DataFetcher:
             cache.set(cache_key, result, ttl=300)  # Cache for 5 minutes
             return result
 
+        # Fallback: Try Yahoo Finance (yfinance) last price if Alpha Vantage failed
+        fallback_price = self._get_yfinance_last_price(symbol)
+        if fallback_price and fallback_price > 0:
+            result = {
+                "symbol": symbol,
+                "current_price": float(fallback_price),
+                "change": 0.0,
+                "change_percent": "0%",
+                "volume": 0,
+                "timestamp": datetime.now().isoformat(),
+                "source": "yfinance_fallback",
+            }
+            cache.set(cache_key, result, ttl=300)
+            return result
+
         return {
             "symbol": symbol,
             "current_price": 0,
             "error": "Failed to fetch price data",
         }
+
+    def _get_yfinance_last_price(self, symbol: str) -> Optional[float]:
+        """Best-effort last price using yfinance as a fallback for foreign symbols.
+        Returns None if unavailable.
+        """
+        try:
+            import yfinance as yf
+
+            ticker = yf.Ticker(symbol)
+            # Try fast_info if available
+            last_price = None
+            try:
+                fast_info = getattr(ticker, "fast_info", None)
+                if fast_info and isinstance(fast_info, dict):
+                    lp = fast_info.get("last_price") or fast_info.get("last_price")
+                    if lp:
+                        last_price = float(lp)
+            except Exception:
+                last_price = None
+
+            if not last_price:
+                # Fall back to a small history window
+                hist = ticker.history(period="1d", interval="1m")
+                if hist is not None and not hist.empty:
+                    last_price = float(hist["Close"].iloc[-1])
+
+            return float(last_price) if last_price else None
+        except Exception:
+            return None
 
     def get_company_news(self, symbol: str, days_back: int = 7) -> list:
         """Fetch company news from multiple sources for better coverage"""

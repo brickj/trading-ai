@@ -36,6 +36,20 @@ document.addEventListener('DOMContentLoaded', function() {
         debouncedLoadOpportunities(true); // Use debounced version with force refresh
     });
     
+    // Market filter change
+    const marketFilter = document.getElementById('marketFilter');
+    if (marketFilter) {
+        marketFilter.addEventListener('change', () => {
+            console.log('🌍 [FILTER] Market changed to:', marketFilter.value);
+            // Re-render with current data if present
+            if (opportunitiesData && opportunitiesData.length) {
+                displayOpportunities({ data: { opportunities: opportunitiesData } });
+            } else {
+                debouncedLoadOpportunities(false);
+            }
+        });
+    }
+    
     // Set initial UI state for watchlist mode
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
         btn.classList.remove('btn-primary', 'active');
@@ -348,6 +362,15 @@ function displayOpportunities(data) {
     }
     
     console.log('[DIAG] [DISPLAY] Opportunities array length:', opportunities.length);
+
+    // Persist the latest raw opportunities for re-filtering
+    opportunitiesData = opportunities;
+
+    // Apply market filter
+    const market = (document.getElementById('marketFilter')?.value || 'all');
+    if (market !== 'all') {
+        opportunities = opportunities.filter(opp => matchMarketBySuffix(opp?.symbol, market));
+    }
     logToBackend('info', '[DIAG] [DISPLAY] Opportunities array length', { length: opportunities.length });
     
     if (opportunities.length === 0) {
@@ -515,7 +538,9 @@ function createOpportunityCard(opp) {
         '<span class="badge bg-info">News-Driven</span>' : 
         '<span class="badge bg-warning">Watchlist</span>';
     
+    const { exchange, currency } = getExchangeCurrencyFromSymbol(symbol);
     const typeBadge = '<span class="badge bg-primary">Stock</span>';
+    const exBadge = exchange ? ` <span class="badge bg-dark">${exchange}${currency ? ' • ' + currency : ''}</span>` : '';
     
     const actionBadge = action === 'CALL' ? 
         '<span class="badge bg-success">CALL</span>' : 
@@ -537,7 +562,7 @@ function createOpportunityCard(opp) {
             <div>
                 <h6 class="mb-0">
                     <strong>${symbol}</strong>
-                    ${typeBadge}
+                    ${typeBadge}${exBadge}
                     ${triggerBadge}
                     ${actionBadge}
                 </h6>
@@ -590,6 +615,45 @@ function createOpportunityCard(opp) {
     
     console.log('✅ [CARD] Card created successfully for:', symbol);
     return card;
+}
+
+// Helpers: exchange/currency mapping from Yahoo suffix
+function getExchangeCurrencyFromSymbol(symbol) {
+    try {
+        if (!symbol || typeof symbol !== 'string') return { exchange: '', currency: '' };
+        if (symbol.endsWith('.L')) return { exchange: 'LSE', currency: 'GBP' };
+        if (symbol.endsWith('.TO')) return { exchange: 'TSX', currency: 'CAD' };
+        if (symbol.endsWith('.DE')) return { exchange: 'XETRA', currency: 'EUR' };
+        if (symbol.endsWith('.F')) return { exchange: 'Frankfurt', currency: 'EUR' };
+        if (symbol.endsWith('.T')) return { exchange: 'TSE', currency: 'JPY' };
+        if (symbol.endsWith('.HK')) return { exchange: 'HKEX', currency: 'HKD' };
+        if (symbol.endsWith('.PA')) return { exchange: 'Euronext Paris', currency: 'EUR' };
+        return { exchange: 'US', currency: 'USD' };
+    } catch (e) {
+        return { exchange: '', currency: '' };
+    }
+}
+
+function matchMarketBySuffix(symbol, marketCode) {
+    if (!symbol || !marketCode) return true;
+    switch (marketCode) {
+        case 'US':
+            return !symbol.includes('.') || symbol.endsWith('.US');
+        case 'UK':
+            return symbol.endsWith('.L');
+        case 'CA':
+            return symbol.endsWith('.TO');
+        case 'DE':
+            return symbol.endsWith('.DE') || symbol.endsWith('.F');
+        case 'JP':
+            return symbol.endsWith('.T');
+        case 'HK':
+            return symbol.endsWith('.HK');
+        case 'FR':
+            return symbol.endsWith('.PA');
+        default:
+            return true;
+    }
 }
 
 // Execute opportunity trade
