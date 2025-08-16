@@ -1227,7 +1227,18 @@ def backtest_historical_recommendations():
                 data={
                     "message": f"No historical recommendations found for {symbol or 'all symbols'} in the last {days_back} days",
                     "total_recommendations": 0,
-                    "backtest_results": {},
+                    "trades": [],
+                    "cumulative_capital": [10000],
+                    "initial_capital": 10000,
+                    "final_capital": 10000,
+                    "total_return": 0,
+                    "total_trades": 0,
+                    "winning_trades": 0,
+                    "losing_trades": 0,
+                    "win_rate": 0,
+                    "avg_trade": 0,
+                    "best_trade": 0,
+                    "worst_trade": 0
                 }
             )
 
@@ -4359,6 +4370,20 @@ def get_logs():
 print("=== STARTUP: About to load preloaded data from database ===")
 load_preloaded_data_from_db()
 print("=== STARTUP: Finished loading preloaded data from database ===")
+
+@app.route("/api/markets", methods=["GET"])
+def get_markets():
+    """Get all available markets for frontend dropdown"""
+    try:
+        from src.core.market_manager import MarketManager
+        markets = MarketManager.get_markets_for_dropdown()
+        return create_api_response({
+            "markets": markets,
+            "count": len(markets)
+        })
+    except Exception as e:
+        log_exception("Markets endpoint", e)
+        return create_api_response(error=str(e), status_code=500)
 
 
 @app.route("/api/watchlist/config", methods=["GET", "POST"])

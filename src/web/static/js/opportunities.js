@@ -64,6 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set initial title
     document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
     
+    // Load markets data first
+    loadMarketsData();
+    
     // Load initial data (from cache) - will load watchlist data
     debouncedLoadOpportunities(false); // Use debounced version
     
@@ -621,6 +624,14 @@ function createOpportunityCard(opp) {
 function getExchangeCurrencyFromSymbol(symbol) {
     try {
         if (!symbol || typeof symbol !== 'string') return { exchange: '', currency: '' };
+        
+        // Try to get from backend first (if available)
+        if (window.marketData && window.marketData[symbol]) {
+            const market = window.marketData[symbol];
+            return { exchange: market.code, currency: market.currency };
+        }
+        
+        // Fallback to hardcoded mapping
         if (symbol.endsWith('.L')) return { exchange: 'LSE', currency: 'GBP' };
         if (symbol.endsWith('.TO')) return { exchange: 'TSX', currency: 'CAD' };
         if (symbol.endsWith('.DE')) return { exchange: 'XETRA', currency: 'EUR' };
@@ -628,6 +639,8 @@ function getExchangeCurrencyFromSymbol(symbol) {
         if (symbol.endsWith('.T')) return { exchange: 'TSE', currency: 'JPY' };
         if (symbol.endsWith('.HK')) return { exchange: 'HKEX', currency: 'HKD' };
         if (symbol.endsWith('.PA')) return { exchange: 'Euronext Paris', currency: 'EUR' };
+        if (symbol.endsWith('.AS')) return { exchange: 'AMS', currency: 'EUR' };
+        if (symbol.endsWith('.SA')) return { exchange: 'B3', currency: 'BRL' };
         return { exchange: 'US', currency: 'USD' };
     } catch (e) {
         return { exchange: '', currency: '' };
@@ -651,6 +664,12 @@ function matchMarketBySuffix(symbol, marketCode) {
             return symbol.endsWith('.HK');
         case 'FR':
             return symbol.endsWith('.PA');
+        case 'NL':
+            return symbol.endsWith('.AS');
+        case 'BR':
+            return symbol.endsWith('.SA');
+        case 'TW':
+            return symbol === 'TSM'; // Taiwan Semiconductor has no suffix
         default:
             return true;
     }
@@ -753,6 +772,77 @@ setInterval(() => {
         debouncedLoadOpportunities(false); // Use debounced version
     }
 }, 5 * 60 * 1000);
+
+// Load markets data from API
+async function loadMarketsData() {
+    try {
+        console.log('🌍 [MARKETS] Loading markets data...');
+        const response = await fetch('/api/markets');
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load markets data');
+        }
+        
+        // Store markets data globally for use in other functions
+        window.marketData = {};
+        window.marketsList = data.data.markets || [];
+        
+        // Create a lookup table for symbols
+        window.marketsList.forEach(market => {
+            if (market.value === 'US') {
+                // US stocks don't have suffixes, so we'll handle them specially
+                window.marketData['US'] = market;
+            } else {
+                // For foreign markets, we need to map the suffix to the market
+                // This will be populated when we process opportunities
+            }
+        });
+        
+        console.log('✅ [MARKETS] Loaded markets:', window.marketsList);
+        
+        // Populate the market filter dropdown
+        populateMarketFilter();
+        
+    } catch (error) {
+        console.error('❌ [MARKETS] Error loading markets:', error);
+        // Fallback to hardcoded markets
+        populateMarketFilterFallback();
+    }
+}
+
+// Populate market filter dropdown with dynamic data
+function populateMarketFilter() {
+    const marketFilter = document.getElementById('marketFilter');
+    if (!marketFilter) return;
+    
+    // Clear existing options
+    marketFilter.innerHTML = '';
+    
+    // Add "All Markets" option
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'All Markets';
+    allOption.selected = true;
+    marketFilter.appendChild(allOption);
+    
+    // Add market options
+    window.marketsList.forEach(market => {
+        const option = document.createElement('option');
+        option.value = market.value;
+        option.textContent = market.label;
+        marketFilter.appendChild(option);
+    });
+}
+
+// Fallback to hardcoded markets if API fails
+function populateMarketFilterFallback() {
+    const marketFilter = document.getElementById('marketFilter');
+    if (!marketFilter) return;
+    
+    // Keep existing hardcoded options
+    console.log('⚠️ [MARKETS] Using fallback hardcoded markets');
+}
 
 // Load watchlist configuration from API
 async function loadWatchlistConfig() {
