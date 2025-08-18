@@ -1,41 +1,77 @@
 {% extends "base.html" %}
 
-{% block title %}Weekly Market Plan{% endblock %}
+{% block title %}Weekly Market Plan - Trading AI{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>📅 Weekly Market Plan</h1>
-    <p class="text-muted">Plan your trading strategy for the week ahead</p>
-    
-    <div class="row">
-        <div class="col-md-12">
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-calendar-week text-primary"></i> Weekly Market Plan</h1>
+            <p class="lead text-muted">Plan your trading week with key market events and announcements</p>
+        </div>
+    </div>
+
+    <!-- Week Navigation and Filters -->
+    <div class="row mb-4">
+        <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    <h5>Weekly Market Events</h5>
-                </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <strong>Note:</strong> Weekly plan functionality is currently being updated. 
-                        Please check the system status page for current market information.
+                    <h5><i class="fas fa-calendar"></i> Week Selection</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="changeWeek(-1)">
+                            <i class="fas fa-chevron-left"></i> Previous Week
+                        </button>
+                        <input type="date" id="weekSelector" class="form-control" onchange="selectWeek()">
+                        <button class="btn btn-outline-primary btn-sm" onclick="changeWeek(1)">
+                            Next Week <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
-                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5><i class="fas fa-filter"></i> Event Filters</h5>
                     <div class="row">
-                        <div class="col-md-6">
-                            <h6>Available Features:</h6>
-                            <ul class="list-group">
-                                <li class="list-group-item">📊 Earnings Calendar</li>
-                                <li class="list-group-item">🏛️ Economic Events</li>
-                                <li class="list-group-item">🏦 Federal Reserve Schedule</li>
-                                <li class="list-group-item">📈 Options Expiration</li>
-                                <li class="list-group-item">🏖️ Market Holidays</li>
-                            </ul>
+                        <div class="col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterEarnings" checked onchange="filterEvents()">
+                                <label class="form-check-label" for="filterEarnings">
+                                    <span class="badge bg-primary">Earnings</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterFed" checked onchange="filterEvents()">
+                                <label class="form-check-label" for="filterFed">
+                                    <span class="badge bg-danger">Fed Events</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterEconomic" checked onchange="filterEvents()">
+                                <label class="form-check-label" for="filterEconomic">
+                                    <span class="badge bg-success">Economic Data</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <h6>Quick Actions:</h6>
-                            <div class="d-grid gap-2">
-                                <a href="/system_status" class="btn btn-primary">View System Status</a>
-                                <a href="/opportunities" class="btn btn-secondary">View Opportunities</a>
-                                <a href="/" class="btn btn-outline-secondary">Back to Dashboard</a>
+                        <div class="col-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterOptions" checked onchange="filterEvents()">
+                                <label class="form-check-label" for="filterOptions">
+                                    <span class="badge bg-warning">Options Exp</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterHolidays" checked onchange="filterEvents()">
+                                <label class="form-check-label" for="filterHolidays">
+                                    <span class="badge bg-secondary">Holidays</span>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filterHighImpact" onchange="filterEvents()">
+                                <label class="form-check-label" for="filterHighImpact">
+                                    High Impact Only
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -43,5 +79,426 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading market events...</p>
+    </div>
+
+    <!-- Weekly Calendar View -->
+    <div class="row weekly-calendar-container" id="weeklyCalendar">
+        <!-- Calendar will be populated by JavaScript -->
+    </div>
+
+    <!-- Event Summary Cards -->
+    <div class="row mt-4" id="eventSummary">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 id="earningsCount">0</h3>
+                    <p>Earnings Reports</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h3 id="fedCount">0</h3>
+                    <p>Fed Events</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 id="economicCount">0</h3>
+                    <p>Economic Releases</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h3 id="optionsCount">0</h3>
+                    <p>Options Expirations</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Events List -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list"></i> Detailed Events List</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="eventsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Event</th>
+                                    <th>Type</th>
+                                    <th>Impact</th>
+                                    <th>Symbol</th>
+                                    <th>Timing</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsTableBody">
+                                <!-- Events will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Watchlist Events (if applicable) -->
+    <div class="row mt-4" id="watchlistEventsRow" style="display: none;">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-star"></i> Your Watchlist Events</h5>
+                </div>
+                <div class="card-body" id="watchlistEvents">
+                    <!-- Watchlist specific events -->
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentWeekStart = null;
+let allEvents = {};
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial week to current week (handle Sunday correctly)
+    const today = new Date();
+    const monday = getMondayForDate(today);
+    currentWeekStart = monday;
+    document.getElementById('weekSelector').value = formatDate(monday);
+    // Load initial week
+    loadWeeklyEvents();
+});
+
+function formatDate(date) {
+    // Format YYYY-MM-DD in local time to avoid UTC offset issues (esp. Sundays)
+    const d = new Date(date);
+    const tzAdjusted = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return tzAdjusted.toISOString().split('T')[0];
+}
+
+function changeWeek(direction) {
+    const newDate = new Date(currentWeekStart);
+    newDate.setDate(newDate.getDate() + (direction * 7));
+    currentWeekStart = newDate;
+    document.getElementById('weekSelector').value = formatDate(newDate);
+    loadWeeklyEvents();
+}
+
+function selectWeek() {
+    const selectedDate = new Date(document.getElementById('weekSelector').value);
+    const monday = getMondayForDate(selectedDate);
+    currentWeekStart = monday;
+    // Normalize the date input to the computed Monday to avoid off-by-one on Sundays
+    document.getElementById('weekSelector').value = formatDate(monday);
+    loadWeeklyEvents();
+}
+
+function loadWeeklyEvents() {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const calendar = document.getElementById('weeklyCalendar');
+    
+    loadingIndicator.style.display = 'block';
+    calendar.style.display = 'none';
+    
+    const weekStart = formatDate(currentWeekStart);
+    
+    fetch(`/api/weekly_events?start_date=${weekStart}`)
+        .then(response => response.json())
+        .then(response => {
+            console.log('API Response:', response); // Debug log
+            allEvents = response.data || response; // Handle both nested and flat structures
+            renderCalendar();
+            updateSummary();
+            renderEventsTable();
+            loadingIndicator.style.display = 'none';
+            calendar.style.display = 'flex';
+        })
+        .catch(error => {
+            console.error('Error loading events:', error);
+            loadingIndicator.style.display = 'none';
+            calendar.innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load events</div></div>';
+            calendar.style.display = 'block';
+        });
+}
+
+// Compute Monday for any given date (weekdays only)
+function getMondayForDate(inputDate) {
+    const date = new Date(inputDate);
+    const day = date.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+    const diff = (day === 0 ? -6 : 1) - day; // If Sunday, go back 6 days; else move to Monday
+    date.setDate(date.getDate() + diff);
+    return date;
+}
+
+function renderCalendar() {
+    // Get current filter state
+    const filters = {
+        earnings: document.getElementById('filterEarnings').checked,
+        fed: document.getElementById('filterFed').checked,
+        economic: document.getElementById('filterEconomic').checked,
+        options: document.getElementById('filterOptions').checked,
+        holidays: document.getElementById('filterHolidays').checked,
+        highImpact: document.getElementById('filterHighImpact').checked
+    };
+    
+    // Use the filtered rendering function
+    renderCalendarWithFilters(filters);
+}
+
+function getAllEventsForDate(dateStr) {
+    const events = [];
+    
+    // Collect events from all categories (weekdays only)
+    ['earnings', 'economic', 'federal_reserve', 'options_expiration', 'market_holidays'].forEach(category => {
+        if (allEvents[category]) {
+            allEvents[category].forEach(event => {
+                if (event.date === dateStr) {
+                    events.push(event);
+                }
+            });
+        }
+    });
+    
+    return events;
+}
+
+function truncateText(text, maxLength = 20) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
+}
+
+function renderDayEvents(events, isWeekend = false) {
+    if (events.length === 0) {
+        return '<small class="text-muted">No events</small>';
+    }
+    
+    let html = '';
+    events.forEach(event => {
+        const badge = getEventBadge(event);
+        const icon = getEventIcon(event);
+        const eventText = event.name || event.symbol || 'Event';
+        const maxLength = isWeekend ? 15 : 25;
+        const displayText = truncateText(eventText, maxLength);
+        
+        html += `
+            <div class="event-item">
+                <small>
+                    <i class="${icon}"></i>
+                    <span class="${badge}" title="${eventText}">${displayText}</span>
+                </small>
+            </div>
+        `;
+    });
+    
+    return html;
+}
+
+function getEventBadge(event) {
+    const typeMap = {
+        'earnings': 'badge bg-primary',
+        'federal_reserve': 'badge bg-danger',
+        'economic_data': 'badge bg-success',
+        'options_expiration': 'badge bg-warning',
+        'market_holiday': 'badge bg-secondary',
+        'market_holidays': 'badge bg-secondary'
+    };
+    
+    return typeMap[event.event_type] || 'badge bg-info';
+}
+
+function getEventIcon(event) {
+    const iconMap = {
+        'earnings': 'fas fa-chart-line',
+        'federal_reserve': 'fas fa-university',
+        'economic_data': 'fas fa-chart-bar',
+        'options_expiration': 'fas fa-calendar-times',
+        'market_holiday': 'fas fa-calendar-day',
+        'market_holidays': 'fas fa-calendar-day'
+    };
+    
+    return iconMap[event.event_type] || 'fas fa-calendar';
+}
+
+function updateSummary() {
+    let counts = {
+        earnings: 0,
+        fed: 0,
+        economic: 0,
+        options: 0
+    };
+    
+    if (allEvents.earnings) counts.earnings = allEvents.earnings.length;
+    if (allEvents.federal_reserve) counts.fed = allEvents.federal_reserve.length;
+    if (allEvents.economic) counts.economic = allEvents.economic.length;
+    if (allEvents.options_expiration) counts.options = allEvents.options_expiration.length;
+    
+    document.getElementById('earningsCount').textContent = counts.earnings;
+    document.getElementById('fedCount').textContent = counts.fed;
+    document.getElementById('economicCount').textContent = counts.economic;
+    document.getElementById('optionsCount').textContent = counts.options;
+}
+
+function renderEventsTable() {
+    const tbody = document.getElementById('eventsTableBody');
+    const allEventsList = [];
+    
+    // Collect all events
+    ['earnings', 'economic', 'federal_reserve', 'options_expiration', 'market_holidays'].forEach(category => {
+        if (allEvents[category]) {
+            allEvents[category].forEach(event => {
+                allEventsList.push(event);
+            });
+        }
+    });
+    
+    // Sort by date
+    allEventsList.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    let html = '';
+    allEventsList.forEach(event => {
+        const date = new Date(event.date);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+        const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        html += `
+            <tr class="event-row" data-type="${event.event_type}" data-impact="${event.impact}">
+                <td>${formattedDate}</td>
+                <td>${dayName}</td>
+                <td>${event.name || event.symbol}</td>
+                <td><span class="${getEventBadge(event)}">${event.event_type.replace('_', ' ')}</span></td>
+                <td><span class="badge bg-${getImpactColor(event.impact)}">${event.impact}</span></td>
+                <td>${event.symbol || '-'}</td>
+                <td>${event.timing || '-'}</td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function getImpactColor(impact) {
+    const colorMap = {
+        'high': 'danger',
+        'medium': 'warning',
+        'low': 'info'
+    };
+    return colorMap[impact] || 'secondary';
+}
+
+function filterEvents() {
+    const filters = {
+        earnings: document.getElementById('filterEarnings').checked,
+        fed: document.getElementById('filterFed').checked,
+        economic: document.getElementById('filterEconomic').checked,
+        options: document.getElementById('filterOptions').checked,
+        holidays: document.getElementById('filterHolidays').checked,
+        highImpact: document.getElementById('filterHighImpact').checked
+    };
+    
+    const rows = document.querySelectorAll('.event-row');
+    
+    rows.forEach(row => {
+        const type = row.dataset.type;
+        const impact = row.dataset.impact;
+        
+        let show = false;
+        
+        // Check type filters - match actual event_type values from API
+        if (type === 'earnings' && filters.earnings) show = true;
+        if (type === 'federal_reserve' && filters.fed) show = true;
+        if (type === 'economic_data' && filters.economic) show = true;
+        if (type === 'options_expiration' && filters.options) show = true;
+        if ((type === 'market_holidays' || type === 'market_holiday') && filters.holidays) show = true;
+        
+        // Apply high impact filter
+        if (filters.highImpact && impact !== 'high') show = false;
+        
+        row.style.display = show ? '' : 'none';
+    });
+    
+    // Also apply filters to calendar view
+    renderCalendarWithFilters(filters);
+}
+
+function renderCalendarWithFilters(filters) {
+    const calendar = document.getElementById('weeklyCalendar');
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+    
+    let calendarHTML = '';
+    
+    for (let i = 0; i < 5; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = formatDate(date);
+        const dayName = days[i];
+        
+        const dayEvents = getFilteredEventsForDate(dateStr, filters);
+        const isToday = dateStr === formatDate(new Date());
+        
+        calendarHTML += `
+            <div class="col weekly-day-column">
+                <div class="card weekly-calendar-card ${isToday ? 'border-primary' : ''}">
+                    <div class="card-header text-center ${isToday ? 'bg-primary text-white' : ''}">
+                        <h6 class="mb-0">${dayName}</h6>
+                        <small>${date.getMonth() + 1}/${date.getDate()}</small>
+                    </div>
+                    <div class="card-body">
+                        ${renderDayEvents(dayEvents, false)}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    calendar.innerHTML = calendarHTML;
+}
+
+function getFilteredEventsForDate(dateStr, filters) {
+    const events = getAllEventsForDate(dateStr);
+    
+    return events.filter(event => {
+        // Apply type filters
+        let showByType = false;
+        
+        if (event.event_type === 'earnings' && filters.earnings) showByType = true;
+        if (event.event_type === 'federal_reserve' && filters.fed) showByType = true;
+        if (event.event_type === 'economic_data' && filters.economic) showByType = true;
+        if (event.event_type === 'options_expiration' && filters.options) showByType = true;
+        if ((event.event_type === 'market_holidays' || event.event_type === 'market_holiday') && filters.holidays) showByType = true;
+        
+        // Apply high impact filter
+        if (filters.highImpact && event.impact !== 'high') showByType = false;
+        
+        return showByType;
+    });
+}
+
+// Export functions for global access
+window.changeWeek = changeWeek;
+window.selectWeek = selectWeek;
+window.filterEvents = filterEvents;
+</script>
 {% endblock %}
