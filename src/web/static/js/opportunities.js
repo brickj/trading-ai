@@ -4,26 +4,6 @@
 let currentMode = 'watchlist'; // Changed default to watchlist
 let opportunitiesData = [];
 let isRefreshing = false;
-let isRequestInProgress = false; // Add debounce flag
-let lastRequestTime = 0; // Track last request time
-
-// Debounce function to prevent rapid successive calls
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Debounced version of loadOpportunities
-const debouncedLoadOpportunities = debounce((forceRefresh) => {
-    loadOpportunities(forceRefresh);
-}, 500); // 500ms debounce
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -33,22 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('refreshBtn').addEventListener('click', () => {
         // Context-aware refresh based on current mode
         console.log('🔄 [REFRESH] Refresh button clicked for mode:', currentMode);
-        debouncedLoadOpportunities(true); // Use debounced version with force refresh
+        loadOpportunities(true); // Force refresh for current mode
     });
-    
-    // Market filter change
-    const marketFilter = document.getElementById('marketFilter');
-    if (marketFilter) {
-        marketFilter.addEventListener('change', () => {
-            console.log('🌍 [FILTER] Market changed to:', marketFilter.value);
-            // Re-render with current data if present
-            if (opportunitiesData && opportunitiesData.length) {
-                displayOpportunities({ data: { opportunities: opportunitiesData } });
-            } else {
-                debouncedLoadOpportunities(false);
-            }
-        });
-    }
     
     // Set initial UI state for watchlist mode
     document.querySelectorAll('.btn-group .btn').forEach(btn => {
@@ -64,11 +30,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set initial title
     document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
     
-    // Load markets data first
-    loadMarketsData();
-    
     // Load initial data (from cache) - will load watchlist data
-    debouncedLoadOpportunities(false); // Use debounced version
+    loadOpportunities(false);
     
     // Load watchlist configuration
     loadWatchlistConfig();
@@ -97,7 +60,7 @@ function switchMode(mode) {
     document.getElementById('opportunitiesTitle').textContent = titles[mode];
     
     // Load data for current mode (use cached data)
-    debouncedLoadOpportunities(false); // Use debounced version
+    loadOpportunities(false);
 }
 
 // Utility: log fetch requests and responses
@@ -149,27 +112,7 @@ async function loggedFetch(url, options = {}) {
 
 // Load opportunities data
 async function loadOpportunities(forceRefresh = false) {
-    // Prevent multiple simultaneous requests
-    if (isRequestInProgress) {
-        console.log('⚠️ [LOAD] Request already in progress, skipping...');
-        return;
-    }
-    
-    // Check if we're making requests too frequently
-    const now = Date.now();
-    if (now - lastRequestTime < 1000) { // Minimum 1 second between requests
-        console.log('⚠️ [LOAD] Request too frequent, skipping...');
-        return;
-    }
-    
-    isRequestInProgress = true;
-    lastRequestTime = now;
-    
     console.log('🚀 [LOAD] Starting loadOpportunities for mode:', currentMode, 'forceRefresh:', forceRefresh);
-    
-    // Clear any existing error messages
-    clearAlerts();
-    
     showLoading('loadingSpinner');
     document.getElementById('refreshBtn').disabled = true;
     
@@ -197,105 +140,41 @@ async function loadOpportunities(forceRefresh = false) {
         
         console.log('🌐 [LOAD] Fetching from endpoint:', endpoint);
         
-        // Add timeout and retry logic
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const response = await loggedFetch(endpoint);
+        const data = await response.json();
         
-        try {
-            const response = await loggedFetch(endpoint, {
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            
-            const data = await response.json();
-            
-            console.log('📊 [LOAD] Raw API response data:', {
-                mode: currentMode,
-                endpoint: endpoint,
-                responseStatus: response.status,
-                dataType: typeof data,
-                isArray: Array.isArray(data),
-                hasError: !!data.error,
-                errorMessage: data.error,
-                dataKeys: Object.keys(data),
-                dataStructure: JSON.stringify(data, null, 2)
-            });
-            
-            if (data.error) {
-                console.error('❌ [LOAD] API returned error:', data.error);
-                showAlert(data.error, 'danger');
-                return;
-            }
-            
-            console.log('✅ [LOAD] API call successful, calling displayOpportunities');
-            displayOpportunities(data);
-            
-            document.getElementById('lastUpdated').textContent = 
-                `Last updated: ${new Date().toLocaleString()}`;
-                
-        } catch (fetchError) {
-            clearTimeout(timeoutId);
-            
-            // Check if it's an abort error (timeout)
-            if (fetchError.name === 'AbortError') {
-                console.warn('⚠️ [LOAD] Request timed out, retrying once...');
-                // Retry once with a shorter timeout
-                const retryController = new AbortController();
-                const retryTimeoutId = setTimeout(() => retryController.abort(), 15000);
-                
-                try {
-                    const retryResponse = await loggedFetch(endpoint, {
-                        signal: retryController.signal
-                    });
-                    clearTimeout(retryTimeoutId);
-                    
-                    const retryData = await retryResponse.json();
-                    
-                    if (retryData.error) {
-                        console.error('❌ [LOAD] Retry API returned error:', retryData.error);
-                        showAlert(retryData.error, 'danger');
-                        return;
-                    }
-                    
-                    console.log('✅ [LOAD] Retry successful, calling displayOpportunities');
-                    displayOpportunities(retryData);
-                    
-                    document.getElementById('lastUpdated').textContent = 
-                        `Last updated: ${new Date().toLocaleString()}`;
-                        
-                } catch (retryError) {
-                    clearTimeout(retryTimeoutId);
-                    throw retryError;
-                }
-            } else {
-                throw fetchError;
-            }
+        console.log('📊 [LOAD] Raw API response data:', {
+            mode: currentMode,
+            endpoint: endpoint,
+            responseStatus: response.status,
+            dataType: typeof data,
+            isArray: Array.isArray(data),
+            hasError: !!data.error,
+            errorMessage: data.error,
+            dataKeys: Object.keys(data),
+            dataStructure: JSON.stringify(data, null, 2)
+        });
+        
+        if (data.error) {
+            console.error('❌ [LOAD] API returned error:', data.error);
+            showAlert(data.error, 'danger');
+            return;
         }
+        
+        console.log('✅ [LOAD] API call successful, calling displayOpportunities');
+        displayOpportunities(data);
+        
+        document.getElementById('lastUpdated').textContent = 
+            `Last updated: ${new Date().toLocaleString()}`;
         
     } catch (error) {
         if (window.debugPanel) window.debugPanel.setError(error.message);
         console.error('❌ [LOAD] Error in loadOpportunities:', {
             error: error.message,
             stack: error.stack,
-            mode: currentMode,
-            name: error.name
+            mode: currentMode
         });
-        
-        // More specific error messages
-        let errorMessage = 'Error loading opportunities';
-        if (error.name === 'AbortError') {
-            errorMessage = 'Request timed out. Please try again.';
-        } else if (error.message.includes('Failed to fetch')) {
-            errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (error.message.includes('404')) {
-            errorMessage = 'Service temporarily unavailable. Please try again later.';
-        } else if (error.message.includes('500')) {
-            errorMessage = 'Server error. Please try again later.';
-        } else {
-            errorMessage = 'Error loading opportunities: ' + error.message;
-        }
-        
-        showAlert(errorMessage, 'danger');
+        showAlert('Error loading opportunities: ' + error.message, 'danger');
     } finally {
         hideLoading('loadingSpinner');
         
@@ -306,9 +185,6 @@ async function loadOpportunities(forceRefresh = false) {
             refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
             isRefreshing = false;
         }
-        
-        // Reset request in progress flag
-        isRequestInProgress = false;
         
         console.log('🏁 [LOAD] loadOpportunities completed');
     }
@@ -365,15 +241,6 @@ function displayOpportunities(data) {
     }
     
     console.log('[DIAG] [DISPLAY] Opportunities array length:', opportunities.length);
-
-    // Persist the latest raw opportunities for re-filtering
-    opportunitiesData = opportunities;
-
-    // Apply market filter
-    const market = (document.getElementById('marketFilter')?.value || 'all');
-    if (market !== 'all') {
-        opportunities = opportunities.filter(opp => matchMarketBySuffix(opp?.symbol, market));
-    }
     logToBackend('info', '[DIAG] [DISPLAY] Opportunities array length', { length: opportunities.length });
     
     if (opportunities.length === 0) {
@@ -541,9 +408,7 @@ function createOpportunityCard(opp) {
         '<span class="badge bg-info">News-Driven</span>' : 
         '<span class="badge bg-warning">Watchlist</span>';
     
-    const { exchange, currency } = getExchangeCurrencyFromSymbol(symbol);
     const typeBadge = '<span class="badge bg-primary">Stock</span>';
-    const exBadge = exchange ? ` <span class="badge bg-dark">${exchange}${currency ? ' • ' + currency : ''}</span>` : '';
     
     const actionBadge = action === 'CALL' ? 
         '<span class="badge bg-success">CALL</span>' : 
@@ -565,7 +430,7 @@ function createOpportunityCard(opp) {
             <div>
                 <h6 class="mb-0">
                     <strong>${symbol}</strong>
-                    ${typeBadge}${exBadge}
+                    ${typeBadge}
                     ${triggerBadge}
                     ${actionBadge}
                 </h6>
@@ -620,61 +485,6 @@ function createOpportunityCard(opp) {
     return card;
 }
 
-// Helpers: exchange/currency mapping from Yahoo suffix
-function getExchangeCurrencyFromSymbol(symbol) {
-    try {
-        if (!symbol || typeof symbol !== 'string') return { exchange: '', currency: '' };
-        
-        // Try to get from backend first (if available)
-        if (window.marketData && window.marketData[symbol]) {
-            const market = window.marketData[symbol];
-            return { exchange: market.code, currency: market.currency };
-        }
-        
-        // Fallback to hardcoded mapping
-        if (symbol.endsWith('.L')) return { exchange: 'LSE', currency: 'GBP' };
-        if (symbol.endsWith('.TO')) return { exchange: 'TSX', currency: 'CAD' };
-        if (symbol.endsWith('.DE')) return { exchange: 'XETRA', currency: 'EUR' };
-        if (symbol.endsWith('.F')) return { exchange: 'Frankfurt', currency: 'EUR' };
-        if (symbol.endsWith('.T')) return { exchange: 'TSE', currency: 'JPY' };
-        if (symbol.endsWith('.HK')) return { exchange: 'HKEX', currency: 'HKD' };
-        if (symbol.endsWith('.PA')) return { exchange: 'Euronext Paris', currency: 'EUR' };
-        if (symbol.endsWith('.AS')) return { exchange: 'AMS', currency: 'EUR' };
-        if (symbol.endsWith('.SA')) return { exchange: 'B3', currency: 'BRL' };
-        return { exchange: 'US', currency: 'USD' };
-    } catch (e) {
-        return { exchange: '', currency: '' };
-    }
-}
-
-function matchMarketBySuffix(symbol, marketCode) {
-    if (!symbol || !marketCode) return true;
-    switch (marketCode) {
-        case 'US':
-            return !symbol.includes('.') || symbol.endsWith('.US');
-        case 'UK':
-            return symbol.endsWith('.L');
-        case 'CA':
-            return symbol.endsWith('.TO');
-        case 'DE':
-            return symbol.endsWith('.DE') || symbol.endsWith('.F');
-        case 'JP':
-            return symbol.endsWith('.T');
-        case 'HK':
-            return symbol.endsWith('.HK');
-        case 'FR':
-            return symbol.endsWith('.PA');
-        case 'NL':
-            return symbol.endsWith('.AS');
-        case 'BR':
-            return symbol.endsWith('.SA');
-        case 'TW':
-            return symbol === 'TSM'; // Taiwan Semiconductor has no suffix
-        default:
-            return true;
-    }
-}
-
 // Execute opportunity trade
 async function executeOpportunity(symbol) {
     try {
@@ -707,7 +517,7 @@ function analyzeWatchlistOpportunities() {
     switchMode('watchlist');
     
     // Then trigger a refresh to run the analysis
-    debouncedLoadOpportunities(true); // Use debounced version with force refresh
+    loadOpportunities(true);
 }
 
 // Socket.IO event handlers for real-time progress updates
@@ -768,81 +578,9 @@ if (typeof io !== 'undefined') {
 // Auto-refresh every 5 minutes
 setInterval(() => {
     if (document.visibilityState === 'visible') {
-        console.log('🔄 [AUTO-REFRESH] Auto-refreshing opportunities...');
-        debouncedLoadOpportunities(false); // Use debounced version
+        loadOpportunities();
     }
 }, 5 * 60 * 1000);
-
-// Load markets data from API
-async function loadMarketsData() {
-    try {
-        console.log('🌍 [MARKETS] Loading markets data...');
-        const response = await fetch('/api/markets');
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to load markets data');
-        }
-        
-        // Store markets data globally for use in other functions
-        window.marketData = {};
-        window.marketsList = data.data.markets || [];
-        
-        // Create a lookup table for symbols
-        window.marketsList.forEach(market => {
-            if (market.value === 'US') {
-                // US stocks don't have suffixes, so we'll handle them specially
-                window.marketData['US'] = market;
-            } else {
-                // For foreign markets, we need to map the suffix to the market
-                // This will be populated when we process opportunities
-            }
-        });
-        
-        console.log('✅ [MARKETS] Loaded markets:', window.marketsList);
-        
-        // Populate the market filter dropdown
-        populateMarketFilter();
-        
-    } catch (error) {
-        console.error('❌ [MARKETS] Error loading markets:', error);
-        // Fallback to hardcoded markets
-        populateMarketFilterFallback();
-    }
-}
-
-// Populate market filter dropdown with dynamic data
-function populateMarketFilter() {
-    const marketFilter = document.getElementById('marketFilter');
-    if (!marketFilter) return;
-    
-    // Clear existing options
-    marketFilter.innerHTML = '';
-    
-    // Add "All Markets" option
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = 'All Markets';
-    allOption.selected = true;
-    marketFilter.appendChild(allOption);
-    
-    // Add market options
-    window.marketsList.forEach(market => {
-        const option = document.createElement('option');
-        option.value = market.value;
-        option.textContent = market.label;
-        marketFilter.appendChild(option);
-    });
-}
-
-// Fallback to hardcoded markets if API fails
-function populateMarketFilterFallback() {
-    const marketFilter = document.getElementById('marketFilter');
-    if (!marketFilter) return;
-    
-    // Keep existing hardcoded options
-    console.log('⚠️ [MARKETS] Using fallback hardcoded markets');
-}
 
 // Load watchlist configuration from API
 async function loadWatchlistConfig() {
@@ -958,16 +696,6 @@ function showAlert(message, type = 'info') {
             alertDiv.remove();
         }
     }, 5000);
-}
-
-function clearAlerts() {
-    // Remove all existing alerts
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        if (alert.parentNode) {
-            alert.remove();
-        }
-    });
 }
 
 function showLoading(elementId) {

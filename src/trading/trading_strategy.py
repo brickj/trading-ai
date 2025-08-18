@@ -2,7 +2,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List
 import yfinance as yf
-from ..core.go_service_client import GoServiceClient
+# from ..core.go_service_client import GoServiceClient  # Module removed
 
 
 class TradingStrategy:
@@ -11,7 +11,7 @@ class TradingStrategy:
         self.trade_history = []
         self.initial_capital = 10000
         self.current_capital = self.initial_capital
-        self.go_client = GoServiceClient()
+        # self.go_client = GoServiceClient()  # Module removed
 
     def calculate_option_price_estimate(
         self,
@@ -171,6 +171,28 @@ class TradingStrategy:
             ),
         }
 
+        # Send Telegram alert for high-confidence signals
+        try:
+            from src.core.telegram_alerts import telegram_alerter
+            
+            if confidence >= 0.7:  # Only alert for high confidence signals
+                # Prepare additional data for the alert
+                additional_data = {}
+                if "sentiment_score" in signal_data:
+                    additional_data["sentiment_score"] = signal_data["sentiment_score"]
+                
+                # Send the trading signal alert
+                telegram_alerter.send_trading_signal(
+                    symbol=symbol,
+                    action=action,
+                    confidence=confidence,
+                    price=current_price,
+                    reason=signal_data.get("reasoning", ""),
+                    additional_data=additional_data
+                )
+        except Exception as e:
+            print(f"⚠️ Error sending Telegram alert: {e}")
+
     def _generate_entry_strategy(
         self, sentiment_score: float, confidence: float, current_price: float
     ) -> Dict:
@@ -250,14 +272,14 @@ class TradingStrategy:
             return {"status": "no_trade", "message": "Holding position"}
         total_cost = trade_signal["option_price"] * trade_signal["position_size"]
         # Check risk limits using Go service if available
-        if self.go_client.is_service_available("risk"):
+        if False:  # self.go_client.is_service_available("risk") removed
             portfolio_data = {
                 "positions": self.positions,
                 "current_capital": self.current_capital,
                 "total_value": self.current_capital
                 + sum([p["total_cost"] for p in self.positions]),
             }
-            risk_check = self.go_client.check_risk_limits(portfolio_data, trade_signal)
+            # risk_check = self.go_client.check_risk_limits(portfolio_data, trade_signal)  # Module removed
             if risk_check and not risk_check.get("approved", True):
                 return {
                     "status": "risk_rejected",

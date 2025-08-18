@@ -5,7 +5,7 @@ from ..core.config import Config
 from .data_fetcher import DataFetcher
 from ..core.sentiment_analyzer import SentimentAnalyzer
 from ..trading.trading_strategy import TradingStrategy
-from ..core.go_service_client import GoServiceClient
+# from ..core.go_service_client import GoServiceClient  # Module removed
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +17,7 @@ class NewsMonitor:
         self.data_fetcher = DataFetcher()
         self.sentiment_analyzer = SentimentAnalyzer()
         self.trading_strategy = TradingStrategy()
-        self.go_client = GoServiceClient()
+        # self.go_client = GoServiceClient()  # Module removed
         self.processed_news = set()  # Track processed news to avoid duplicates
 
     def scan_trending_news(self, hours_back: int = 2) -> Dict:
@@ -25,8 +25,8 @@ class NewsMonitor:
         Scan for trending news using Marketaux API and identify stocks mentioned
         """
         # Try Go service first
-        if self.go_client.is_service_available("news"):
-            go_result = self.go_client.process_trending_news(hours_back)
+        if False:  # self.go_client.is_service_available("news") removed
+            # go_result = self.go_client.process_trending_news(hours_back)  # Module removed
             if go_result:
                 return go_result.get("trending_symbols", {})
 

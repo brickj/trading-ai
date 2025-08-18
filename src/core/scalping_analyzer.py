@@ -360,6 +360,41 @@ class ScalpingAnalyzer:
             log_error(f"Error generating recommendation: {e}")
             return "Analysis Error"
 
+        # Send Telegram alert for scalping opportunities
+        try:
+            from src.core.telegram_alerts import telegram_alerter
+            
+            # Check if this is a strong scalping opportunity
+            if recommendation in ["Long Scalping Opportunity", "Short Scalping Opportunity"]:
+                # Get the ticker from market_data if available
+                ticker = market_data.get("ticker", "UNKNOWN")
+                current_price = market_data.get("price_now", 0)
+                sentiment_score = sentiment_data.get("sentiment_score", 0)
+                
+                # Determine action based on recommendation
+                action = "BUY" if "Long" in recommendation else "SELL"
+                
+                # Calculate confidence based on volume and sentiment
+                volume_confidence = min(market_data.get("volume_ratio", 0) / 2.0, 1.0)
+                sentiment_confidence = abs(sentiment_data.get("sentiment_score", 0))
+                overall_confidence = (volume_confidence + sentiment_confidence) / 2
+                
+                if overall_confidence >= 0.6:  # Only alert for moderate+ confidence
+                    telegram_alerter.send_trading_signal(
+                        symbol=ticker,
+                        action=action,
+                        confidence=overall_confidence,
+                        price=current_price,
+                        reason=f"Scalping opportunity: {recommendation}",
+                        additional_data={
+                            "sentiment_score": sentiment_score,
+                            "volume_ratio": market_data.get("volume_ratio", 0),
+                            "price_change_pct": market_data.get("price_change_pct", 0)
+                        }
+                    )
+        except Exception as e:
+            log_error(f"Error sending Telegram alert for scalping: {e}")
+
     def store_scalping_signal(
         self,
         ticker: str,

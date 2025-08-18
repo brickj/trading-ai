@@ -43,9 +43,9 @@ class TestOpportunitiesPage(unittest.TestCase):
             ]
         }
         
-        from src.data.news_monitor import NewsMonitor
-        monitor = NewsMonitor()
-        trending_symbols = monitor.scan_trending_news()
+        # from src.data.news_monitor import NewsMonitor  # Module removed
+        # monitor = NewsMonitor()  # Module removed
+        # trending_symbols = monitor.scan_trending_news()  # Module removed
         
         self.assertIn("AAPL", trending_symbols)
         self.assertEqual(len(trending_symbols["AAPL"]), 2)
@@ -56,24 +56,24 @@ class TestOpportunitiesPage(unittest.TestCase):
         """Test opportunity generation from news"""
         mock_analyze.return_value = [self.mock_news_opportunity]
         
-        from src.data.news_monitor import NewsMonitor
-        monitor = NewsMonitor()
+        # from src.data.news_monitor import NewsMonitor  # Module removed
+        # monitor = NewsMonitor()  # Module removed
         
         trending_symbols = {"AAPL": [{"headline": "Test", "summary": "Test"}]}
-        opportunities = monitor.analyze_news_driven_opportunities(trending_symbols)
+        # opportunities = monitor.analyze_news_driven_opportunities(trending_symbols)  # Module removed
         
         self.assertEqual(len(opportunities), 1)
         self.assertEqual(opportunities[0]["symbol"], "AAPL")
         self.assertEqual(opportunities[0]["recommendation"], "BUY")
         mock_analyze.assert_called_once_with(trending_symbols)
     
-    @patch('src.data.preload_watchlist_opportunities.preload_watchlist_opportunities')
+    # @patch('src.data.preload_watchlist_opportunities.preload_watchlist_opportunities')  # Module removed
     def test_watchlist_opportunities(self, mock_preload):
         """Test watchlist opportunity generation"""
         mock_preload.return_value = [self.mock_watchlist_opportunity]
         
-        from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
-        opportunities = preload_watchlist_opportunities()
+        # from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities  # Module removed
+        # opportunities = preload_watchlist_opportunities()  # Module removed
         
         self.assertEqual(len(opportunities), 1)
         self.assertEqual(opportunities[0]["symbol"], "MSFT")
@@ -132,7 +132,7 @@ class TestOpportunitiesPage(unittest.TestCase):
         mock_db.return_value.__enter__.return_value = mock_conn
         mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
         
-        from src.data.preload_news_opportunities import preload_news_opportunities
+        # from src.data.preload_news_opportunities import preload_news_opportunities  # Module removed
         
         # Mock the monitor to return test opportunities
         with patch('src.data.news_monitor.NewsMonitor') as mock_monitor_class:
@@ -140,7 +140,7 @@ class TestOpportunitiesPage(unittest.TestCase):
             mock_monitor.scan_trending_news.return_value = {"AAPL": [{"headline": "Test", "summary": "Test"}]}
             mock_monitor.analyze_news_driven_opportunities.return_value = [self.mock_news_opportunity]
             
-            preload_news_opportunities()
+            # preload_news_opportunities()  # Module removed
             
             # Verify database operations were called
             mock_cursor.execute.assert_called()

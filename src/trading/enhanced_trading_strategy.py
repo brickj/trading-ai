@@ -997,6 +997,37 @@ class EnhancedTradingStrategy(TradingStrategy):
         except Exception as e:
             print(f"⚠️ Error saving recommendations to database: {e}")
 
+        # Send Telegram alerts for high-confidence recommendations
+        try:
+            from src.core.telegram_alerts import telegram_alerter
+            
+            for rec in all_recommendations:
+                confidence = rec.get("confidence", 0)
+                if confidence >= 0.7:  # Only alert for high confidence recommendations
+                    symbol = rec.get("symbol", symbol)
+                    action = rec.get("action", "UNKNOWN")
+                    price = rec.get("current_price", current_price)
+                    reason = rec.get("reason", "")
+                    
+                    # Prepare additional data for the alert
+                    additional_data = {}
+                    if "sentiment_score" in rec:
+                        additional_data["sentiment_score"] = rec["sentiment_score"]
+                    if "volume" in rec:
+                        additional_data["volume"] = rec["volume"]
+                    
+                    # Send the trading signal alert
+                    telegram_alerter.send_trading_signal(
+                        symbol=symbol,
+                        action=action,
+                        confidence=confidence,
+                        price=price,
+                        reason=reason,
+                        additional_data=additional_data
+                    )
+        except Exception as e:
+            print(f"⚠️ Error sending Telegram alerts: {e}")
+
         return {
             "top_recommendation": top_recommendation,
             "top_stock_recommendation": top_stock,

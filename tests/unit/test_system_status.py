@@ -135,7 +135,6 @@ class TestSystemStatus(unittest.TestCase):
         
         # Test sending message
         result = telegram_alerter.send_message("Test alert message")
-        
         self.assertTrue(result)
         mock_alerter.send_message.assert_called_once_with("Test alert message")
     

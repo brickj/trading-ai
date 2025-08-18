@@ -7,7 +7,7 @@ import numpy as np
 import re  # Added for regex fallback
 
 # Import API tracker for monitoring API usage
-from src.utils.api_tracker import api_tracker
+# from src.utils.api_tracker import api_tracker  # Module removed
 
 
 class SentimentAnalyzer:
@@ -62,7 +62,7 @@ class SentimentAnalyzer:
             result = response.json()
 
             # Track API usage
-            api_tracker.record_request("ollama")
+            # api_tracker.record_request("ollama")  # Module removed
 
             # Return in the expected format for the sentiment analyzer
             return {"choices": [{"message": {"content": result.get("response", "")}}]}
