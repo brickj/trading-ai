@@ -150,17 +150,8 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
-                        <span class="badge bg-success me-2">Open</span>
-                        <small>Market is currently open for trading</small>
-                    </div>
-                    <div class="col-md-4">
-                        <span class="badge bg-danger me-2">Closed</span>
-                        <small>Market is closed</small>
-                    </div>
-                    <div class="col-md-4">
-                        <span class="badge bg-warning me-2">Pre/After Market</span>
-                        <small>Extended hours trading</small>
+                    <div class="col-md-12">
+                        <p class="text-muted mb-0">Market status is determined in real-time based on current time and trading hours for each exchange.</p>
                     </div>
                 </div>
             </div>
@@ -274,6 +265,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     marketsData = data.data.markets;
                     console.log('Loaded markets:', marketsData.length);
+                    
+                    // Log all US markets for debugging
+                    const usMarkets = marketsData.filter(m => m.country === 'United States');
+                    console.log('US markets found:', usMarkets.length);
+                    usMarkets.forEach(market => {
+                        console.log(`US Market ${market.code}: Status=${market.status}, Class=${market.status_class}, Name=${market.name}`);
+                    });
+                    
+                    console.log('Sample US market data:', marketsData.find(m => m.country === 'United States' && m.code === 'SPY'));
                     updateSummaryStats(data.data.summary);
                     applyFilters();
                     updateLastUpdated();
@@ -302,6 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const regionFilter = document.getElementById('regionFilter').value;
         const statusFilter = document.getElementById('statusFilter').value;
         
+        console.log('Applying filters - Region:', regionFilter, 'Status:', statusFilter);
+        console.log('Total markets before filter:', marketsData.length);
+        
         filteredData = marketsData.filter(market => {
             let passRegion = true;
             let passStatus = true;
@@ -328,6 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function renderMarkets() {
         console.log('Rendering markets, filtered data length:', filteredData.length);
+        console.log('Sample filtered market data:', filteredData.find(m => m.country === 'United States' && m.code === 'SPY'));
         const container = document.getElementById('marketsContainer');
         
         if (filteredData.length === 0) {

@@ -45,9 +45,11 @@ from src.core.database import (
 import traceback
 from src.core.watchlist_manager import watchlist_manager
 from src.core.tier_manager import tier_manager
+from src.core.market_manager import MarketManager
 from src.web.scalping_signals import scalping_signals_bp
 from apscheduler.schedulers.background import BackgroundScheduler
 import psycopg2
+import pytz
 from psycopg2.extras import RealDictCursor
 import threading
 import os
@@ -2134,6 +2136,255 @@ def backtest_page():
         now=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     )
 
+
+@app.route("/foreign_markets_overview")
+def foreign_markets_overview_page():
+    """Foreign markets overview page"""
+    try:
+        trading_logger.api_logger.info(
+            "[DEBUG] Entering foreign_markets_overview_page route handler"
+        )
+        return render_template("foreign_markets_overview.html")
+    except Exception as e:
+        trading_logger.error_logger.error(
+            f"[ERROR] Failed to render foreign markets overview page: {str(e)}"
+        )
+        return "Error loading foreign markets overview page", 500
+
+@app.route("/api/foreign_markets/overview")
+def foreign_markets_overview_api():
+    """Get foreign markets overview data"""
+    try:
+        trading_logger.api_logger.info(
+            "[DEBUG] Entered foreign_markets_overview API endpoint"
+        )
+        
+        # Get markets data from MarketManager
+        markets = MarketManager.get_markets_for_dropdown()
+        
+        # Add US market indices and sectors
+        us_market_indices = [
+            {"code": "SPY", "currency": "USD", "label": "S&P 500 ETF", "value": "US"},
+            {"code": "DIA", "currency": "USD", "label": "Dow Jones ETF", "value": "US"},
+            {"code": "IWM", "currency": "USD", "label": "Russell 2000 ETF", "value": "US"},
+            {"code": "QQQ", "currency": "USD", "label": "NASDAQ-100 ETF", "value": "US"},
+            {"code": "VTI", "currency": "USD", "label": "Total US Market ETF", "value": "US"},
+            {"code": "VEA", "currency": "USD", "label": "Developed Markets ETF", "value": "US"},
+            {"code": "VWO", "currency": "USD", "label": "Emerging Markets ETF", "value": "US"},
+            {"code": "XLF", "currency": "USD", "label": "Financial Sector ETF", "value": "US"},
+            {"code": "XLK", "currency": "USD", "label": "Technology Sector ETF", "value": "US"},
+            {"code": "XLE", "currency": "USD", "label": "Energy Sector ETF", "value": "US"},
+            {"code": "XLV", "currency": "USD", "label": "Healthcare Sector ETF", "value": "US"},
+            {"code": "XLI", "currency": "USD", "label": "Industrial Sector ETF", "value": "US"},
+            {"code": "XLP", "currency": "USD", "label": "Consumer Staples ETF", "value": "US"},
+            {"code": "XLY", "currency": "USD", "label": "Consumer Discretionary ETF", "value": "US"},
+            {"code": "XLB", "currency": "USD", "label": "Materials Sector ETF", "value": "US"},
+            {"code": "XLU", "currency": "USD", "label": "Utilities Sector ETF", "value": "US"},
+            {"code": "XLRE", "currency": "USD", "label": "Real Estate Sector ETF", "value": "US"}
+        ]
+        
+        # Combine exchange markets with US market indices
+        all_markets = markets + us_market_indices
+        
+        # Enhance markets data with required fields for frontend
+        enhanced_markets = []
+        for market in all_markets:
+            # Map the simple structure to the detailed structure expected by frontend
+            enhanced_market = {
+                "code": market.get("code", ""),
+                "currency": market.get("currency", ""),
+                "label": market.get("label", ""),
+                "value": market.get("value", ""),
+                # Add required fields for frontend
+                "name": market.get("label", "").split(" (")[0] if "(" in market.get("label", "") else market.get("label", ""),
+                "country": market.get("value", ""),
+                "status": "Open",  # Default status
+                "status_class": "success",  # Default status class
+                "performance": 0.0,  # Default performance
+                "performance_class": "secondary",  # Default performance class
+                "symbol_count": 0,  # Default symbol count
+                "symbols": [],  # Default empty symbols list
+                "trading_hours_open": "09:00",  # Default trading hours
+                "trading_hours_close": "17:00",  # Default trading hours
+                "timezone": "UTC"  # Default timezone
+            }
+            
+            # Set country names based on value codes
+            country_mapping = {
+                "NL": "Netherlands",
+                "BR": "Brazil", 
+                "FR": "France",
+                "HK": "Hong Kong",
+                "UK": "United Kingdom",
+                "US": "United States",
+                "JP": "Japan",
+                "CA": "Canada",
+                "TW": "Taiwan",
+                "XETRA": "Germany"
+            }
+            
+            # Special handling for US market indices and exchanges
+            if market.get("code") in ["SPY", "DIA", "IWM", "QQQ", "VTI", "VEA", "VWO", "XLF", "XLK", "XLE", "XLV", "XLI", "XLP", "XLY", "XLB", "XLU", "XLRE", "NASDAQ", "NYSE"]:
+                enhanced_market["country"] = "United States"
+                enhanced_market["name"] = market.get("label", "")
+                
+                # Determine US market status based on current time
+                # Get current time in US Eastern timezone
+                eastern = pytz.timezone('US/Eastern')
+                current_time = datetime.now(eastern)
+                current_time_str = current_time.strftime("%H:%M")
+                
+                # Check if it's a weekday (Monday = 0, Sunday = 6)
+                is_weekday = current_time.weekday() < 5
+                
+                # Check if current time is within trading hours (9:30 AM - 4:00 PM ET)
+                trading_start = "09:30"
+                trading_end = "16:00"
+                
+                if is_weekday and trading_start <= current_time_str <= trading_end:
+                    enhanced_market["status"] = "Open"
+                    enhanced_market["status_class"] = "success"
+                elif is_weekday and current_time_str < trading_start:
+                    enhanced_market["status"] = "Pre-Market"
+                    enhanced_market["status_class"] = "warning"
+                elif is_weekday and current_time_str > trading_end:
+                    enhanced_market["status"] = "After Hours"
+                    enhanced_market["status_class"] = "warning"
+                else:
+                    enhanced_market["status"] = "Closed"
+                    enhanced_market["status_class"] = "secondary"
+                
+                enhanced_market["performance"] = 0.0  # Would need real-time data for actual performance
+                enhanced_market["performance_class"] = "secondary"
+                enhanced_market["symbol_count"] = 1  # Each ETF represents one symbol
+                enhanced_market["symbols"] = [market.get("code", "")]
+                enhanced_market["trading_hours_open"] = "09:30"
+                enhanced_market["trading_hours_close"] = "16:00"
+                enhanced_market["timezone"] = "EST"
+            else:
+                enhanced_market["country"] = country_mapping.get(market.get("value", ""), market.get("value", ""))
+            
+            # Set timezone based on country
+            timezone_mapping = {
+                "Netherlands": "Europe/Amsterdam",
+                "Brazil": "America/Sao_Paulo", 
+                "France": "Europe/Paris",
+                "Hong Kong": "Asia/Hong_Kong",
+                "United Kingdom": "Europe/London",
+                "United States": "US/Eastern",
+                "Japan": "Asia/Tokyo",
+                "Canada": "America/Toronto",
+                "Taiwan": "Asia/Taipei",
+                "Germany": "Europe/Berlin"
+            }
+            enhanced_market["timezone"] = timezone_mapping.get(enhanced_market["country"], "UTC")
+            
+            # Set trading hours based on region
+            if enhanced_market["country"] in ["Japan", "Hong Kong", "Taiwan"]:
+                enhanced_market["trading_hours_open"] = "09:00"
+                enhanced_market["trading_hours_close"] = "15:00"
+            elif enhanced_market["country"] in ["United Kingdom", "Germany", "France", "Netherlands"]:
+                enhanced_market["trading_hours_open"] = "08:00"
+                enhanced_market["trading_hours_close"] = "16:30"
+            elif enhanced_market["country"] in ["United States", "Canada"]:
+                enhanced_market["trading_hours_open"] = "09:30"
+                enhanced_market["trading_hours_close"] = "16:00"
+            else:
+                enhanced_market["trading_hours_open"] = "09:00"
+                enhanced_market["trading_hours_close"] = "17:00"
+            
+            # Determine market status based on current time and trading hours
+            if enhanced_market["country"] not in ["United States"]:  # Skip US markets as they're handled above
+                try:
+                    # Get current time in the market's timezone
+                    market_tz = pytz.timezone(enhanced_market["timezone"])
+                    market_time = datetime.now(market_tz)
+                    market_time_str = market_time.strftime("%H:%M")
+                    
+                    # Check if it's a weekday
+                    is_weekday = market_time.weekday() < 5
+                    
+                    # Get trading hours for this market
+                    open_time = enhanced_market["trading_hours_open"]
+                    close_time = enhanced_market["trading_hours_close"]
+                    
+                    # Debug logging
+                    trading_logger.api_logger.info(
+                        f"Market {enhanced_market['code']} ({enhanced_market['country']}): "
+                        f"Current time: {market_time_str}, Trading hours: {open_time}-{close_time}, "
+                        f"Weekday: {is_weekday}"
+                    )
+                    
+                    if is_weekday and open_time <= market_time_str <= close_time:
+                        enhanced_market["status"] = "Open"
+                        enhanced_market["status_class"] = "success"
+                    elif is_weekday and market_time_str < open_time:
+                        enhanced_market["status"] = "Pre-Market"
+                        enhanced_market["status_class"] = "warning"
+                    elif is_weekday and market_time_str > close_time:
+                        enhanced_market["status"] = "After Hours"
+                        enhanced_market["status_class"] = "warning"
+                    else:
+                        enhanced_market["status"] = "Closed"
+                        enhanced_market["status_class"] = "secondary"
+                except Exception as e:
+                    # Log the error for debugging
+                    trading_logger.error_logger.error(
+                        f"Error determining status for {enhanced_market['code']}: {str(e)}"
+                    )
+                    # Fallback to default status if timezone conversion fails
+                    enhanced_market["status"] = "Closed"  # Default to closed instead of unknown
+                    enhanced_market["status_class"] = "secondary"
+            
+            enhanced_markets.append(enhanced_market)
+        
+        # Calculate summary statistics
+        total_markets = len(enhanced_markets) if enhanced_markets else 0
+        markets_open = len([m for m in enhanced_markets if m.get('status') == 'Open']) if enhanced_markets else 0
+        markets_pre_after = len([m for m in enhanced_markets if m.get('status') in ['Pre-Market', 'After Hours']]) if enhanced_markets else 0
+        markets_closed = len([m for m in enhanced_markets if m.get('status') == 'Closed']) if enhanced_markets else 0
+        total_symbols = sum(len(m.get('symbols', [])) for m in enhanced_markets) if enhanced_markets else 0
+        
+        # Calculate foreign coverage percentage (assuming total portfolio is 100)
+        foreign_coverage = round((total_symbols / 100) * 100, 1) if total_symbols > 0 else 0
+        
+        summary = {
+            "total_markets": total_markets,
+            "markets_open": markets_open,
+            "total_foreign_symbols": total_symbols,  # Fixed field name
+            "foreign_coverage": foreign_coverage
+        }
+        
+        # Log the final response data for debugging
+        trading_logger.api_logger.info(
+            f"[DEBUG] Final API response - Total markets: {len(enhanced_markets)}, "
+            f"US markets: {len([m for m in enhanced_markets if m['country'] == 'United States'])}"
+        )
+        
+        # Log sample US market data
+        us_markets = [m for m in enhanced_markets if m['country'] == 'United States']
+        if us_markets:
+            sample_us = us_markets[0]
+            trading_logger.api_logger.info(
+                f"[DEBUG] Sample US market data: {sample_us['code']} - "
+                f"Status: {sample_us['status']}, Class: {sample_us['status_class']}, "
+                f"Name: {sample_us['name']}"
+            )
+        
+        return create_api_response(
+            data={"markets": enhanced_markets, "summary": summary},
+            message="Foreign markets overview retrieved successfully"
+        )
+        
+    except Exception as e:
+        trading_logger.error_logger.error(
+            f"[ERROR] Failed to fetch foreign markets overview: {str(e)}"
+        )
+        return create_api_response(
+            success=False,
+            message=f"Failed to fetch foreign markets overview: {str(e)}",
+            status_code=500,
+        )
 
 @app.route("/opportunities")
 def opportunities_page():
