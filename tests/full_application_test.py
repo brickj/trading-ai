@@ -38,7 +38,7 @@ class FullApplicationTest(unittest.TestCase):
         resp = self._get("/crypto")
         self.assertEqual(resp.status_code, 200)
         self.assertIn("Crypto", resp.text)
-        api = self.session.post(f"{self.BASE_URL}/api/crypto_analysis", json={"symbols": ["BTC"]})
+        api = self._get("/api/crypto_analysis")
         self.assertEqual(api.status_code, 200)
 
     def test_04_portfolio_page(self):
