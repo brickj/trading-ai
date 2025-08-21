@@ -62,6 +62,14 @@ class BatchProcessor:
 
             # --- Improved news matching ---
             symbol_map = {
+                "BTC": ["BTC", "Bitcoin"],
+                "ETH": ["ETH", "Ethereum"],
+                "ADA": ["ADA", "Cardano"],
+                "DOT": ["DOT", "Polkadot"],
+                "LINK": ["LINK", "Chainlink"],
+                "SOL": ["SOL", "Solana"],
+                "USDT": ["USDT", "Tether"],
+                # Also support USD suffixed versions for backwards compatibility
                 "BTCUSD": ["BTC", "Bitcoin"],
                 "ETHUSD": ["ETH", "Ethereum"],
                 "ADAUSD": ["ADA", "Cardano"],

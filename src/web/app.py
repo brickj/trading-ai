@@ -890,8 +890,11 @@ def sp500_analysis():
 
 @app.route("/api/crypto_analysis")
 def crypto_analysis():
-    """Analyze cryptocurrencies for trading opportunities"""
+    """Analyze cryptocurrencies for trading opportunities with fast preload"""
     try:
+        # Check for fast mode (preload) parameter
+        fast_mode = request.args.get('fast', '0') == '1'
+        
         # Check cache first
         cache_key = "crypto_analysis_v1"
         cached_result = get_cached_result(cache_key)
@@ -917,11 +920,8 @@ def crypto_analysis():
                 )
                 cached_result = None
 
-        print("🚀 Starting fresh crypto analysis with smart batching...")
-
         # Get crypto symbols from database instead of config
         crypto_symbols = watchlist_manager.get_cryptos()
-        watchlist_manager.get_stocks()
 
         if not crypto_symbols:
             return create_api_response(
@@ -939,6 +939,62 @@ def crypto_analysis():
                     ),
                 }
             )
+
+        # FAST MODE: Return basic price data immediately for preload
+        if fast_mode:
+            print("⚡ Fast mode: Returning basic crypto price data for preload...")
+            opportunities = []
+            errors = []
+            
+            for symbol in crypto_symbols:
+                try:
+                    # Get basic price data only (fast)
+                    price_data = data_fetcher.get_stock_price(symbol)
+                    if "error" not in price_data and isinstance(price_data, dict):
+                        # Create basic opportunity with price data only
+                        basic_opportunity = {
+                            "symbol": symbol,
+                            "current_price": price_data.get("current_price", 0),
+                            "price_change": price_data.get("price_change", 0),
+                            "price_change_percent": price_data.get("price_change_percent", 0),
+                            "sentiment_score": 0.0,  # Neutral sentiment for fast mode
+                            "sentiment_label": "analyzing",
+                            "action": "HOLD",
+                            "confidence": 0.5,
+                            "analysis_type": "basic_preload",
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                        opportunities.append(basic_opportunity)
+                    else:
+                        errors.append({"symbol": symbol, "error": "Price data unavailable"})
+                except Exception as e:
+                    errors.append({"symbol": symbol, "error": str(e)})
+            
+            # Return fast basic data
+            fast_result = {
+                "opportunities": opportunities,
+                "errors": errors,
+                "timestamp": datetime.now().isoformat(),
+                "total_analyzed": len(crypto_symbols),
+                "opportunities_found": len(opportunities),
+                "errors_count": len(errors),
+                "cached": False,
+                "mode": "fast_preload",
+                "note": "Basic price data loaded. Full analysis will be cached for future requests."
+            }
+            
+            return create_api_response(data=fast_result)
+
+        print("🚀 Starting full crypto analysis with smart batching...")
+
+        # Use smart batching for concurrent processing
+        # No limit - use all cryptos from the database
+        limited_cryptos = crypto_symbols
+
+        # Create batch tasks (with shared crypto news for efficiency)
+        tasks = create_crypto_analysis_tasks(
+            limited_cryptos, Config.BULK_ANALYSIS_NEWS_DAYS
+        )
 
         # Use smart batching for concurrent processing
         # No limit - use all cryptos from the database

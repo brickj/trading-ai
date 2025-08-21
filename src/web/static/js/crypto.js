@@ -7,8 +7,8 @@ let signalChart = null;
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Auto-load data after a short delay
-    setTimeout(loadCryptoData, 1000);
+    // Load data immediately for best user experience
+    loadCryptoData();
 });
 
 // Load crypto analysis data
@@ -17,23 +17,39 @@ async function loadCryptoData() {
     document.getElementById('refreshBtn').disabled = true;
     
     try {
-        const response = await fetch('/api/crypto_analysis');
-        const data = await response.json();
+        // First, try fast mode for instant preload
+        console.log('Loading crypto data in fast mode for preload...');
+        const fastResponse = await fetch('/api/crypto_analysis?fast=1');
+        const fastData = await fastResponse.json();
         
-        if (data.error) {
-            showAlert(data.error, 'danger');
-            return;
+        if (fastData.success && fastData.data.opportunities) {
+            console.log('Fast mode data loaded, displaying basic crypto cards...');
+            cryptoData = fastData.data.opportunities || [];
+            displayCryptoCards(cryptoData);
+            updateSummaryStats(cryptoData);
+            
+            document.getElementById('lastUpdated').textContent = 
+                `Last updated: ${new Date(fastData.data.timestamp || fastData.timestamp).toLocaleString()} (basic data)`;
         }
         
-        cryptoData = data.results;
-        displayCryptoTable(cryptoData);
-        updateCharts(cryptoData);
-        updateSummaryStats(cryptoData);
+        // Then try to get full analysis from cache or trigger background analysis
+        console.log('Attempting to load full analysis data...');
+        const fullResponse = await fetch('/api/crypto_analysis');
+        const fullData = await fullResponse.json();
         
-        document.getElementById('lastUpdated').textContent = 
-            `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+        if (fullData.success && fullData.data.opportunities) {
+            console.log('Full analysis data loaded, updating crypto cards...');
+            cryptoData = fullData.data.opportunities || [];
+            displayCryptoCards(cryptoData);
+            updateCharts(cryptoData);
+            updateSummaryStats(cryptoData);
+            
+            document.getElementById('lastUpdated').textContent = 
+                `Last updated: ${new Date(fullData.data.timestamp || fullData.timestamp).toLocaleString()}`;
+        }
         
     } catch (error) {
+        console.error('Error loading crypto data:', error);
         showAlert('Error loading crypto data: ' + error.message, 'danger');
     } finally {
         hideLoading('loadingSpinner');
@@ -41,9 +57,81 @@ async function loadCryptoData() {
     }
 }
 
-// Display crypto data in table
+// Display crypto data in cards
+function displayCryptoCards(cryptos) {
+    const cardsContainer = document.getElementById('cryptoCardsRow');
+    if (!cardsContainer) return;
+    
+    cardsContainer.innerHTML = '';
+    
+    if (cryptos.length === 0) {
+        cardsContainer.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    <i class="fas fa-info-circle"></i>
+                    No cryptocurrency opportunities with strong signals found at this time.
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    const row = document.createElement('div');
+    row.className = 'row';
+    
+    cryptos.forEach(crypto => {
+        const sentimentClass = getSentimentClass(crypto.sentiment_score);
+        const sentimentStrength = getSentimentStrength(crypto.sentiment_score);
+        
+        // Determine crypto icon
+        let icon = 'fas fa-coins';
+        if (crypto.symbol === 'BTC') icon = 'fab fa-bitcoin';
+        else if (crypto.symbol === 'ETH') icon = 'fab fa-ethereum';
+        
+        // Determine sentiment bar color and width
+        const sentimentScore = crypto.sentiment_score || 0;
+        const sentimentWidth = Math.abs(sentimentScore * 100);
+        const sentimentColor = sentimentScore > 0 ? 'bg-success' : 'bg-danger';
+        
+        const cardHtml = `
+            <div class="col-md-4 mb-3">
+                <div class="card crypto-card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="${icon}"></i> ${crypto.symbol}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Price</small>
+                                <h6 class="mb-0">${formatCurrency(crypto.current_price || 0)}</h6>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Action</small>
+                                <h6 class="mb-0 ${crypto.action === 'BUY' ? 'text-success' : crypto.action === 'SELL' ? 'text-danger' : 'text-secondary'}">${crypto.action || 'HOLD'}</h6>
+                            </div>
+                        </div>
+                        <hr>
+                        <small class="text-muted">Sentiment</small>
+                        <div class="progress mb-2" style="height: 8px;">
+                            <div class="progress-bar ${sentimentColor}" style="width: ${sentimentWidth}%"></div>
+                        </div>
+                        <small class="text-muted">Confidence: ${((crypto.confidence || 0) * 100).toFixed(0)}%</small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        row.innerHTML += cardHtml;
+    });
+    
+    cardsContainer.appendChild(row);
+}
+
+// Display crypto data in table (keeping for compatibility)
 function displayCryptoTable(cryptos) {
     const tbody = document.getElementById('cryptoTableBody');
+    if (!tbody) return;
+    
     tbody.innerHTML = '';
     
     cryptos.forEach(crypto => {

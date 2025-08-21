@@ -381,9 +381,16 @@ class DataFetcher:
         """Fallback method using Alpha Vantage for crypto prices"""
         # Use Alpha Vantage for crypto prices
         url = "https://www.alphavantage.co/query"
+        
+        # Handle symbols with or without USD suffix
+        if symbol.endswith("USD"):
+            from_currency = symbol.replace("USD", "")
+        else:
+            from_currency = symbol
+            
         params = {
             "function": "CURRENCY_EXCHANGE_RATE",
-            "from_currency": symbol.replace("USD", ""),
+            "from_currency": from_currency,
             "to_currency": "USD",
             "apikey": Config.ALPHA_VANTAGE_API_KEY,
         }
@@ -626,6 +633,21 @@ class DataFetcher:
         Returns:
             Market data including price, volume, etc.
         """
+        # Check if this is a crypto symbol by looking it up in the database
+        try:
+            from src.core.database import execute_query
+            crypto_check = execute_query(
+                "SELECT symbol FROM watchlists WHERE type = 'crypto' AND symbol = %s",
+                (symbol,),
+                fetch_all=False
+            )
+            if crypto_check:
+                return self.get_crypto_price(symbol)
+        except:
+            # Fallback to old logic if database check fails
+            pass
+        
+        # Fallback: if symbol ends with USD, treat as crypto, otherwise as stock
         if symbol.endswith("USD"):
             return self.get_crypto_price(symbol)
         else:
