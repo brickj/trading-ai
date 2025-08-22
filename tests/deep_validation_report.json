@@ -1,0 +1,56 @@
+{
+  "run": {
+    "timestamp": "2025-08-21T17:31:27.905684"
+  },
+  "endpoints": {
+    "crypto_fast": {
+      "status": 200,
+      "time": 0.005688667297363281,
+      "count": 1
+    },
+    "crypto_full": {
+      "status": 200,
+      "time": 0.0067479610443115234,
+      "count": 1
+    },
+    "dashboard": {
+      "status": 200,
+      "time": 1.0471453666687012,
+      "market_overview": {
+        "active_analyses": 104,
+        "last_updated": "2025-08-21T17:31:30.003740",
+        "success_rate": "0.0%",
+        "total_stocks": 106
+      }
+    },
+    "opportunities": {
+      "status_news": 200,
+      "status_watchlist": 200,
+      "time_news": 0.03817892074584961,
+      "time_watchlist": 0.02528214454650879,
+      "news_count": 1,
+      "watchlist_count": 22
+    },
+    "portfolio": {
+      "status": 200,
+      "time": 0.002618074417114258
+    },
+    "sp500_analysis": {
+      "status": 200,
+      "time": 0.019892215728759766,
+      "count": 3
+    },
+    "system_status": {
+      "status": 200,
+      "time": 1.0430619716644287
+    },
+    "foreign_markets_overview": {
+      "status": 200,
+      "time": 0.10869598388671875,
+      "markets": 28
+    }
+  },
+  "pages": {},
+  "warnings": [],
+  "failures": []
+}

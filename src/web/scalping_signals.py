@@ -2,11 +2,29 @@ from flask import Blueprint, render_template, jsonify, request
 from src.core.database import get_db_connection, execute_query
 from src.core.scalping_analyzer import scalping_analyzer
 from src.core.logger import log_info, log_error
-from datetime import datetime, date
+from datetime import datetime, date, time
 import json
 import psycopg2.extras
 
 scalping_signals_bp = Blueprint("scalping_signals", __name__)
+
+
+def _convert_datetime_objects(obj):
+    """Convert datetime, date, and time objects to JSON-serializable strings"""
+    if isinstance(obj, dict):
+        return {k: _convert_datetime_objects(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_convert_datetime_objects(item) for item in obj]
+    elif hasattr(obj, "isoformat"):  # datetime objects
+        return obj.isoformat()
+    elif hasattr(obj, "strftime"):  # date objects
+        return obj.isoformat()
+    elif isinstance(obj, time):  # time objects (PostgreSQL time)
+        return obj.isoformat()
+    elif hasattr(obj, "quantize"):  # Decimal objects
+        return float(obj)
+    else:
+        return obj
 
 
 @scalping_signals_bp.route("/scalping_signals")
@@ -161,6 +179,10 @@ def get_scalping_history():
                         except:
                             signal["headlines"] = []
                     signals.append(signal)
+        
+        # Convert all datetime and time objects to JSON-serializable strings
+        signals = _convert_datetime_objects(signals)
+        
         log_info(
             f"[SCALPING] Returning {len(signals)} historical signals for days={days}"
         )
@@ -217,6 +239,10 @@ def get_opportunities_by_type():
                         except:
                             signal["headlines"] = []
                     signals.append(signal)
+        
+        # Convert all datetime and time objects to JSON-serializable strings
+        signals = _convert_datetime_objects(signals)
+        
         log_info(
             f"[SCALPING] Returning {len(signals)} filtered opportunities for type={asset_type}, recommendation={recommendation}"
         )
