@@ -41,7 +41,13 @@ class TradingStrategy:
         """
         Generate specific day trading and scalping recommendations based on sentiment
         """
-        action = signal_data["action"]
+        # Handle both old and new signal data structures
+        if "action" in signal_data:
+            action = signal_data["action"]
+        elif "stock_recommendation" in signal_data and "action" in signal_data["stock_recommendation"]:
+            action = signal_data["stock_recommendation"]["action"]
+        else:
+            action = "HOLD"  # Default fallback
         # signal_strength = signal_data['signal_strength']  # Currently unused
         confidence = sentiment_data["confidence"]
         sentiment_score = sentiment_data["sentiment_score"]

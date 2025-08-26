@@ -1,0 +1,11 @@
+look at the foriegn markets page, 
+read the code
+check the logs
+check the data source and confirm that it has the data
+check the request and response to the page, confirm that data is being returned to the page
+check the data on the page and confirm that the page is being populated
+continue the steps above until you can confirm with over 90% accuracy that the page is working
+DO NOT tell me the page is working until it is
+DO NOT guess, READ THE CODE
+I repeat DO NOT guess, READ THE CODE
+when you can confirm that the page works, let me know

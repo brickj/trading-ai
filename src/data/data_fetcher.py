@@ -221,8 +221,8 @@ class DataFetcher:
             def is_stock_specific(article, symbol):
                 if not isinstance(article, dict):
                     return False
-                headline = article.get("headline", article.get("title", "")).lower()
-                summary = article.get("summary", article.get("description", "")).lower()
+                headline = (article.get("headline") or article.get("title") or "").lower()
+                summary = (article.get("summary") or article.get("description") or "").lower()
                 symbol_lower = symbol.lower()
                 # Always include fallback news
                 if article.get("source", "").lower() in [
@@ -1118,7 +1118,7 @@ class DataFetcher:
             # Handle rate limiting
             if response.status_code == 429:
                 # Set a 1-hour cooldown for this symbol
-                cache.set(cache_key, True, timeout=3600)
+                cache.set(cache_key, True, ttl=3600)
                 print(
                     f"[WARNING][YahooFinance] Rate limited for {symbol}, cooling down for 1 hour"
                 )
@@ -1185,7 +1185,7 @@ class DataFetcher:
         except requests.exceptions.RequestException as e:
             log_error(f"Yahoo Finance API request failed for {symbol}: {e}")
             # Set a shorter cooldown for network errors
-            cache.set(cache_key, True, timeout=300)  # 5 minutes
+            cache.set(cache_key, True, ttl=300)  # 5 minutes
             return []
 
         except Exception as e:
@@ -1449,6 +1449,9 @@ class DataFetcher:
 
             def is_faq_post(title, text):
                 """Check if a post is an FAQ or non-news post"""
+                # Handle None values safely
+                title = title or ""
+                text = text or ""
                 combined_text = (title + " " + text).lower()
                 return any(keyword in combined_text for keyword in faq_keywords)
 

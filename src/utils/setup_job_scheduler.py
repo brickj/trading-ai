@@ -58,6 +58,12 @@ def setup_default_jobs():
             "enabled": True,
             "description": "Populate weekly market calendar data (earnings, economic events, Fed meetings)",
         },
+        {
+            "job_name": "update_historical_data",
+            "run_time": time(10, 0),  # 10:00 AM ET (trading day)
+            "enabled": True,
+            "description": "Update 2-year historical data for enhanced analysis backtesting (trading days only)",
+        },
     ]
 
     try:
@@ -89,8 +95,10 @@ def setup_default_jobs():
         print("  9:40 AM - News-Driven Opportunities")
         print("  9:45 AM - Watchlist Opportunities")
         print("  9:55 AM - Scalping Analysis")
+        print("  10:00 AM - Historical Data Update (2-year backtesting data)")
         print("\n💡 Daily jobs run Monday-Friday on trading days.")
         print("   Weekly jobs run Monday mornings to refresh market calendar.")
+        print("   Historical data updates run at 10 AM on trading days for fresh backtesting data.")
         print("   You can modify schedules via the System Status page.")
 
     except Exception as e:

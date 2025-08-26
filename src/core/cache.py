@@ -46,6 +46,21 @@ class Cache:
 
         key_data = json.dumps((args, sorted(kwargs.items())), sort_keys=True)
         return hashlib.sha256(key_data.encode()).hexdigest()
+    
+    def _serialize_datetime(self, obj):
+        """Serialize datetime objects for JSON"""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif hasattr(obj, '__dict__'):
+            # Handle objects with datetime attributes
+            result = {}
+            for key, value in obj.__dict__.items():
+                if isinstance(value, datetime):
+                    result[key] = value.isoformat()
+                else:
+                    result[key] = value
+            return result
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -139,24 +154,24 @@ class Cache:
         """
         try:
             expires_at = datetime.now() + timedelta(seconds=ttl)
-            serialized_data = json.dumps(value)
+            # Use custom serialization to handle datetime objects
+            serialized_data = json.dumps(value, default=self._serialize_datetime)
 
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
                     # Insert or update the cache entry
                     cursor.execute(
                         """
-                        INSERT INTO api_cache (cache_key, key_hash, data, expires_at)
-                        VALUES (%s, %s, %s, %s)
+                        INSERT INTO api_cache (key_hash, data, expires_at)
+                        VALUES (%s, %s, %s)
                         ON CONFLICT (key_hash)
                         DO UPDATE SET
-                            cache_key = EXCLUDED.cache_key,
                             data = EXCLUDED.data,
                             expires_at = EXCLUDED.expires_at,
                             access_count = 0,
                             last_accessed = CURRENT_TIMESTAMP
                         """,
-                        (key, key, serialized_data, expires_at),
+                        (key, serialized_data, expires_at),
                     )
                     conn.commit()
                     return True

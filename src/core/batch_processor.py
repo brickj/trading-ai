@@ -83,8 +83,8 @@ class BatchProcessor:
                 news
                 for news in shared_news
                 if any(
-                    name.lower() in news.get("headline", "").lower()
-                    or name.lower() in news.get("summary", "").lower()
+                    name.lower() in (news.get("headline") or "").lower()
+                    or name.lower() in (news.get("summary") or "").lower()
                     for name in names
                 )
             ]
@@ -96,7 +96,7 @@ class BatchProcessor:
             try:
                 if crypto_news and len(crypto_news) > 0:
                     sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
-                        crypto_news
+                        crypto_news, symbol=symbol
                     )
                 else:
                     sentiment_data = (

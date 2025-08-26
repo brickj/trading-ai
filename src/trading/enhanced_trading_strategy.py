@@ -40,9 +40,14 @@ class EnhancedTradingStrategy(TradingStrategy):
         recommendations = []
 
         # Base parameters
+        print(f"🔍 Debug: Generating recommendations for {symbol}")
+        print(f"🔍 Debug: sentiment_data keys: {list(sentiment_data.keys()) if isinstance(sentiment_data, dict) else 'Not a dict'}")
+        print(f"🔍 Debug: signal_data keys: {list(signal_data.keys()) if isinstance(signal_data, dict) else 'Not a dict'}")
+        
         sentiment_score = sentiment_data["sentiment_score"]
         base_confidence = sentiment_data["confidence"]
-        action = signal_data["action"]
+        action = signal_data.get("stock_recommendation", {}).get("action", "HOLD")
+        print(f"🔍 Debug: Action extracted: {action}")
 
         # Even for HOLD, generate recommendations with neutral bias
         if action == "HOLD":
@@ -380,7 +385,7 @@ class EnhancedTradingStrategy(TradingStrategy):
         }
 
     def test_recommendations_against_historical_data(
-        self, recommendations: List[Dict], lookback_days: int = 90
+        self, recommendations: List[Dict], lookback_days: int = 730
     ) -> List[Dict]:
         """
         Test each recommendation against historical data using Alpha Vantage
@@ -435,22 +440,22 @@ class EnhancedTradingStrategy(TradingStrategy):
                 }
 
             # Apply database performance adjustment if available
-            if db_performance and db_performance.get("total_with_outcomes", 0) > 0:
+            if db_performance and db_performance.get("total_recommendations", 0) > 0:
                 # Find matching recommendation type in DB history
                 matching_types = [
                     r
-                    for r in db_performance.get("recommendation_performance", [])
+                    for r in db_performance.get("breakdown_by_action", [])
                     if r.get("recommendation_type") == rec.get("recommendation_type")
                     and r.get("action") == rec.get("action")
                 ]
 
                 if (
-                    matching_types and matching_types[0].get("count", 0) >= 5
+                    matching_types and matching_types[0].get("total_recommendations", 0) >= 5
                 ):  # Need at least 5 samples
-                    db_win_rate = matching_types[0].get("win_rate", 0)
+                    db_win_rate = float(matching_types[0].get("win_rate", 0) or 0)
                     # Adjust confidence based on past performance (weight increases with more data)
                     count = min(
-                        matching_types[0].get("count", 0), 100
+                        int(matching_types[0].get("total_recommendations", 0) or 0), 100
                     )  # Cap at 100 for weighting
                     weight_factor = min(
                         0.5, count / 200
@@ -463,7 +468,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                     )
 
                     rec["db_confidence_factor"] = db_win_rate
-                    rec["db_samples"] = matching_types[0].get("count", 0)
+                    rec["db_samples"] = int(matching_types[0].get("total_recommendations", 0) or 0)
                     rec["confidence"] = round(final_confidence, 3)
 
                     print(
@@ -1071,12 +1076,12 @@ class EnhancedTradingStrategy(TradingStrategy):
 
         symbol = recommendations[0]["symbol"]
 
-        # Get historical data (90 days)
-        historical_data = self._get_alpha_vantage_historical_data(symbol, 90)
+        # Get historical data (730 days = 2 years for enhanced analysis)
+        historical_data = self._get_alpha_vantage_historical_data(symbol, 730)
         if historical_data is None or (
             isinstance(historical_data, pd.DataFrame) and historical_data.empty
         ):
-            historical_data = self._get_yahoo_historical_data(symbol, 90)
+            historical_data = self._get_yahoo_historical_data(symbol, 730)
 
         if historical_data is None or (
             isinstance(historical_data, pd.DataFrame) and historical_data.empty

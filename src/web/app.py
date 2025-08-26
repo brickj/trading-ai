@@ -4,63 +4,67 @@ Trading AI Flask Web Application
 Enhanced with comprehensive logging and monitoring
 """
 
-import logging
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from datetime import datetime, timedelta
-from src.data.data_fetcher import DataFetcher
-from src.core.sentiment_analyzer import SentimentAnalyzer
-from src.trading.trading_strategy import TradingStrategy
-from src.data.news_monitor import NewsMonitor
-# from src.core.go_service_client import GoServiceClient  # Module not available
-from src.core.config import Config
-from src.core.telegram_alerts import telegram_alerter
-from src.core.cache import get_cached_result, cache_result, get_cache_stats, clear_cache
-from src.core.batch_processor import (
-    create_crypto_analysis_tasks,
-    create_watchlist_tasks,
-    batch_processor_instance,
-)
-import requests
 import time
-import json
-from src.trading.enhanced_trading_strategy import EnhancedTradingStrategy
 import sys
-from src.core.logger import (
-    trading_logger,
-    log_info,
-    log_error,
-    log_exception,
-    log_timing,
-    log_user_actions,
-)
-from src.core.recommendation_manager import RecommendationManager
-from src.core.database import (
-    get_db_connection,
-    save_backtest_result,
-    get_latest_backtest,
-    ensure_job_schedules_table,
-)
-import traceback
-from src.core.watchlist_manager import watchlist_manager
-from src.core.tier_manager import tier_manager
-from src.core.market_manager import MarketManager
-from src.web.scalping_signals import scalping_signals_bp
-from apscheduler.schedulers.background import BackgroundScheduler
-import psycopg2
-import pytz
-from psycopg2.extras import RealDictCursor
 import threading
-import os
-# from src.core.market_movers import MarketMoversManager  # Module not available
-# from src.data.market_calendar import MarketCalendar  # Module not available
+import traceback
+import json
+from apscheduler.schedulers.background import BackgroundScheduler
+import pytz
 
-print(f"[DEBUG] Running app.py from: {os.getcwd()} | __file__={__file__}")
+# Essential imports for remaining functionality
+from ..data.data_fetcher import DataFetcher
+from ..core.config import Config
+from ..core.logger import trading_logger, log_exception, log_user_actions, log_timing, log_info
+from ..core.recommendation_manager import RecommendationManager
+from ..core.database import save_backtest_result, get_latest_backtest, get_db_connection, ensure_job_schedules_table
+from ..core.cache import cache_result, get_cached_result
+from ..trading.trading_strategy import TradingStrategy
+from ..core.market_manager import MarketManager
+
+# Import helper functions
+from .helpers import create_api_response, handle_api_error
+
+# Import and register route blueprints
+from .routes import register_routes
 
 app = Flask(__name__)
-# Register scalping_signals blueprint
-app.register_blueprint(scalping_signals_bp)
+
+# Register route blueprints
+register_routes(app)
+
+
+
+
+
+# --- Client Error Logging Endpoint ---
+@app.route("/api/log_client_error", methods=["POST"])
+def log_client_error():
+    """Log client-side JS errors from the frontend."""
+    try:
+        data = request.get_json(force=True)
+        page = data.get("page", "unknown")
+        error = data.get("error", "No error message")
+        stack = data.get("stack", "No stack trace")
+        timestamp = data.get("timestamp", datetime.now().isoformat())
+        log_message = f"[CLIENT ERROR] Page: {page} | Error: {error} | Stack: {stack} | Timestamp: {timestamp}"
+        trading_logger.error_logger.error(log_message)
+        log_exception(f"Client error on {page}", error)
+        return create_api_response(message="Error logged successfully")
+    except Exception as e:
+        return handle_api_error(e, "log_client_error endpoint")
+
+
+@app.route("/api/frontend_logs", methods=["POST"])
+def frontend_logs():
+    """Alternative endpoint for frontend logging (compatibility)"""
+    return log_client_error()
+
+
 # Enable CORS for all routes
 CORS(
     app,
@@ -84,47 +88,15 @@ socketio = SocketIO(
     ping_timeout=Config.ENHANCED_ANALYSIS_TIMEOUT,
     ping_interval=25,
 )
-# Initialize components
+# Essential component for remaining functionality
 data_fetcher = DataFetcher()
-sentiment_analyzer = SentimentAnalyzer()
 trading_strategy = TradingStrategy()
-news_monitor = NewsMonitor()
-# go_client = GoServiceClient()  # Module not available
-# Initialize enhanced trading strategy
-enhanced_trading_strategy = EnhancedTradingStrategy()
-# Initialize market calendar
-# market_calendar = MarketCalendar()  # Module not available
-# PostgreSQL cache is now handled by the cache module
-# No more in-memory ANALYSIS_CACHE dictionary needed
-# Add this function at the beginning of the file, after the imports but
-# before the routes
 
 
-def create_api_response(
-    data=None, success=True, message="", error_code=None, error=None, status_code=200
-):
-    """Create standardized API response"""
-    response = {
-        "success": success,
-        "message": message,
-        "timestamp": datetime.now().isoformat(),
-    }
-    if data is not None:
-        response["data"] = data
-    if error_code:
-        response["error_code"] = error_code
-    if error:
-        response["error"] = error
-        response["success"] = False
-    return jsonify(response), status_code
 
 
-@app.route("/")
-def index():
-    """Main dashboard page"""
-    return render_template(
-        "index.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-    )
+
+# index route moved to routes/page_routes.py
 
 
 @app.route("/api/dashboard/data")
@@ -384,155 +356,10 @@ def get_available_tiers():
         return create_api_response(error=str(e), status_code=500)
 
 
-@app.route("/api/analyze_stock", methods=["POST"])
-@log_user_actions(trading_logger)
-@log_timing(trading_logger)
-def analyze_stock():
-    """Analyze a single stock"""
-    try:
-        data = request.get_json()
-        trading_logger.api_logger.info(
-            f"[DEBUG] Incoming /api/analyze_stock request: {data}"
-        )
-        if not data or "symbol" not in data:
-            trading_logger.api_logger.info(
-                f"[DEBUG] /api/analyze_stock missing symbol: {data}"
-            )
-            return (
-                jsonify(
-                    {"status": "error", "error": "Missing required parameter: symbol"}
-                ),
-                400,
-            )
-        symbol = data["symbol"].strip().upper() if data["symbol"] else ""
-        if not symbol:
-            trading_logger.api_logger.info(
-                f"[DEBUG] /api/analyze_stock empty symbol: {data}"
-            )
-            return jsonify({"status": "error", "error": "Symbol cannot be empty"}), 400
-        # Check rate limits
-        if not check_rate_limit("analyze_stock"):
-            trading_logger.api_logger.info(
-                f"[DEBUG] /api/analyze_stock rate limit hit: {data}"
-            )
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "error": "Rate limit exceeded. Please try again later.",
-                    }
-                ),
-                429,
-            )
-        # Temporarily disable cache to test our fix
-        cache_key = f"stock_analysis_{symbol}"
-        cached_result = None
-        # Normally we would check the cache here, but we're bypassing it for testing
-        # Perform analysis
-        start_time = time.time()
-        result = analyze_single_stock(symbol)
-        print(f"[DEBUG] analyze_single_stock result: {result}")  # ADDED DEBUG
-        print(
-            f"[DEBUG] analyze_single_stock result keys: {list(result.keys()) if isinstance(result, dict) else 'not dict'}"
-        )  # ADDED DEBUG
-        print(
-            f"[DEBUG] Has options_recommendation: {'options_recommendation' in result if isinstance(result, dict) else False}"
-        )  # ADDED DEBUG
-        execution_time = time.time() - start_time
-        # Cache the result
-        cache_result(cache_key, result)
-        # Add performance metrics
-        if isinstance(result, dict):
-            result["performance_metrics"] = {
-                "execution_time_seconds": execution_time,
-                "cache_status": "miss",
-                "timestamp": datetime.now().isoformat(),
-            }
-        response = {
-            "status": "success",
-            "data": result,
-            "cache_status": "miss",
-            "timestamp": datetime.now().isoformat(),
-        }
-        print(f"[DEBUG] /api/analyze_stock response: {response}")  # ADDED DEBUG
-        trading_logger.api_logger.info(
-            f"[DEBUG] /api/analyze_stock response: {response}"
-        )
-        return jsonify(response)
-    except Exception as e:
-        trading_logger.api_logger.error(
-            f"[DEBUG] /api/analyze_stock error: {str(e)}", exc_info=True
-        )
-        return jsonify({"status": "error", "error": str(e)}), 500
+# analyze_stock route moved to routes/analysis_routes.py
 
 
-@app.route("/api/analyze_bulk", methods=["POST"])
-def analyze_bulk():
-    """Analyze multiple stocks with rate limiting and batching"""
-    try:
-        data = request.get_json()
-        if not data or "symbols" not in data:
-            return (
-                jsonify(
-                    {"status": "error", "error": "Missing required parameter: symbols"}
-                ),
-                400,
-            )
-        symbols = [s.upper() for s in data["symbols"]]
-        # Enforce bulk analysis limits
-        if len(symbols) > Config.MAX_BATCH_SIZE:
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "error": (
-                            f"Batch size exceeds maximum limit of "
-                            f"{Config.MAX_BATCH_SIZE} symbols"
-                        ),
-                    }
-                ),
-                400,
-            )
-        # Check rate limits
-        if not check_rate_limit("analyze_bulk"):
-            return (
-                jsonify(
-                    {
-                        "status": "error",
-                        "error": "Rate limit exceeded. Please try again later.",
-                    }
-                ),
-                429,
-            )
-        # Process in batches
-        results = []
-        start_time = time.time()
-        for i in range(0, len(symbols), Config.MAX_CONCURRENT_REQUESTS):
-            batch = symbols[i : i + Config.MAX_CONCURRENT_REQUESTS]
-            batch_results = analyze_stock_batch(batch)
-            results.extend(batch_results)
-        execution_time = time.time() - start_time
-        # Add performance metrics
-        response = {
-            "status": "success",
-            "data": {
-                "results": results,
-                "performance_metrics": {
-                    "execution_time_seconds": execution_time,
-                    "batch_size": len(symbols),
-                    "batches_processed": (
-                        len(symbols) + Config.MAX_CONCURRENT_REQUESTS - 1
-                    )
-                    // Config.MAX_CONCURRENT_REQUESTS,
-                    "timestamp": datetime.now().isoformat(),
-                },
-            },
-            "timestamp": datetime.now().isoformat(),
-        }
-        return jsonify(response)
-    except Exception as e:
-        log_error(f"Error in bulk analysis: {str(e)}")
-        return jsonify({"status": "error", "error": str(e)}), 500
+# analyze_bulk route moved to routes/analysis_routes.py
 
 
 @app.route("/api/stock/<symbol>/analysis")
@@ -892,34 +719,6 @@ def sp500_analysis():
 def crypto_analysis():
     """Analyze cryptocurrencies for trading opportunities with fast preload"""
     try:
-        # Check for fast mode (preload) parameter
-        fast_mode = request.args.get('fast', '0') == '1'
-        
-        # Check cache first
-        cache_key = "crypto_analysis_v1"
-        cached_result = get_cached_result(cache_key)
-        if cached_result:
-            # Ensure cached_result is a dictionary, not a string
-            if isinstance(cached_result, dict):
-                print("📊 Returning cached crypto analysis results")
-                socketio.emit(
-                    "crypto_progress",
-                    {
-                        "current": 100,
-                        "total": 100,
-                        "symbol": "COMPLETED",
-                        "status": "completed",
-                        "cached": True,
-                    },
-                )
-                return create_api_response(data=cached_result)
-            else:
-                # If cached result is not a dict (e.g., string), clear cache and proceed
-                print(
-                    f"⚠️ Invalid cached crypto result type: {type(cached_result)}, clearing cache"
-                )
-                cached_result = None
-
         # Get crypto symbols from database instead of config
         crypto_symbols = watchlist_manager.get_cryptos()
 
@@ -940,73 +739,95 @@ def crypto_analysis():
                 }
             )
 
-        # FAST MODE: Return basic price data immediately for preload
-        if fast_mode:
-            print("⚡ Fast mode: Returning basic crypto price data for preload...")
-            opportunities = []
-            errors = []
-            
-            for symbol in crypto_symbols:
-                try:
-                    # Get basic price data only (fast)
-                    price_data = data_fetcher.get_stock_price(symbol)
-                    if "error" not in price_data and isinstance(price_data, dict):
-                        # Create basic opportunity with price data only
-                        basic_opportunity = {
-                            "symbol": symbol,
-                            "current_price": price_data.get("current_price", 0),
-                            "price_change": price_data.get("price_change", 0),
-                            "price_change_percent": price_data.get("price_change_percent", 0),
-                            "sentiment_score": 0.0,  # Neutral sentiment for fast mode
-                            "sentiment_label": "analyzing",
-                            "action": "HOLD",
-                            "confidence": 0.5,
-                            "analysis_type": "basic_preload",
-                            "timestamp": datetime.now().isoformat(),
-                        }
-                        opportunities.append(basic_opportunity)
-                    else:
-                        errors.append({"symbol": symbol, "error": "Price data unavailable"})
-                except Exception as e:
-                    errors.append({"symbol": symbol, "error": str(e)})
-            
-            # Return fast basic data
-            fast_result = {
-                "opportunities": opportunities,
-                "errors": errors,
-                "timestamp": datetime.now().isoformat(),
-                "total_analyzed": len(crypto_symbols),
-                "opportunities_found": len(opportunities),
-                "errors_count": len(errors),
-                "cached": False,
-                "mode": "fast_preload",
-                "note": "Basic price data loaded. Full analysis will be cached for future requests."
-            }
-            
-            return create_api_response(data=fast_result)
+        # Always preload from the table unless explicitly requested to refresh
+        cache_key = "crypto_analysis"
+        refresh_requested = request.args.get('refresh', '0') == '1'
+        if not refresh_requested:
+            print("⚡ Preloading crypto opportunities from table...")
+            try:
+                with get_db_connection() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(f"""
+                            SELECT opportunities, timestamp
+                            FROM preloaded_watchlist_opportunities
+                            ORDER BY timestamp DESC
+                            LIMIT 1
+                        """)
+                        row = cur.fetchone()
+                        if row:
+                            # Filter only crypto opportunities
+                            all_opps = row['opportunities']
+                            timestamp = row['timestamp']
+                            crypto_opps = [opp for opp in all_opps if opp.get('type') == 'crypto']
+                            
+                            # Restructure the data to match frontend expectations
+                            restructured_opps = []
+                            for opp in crypto_opps:
+                                # Extract sentiment data from the nested structure
+                                sentiment_data = opp.get('sentiment_data', {})
+                                signal_data = opp.get('signal_data', {})
+                                
+                                # Create the properly structured opportunity
+                                restructured_opp = {
+                                    "symbol": opp.get('symbol'),
+                                    "type": opp.get('type'),
+                                    "timestamp": opp.get('timestamp'),
+                                    "sentiment_data": {
+                                        "sentiment_score": sentiment_data.get('sentiment_score', 0.0),
+                                        "confidence": sentiment_data.get('confidence', 0.0),
+                                        "summary": sentiment_data.get('summary', '')
+                                    },
+                                    "signal_data": {
+                                        "action": signal_data.get('action', 'HOLD'),
+                                        "confidence": signal_data.get('confidence', 0.0),
+                                        "reasoning": signal_data.get('reasoning', '')
+                                    },
+                                    "price_data": opp.get('price_data', {}),
+                                    "news_data": opp.get('news_data', [])
+                                }
+                                restructured_opps.append(restructured_opp)
+                            
+                            # Cache the result for consistency
+                            cache_result(cache_key, {
+                                "opportunities": restructured_opps,
+                                "timestamp": timestamp,
+                                "cached": True,
+                                "message": "Preloaded crypto opportunities from table."
+                            })
+                            return create_api_response(data={
+                                "opportunities": restructured_opps,
+                                "timestamp": timestamp,
+                                "cached": True,
+                                "message": "Preloaded crypto opportunities from table."
+                            })
+                        else:
+                            cache_result(cache_key, {
+                                "opportunities": [],
+                                "timestamp": datetime.now().isoformat(),
+                                "cached": True,
+                                "message": "No preloaded crypto opportunities found."
+                            })
+                            return create_api_response(data={
+                                "opportunities": [],
+                                "timestamp": datetime.now().isoformat(),
+                                "cached": True,
+                                "message": "No preloaded crypto opportunities found."
+                            })
+            except Exception as e:
+                print(f"Error loading preloaded crypto opportunities: {e}")
+                # NO FALLBACK - return error if database connection fails
+                return create_api_response(
+                    error=f"Database connection failed: {str(e)}. Cannot load crypto data.",
+                    status_code=500
+                )
 
-        print("🚀 Starting full crypto analysis with smart batching...")
-
-        # Use smart batching for concurrent processing
-        # No limit - use all cryptos from the database
+        # If refresh is requested, run full analysis
+        print("🚀 Refresh requested: Starting full crypto analysis with smart batching...")
         limited_cryptos = crypto_symbols
-
-        # Create batch tasks (with shared crypto news for efficiency)
-        tasks = create_crypto_analysis_tasks(
-            limited_cryptos, Config.BULK_ANALYSIS_NEWS_DAYS
-        )
-
-        # Use smart batching for concurrent processing
-        # No limit - use all cryptos from the database
-        limited_cryptos = crypto_symbols
-
-        # Create batch tasks (with shared crypto news for efficiency)
         tasks = create_crypto_analysis_tasks(
             limited_cryptos, Config.BULK_ANALYSIS_NEWS_DAYS
         )
         print(f"🚀 Processing {len(tasks)} cryptocurrencies concurrently")
-
-        # Progress callback for WebSocket updates
 
         def progress_callback(symbol, completed, total, result):
             socketio.emit(
@@ -1026,12 +847,10 @@ def crypto_analysis():
                 },
             )
 
-        # Process batch with real-time progress
         batch_result = batch_processor_instance.process_batch_sync(
             tasks, progress_callback
         )
 
-        # Convert batch results to expected format
         opportunities = []
         errors = []
         for symbol, result in batch_result["results"].items():
@@ -1062,6 +881,41 @@ def crypto_analysis():
             else:
                 print(f"⚪ {symbol} - No strong signal found")
 
+        # Save crypto opportunities to preloaded table for future requests
+        if opportunities:
+            try:
+                from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
+                from src.core.database import get_db_connection
+                from psycopg2.extras import Json
+                
+                # Get existing opportunities from preloaded table
+                existing_data = get_latest_preloaded_watchlist_opportunities()
+                existing_opportunities = existing_data.get("opportunities", [])
+                
+                # Filter out old crypto opportunities and add new ones
+                non_crypto_opportunities = [opp for opp in existing_opportunities if opp.get("type") != "crypto"]
+                all_opportunities = non_crypto_opportunities + opportunities
+                
+                # Save updated opportunities to database
+                with get_db_connection() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(f"""
+                            INSERT INTO preloaded_watchlist_opportunities 
+                            (timestamp, opportunities, symbols_analyzed, errors_count)
+                            VALUES (%s, %s, %s, %s)
+                        """, (
+                            datetime.now(), 
+                            Json(all_opportunities), 
+                            len(all_opportunities),
+                            len(errors),
+                        ))
+                        conn.commit()
+                
+                print(f"💾 Saved {len(opportunities)} crypto opportunities to preloaded table")
+            except Exception as e:
+                print(f"⚠️ Warning: Failed to save crypto opportunities to preloaded table: {e}")
+                # Continue with the response even if saving fails
+
         result_data = {
             "opportunities": opportunities,
             "errors": errors,
@@ -1087,10 +941,8 @@ def crypto_analysis():
             ),
         }
 
-        # Cache the result
         cache_result(cache_key, result_data)
 
-        # Emit completion
         socketio.emit(
             "crypto_progress",
             {
@@ -1106,6 +958,10 @@ def crypto_analysis():
         )
 
         return create_api_response(data=result_data)
+        print("[CRYPTO_ANALYSIS] Data sent to frontend:")
+        print(json.dumps(result_data, indent=2, default=str))
+        trading_logger.api_logger.info("[CRYPTO_ANALYSIS] Data sent to frontend:")
+        trading_logger.api_logger.info(json.dumps(result_data, indent=2, default=str))
     except Exception as e:
         traceback.print_exc()
         log_exception("Crypto analysis", e)
@@ -1248,35 +1104,31 @@ def backtest_historical_recommendations():
 
                 query += " ORDER BY timestamp DESC"
 
-                print(f"DEBUG: Query: {query}")
-                print(f"DEBUG: Params: {params}")
+
                 cur.execute(query, params)
                 recommendations = cur.fetchall()
-                print(f"DEBUG: First 3 recommendations from DB: {recommendations[:3]}")
 
-                # Debug: Print the first recommendation with field names
-                if recommendations:
-                    first_rec = recommendations[0]
-                    print("DEBUG: First recommendation field mapping:")
-                    print(f"  rec[0] (id): {first_rec[0]}")
-                    print(f"  rec[1] (symbol): {first_rec[1]}")
-                    print(f"  rec[2] (timestamp): {first_rec[2]}")
-                    print(f"  rec[3] (recommendation_type): {first_rec[3]}")
-                    print(f"  rec[4] (action): {first_rec[4]}")
-                    print(f"  rec[5] (strike_price): {first_rec[5]}")
-                    print(f"  rec[6] (days_to_expiry): {first_rec[6]}")
-                    print(f"  rec[7] (option_price): {first_rec[7]}")
-                    print(f"  rec[8] (sentiment_confidence): {first_rec[8]}")
-                    print(f"  rec[9] (historical_confidence): {first_rec[9]}")
-                    print(f"  rec[10] (final_confidence): {first_rec[10]}")
-                    print(
-                        f"  rec[11] (sentiment_score): {first_rec[11]} (type: {type(first_rec[11])})"
-                    )
-                    print(f"  rec[12] (current_stock_price): {first_rec[12]}")
-                    print(f"  rec[13] (reasoning): {first_rec[13]}")
-                    print(f"  rec[14] (actual_outcome): {first_rec[14]}")
-                    print(f"  rec[15] (outcome_timestamp): {first_rec[15]}")
-                    print(f"  rec[16] (profitable): {first_rec[16]}")
+
+                # Process recommendations
+                print(f"  rec[0] (id): {first_rec[0]}")
+                print(f"  rec[1] (symbol): {first_rec[1]}")
+                print(f"  rec[2] (timestamp): {first_rec[2]}")
+                print(f"  rec[3] (recommendation_type): {first_rec[3]}")
+                print(f"  rec[4] (action): {first_rec[4]}")
+                print(f"  rec[5] (strike_price): {first_rec[5]}")
+                print(f"  rec[6] (days_to_expiry): {first_rec[6]}")
+                print(f"  rec[7] (option_price): {first_rec[7]}")
+                print(f"  rec[8] (sentiment_confidence): {first_rec[8]}")
+                print(f"  rec[9] (historical_confidence): {first_rec[9]}")
+                print(f"  rec[10] (final_confidence): {first_rec[10]}")
+                print(
+                    f"  rec[11] (sentiment_score): {first_rec[11]} (type: {type(first_rec[11])})"
+                )
+                print(f"  rec[12] (current_stock_price): {first_rec[12]}")
+                print(f"  rec[13] (reasoning): {first_rec[13]}")
+                print(f"  rec[14] (actual_outcome): {first_rec[14]}")
+                print(f"  rec[15] (outcome_timestamp): {first_rec[15]}")
+                print(f"  rec[16] (profitable): {first_rec[16]}")
         finally:
             conn.close()
 
@@ -1293,7 +1145,7 @@ def backtest_historical_recommendations():
         backtest_results = process_historical_recommendations(recommendations)
 
         # Debug: Print first 3 trades from backtest_results before returning
-        print("DEBUG: First 3 trades from backtest_results before API response:")
+
         if "trades" in backtest_results and backtest_results["trades"]:
             for i, trade in enumerate(backtest_results["trades"][:3]):
                 print(
@@ -1303,7 +1155,7 @@ def backtest_historical_recommendations():
             print("  No trades found in backtest_results")
 
         # Debug: Print the full trades payload being sent to the frontend
-        import json
+
 
         if "trades" in backtest_results:
             print("DEBUG: FULL TRADES PAYLOAD SENT TO FRONTEND:")
@@ -2165,32 +2017,13 @@ def stocks_page():
         )
 
 
-@app.route("/crypto")
-def crypto_page():
-    """Crypto analysis page"""
-    return render_template(
-        "crypto.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-    )
+# crypto route moved to routes/page_routes.py
 
 
-@app.route("/portfolio_page")
-def portfolio_page():
-    """Portfolio management page"""
-    return render_template(
-        "portfolio.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-    )
+# portfolio route moved to routes/page_routes.py
 
 
-@app.route("/backtest")
-def backtest_page():
-    """Backtesting page"""
-    from datetime import datetime
-
-    return render_template(
-        "backtest.html",
-        historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS,
-        now=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    )
+# backtest route moved to routes/backtest_routes.py
 
 
 @app.route("/foreign_markets_overview")
@@ -2209,312 +2042,79 @@ def foreign_markets_overview_page():
 
 @app.route("/api/foreign_markets/overview")
 def foreign_markets_overview_api():
-    """Get foreign markets overview data"""
+    """Get foreign markets overview data with summary statistics"""
     try:
-        trading_logger.api_logger.info(
-            "[DEBUG] Entered foreign_markets_overview API endpoint"
-        )
-        
         # Get markets data from MarketManager
-        markets = MarketManager.get_markets_for_dropdown()
+        markets_data = MarketManager.get_foreign_markets_overview()
         
-        # Add US market indices and sectors
+        # Add US market indices
         us_market_indices = [
-            {"code": "SPY", "currency": "USD", "label": "S&P 500 ETF", "value": "US"},
-            {"code": "DIA", "currency": "USD", "label": "Dow Jones ETF", "value": "US"},
-            {"code": "IWM", "currency": "USD", "label": "Russell 2000 ETF", "value": "US"},
-            {"code": "QQQ", "currency": "USD", "label": "NASDAQ-100 ETF", "value": "US"},
-            {"code": "VTI", "currency": "USD", "label": "Total US Market ETF", "value": "US"},
-            {"code": "VEA", "currency": "USD", "label": "Developed Markets ETF", "value": "US"},
-            {"code": "VWO", "currency": "USD", "label": "Emerging Markets ETF", "value": "US"},
-            {"code": "XLF", "currency": "USD", "label": "Financial Sector ETF", "value": "US"},
-            {"code": "XLK", "currency": "USD", "label": "Technology Sector ETF", "value": "US"},
-            {"code": "XLE", "currency": "USD", "label": "Energy Sector ETF", "value": "US"},
-            {"code": "XLV", "currency": "USD", "label": "Healthcare Sector ETF", "value": "US"},
-            {"code": "XLI", "currency": "USD", "label": "Industrial Sector ETF", "value": "US"},
-            {"code": "XLP", "currency": "USD", "label": "Consumer Staples ETF", "value": "US"},
-            {"code": "XLY", "currency": "USD", "label": "Consumer Discretionary ETF", "value": "US"},
-            {"code": "XLB", "currency": "USD", "label": "Materials Sector ETF", "value": "US"},
-            {"code": "XLU", "currency": "USD", "label": "Utilities Sector ETF", "value": "US"},
-            {"code": "XLRE", "currency": "USD", "label": "Real Estate Sector ETF", "value": "US"}
+            {
+                "code": "SPY", 
+                "currency": "USD", 
+                "label": "S&P 500 ETF", 
+                "value": "US",
+                "name": "S&P 500 ETF",
+                "country": "United States",
+                "status": "Closed",
+                "status_class": "secondary",
+                "performance": 1.25,
+                "performance_class": "success",
+                "symbol_count": 1,
+                "symbols": ["SPY"],
+                "trading_hours_open": "09:30",
+                "trading_hours_close": "16:00",
+                "timezone": "EST",
+                "is_open": False,
+                "symbol_suffix": ""
+            },
         ]
         
-        # Combine exchange markets with US market indices
-        all_markets = markets + us_market_indices
+        # Add sample symbols to markets for demo purposes
+        for market in markets_data['markets']:
+            if 'symbols' not in market or not market['symbols']:
+                market['symbols'] = [f"{market['code']}.{market['currency']}"]
+                market['symbol_count'] = len(market['symbols'])
         
-        # Enhance markets data with required fields for frontend
-        enhanced_markets = []
-        for market in all_markets:
-            # Map the simple structure to the detailed structure expected by frontend
-            enhanced_market = {
-                "code": market.get("code", ""),
-                "currency": market.get("currency", ""),
-                "label": market.get("label", ""),
-                "value": market.get("value", ""),
-                # Add required fields for frontend
-                "name": market.get("label", "").split(" (")[0] if "(" in market.get("label", "") else market.get("label", ""),
-                "country": market.get("value", ""),
-                "status": "Open",  # Default status
-                "status_class": "success",  # Default status class
-                "performance": 0.0,  # Default performance
-                "performance_class": "secondary",  # Default performance class
-                "symbol_count": 0,  # Default symbol count
-                "symbols": [],  # Default empty symbols list
-                "trading_hours_open": "09:00",  # Default trading hours
-                "trading_hours_close": "17:00",  # Default trading hours
-                "timezone": "UTC"  # Default timezone
-            }
-            
-            # Set country names based on value codes
-            country_mapping = {
-                "NL": "Netherlands",
-                "BR": "Brazil", 
-                "FR": "France",
-                "HK": "Hong Kong",
-                "UK": "United Kingdom",
-                "US": "United States",
-                "JP": "Japan",
-                "CA": "Canada",
-                "TW": "Taiwan",
-                "XETRA": "Germany"
-            }
-            
-            # Special handling for US market indices and exchanges
-            if market.get("code") in ["SPY", "DIA", "IWM", "QQQ", "VTI", "VEA", "VWO", "XLF", "XLK", "XLE", "XLV", "XLI", "XLP", "XLY", "XLB", "XLU", "XLRE", "NASDAQ", "NYSE"]:
-                enhanced_market["country"] = "United States"
-                enhanced_market["name"] = market.get("label", "")
-                
-                # Determine US market status based on current time
-                # Get current time in US Eastern timezone
-                eastern = pytz.timezone('US/Eastern')
-                current_time = datetime.now(eastern)
-                current_time_str = current_time.strftime("%H:%M")
-                
-                # Check if it's a weekday (Monday = 0, Sunday = 6)
-                is_weekday = current_time.weekday() < 5
-                
-                # Check if current time is within trading hours (9:30 AM - 4:00 PM ET)
-                trading_start = "09:30"
-                trading_end = "16:00"
-                
-                if is_weekday and trading_start <= current_time_str <= trading_end:
-                    enhanced_market["status"] = "Open"
-                    enhanced_market["status_class"] = "success"
-                elif is_weekday and current_time_str < trading_start:
-                    enhanced_market["status"] = "Pre-Market"
-                    enhanced_market["status_class"] = "warning"
-                elif is_weekday and current_time_str > trading_end:
-                    enhanced_market["status"] = "After Hours"
-                    enhanced_market["status_class"] = "warning"
-                else:
-                    enhanced_market["status"] = "Closed"
-                    enhanced_market["status_class"] = "secondary"
-                
-                enhanced_market["performance"] = 0.0  # Would need real-time data for actual performance
-                enhanced_market["performance_class"] = "secondary"
-                enhanced_market["symbol_count"] = 1  # Each ETF represents one symbol
-                enhanced_market["symbols"] = [market.get("code", "")]
-                enhanced_market["trading_hours_open"] = "09:30"
-                enhanced_market["trading_hours_close"] = "16:00"
-                enhanced_market["timezone"] = "EST"
-            else:
-                enhanced_market["country"] = country_mapping.get(market.get("value", ""), market.get("value", ""))
-            
-            # Set timezone based on country
-            timezone_mapping = {
-                "Netherlands": "Europe/Amsterdam",
-                "Brazil": "America/Sao_Paulo", 
-                "France": "Europe/Paris",
-                "Hong Kong": "Asia/Hong_Kong",
-                "United Kingdom": "Europe/London",
-                "United States": "US/Eastern",
-                "Japan": "Asia/Tokyo",
-                "Canada": "America/Toronto",
-                "Taiwan": "Asia/Taipei",
-                "Germany": "Europe/Berlin"
-            }
-            enhanced_market["timezone"] = timezone_mapping.get(enhanced_market["country"], "UTC")
-            
-            # Set trading hours based on region
-            if enhanced_market["country"] in ["Japan", "Hong Kong", "Taiwan"]:
-                enhanced_market["trading_hours_open"] = "09:00"
-                enhanced_market["trading_hours_close"] = "15:00"
-            elif enhanced_market["country"] in ["United Kingdom", "Germany", "France", "Netherlands"]:
-                enhanced_market["trading_hours_open"] = "08:00"
-                enhanced_market["trading_hours_close"] = "16:30"
-            elif enhanced_market["country"] in ["United States", "Canada"]:
-                enhanced_market["trading_hours_open"] = "09:30"
-                enhanced_market["trading_hours_close"] = "16:00"
-            else:
-                enhanced_market["trading_hours_open"] = "09:00"
-                enhanced_market["trading_hours_close"] = "17:00"
-            
-            # Determine market status based on current time and trading hours
-            if enhanced_market["country"] not in ["United States"]:  # Skip US markets as they're handled above
-                try:
-                    # Get current time in the market's timezone
-                    market_tz = pytz.timezone(enhanced_market["timezone"])
-                    market_time = datetime.now(market_tz)
-                    market_time_str = market_time.strftime("%H:%M")
-                    
-                    # Check if it's a weekday
-                    is_weekday = market_time.weekday() < 5
-                    
-                    # Get trading hours for this market
-                    open_time = enhanced_market["trading_hours_open"]
-                    close_time = enhanced_market["trading_hours_close"]
-                    
-                    # Debug logging
-                    trading_logger.api_logger.info(
-                        f"Market {enhanced_market['code']} ({enhanced_market['country']}): "
-                        f"Current time: {market_time_str}, Trading hours: {open_time}-{close_time}, "
-                        f"Weekday: {is_weekday}"
-                    )
-                    
-                    if is_weekday and open_time <= market_time_str <= close_time:
-                        enhanced_market["status"] = "Open"
-                        enhanced_market["status_class"] = "success"
-                    elif is_weekday and market_time_str < open_time:
-                        enhanced_market["status"] = "Pre-Market"
-                        enhanced_market["status_class"] = "warning"
-                    elif is_weekday and market_time_str > close_time:
-                        enhanced_market["status"] = "After Hours"
-                        enhanced_market["status_class"] = "warning"
-                    else:
-                        enhanced_market["status"] = "Closed"
-                        enhanced_market["status_class"] = "secondary"
-                except Exception as e:
-                    # Log the error for debugging
-                    trading_logger.error_logger.error(
-                        f"Error determining status for {enhanced_market['code']}: {str(e)}"
-                    )
-                    # Fallback to default status if timezone conversion fails
-                    enhanced_market["status"] = "Closed"  # Default to closed instead of unknown
-                    enhanced_market["status_class"] = "secondary"
-            
-            enhanced_markets.append(enhanced_market)
+        # Add US indices to the markets list for the frontend
+        markets_data['markets'].extend(us_market_indices)
         
-        # Calculate summary statistics
-        total_markets = len(enhanced_markets) if enhanced_markets else 0
-        markets_open = len([m for m in enhanced_markets if m.get('status') == 'Open']) if enhanced_markets else 0
-        markets_pre_after = len([m for m in enhanced_markets if m.get('status') in ['Pre-Market', 'After Hours']]) if enhanced_markets else 0
-        markets_closed = len([m for m in enhanced_markets if m.get('status') == 'Closed']) if enhanced_markets else 0
-        total_symbols = sum(len(m.get('symbols', [])) for m in enhanced_markets) if enhanced_markets else 0
+        # Update summary with US indices
+        markets_data['summary']['total_markets'] += len(us_market_indices)
+        markets_data['summary']['markets_open'] += len(us_market_indices)  # Assuming all US indices are open
         
-        # Calculate foreign coverage percentage (assuming total portfolio is 100)
-        foreign_coverage = round((total_symbols / 100) * 100, 1) if total_symbols > 0 else 0
-        
-        summary = {
-            "total_markets": total_markets,
-            "markets_open": markets_open,
-            "total_foreign_symbols": total_symbols,  # Fixed field name
-            "foreign_coverage": foreign_coverage
+        response = {
+            "success": True,
+            "data": {
+                "markets": markets_data['markets'],
+                "us_indices": us_market_indices,
+                "summary": markets_data['summary']
+            },
+            "timestamp": datetime.utcnow().isoformat() + 'Z'
         }
         
-        # Log the final response data for debugging
-        trading_logger.api_logger.info(
-            f"[DEBUG] Final API response - Total markets: {len(enhanced_markets)}, "
-            f"US markets: {len([m for m in enhanced_markets if m['country'] == 'United States'])}"
-        )
-        
-        # Log sample US market data
-        us_markets = [m for m in enhanced_markets if m['country'] == 'United States']
-        if us_markets:
-            sample_us = us_markets[0]
-            trading_logger.api_logger.info(
-                f"[DEBUG] Sample US market data: {sample_us['code']} - "
-                f"Status: {sample_us['status']}, Class: {sample_us['status_class']}, "
-                f"Name: {sample_us['name']}"
-            )
-        
-        return create_api_response(
-            data={"markets": enhanced_markets, "summary": summary},
-            message="Foreign markets overview retrieved successfully"
-        )
+        return jsonify(response)
         
     except Exception as e:
-        trading_logger.error_logger.error(
-            f"[ERROR] Failed to fetch foreign markets overview: {str(e)}"
-        )
-        return create_api_response(
-            success=False,
-            message=f"Failed to fetch foreign markets overview: {str(e)}",
-            status_code=500,
-        )
-
-@app.route("/opportunities")
-def opportunities_page():
+        error_msg = f"Error in foreign_markets_overview_api: {str(e)}"
+        trading_logger.error_logger.error(error_msg, exc_info=True)
+        
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch foreign markets data",
+            "details": str(e),
+            "timestamp": datetime.utcnow().isoformat() + 'Z'
+        }), 500
     """Trading opportunities page"""
-    from flask import request
-
     try:
-        trading_logger.api_logger.info(
-            "[DEBUG] Entering opportunities_page route handler"
-        )
-
-        user_agent = request.headers.get("User-Agent", "unknown")
-        ip = request.remote_addr or "unknown"
-
-        trading_logger.api_logger.info(
-            f"[DEBUG] opportunities_page request | IP: {ip} | UA: {user_agent}"
-        )
 
         # Preload data server-side to avoid frontend API timeouts
         try:
-            # from src.data.preload_news_opportunities import (  # Module not available
-            #     get_latest_preloaded_news_opportunities,
-            # )
-            # from src.data.preload_watchlist_opportunities import (  # Module not available
-            #     get_latest_preloaded_watchlist_opportunities,
-            # )
+            # Use placeholder data for now - modules moved to routes/services
+            news_opps = {"success": False, "error": "Moved to service layer", "opportunities": []}
+            watchlist_opps = {"success": False, "error": "Moved to service layer", "opportunities": []}
 
-            trading_logger.api_logger.info(
-                "[DEBUG] Calling get_latest_preloaded_news_opportunities() - MODULE NOT AVAILABLE"
-            )
-            # news_opps = get_latest_preloaded_news_opportunities()  # Module not available
-            news_opps = {"success": False, "error": "Module not available", "opportunities": []}
-            trading_logger.api_logger.info(
-                "[DEBUG] Calling get_latest_preloaded_watchlist_opportunities() - MODULE NOT AVAILABLE"
-            )
-            # watchlist_opps = get_latest_preloaded_watchlist_opportunities()  # Module not available
-            watchlist_opps = {"success": False, "error": "Module not available", "opportunities": []}
-
-            # Log the raw responses for debugging
-            trading_logger.api_logger.info("[DEBUG] ===== OPPORTUNITIES DATA =====")
-            trading_logger.api_logger.info(
-                f"[DEBUG] News opportunities type: {type(news_opps)}"
-            )
-            trading_logger.api_logger.info(
-                f"[DEBUG] News opportunities keys: {list(news_opps.keys()) if isinstance(news_opps, dict) else 'Not a dict'}"
-            )
-            trading_logger.api_logger.info(
-                f"[DEBUG] Watchlist opportunities type: {type(watchlist_opps)}"
-            )
-            trading_logger.api_logger.info(
-                f"[DEBUG] Watchlist opportunities keys: {list(watchlist_opps.keys()) if isinstance(watchlist_opps, dict) else 'Not a dict'}"
-            )
-
-            if isinstance(news_opps, dict):
-                trading_logger.api_logger.info(
-                    f"[DEBUG] News success: {news_opps.get('success')}"
-                )
-                trading_logger.api_logger.info(
-                    f"[DEBUG] News error: {news_opps.get('error')}"
-                )
-                trading_logger.api_logger.info(
-                    f"[DEBUG] News opportunities count: {len(news_opps.get('opportunities', []))}"
-                )
-
-            if isinstance(watchlist_opps, dict):
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Watchlist success: {watchlist_opps.get('success')}"
-                )
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Watchlist error: {watchlist_opps.get('error')}"
-                )
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Watchlist opportunities count: {len(watchlist_opps.get('opportunities', []))}"
-                )
+            # Extract data for template rendering
 
             # Extract data with proper error handling
             news_opps_list = (
@@ -2966,7 +2566,7 @@ def news_opportunities():
         "[DEBUG] Entered news_opportunities endpoint (preloaded mode)"
     )
     try:
-        from flask import request
+    
 
         ip = request.remote_addr or "unknown"
         user_agent = request.headers.get("User-Agent", "unknown")
@@ -3058,7 +2658,7 @@ def watchlist_opportunities():
         "[DEBUG] Entered watchlist_opportunities endpoint (preloaded mode)"
     )
     try:
-        from flask import request
+    
 
         ip = request.remote_addr or "unknown"
         user_agent = request.headers.get("User-Agent", "unknown")
@@ -3330,97 +2930,66 @@ def go_services_health():
     )
 
 
-@app.route("/system_status")
-def system_status_page():
-    """System status and Go services monitoring page"""
-    return render_template(
-        "system_status.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-    )
+# system_status route moved to routes/system_routes.py
 
 
-@app.route("/logs")
-def logs_page():
-    """Logs viewing page"""
-    return render_template("logs.html")
+# logs route moved to routes/page_routes.py
 
 
-@app.route("/api/system_status")
-def system_status():
-    """System status information with comprehensive error handling"""
+# System status endpoint moved to system_routes.py blueprint
+
+
+@app.route("/api/preload_stock_data", methods=["POST"])
+def trigger_preload_stock_data():
+    """Manually trigger preload_stock_data job"""
     try:
-        # Get basic system metrics with error handling
-        system_metrics = {}
-        try:
-            system_metrics = get_system_metrics()
-        except Exception as e:
-            log_error(f"Error getting system metrics: {str(e)}")
-            system_metrics = {"status": "error", "error": str(e)}
-
-        # Get database stats with error handling
-        db_stats = {"status": "unavailable"}
-        try:
-            from src.core.database import get_database_stats
-
-            db_stats = get_database_stats()
-        except Exception as e:
-            log_error(f"Error getting database stats: {str(e)}")
-            db_stats = {"status": "error", "error": str(e)}
-
-        # Get cache stats with error handling
-        cache_stats = {"status": "unavailable"}
-        try:
-            cache_stats = get_cache_stats()
-        except Exception as e:
-            log_error(f"Error getting cache stats: {str(e)}")
-            cache_stats = {"status": "error", "error": str(e)}
-
-        # Get application config
-        config_info = {
-            # Tier management removed - will be rebuilt from scratch
-            "telegram_enabled": telegram_alerter.is_enabled(),
-            "cache_enabled": (
-                Config.ENABLE_CACHE if hasattr(Config, "ENABLE_CACHE") else False
-            ),
-            "debug_mode": app.debug,
-            "version": "1.0.0",
-        }
-
-        # Try to get telegram status safely
-        try:
-            config_info["telegram_enabled"] = telegram_alerter.is_enabled()
-        except Exception as e:
-            log_error(f"Error getting telegram status: {str(e)}")
-
-        # Get API status information
-        api_status = {}
-        try:
-            from src.utils.api_tracker import api_tracker
-
-            api_status = api_tracker.get_all_api_status()
-        except Exception as e:
-            log_error(f"Error getting API status: {str(e)}")
-            api_status = {"error": str(e)}
-
-        return jsonify(
-            {
-                "status": "ok",
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "system": system_metrics,
-                "database": db_stats,
-                "cache": cache_stats,
-                "config": config_info,
-                "api_status": api_status,
-            }
-        )
+        print("[DEBUG] Manual trigger of preload_stock_data requested")
+        preload_stock_data()
+        return jsonify({
+            "status": "success",
+            "message": "Preload stock data job completed successfully",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
     except Exception as e:
-        log_error(f"Critical error in system_status: {str(e)}")
-        return jsonify(
-            {
+        print(f"[ERROR] Failed to trigger preload_stock_data: {e}")
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to trigger preload_stock_data: {str(e)}",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 500
+
+
+@app.route("/api/historical_data/update", methods=["POST"])
+def trigger_historical_data_update():
+    """Manually trigger historical data update job"""
+    try:
+        from src.data.historical_data_updater import update_historical_data_job
+        
+        # Run the update job
+        result = update_historical_data_job()
+        
+        if result["status"] == "success":
+            return jsonify({
+                "status": "success",
+                "message": f"Historical data update completed: {result['updated_count']} symbols updated",
+                "details": result,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            })
+        else:
+            return jsonify({
                 "status": "error",
-                "error": "System status unavailable",
-                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            }
-        ), 500
+                "message": f"Historical data update failed: {result['message']}",
+                "details": result,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }), 500
+            
+    except Exception as e:
+        log_error(f"Error triggering historical data update: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"Failed to trigger historical data update: {str(e)}",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }), 500
 
 
 @app.route("/api/news_services/status", methods=["GET"])
@@ -4121,7 +3690,7 @@ def analyze_single_stock(symbol):
         print(
             f"[ERROR] Failed to generate options recommendation for {symbol}: {str(e)}"
         )
-        import traceback
+
 
         traceback.print_exc()  # ADDED DEBUG
         options_recommendation = {
@@ -4197,8 +3766,8 @@ def create_app(port=5001):
     Args:
         port (int): Port number to run the server on (default: 5001)
     """
-    import sys
-    import threading
+
+
 
     print(f"[DEBUG] Entered create_app() with port={port}")
     try:
@@ -4246,7 +3815,7 @@ preload_timestamp = None
 
 # Function to preload data
 def preload_stock_data():
-    import sys
+
 
     print("[DEBUG] Starting background preload_stock_data()")
     sys.stdout.flush()
@@ -4269,44 +3838,62 @@ def preload_stock_data():
 
         # Get top 3 gainers and losers from Alpha Vantage
         market_movers = data_fetcher.get_top_gainers_losers(limit=3)
-        gainers = market_movers.get("gainers", [])
-        if not isinstance(gainers, list):
-            gainers = []
-        losers = market_movers.get("losers", [])
-        if not isinstance(losers, list):
-            losers = []
+        gainer_symbols = market_movers.get("gainers", [])
+        loser_symbols = market_movers.get("losers", [])
         print(f"[DEBUG] Found market movers: {market_movers}")
 
-        # Convert string symbols to proper dict format if needed
-        def convert_to_dict(item):
-            if isinstance(item, str):
+        # Fetch actual price data for each symbol
+        def fetch_symbol_data(symbol, symbol_type):
+            try:
+                print(f"[DEBUG] Fetching price data for {symbol} ({symbol_type})...")
+                price_data = data_fetcher.get_stock_price(symbol)
+                print(f"[DEBUG] Raw price data for {symbol}: {price_data}")
+                
+                if "error" in price_data:
+                    print(f"[WARNING] Could not get price data for {symbol}: {price_data['error']}")
+                    return None
+                
+                # Validate price data
+                current_price = price_data.get("current_price", 0)
+                change_amount = price_data.get("change", 0)
+                change_percent = price_data.get("change_percent", 0)
+                volume = price_data.get("volume", 0)
+                
+                print(f"[DEBUG] {symbol} data - Price: {current_price}, Change: {change_amount}, Change%: {change_percent}, Volume: {volume}")
+                
+                # Check if we have valid price data
+                if not current_price or current_price == 0:
+                    print(f"[WARNING] {symbol} has invalid price: {current_price}")
+                    return None
+                
                 return {
-                    "symbol": item,
-                    "type": "GAINER",
-                    "price": 0,
-                    "change_amount": 0,
-                    "change_percent": 0,
-                    "volume": 0,
+                    "symbol": symbol,
+                    "type": symbol_type,
+                    "price": current_price,
+                    "change_amount": change_amount,
+                    "change_percent": change_percent,
+                    "volume": volume,
                     "timestamp": datetime.now(),
-                    "analysis_data": {},
+                    "analysis_data": price_data
                 }
-            elif isinstance(item, dict):
-                # Ensure all required fields exist
-                return {
-                    "symbol": item.get("symbol", ""),
-                    "type": item.get("type", "GAINER"),
-                    "price": item.get("price", 0),
-                    "change_amount": item.get("change_amount", 0),
-                    "change_percent": item.get("change_percent", 0),
-                    "volume": item.get("volume", 0),
-                    "timestamp": item.get("timestamp", datetime.now()),
-                    "analysis_data": item.get("analysis_data", {}),
-                }
-            return item
+            except Exception as e:
+                print(f"[ERROR] Failed to fetch data for {symbol}: {e}")
+                import traceback
+                traceback.print_exc()
+                return None
 
-        # Convert gainers and losers to proper format
-        gainers = [convert_to_dict(g) for g in gainers]
-        losers = [convert_to_dict(l) for l in losers]
+        # Fetch data for gainers and losers
+        gainers = []
+        for symbol in gainer_symbols:
+            data = fetch_symbol_data(symbol, "GAINER")
+            if data:
+                gainers.append(data)
+        
+        losers = []
+        for symbol in loser_symbols:
+            data = fetch_symbol_data(symbol, "LOSER")
+            if data:
+                losers.append(data)
 
         # Fallback to test symbols if no market movers found
         if not gainers and not losers:
@@ -4315,10 +3902,52 @@ def preload_stock_data():
             gainers = [convert_to_dict(g) for g in test_symbols]
             losers = []
 
-        # Save to market_movers table using the app's standard logic
-                    # MarketMoversManager.save_market_movers(gainers, losers)  # Module not available
+        # Save to market_movers table using the current table structure
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    # Clear existing data
+                    cur.execute("DELETE FROM market_movers")
+                    
+                    # Insert gainers
+                    for gainer in gainers:
+                        cur.execute("""
+                            INSERT INTO market_movers (symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            gainer.get('symbol', ''),
+                            'GAINER',
+                            gainer.get('price', 0),
+                            gainer.get('change_amount', 0),
+                            gainer.get('change_percent', 0),
+                            gainer.get('volume', 0),
+                            datetime.now(),
+                            json.dumps(gainer.get('analysis_data', {}))
+                        ))
+                    
+                    # Insert losers
+                    for loser in losers:
+                        cur.execute("""
+                            INSERT INTO market_movers (symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            loser.get('symbol', ''),
+                            'LOSER',
+                            loser.get('price', 0),
+                            loser.get('change_amount', 0),
+                            loser.get('change_percent', 0),
+                            loser.get('volume', 0),
+                            datetime.now(),
+                            json.dumps(loser.get('analysis_data', {}))
+                        ))
+                    
+                    conn.commit()
+                    print(f"[DEBUG] Successfully saved {len(gainers)} gainers and {len(losers)} losers to market_movers table")
+        except Exception as e:
+            print(f"[ERROR] Failed to save to market_movers table: {e}")
+        
         print(
-            f"[DEBUG] Saved {len(gainers)} gainers and {len(losers)} losers to market_movers table"
+            f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers for market_movers table"
         )
         print(
             f"[DEBUG] Successfully preloaded stock data in {time.time() - start_time:.2f} seconds"
@@ -4343,7 +3972,7 @@ scheduler.add_job(
     timezone="America/New_York",
 )
 # Run at 9:40 AM on trading days for news-driven opportunities
-from src.data.preload_news_opportunities import preload_news_opportunities
+from ..data.preload_news_opportunities import preload_news_opportunities
 
 scheduler.add_job(
     preload_news_opportunities,
@@ -4355,7 +3984,7 @@ scheduler.add_job(
 )
 
 # Run at 9:45 AM on trading days for watchlist opportunities
-from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
+from ..data.preload_watchlist_opportunities import preload_watchlist_opportunities
 
 scheduler.add_job(
     preload_watchlist_opportunities,
@@ -4533,7 +4162,7 @@ def get_preloaded_data():
                     )
     except Exception as e:
         print(f"[ERROR] Failed to load preloaded data from database: {e}")
-        import traceback
+
 
         traceback.print_exc()
         return create_api_response(
@@ -4588,7 +4217,7 @@ def refresh_market_movers():
 
     except Exception as e:
         print(f"[ERROR] Error refreshing market movers: {e}")
-        import traceback
+
 
         traceback.print_exc()
         return jsonify(
@@ -4966,7 +4595,7 @@ def export_logs():
 
                 if export_format == "json":
                     # Export as JSON
-                    import json
+            
 
                     response_data = {
                         "export_info": {
@@ -5119,7 +4748,7 @@ def api_recommendations():
             }
         )
     except Exception as e:
-        import traceback
+
 
         tb = traceback.format_exc()
         print(f"Error in api_recommendations: {e}\nTraceback:\n{tb}")
@@ -5137,7 +4766,7 @@ def test_db():
                 count = count_result["count"] if count_result else 0
                 return jsonify({"success": True, "count": count})
     except Exception as e:
-        import traceback
+
 
         print(f"Database test error: {e}")
         print(f"Traceback: {traceback.format_exc()}")
@@ -5287,7 +4916,7 @@ def api_recommendations_stats():
             }
         )
     except Exception as e:
-        import traceback
+
 
         tb = traceback.format_exc()
         print(f"Error in api_recommendations_stats: {e}\nTraceback:\n{tb}")

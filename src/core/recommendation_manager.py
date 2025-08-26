@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 from contextlib import contextmanager
 import numpy as np
+import psycopg2.extras
 from src.core.database import get_db_connection
 
 logger = logging.getLogger(__name__)
@@ -180,7 +181,7 @@ class RecommendationManager:
         """
         try:
             with self._get_connection() as conn:
-                with conn.cursor() as cur:
+                with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                     # Calculate date cutoff
                     cutoff_date = datetime.now() - timedelta(days=days_back)
                     # Build query based on filters

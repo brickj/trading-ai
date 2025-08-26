@@ -53,7 +53,7 @@ class SentimentAnalyzer:
             response = requests.post(
                 f"{self.ollama_base_url}/api/generate",
                 json=payload,
-                timeout=60,  # 1 minute timeout for local processing
+                timeout=45,  # 45 seconds - reasonable for local Ollama processing
             )
             if response.status_code != 200:
                 raise Exception(
@@ -371,10 +371,10 @@ class SentimentAnalyzer:
             # Repeat stock-specific news more to give it higher weight
             repeat_count = int(weight)
             for _ in range(repeat_count):
-                news_text += f"Headline: {article['headline']}\nSummary: {article['summary']}\n\n"
+                news_text += f"Headline: {article['headline']}\n"
 
-        # Limit text length to prevent Ollama timeouts (max 8000 characters)
-        max_text_length = 8000
+        # Limit text length to prevent Ollama timeouts (reduced for faster processing)
+        max_text_length = 800
         if len(news_text) > max_text_length:
             print(
                 f"⚠️  Truncating news text from {len(news_text)} to {max_text_length} characters to prevent timeout"
@@ -710,6 +710,10 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
         if not symbol:
             return False
 
+        # Handle None values safely
+        headline = headline or ""
+        summary = summary or ""
+
         # Convert to lowercase for case-insensitive matching
         text = (headline + " " + summary).lower()
         symbol_lower = symbol.lower()
@@ -806,35 +810,35 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                 f"Invalid sentiment data format - score: {sentiment_score}, confidence: {confidence}"
             )
 
-        # Only trade if confidence is above threshold and sentiment is strong enough
-        if (
-            confidence < Config.CONFIDENCE_THRESHOLD
-            or abs(sentiment_score) < Config.SENTIMENT_THRESHOLD
-        ):
-            return {
-                "action": "HOLD",
-                "signal_strength": 0,
-                "confidence": confidence,
-                "reasoning": "Low confidence or weak sentiment signal",
-            }
-        if sentiment_score > Config.SENTIMENT_THRESHOLD:
-            return {
-                "action": "CALL",
-                "signal_strength": sentiment_score * confidence,
-                "confidence": confidence,
-                "reasoning": f"Positive sentiment ({sentiment_score:.2f}) with high confidence ({confidence:.2f})",
-            }
+        # Return both stock and options recommendations
+        if confidence < Config.CONFIDENCE_THRESHOLD or abs(sentiment_score) < Config.SENTIMENT_THRESHOLD:
+            stock_action = "HOLD"
+            options_action = "HOLD"
+            reasoning = "Low confidence or weak sentiment signal"
+        elif sentiment_score > Config.SENTIMENT_THRESHOLD:
+            stock_action = "BUY"
+            options_action = "CALL"
+            reasoning = f"Positive sentiment ({sentiment_score:.2f}) with high confidence ({confidence:.2f})"
         elif sentiment_score < -Config.SENTIMENT_THRESHOLD:
-            return {
-                "action": "PUT",
-                "signal_strength": abs(sentiment_score) * confidence,
-                "confidence": confidence,
-                "reasoning": f"Negative sentiment ({sentiment_score:.2f}) with high confidence ({confidence:.2f})",
-            }
+            stock_action = "SELL"
+            options_action = "PUT"
+            reasoning = f"Negative sentiment ({sentiment_score:.2f}) with high confidence ({confidence:.2f})"
         else:
-            return {
-                "action": "HOLD",
-                "signal_strength": 0,
+            stock_action = "HOLD"
+            options_action = "HOLD"
+            reasoning = "Neutral sentiment"
+
+        return {
+            "stock_recommendation": {
+                "action": stock_action,
+                "signal_strength": abs(sentiment_score) * confidence if stock_action in ["BUY", "SELL"] else 0,
                 "confidence": confidence,
-                "reasoning": "Neutral sentiment",
+                "reasoning": reasoning,
+            },
+            "options_recommendation": {
+                "action": options_action,
+                "signal_strength": abs(sentiment_score) * confidence if options_action in ["CALL", "PUT"] else 0,
+                "confidence": confidence,
+                "reasoning": reasoning,
             }
+        }

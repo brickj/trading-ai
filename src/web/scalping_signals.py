@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, jsonify, request
-from src.core.database import get_db_connection, execute_query
-from src.core.scalping_analyzer import scalping_analyzer
-from src.core.logger import log_info, log_error
+from ..core.database import get_db_connection, execute_query
+from ..core.scalping_analyzer import scalping_analyzer
+from ..core.logger import log_info, log_error
 from datetime import datetime, date, time
 import json
 import psycopg2.extras

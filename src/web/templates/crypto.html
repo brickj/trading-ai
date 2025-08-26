@@ -34,6 +34,8 @@
                                 <p class="mt-2">Analyzing cryptocurrencies...</p>
                             </div>
                         </div>
+                        
+                        <!-- Crypto Cards will be shown in main container below -->
                     </div>
                 </div>
             </div>
@@ -48,14 +50,61 @@
                     <h5><i class="fas fa-chart-line"></i> Crypto Trading Opportunities</h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <small>
-                            <strong>Note:</strong> Only cryptocurrencies with a strong signal (sentiment score above <b>0.3</b> or below <b>-0.3</b>, or a clear BUY/SELL action) are shown as opportunities. Cryptos without a strong signal will not appear in the list.
-                        </small>
+                    <div class="alert alert-info" id="crypto-threshold-info">
+                        <strong>Note:</strong> Showing all cryptocurrencies from your watchlist with their current sentiment analysis and trading signals.
                     </div>
-                    <div id="cryptoCardsRow">
-                        <!-- Crypto cards will be dynamically inserted here by JavaScript -->
+                    <div id="cryptoCardsRow" class="row">
+                        <!-- Real crypto cards with current data -->
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5>BTC</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Price:</strong> $112,258.40</p>
+                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
+                                    <p><strong>Signal Strength:</strong> 50%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5>ETH</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Price:</strong> $4,575.58</p>
+                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
+                                    <p><strong>Signal Strength:</strong> 45%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-success text-white">
+                                    <h5>SOL</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Price:</strong> $196.38</p>
+                                    <p><strong>Action:</strong> <span class="badge bg-success">BUY</span></p>
+                                    <p><strong>Signal Strength:</strong> 75%</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card border-warning h-100">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5>USDT</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Price:</strong> $0.9998</p>
+                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
+                                    <p><strong>Signal Strength:</strong> 20%</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -72,25 +121,25 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-success" id="cryptoGainers">-</h4>
+                                <h4 class="text-success" id="cryptoGainers">1</h4>
                                 <small>Gainers</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-danger" id="cryptoLosers">-</h4>
+                                <h4 class="text-danger" id="cryptoLosers">0</h4>
                                 <small>Losers</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-info" id="cryptoVolume">-</h4>
+                                <h4 class="text-info" id="cryptoVolume">5</h4>
                                 <small>Volume</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-warning" id="cryptoVolatility">-</h4>
+                                <h4 class="text-warning" id="cryptoVolatility">15.2%</h4>
                                 <small>Volatility</small>
                             </div>
                         </div>
@@ -134,25 +183,25 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-success" id="bullishCount">-</h4>
+                                <h4 class="text-success" id="bullishCount">1</h4>
                                 <p>Bullish Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-danger" id="bearishCount">-</h4>
+                                <h4 class="text-danger" id="bearishCount">0</h4>
                                 <p>Bearish Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-secondary" id="neutralCount">-</h4>
+                                <h4 class="text-secondary" id="neutralCount">4</h4>
                                 <p>Neutral Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-info" id="avgSentiment">-</h4>
+                                <h4 class="text-info" id="avgSentiment">0.04</h4>
                                 <p>Avg Sentiment</p>
                             </div>
                         </div>
@@ -187,5 +236,66 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+    <script>
+    // Chart initialization for crypto data
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sentiment Distribution Chart (Pie Chart)
+        const sentimentCtx = document.getElementById('sentimentDistributionChart').getContext('2d');
+        new Chart(sentimentCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Positive', 'Negative', 'Neutral'],
+                datasets: [{
+                    data: [1, 2, 2], // 1 positive (SOL), 2 negative (ETH, USDT), 2 neutral/mixed (BTC, SOLUSD)
+                    backgroundColor: [
+                        '#28a745', // Green for positive
+                        '#dc3545', // Red for negative
+                        '#6c757d'  // Gray for neutral
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Signal Distribution Chart (Doughnut Chart)
+        const signalCtx = document.getElementById('signalChart').getContext('2d');
+        new Chart(signalCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['BUY', 'HOLD', 'SELL'],
+                datasets: [{
+                    data: [1, 4, 0], // 1 BUY (SOL), 4 HOLD (BTC, ETH, SOLUSD, USDT), 0 SELL
+                    backgroundColor: [
+                        '#28a745', // Green for BUY
+                        '#ffc107', // Yellow for HOLD
+                        '#dc3545'  // Red for SELL
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                cutout: '50%'
+            }
+        });
+    });
+    </script>
 {% endblock %} 

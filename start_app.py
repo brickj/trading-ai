@@ -329,9 +329,30 @@ def run_scheduled_jobs():
     from datetime import datetime, timedelta
     import calendar
     
-    # Define preload_stock_data as a placeholder (will be handled by app.py scheduler)
+    # Define preload_stock_data to call the real implementation
     def preload_stock_data():
-        print("[SCHEDULER] preload_stock_data called - this will be handled by the main app scheduler")
+        print("[SCHEDULER] preload_stock_data called - calling real implementation")
+        try:
+            # Import and call the real preload_stock_data function from the dedicated module
+            from src.data.preload_stock_data import preload_stock_data as real_preload_stock_data
+            real_preload_stock_data()
+            print("[SCHEDULER] Real preload_stock_data completed successfully")
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] Real preload_stock_data failed: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Define historical data update job
+    def update_historical_data():
+        try:
+            from src.data.historical_data_updater import update_historical_data_job
+            print("[SCHEDULER] Starting historical data update...")
+            result = update_historical_data_job()
+            print(f"[SCHEDULER] Historical data update completed: {result.get('updated_count', 0)} symbols updated")
+            return True
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] Historical data update failed: {e}")
+            return False
     
     def populate_weekly_plan_job():
         """Populate weekly market plan data using WeeklyPlanPopulator"""
@@ -359,7 +380,8 @@ def run_scheduled_jobs():
         # 'preload_watchlist_opportunities': preload_watchlist_opportunities,  # Module removed
         'preload_stock_data': preload_stock_data,
         'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis(),
-        'populate_weekly_plan': lambda: populate_weekly_plan_job()
+        'populate_weekly_plan': lambda: populate_weekly_plan_job(),
+        'update_historical_data': update_historical_data
     }
     
     # If it's a trading day and the app is starting, run any missed jobs from today

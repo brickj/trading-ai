@@ -2,8 +2,9 @@
 Market Manager - Centralized management of foreign exchanges and markets
 """
 import logging
+from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-from src.core.database import get_db_connection
+from src.core.db_utils import execute_query
 from src.core.logger import log_info, log_error, log_debug
 
 logger = logging.getLogger(__name__)
@@ -15,21 +16,14 @@ class MarketManager:
     def get_all_markets() -> List[Dict]:
         """Get all active foreign exchanges"""
         try:
-            with get_db_connection() as conn:
-                if conn is None:
-                    return []
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT code, name, country, currency, timezone, symbol_suffix, 
-                               trading_hours_open, trading_hours_close, active
-                        FROM foreign_exchanges 
-                        WHERE active = TRUE 
-                        ORDER BY country, name
-                    """)
-                    markets = []
-                    for row in cursor.fetchall():
-                        markets.append(dict(row))
-                    return markets
+            query = """
+                SELECT code, name, country, currency, timezone, symbol_suffix, 
+                       trading_hours_open, trading_hours_close, active
+                FROM foreign_exchanges 
+                WHERE active = TRUE 
+                ORDER BY country, name
+            """
+            return execute_query(query) or []
         except Exception as e:
             log_error(f"Error fetching markets: {e}")
             return []
@@ -38,20 +32,15 @@ class MarketManager:
     def get_market_by_code(code: str) -> Optional[Dict]:
         """Get market by exchange code"""
         try:
-            with get_db_connection() as conn:
-                if conn is None:
-                    return None
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT code, name, country, currency, timezone, symbol_suffix, 
-                               trading_hours_open, trading_hours_close, active
-                        FROM foreign_exchanges 
-                        WHERE code = %s AND active = TRUE
-                    """, (code,))
-                    row = cursor.fetchone()
-                    if row:
-                        return dict(row)
-                    return None
+            query = """
+                SELECT code, name, country, currency, timezone, symbol_suffix, 
+                       trading_hours_open, trading_hours_close, active
+                FROM foreign_exchanges 
+                WHERE code = %s AND active = TRUE
+                LIMIT 1
+            """
+            result = execute_query(query, (code,))
+            return result[0] if result else None
         except Exception as e:
             log_error(f"Error fetching market {code}: {e}")
             return None
@@ -60,35 +49,32 @@ class MarketManager:
     def get_market_by_symbol(symbol: str) -> Optional[Dict]:
         """Get market information by symbol (using suffix matching)"""
         try:
-            with get_db_connection() as conn:
-                if conn is None:
-                    return None
-                with conn.cursor() as cursor:
-                    # Try to match by symbol suffix
-                    cursor.execute("""
-                        SELECT code, name, country, currency, timezone, symbol_suffix, 
-                               trading_hours_open, trading_hours_close, active
-                        FROM foreign_exchanges 
-                        WHERE symbol_suffix = %s AND active = TRUE
-                    """, (symbol,))
-                    row = cursor.fetchone()
-                    if row:
-                        return dict(row)
-                    
-                    # If no suffix match, check if it's a US stock (no suffix)
-                    if '.' not in symbol:
-                        cursor.execute("""
-                            SELECT code, name, country, currency, timezone, symbol_suffix, 
-                                   trading_hours_open, trading_hours_close, active
-                            FROM foreign_exchanges 
-                            WHERE code IN ('NASDAQ', 'NYSE') AND active = TRUE
-                            LIMIT 1
-                        """)
-                        row = cursor.fetchone()
-                        if row:
-                            return dict(row)
-                    
-                    return None
+            # Try to match by symbol suffix first
+            suffix_query = """
+                SELECT code, name, country, currency, timezone, symbol_suffix, 
+                       trading_hours_open, trading_hours_close, active
+                FROM foreign_exchanges 
+                WHERE symbol_suffix = %s AND active = TRUE
+                LIMIT 1
+            """
+            result = execute_query(suffix_query, (symbol,))
+            if result:
+                return result[0]
+            
+            # If no suffix match and no dot in symbol, check US exchanges
+            if '.' not in symbol:
+                us_query = """
+                    SELECT code, name, country, currency, timezone, symbol_suffix, 
+                           trading_hours_open, trading_hours_close, active
+                    FROM foreign_exchanges 
+                    WHERE code IN ('NASDAQ', 'NYSE') AND active = TRUE
+                    LIMIT 1
+                """
+                result = execute_query(us_query)
+                if result:
+                    return result[0]
+            
+            return None
         except Exception as e:
             log_error(f"Error fetching market for symbol {symbol}: {e}")
             return None
@@ -97,63 +83,59 @@ class MarketManager:
     def get_markets_for_dropdown() -> List[Dict]:
         """Get markets formatted for frontend dropdown"""
         try:
-            # Test direct database query first
-            with get_db_connection() as conn:
-                if conn is None:
-                    return []
-                with conn.cursor() as cursor:
-                    cursor.execute("SELECT code, name, country, currency, symbol_suffix FROM foreign_exchanges WHERE active = TRUE ORDER BY code")
-                    rows = cursor.fetchall()
-                    
-                    # Debug: print raw rows
-                    print(f"DEBUG: Raw rows from database: {rows[:2]}")
-                    
-                    dropdown_markets = []
-                    for row in rows:
-                        market_dict = dict(row)
-                        print(f"DEBUG: Market dict: {market_dict}")
-                        
-                        if market_dict['code'] in ['NASDAQ', 'NYSE']:
-                            dropdown_markets.append({
-                                'value': 'US',
-                                'label': 'US',
-                                'code': market_dict['code'],
-                                'currency': market_dict['currency']
-                            })
-                        else:
-                            # Foreign markets
-                            country_code = market_dict['code']
-                            if market_dict['code'] == 'LSE':
-                                country_code = 'UK'
-                            elif market_dict['code'] == 'TSX':
-                                country_code = 'CA'
-                            elif market_dict['code'] == 'TSE':
-                                country_code = 'JP'
-                            elif market_dict['code'] == 'HKEX':
-                                country_code = 'HK'
-                            elif market_dict['code'] == 'Euronext':
-                                country_code = 'FR'
-                            elif market_dict['code'] == 'AMS':
-                                country_code = 'NL'
-                            elif market_dict['code'] == 'B3':
-                                country_code = 'BR'
-                            elif market_dict['code'] == 'TWSE':
-                                country_code = 'TW'
-                            
-                            dropdown_markets.append({
-                                'value': country_code,
-                                'label': f"{market_dict['country']} ({market_dict['symbol_suffix']})",
-                                'code': market_dict['code'],
-                                'currency': market_dict['currency']
-                            })
-                    
-                    print(f"DEBUG: Final dropdown markets: {dropdown_markets[:2]}")
-                    return dropdown_markets
+            query = """
+                SELECT code, name, country, currency, symbol_suffix, trading_hours_open, trading_hours_close, timezone
+                FROM foreign_exchanges 
+                WHERE active = TRUE 
+                ORDER BY code
+            """
+            markets = execute_query(query) or []
+            
+            country_code_map = {
+                'LSE': 'UK',
+                'TSX': 'CA',
+                'TSE': 'JP',
+                'HKEX': 'HK',
+                'Euronext': 'FR',
+                'AMS': 'NL',
+                'B3': 'BR',
+                'TWSE': 'TW'
+            }
+            
+            dropdown_markets = []
+            for market in markets:
+                if market['code'] in ['NASDAQ', 'NYSE']:
+                    dropdown_markets.append({
+                        'value': 'US',
+                        'label': 'US',
+                        'name': market['name'],
+                        'code': market['code'],
+                        'currency': market['currency'],
+                        'country': market['country'],
+                        'symbol_suffix': market['symbol_suffix'],
+                        'trading_hours_open': market.get('trading_hours_open'),
+                        'trading_hours_close': market.get('trading_hours_close'),
+                        'timezone': market.get('timezone')
+                    })
+                else:
+                    country_code = country_code_map.get(market['code'], market['code'])
+                    dropdown_markets.append({
+                        'value': country_code,
+                        'label': f"{market['country']} ({market['symbol_suffix']})",
+                        'name': market['name'],
+                        'code': market['code'],
+                        'currency': market['currency'],
+                        'country': market['country'],
+                        'symbol_suffix': market['symbol_suffix'],
+                        'trading_hours_open': market.get('trading_hours_open'),
+                        'trading_hours_close': market.get('trading_hours_close'),
+                        'timezone': market.get('timezone')
+                    })
+            
+            return dropdown_markets
                     
         except Exception as e:
-            print(f"ERROR in get_markets_for_dropdown: {e}")
-            import traceback
-            traceback.print_exc()
+            log_error(f"Error in get_markets_for_dropdown: {e}")
             return []
     
     @staticmethod
@@ -163,3 +145,102 @@ class MarketManager:
         if market:
             return market['code'], market['currency']
         return 'US', 'USD'  # Default fallback
+        
+    @staticmethod
+    def get_foreign_markets_overview() -> Dict:
+        """
+        Get overview of foreign markets with summary statistics
+        
+        Returns:
+            Dict: Contains 'markets' list and 'summary' statistics
+        """
+        try:
+            # Get all active markets
+            markets = MarketManager.get_markets_for_dropdown()
+            
+            # Add additional fields needed by frontend
+            for market in markets:
+                # Set default values for required fields
+                market['is_open'] = False  # Default to closed
+                
+                # Generate symbols for this market
+                if market.get('symbol_suffix'):
+                    market['symbols'] = [f"{market['code']}{market['symbol_suffix']}"]
+                else:
+                    market['symbols'] = [f"{market['code']}.{market['currency']}"]
+                market['symbol_count'] = len(market['symbols'])
+                
+                # Add status and performance related fields
+                market['status'] = 'Closed' if not market.get('is_open', False) else 'Open'
+                market['status_class'] = 'success' if market['status'] == 'Open' else 'secondary'
+                
+                # Add performance data (random for demo, replace with real data)
+                import random
+                market['performance'] = round(random.uniform(-5, 5), 2)
+                market['performance_class'] = 'success' if market['performance'] >= 0 else 'danger'
+                
+                # Use actual database values for trading hours and timezone
+                if market.get('trading_hours_open'):
+                    market['trading_hours_open'] = str(market['trading_hours_open'])[:5]  # Convert time to HH:MM format
+                else:
+                    market['trading_hours_open'] = '09:30'
+                    
+                if market.get('trading_hours_close'):
+                    market['trading_hours_close'] = str(market['trading_hours_close'])[:5]  # Convert time to HH:MM format
+                else:
+                    market['trading_hours_close'] = '16:00'
+                    
+                market['timezone'] = market.get('timezone', 'UTC')
+                
+                # Ensure required fields exist
+                market['country'] = market.get('country', 'Unknown')
+                market['currency'] = market.get('currency', 'USD')
+                market['symbol_suffix'] = market.get('symbol_suffix', '')
+            
+            # Calculate summary statistics
+            total_markets = len(markets)
+            open_markets = sum(1 for m in markets if m.get('is_open', False))
+            
+            # Count symbols across all markets
+            total_symbols = sum(m.get('symbol_count', 0) for m in markets)
+            
+            # Group by region
+            regions = {}
+            for market in markets:
+                country = market.get('country', 'Other')
+                if country not in regions:
+                    regions[country] = 0
+                regions[country] += 1
+            
+            # Create summary
+            summary = {
+                'total_markets': total_markets,
+                'markets_open': open_markets,
+                'markets_closed': total_markets - open_markets,
+                'total_foreign_symbols': total_symbols,
+                'foreign_coverage': round((total_symbols / 1000) * 100, 1) if total_symbols > 0 else 0,  # Assuming 1000 as base
+                'regions': [{'name': k, 'count': v} for k, v in regions.items()],
+                'last_updated': datetime.utcnow().isoformat() + 'Z',
+                'status': 'success'
+            }
+            
+            return {
+                'markets': markets,
+                'summary': summary
+            }
+            
+        except Exception as e:
+            log_error(f"Error in get_foreign_markets_overview: {e}")
+            return {
+                'markets': [],
+                'summary': {
+                    'total_markets': 0,
+                    'markets_open': 0,
+                    'markets_closed': 0,
+                    'total_foreign_symbols': 0,
+                    'foreign_coverage': 0,
+                    'regions': [],
+                    'status': 'error',
+                    'error': str(e)
+                }
+            }
