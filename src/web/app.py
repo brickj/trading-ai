@@ -1712,19 +1712,118 @@ def process_historical_recommendations(recommendations):
         }
 @app.route("/api/portfolio")
 def portfolio():
-    """Get current portfolio status"""
+    """Get current portfolio status with mock data for demo purposes"""
     try:
-        portfolio_summary = trading_strategy.get_portfolio_summary()
-        recent_trades = trading_strategy.trade_history[-10:]  # Last 10 trades
-        # Convert datetime objects to strings for JSON serialization
-        for trade in recent_trades:
-            if "timestamp" in trade:
-                trade["timestamp"] = trade["timestamp"].isoformat()
+        # MOCK DATA: Portfolio summary (no real portfolio tracking yet)
+        portfolio_summary = {
+            "current_capital": 125000,
+            "initial_capital": 100000,
+            "open_positions": 8,
+            "positions_value": 85000,
+            "total_trades": 45,
+            "total_value": 125000,
+            "unrealized_pnl": 25000,
+            "note": "🔴 MOCK DATA - No real portfolio tracking implemented"
+        }
+        
+        # MOCK DATA: Recent trades
+        recent_trades = [
+            {
+                "symbol": "AAPL",
+                "action": "BUY",
+                "quantity": 100,
+                "price": 175.50,
+                "timestamp": (datetime.now() - timedelta(hours=2)).isoformat(),
+                "pnl": 250.00,
+                "status": "closed"
+            },
+            {
+                "symbol": "TSLA",
+                "action": "SELL",
+                "quantity": 50,
+                "price": 245.75,
+                "timestamp": (datetime.now() - timedelta(hours=4)).isoformat(),
+                "pnl": -125.00,
+                "status": "closed"
+            },
+            {
+                "symbol": "NVDA",
+                "action": "BUY",
+                "quantity": 75,
+                "price": 890.25,
+                "timestamp": (datetime.now() - timedelta(hours=6)).isoformat(),
+                "pnl": 1875.00,
+                "status": "closed"
+            },
+            {
+                "symbol": "META",
+                "action": "BUY",
+                "quantity": 120,
+                "price": 485.30,
+                "timestamp": (datetime.now() - timedelta(hours=8)).isoformat(),
+                "pnl": 456.00,
+                "status": "closed"
+            },
+            {
+                "symbol": "GOOGL",
+                "action": "SELL",
+                "quantity": 80,
+                "price": 142.80,
+                "timestamp": (datetime.now() - timedelta(hours=10)).isoformat(),
+                "pnl": 320.00,
+                "status": "closed"
+            }
+        ]
+        
+        # MOCK DATA: Open positions
+        open_positions = [
+            {
+                "symbol": "AAPL",
+                "quantity": 100,
+                "avg_price": 175.50,
+                "current_price": 178.25,
+                "unrealized_pnl": 275.00,
+                "position_value": 17825.00
+            },
+            {
+                "symbol": "NVDA",
+                "quantity": 75,
+                "avg_price": 890.25,
+                "current_price": 925.50,
+                "unrealized_pnl": 2643.75,
+                "position_value": 69412.50
+            },
+            {
+                "symbol": "META",
+                "quantity": 120,
+                "avg_price": 485.30,
+                "current_price": 492.15,
+                "unrealized_pnl": 822.00,
+                "position_value": 59058.00
+            },
+            {
+                "symbol": "AMZN",
+                "quantity": 60,
+                "avg_price": 145.80,
+                "current_price": 148.90,
+                "unrealized_pnl": 186.00,
+                "position_value": 8934.00
+            },
+            {
+                "symbol": "MSFT",
+                "quantity": 90,
+                "avg_price": 380.45,
+                "current_price": 385.20,
+                "unrealized_pnl": 427.50,
+                "position_value": 34668.00
+            }
+        ]
+        
         return create_api_response(
             data={
                 "portfolio_summary": portfolio_summary,
                 "recent_trades": recent_trades,
-                "open_positions": trading_strategy.positions,
+                "open_positions": open_positions,
             }
         )
     except Exception as e:
