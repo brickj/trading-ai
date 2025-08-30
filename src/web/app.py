@@ -2310,64 +2310,81 @@ def weekly_events_api():
                     message="Invalid date format. Use YYYY-MM-DD",
                     status_code=400,
                 )
-        # For now, return mock data since WeeklyPlanPopulator is not available
-        # In the future, this should fetch from weekly_plan_events table
-        mock_events = {
-            "earnings": [
-                {
-                    "date": "2025-08-19",
-                    "name": "AAPL Earnings",
-                    "event_type": "earnings",
-                    "impact": "high",
-                    "symbol": "AAPL",
-                    "timing": "after_market"
-                },
-                {
-                    "date": "2025-08-20",
-                    "name": "NVDA Earnings",
-                    "event_type": "earnings",
-                    "impact": "high",
-                    "symbol": "NVDA",
-                    "timing": "after_market"
-                }
-            ],
-            "federal_reserve": [
-                {
-                    "date": "2025-08-21",
-                    "name": "FOMC Meeting Minutes",
-                    "event_type": "federal_reserve",
-                    "impact": "high",
-                    "symbol": None,
-                    "timing": "all_day"
-                }
-            ],
-            "economic": [
-                {
-                    "date": "2025-08-22",
-                    "name": "CPI Data Release",
-                    "event_type": "economic_data",
-                    "impact": "high",
-                    "symbol": None,
-                    "timing": "market_open"
-                }
-            ],
-            "options_expiration": [
-                {
-                    "date": "2025-08-23",
-                    "name": "Weekly Options Expiration",
-                    "event_type": "options_expiration",
-                    "impact": "medium",
-                    "symbol": None,
-                    "timing": "market_close"
-                }
-            ],
-            "market_holidays": []
-        }
+        # Query the weekly_plan_events table for real data
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    if start_date:
+                        # Get events for the specific week
+                        week_start = start_date
+                        week_end = start_date + timedelta(days=6)
+                        cur.execute("""
+                            SELECT event_date, event_name, event_type, impact, symbol, timing
+                            FROM weekly_plan_events 
+                            WHERE week_start_date = %s 
+                            ORDER BY event_date, event_type
+                        """, (week_start,))
+                    else:
+                        # Get events for current week
+                        today = datetime.now().date()
+                        week_start = today - timedelta(days=today.weekday())  # Monday
+                        cur.execute("""
+                            SELECT event_date, event_name, event_type, impact, symbol, timing
+                            FROM weekly_plan_events 
+                            WHERE week_start_date = %s 
+                            ORDER BY event_date, event_type
+                        """, (week_start,))
+                    
+                    events = cur.fetchall()
+                    
+                    # Group events by type
+                    grouped_events = {
+                        "earnings": [],
+                        "federal_reserve": [],
+                        "economic": [],
+                        "options_expiration": [],
+                        "market_holidays": []
+                    }
+                    
+                    for event in events:
+                        event_data = {
+                            "date": event['event_date'].strftime("%Y-%m-%d"),
+                            "name": event['event_name'],
+                            "event_type": event['event_type'],
+                            "impact": event['impact'],
+                            "symbol": event['symbol'],
+                            "timing": event['timing'] or "all_day"
+                        }
+                        
+                        # Map event types to the expected categories
+                        if event['event_type'] == 'earnings':
+                            grouped_events["earnings"].append(event_data)
+                        elif event['event_type'] == 'federal_reserve':
+                            grouped_events["federal_reserve"].append(event_data)
+                        elif event['event_type'] == 'economic_data':
+                            grouped_events["economic"].append(event_data)
+                        elif event['event_type'] == 'options_expiration':
+                            grouped_events["options_expiration"].append(event_data)
+                        elif event['event_type'] == 'market_holidays':
+                            grouped_events["market_holidays"].append(event_data)
+                    
+                    real_events = grouped_events
+                    
+        except Exception as db_error:
+            trading_logger.error_logger.error(f"[ERROR] Database query failed: {str(db_error)}")
+            # Return empty events if database fails
+            real_events = {
+                "earnings": [],
+                "federal_reserve": [],
+                "economic": [],
+                "options_expiration": [],
+                "market_holidays": []
+            }
         trading_logger.api_logger.info(
-            f"[DEBUG] Successfully fetched mock weekly events: {len(mock_events.get('earnings', []))} earnings, {len(mock_events.get('economic', []))} economic events"
+            f"[DEBUG] Successfully fetched real weekly events: {len(real_events.get('earnings', []))} earnings, {len(real_events.get('economic', []))} economic events"
         )
         return create_api_response(
-            data=mock_events, message="Weekly events retrieved successfully (mock data)"
+            data=real_events, message="Weekly events retrieved successfully from database"
         )
     except Exception as e:
         trading_logger.error_logger.error(
@@ -2436,22 +2453,39 @@ def market_calendar_api(date_str):
                 message="Invalid date format. Use YYYY-MM-DD",
                 status_code=400,
             )
-        # For now, return mock data since market_calendar is not available
-        # In the future, this should fetch from weekly_plan_events table
-        mock_events = [
-            {
-                "name": "Market Open",
-                "event_type": "market_open",
-                "impact": "low",
-                "timing": "market_open"
-            }
-        ]
+        # Query the weekly_plan_events table for real data
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        SELECT event_name, event_type, impact, timing
+                        FROM weekly_plan_events 
+                        WHERE event_date = %s 
+                        ORDER BY event_type, event_name
+                    """, (target_date,))
+                    
+                    events = cur.fetchall()
+                    
+                    real_events = []
+                    for event in events:
+                        event_data = {
+                            "name": event['event_name'],
+                            "event_type": event['event_type'],
+                            "impact": event['impact'],
+                            "timing": event['timing'] or "all_day"
+                        }
+                        real_events.append(event_data)
+                    
+        except Exception as db_error:
+            trading_logger.error_logger.error(f"[ERROR] Database query failed: {str(db_error)}")
+            real_events = []
+        
         trading_logger.api_logger.info(
-            f"[DEBUG] Successfully fetched {len(mock_events)} mock events for {date_str}"
+            f"[DEBUG] Successfully fetched {len(real_events)} real events for {date_str}"
         )
         return create_api_response(
-            data={"date": date_str, "events": mock_events},
-            message=f"Events for {date_str} retrieved successfully (mock data)",
+            data={"date": date_str, "events": real_events},
+            message=f"Events for {date_str} retrieved successfully from database",
         )
     except Exception as e:
         trading_logger.error_logger.error(
@@ -2480,31 +2514,45 @@ def earnings_calendar_api():
             ]  # Default symbols
         # Get days_ahead parameter (optional, default 30)
         days_ahead = int(request.args.get("days_ahead", 30))
-        # For now, return mock data since market_calendar is not available
-        # In the future, this should fetch from weekly_plan_events table
-        mock_earnings = [
-            {
-                "symbol": "AAPL",
-                "date": "2025-08-19",
-                "estimate": 1.25,
-                "previous": 1.20,
-                "impact": "high"
-            },
-            {
-                "symbol": "MSFT",
-                "date": "2025-08-20",
-                "estimate": 2.85,
-                "previous": 2.75,
-                "impact": "high"
-            }
-        ]
-        earnings = mock_earnings
+        # Query the weekly_plan_events table for real earnings data
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    # Get earnings events for watchlist symbols in the next N days
+                    end_date = datetime.now().date() + timedelta(days=days_ahead)
+                    cur.execute("""
+                        SELECT symbol, event_date, impact
+                        FROM weekly_plan_events 
+                        WHERE event_type = 'earnings' 
+                        AND symbol = ANY(%s)
+                        AND event_date BETWEEN CURRENT_DATE AND %s
+                        ORDER BY event_date, symbol
+                    """, (watchlist_symbols, end_date))
+                    
+                    events = cur.fetchall()
+                    
+                    real_earnings = []
+                    for event in events:
+                        earnings_data = {
+                            "symbol": event['symbol'],
+                            "date": event['event_date'].strftime("%Y-%m-%d"),
+                            "estimate": None,  # Not stored in current schema
+                            "previous": None,  # Not stored in current schema
+                            "impact": event['impact']
+                        }
+                        real_earnings.append(earnings_data)
+                    
+                    earnings = real_earnings
+                    
+        except Exception as db_error:
+            trading_logger.error_logger.error(f"[ERROR] Database query failed: {str(db_error)}")
+            earnings = []
         trading_logger.api_logger.info(
-            f"[DEBUG] Successfully fetched {len(earnings)} earnings events for watchlist"
+            f"[DEBUG] Successfully fetched {len(earnings)} real earnings events for watchlist"
         )
         return create_api_response(
             data={"earnings": earnings, "symbols": watchlist_symbols},
-            message="Earnings calendar retrieved successfully",
+            message="Earnings calendar retrieved successfully from database",
         )
     except Exception as e:
         trading_logger.error_logger.error(

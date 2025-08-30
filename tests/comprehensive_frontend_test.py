@@ -822,7 +822,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             # Verify summary structure
             summary = api_data["summary"]
             required_summary_fields = ['total_markets', 'markets_open', 'markets_closed', 
-                                     'total_foreign_symbols', 'watchlist_symbols', 'foreign_coverage']
+                                     'total_foreign_symbols', 'foreign_coverage', 'last_updated', 'regions', 'status']
             for field in required_summary_fields:
                 self.assertIn(field, summary, f"Summary should have {field} field")
             
@@ -832,9 +832,14 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             
             if markets:
                 market = markets[0]
-                required_market_fields = ['code', 'name', 'country', 'currency', 'status', 'symbol_count']
+                required_market_fields = ['code', 'name', 'country', 'currency', 'status', 'symbol_count', 'symbols', 'timezone', 'trading_hours_open', 'trading_hours_close', 'performance', 'performance_class', 'status_class', 'is_open', 'label', 'value']
                 for field in required_market_fields:
                     self.assertIn(field, market, f"Market should have {field} field")
+            
+            # Verify additional data structures
+            self.assertIn("us_indices", api_data, "API data should have us_indices field")
+            us_indices = api_data["us_indices"]
+            self.assertIsInstance(us_indices, list, "US indices should be a list")
             
             print(f"✓ API returned {summary['total_markets']} markets with {summary['total_foreign_symbols']} symbols")
         
