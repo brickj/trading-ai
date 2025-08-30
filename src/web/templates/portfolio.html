@@ -517,9 +517,9 @@ function updateAllocationChart(positions) {
     const allocation = {};
     positions.forEach(position => {
         if (allocation[position.symbol]) {
-            allocation[position.symbol] += position.total_cost;
+            allocation[position.symbol] += position.position_value;
         } else {
-            allocation[position.symbol] = position.total_cost;
+            allocation[position.symbol] = position.position_value;
         }
     });
     
@@ -546,7 +546,7 @@ function updateAllocationChart(positions) {
 
 function updatePortfolioStats(summary, trades) {
     if (trades.length > 0) {
-        const avgPositionSize = trades.reduce((sum, trade) => sum + trade.total_cost, 0) / trades.length;
+        const avgPositionSize = trades.reduce((sum, trade) => sum + (trade.price * trade.quantity), 0) / trades.length;
         document.getElementById('avgPositionSize').textContent = formatCurrency(avgPositionSize);
     } else {
         document.getElementById('avgPositionSize').textContent = '$0.00';
