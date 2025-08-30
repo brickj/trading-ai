@@ -360,20 +360,22 @@ def market_movers():
                     if count_result is None:
                         print(f"[DEBUG] COUNT query returned None")
                         return create_api_response(error="Database query failed", status_code=500)
-                    
+
                     # Debug: see what count_result actually contains
                     print(f"[DEBUG] count_result type: {type(count_result)}")
                     print(f"[DEBUG] count_result content: {count_result}")
-                    
-                    # Handle both RealDictCursor (dict) and regular cursor (tuple) results
+
+                    # Handle dict, tuple/list, or sqlite3.Row results
                     if isinstance(count_result, dict):
                         count = count_result.get('count', 0)
                     elif isinstance(count_result, (tuple, list)):
                         count = count_result[0] if count_result else 0
                     else:
-                        # Fallback: try to convert to int directly
-                        count = int(count_result) if count_result else 0
-                    
+                        try:
+                            count = count_result['count']
+                        except Exception:
+                            count = count_result[0] if hasattr(count_result, '__getitem__') else 0
+
                     print(f"[DEBUG] Table has {count} total rows")
                     
                     if count == 0:
