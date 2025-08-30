@@ -17,9 +17,11 @@ import pytz
 # Essential imports for remaining functionality
 from src.data.data_fetcher import DataFetcher
 from src.core.config import Config
-from src.core.logger import trading_logger, log_exception, log_user_actions, log_timing, log_info, log_error
+from src.core.logger import log_user_actions, log_timing
 from src.core.recommendation_manager import RecommendationManager
 from src.core.database import save_backtest_result, get_latest_backtest, get_db_connection, ensure_job_schedules_table
+from .utils.page_logger import page_logger
+from .utils.db_manager import DBManager
 from src.core.cache import cache_result, get_cached_result
 from src.trading.trading_strategy import TradingStrategy
 from src.core.market_manager import MarketManager
@@ -28,6 +30,12 @@ from src.core.watchlist_manager import watchlist_manager
 from .helpers import create_api_response, handle_api_error
 # Import and register route blueprints
 from .routes import register_routes
+
+# Initialize logging aliases and database manager
+log_info = page_logger.info
+log_error = page_logger.error
+log_exception = page_logger.exception
+trading_logger = page_logger.logger
 app = Flask(__name__)
 # Register route blueprints
 register_routes(app)
@@ -77,6 +85,7 @@ socketio = SocketIO(
 data_fetcher = DataFetcher()
 trading_strategy = TradingStrategy()
 recommendation_manager = RecommendationManager()
+db_manager = DBManager()
 # index route moved to routes/page_routes.py
 @app.route("/api/dashboard/data")
 def get_dashboard_data():
@@ -1119,20 +1128,12 @@ def backtest_historical_recommendations():
         days_back = int(data.get("days_back", 30))
         strategy_type = data.get("strategy_type", "all")  # all, stocks, crypto
         # Create a connection without RealDictCursor for this function
-        db_cfg = Config.DATABASE_CONFIG
-        conn = psycopg2.connect(
-            host=db_cfg["host"],
-            port=db_cfg["port"],
-            database=db_cfg["database"],
-            user=db_cfg["user"],
-            password=db_cfg["password"],
-        )
-        try:
+        with db_manager.connect(dict_cursor=False) as conn:
             with conn.cursor() as cur:
                 # Build query based on parameters
                 query = """
-                    SELECT 
-                        id, symbol, timestamp, recommendation_type, action, 
+                    SELECT
+                        id, symbol, timestamp, recommendation_type, action,
                         strike_price, days_to_expiry, option_price, sentiment_confidence,
                         historical_confidence, final_confidence, sentiment_score,
                         current_stock_price, reasoning, actual_outcome, 
@@ -1213,20 +1214,11 @@ def get_backtest_recommendations():
         days_back = int(request.args.get("days_back", 30))
         limit = int(request.args.get("limit", 100))
         # Create a connection without RealDictCursor for this function
-        db_cfg = Config.DATABASE_CONFIG
-        conn = psycopg2.connect(
-            host=db_cfg["host"],
-            port=db_cfg["port"],
-            database=db_cfg["database"],
-            user=db_cfg["user"],
-            password=db_cfg["password"],
-            cursor_factory=None,  # Use default cursor (tuples)
-        )
-        try:
+        with db_manager.connect(dict_cursor=False) as conn:
             with conn.cursor() as cur:
                 query = """
-                    SELECT 
-                        id, symbol, timestamp, recommendation_type, action, 
+                    SELECT
+                        id, symbol, timestamp, recommendation_type, action,
                         strike_price, current_stock_price, sentiment_confidence,
                         final_confidence, sentiment_score, reasoning,
                         actual_outcome, outcome_timestamp, profitable
@@ -1282,20 +1274,11 @@ def get_backtest_statistics():
         days_back = int(request.args.get("days_back", 30))
         symbol = request.args.get("symbol", "").upper()
         # Create a connection without RealDictCursor for this function
-        db_cfg = Config.DATABASE_CONFIG
-        conn = psycopg2.connect(
-            host=db_cfg["host"],
-            port=db_cfg["port"],
-            database=db_cfg["database"],
-            user=db_cfg["user"],
-            password=db_cfg["password"],
-            cursor_factory=None,  # Use default cursor (tuples)
-        )
-        try:
+        with db_manager.connect(dict_cursor=False) as conn:
             with conn.cursor() as cur:
                 # Build base query
                 base_query = f"""
-                    FROM recommendations 
+                    FROM recommendations
                     WHERE timestamp >= NOW() - INTERVAL '{days_back} days'
                 """
                 params = []

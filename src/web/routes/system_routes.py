@@ -16,12 +16,15 @@ from ..helpers import (
 )
 
 # Import core modules
-from ...core.logger import trading_logger, log_exception
 from ...core.database import get_db_connection
 from ...core.config import Config
+from ..utils.page_logger import page_logger
 
 # Create blueprint
 system_bp = Blueprint('system', __name__)
+
+log_exception = page_logger.exception
+trading_logger = page_logger.logger
 
 
 @system_bp.route("/system_status")
@@ -268,6 +271,20 @@ def get_logs():
                 
     except Exception as e:
         return handle_api_error(e, "get_logs endpoint")
+
+
+@system_bp.route("/api/logging/verbosity", methods=["GET", "POST"])
+def logging_verbosity():
+    """Get or update logging verbosity."""
+    try:
+        if request.method == "POST":
+            data = request.get_json(force=True) or {}
+            verbose = bool(data.get("verbose", True))
+            page_logger.set_verbose(verbose)
+            return create_api_response(data={"verbose": page_logger.verbose})
+        return create_api_response(data={"verbose": page_logger.verbose})
+    except Exception as e:
+        return handle_api_error(e, "logging_verbosity endpoint")
 
 
 @system_bp.route("/api/news_services/toggle", methods=["POST"])
