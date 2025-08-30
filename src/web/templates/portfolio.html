@@ -445,18 +445,17 @@ function displayOpenPositions(positions) {
     
     positions.forEach(position => {
         const row = document.createElement('tr');
-        const entryDate = new Date(position.timestamp).toLocaleDateString();
         
         row.innerHTML = `
             <td><strong>${position.symbol}</strong></td>
-            <td><span class="badge ${position.option_type === 'call' ? 'bg-success' : 'bg-danger'}">${position.option_type.toUpperCase()}</span></td>
-            <td>${formatCurrency(position.strike_price)}</td>
-            <td>${position.position_size}</td>
-            <td>${formatCurrency(position.option_price)}</td>
-            <td>${formatCurrency(position.total_cost)}</td>
-            <td>${position.days_to_expiry} days</td>
-            <td class="${getSentimentClass(position.sentiment_score)}">${position.sentiment_score.toFixed(3)}</td>
-            <td>${entryDate}</td>
+            <td><span class="badge bg-info">STOCK</span></td>
+            <td>${formatCurrency(position.avg_price)}</td>
+            <td>${position.quantity}</td>
+            <td>${formatCurrency(position.current_price)}</td>
+            <td>${formatCurrency(position.position_value)}</td>
+            <td>N/A</td>
+            <td class="text-success">${position.unrealized_pnl >= 0 ? '+' : ''}${formatCurrency(position.unrealized_pnl)}</td>
+            <td>N/A</td>
         `;
         tbody.appendChild(row);
     });
@@ -478,12 +477,12 @@ function displayRecentTrades(trades) {
         row.innerHTML = `
             <td>${tradeDate}</td>
             <td><strong>${trade.symbol}</strong></td>
-            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action}</span></td>
-            <td>${trade.option_type.toUpperCase()}</td>
-            <td>${formatCurrency(trade.strike_price)}</td>
-            <td>${trade.position_size}</td>
-            <td>${formatCurrency(trade.total_cost)}</td>
-            <td class="${getSentimentClass(trade.sentiment_score)}">${trade.sentiment_score.toFixed(3)}</td>
+            <td><span class="badge ${trade.action === 'BUY' ? 'bg-success' : 'bg-danger'}">${trade.action}</span></td>
+            <td>STOCK</td>
+            <td>${formatCurrency(trade.price)}</td>
+            <td>${trade.quantity}</td>
+            <td>${formatCurrency(trade.price * trade.quantity)}</td>
+            <td class="text-success">${trade.pnl >= 0 ? '+' : ''}${formatCurrency(trade.pnl)}</td>
             <td><span class="badge bg-primary">${trade.status.toUpperCase()}</span></td>
         `;
         tbody.appendChild(row);
