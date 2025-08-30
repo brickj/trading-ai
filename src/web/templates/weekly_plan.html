@@ -379,7 +379,9 @@ function renderEventsTable() {
     
     let html = '';
     allEventsList.forEach(event => {
-        const date = new Date(event.date);
+        // Parse date as local time to avoid timezone offset issues
+        const [year, month, day] = event.date.split('-').map(Number);
+        const date = new Date(year, month - 1, day); // month is 0-indexed
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
