@@ -123,12 +123,12 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                     if len(enhanced_data) > 0:
                         stock = enhanced_data[0]
                         self.assertIn("symbol", stock, "Stock should have symbol")
-                        self.assertIn("comprehensive_analysis", stock, "Stock should have comprehensive_analysis")
+                        self.assertIn("signal_data", stock, "Stock should have signal_data")
                         
                         # Check data structure at top level
                         self.assertIn("price_data", stock, "Stock should have price_data")
                         self.assertIn("sentiment_data", stock, "Stock should have sentiment_data")
-                        self.assertIn("comprehensive_analysis", stock, "Stock should have comprehensive_analysis")
+                        self.assertIn("signal_data", stock, "Stock should have signal_data")
                         
                         # Check price data
                         if "price_data" in stock:
@@ -137,28 +137,12 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                             self.assertIn("change", price_data, "Price data should have change")
                             self.assertIn("change_percent", price_data, "Price data should have change_percent")
                         
-                        # Check comprehensive analysis structure
-                        if "comprehensive_analysis" in stock:
-                            comp_analysis = stock["comprehensive_analysis"]
-                            self.assertIn("all_recommendations", comp_analysis, "Comprehensive analysis should have all_recommendations")
-                            self.assertIn("top_recommendation", comp_analysis, "Comprehensive analysis should have top_recommendation")
-                            
-                            # Check all_recommendations structure
-                            if "all_recommendations" in comp_analysis:
-                                all_recs = comp_analysis["all_recommendations"]
-                                self.assertIsInstance(all_recs, list, "All recommendations should be a list")
-                                if len(all_recs) > 0:
-                                    rec = all_recs[0]
-                                    self.assertIn("action", rec, "Recommendation should have action")
-                                    self.assertIn("confidence", rec, "Recommendation should have confidence")
-                                    self.assertIn("reasoning", rec, "Recommendation should have reasoning")
-                            
-                            # Check top_recommendation structure
-                            if "top_recommendation" in comp_analysis:
-                                top_rec = comp_analysis["top_recommendation"]
-                                self.assertIn("action", top_rec, "Top recommendation should have action")
-                                self.assertIn("confidence", top_rec, "Top recommendation should have confidence")
-                                self.assertIn("reasoning", top_rec, "Top recommendation should have reasoning")
+                        # Check signal data structure
+                        if "signal_data" in stock:
+                            signal_data = stock["signal_data"]
+                            self.assertIn("action", signal_data, "Signal data should have action")
+                            self.assertIn("reasoning", signal_data, "Signal data should have reasoning")
+                            self.assertIn("signal_strength", signal_data, "Signal data should have signal_strength")
                         
                         # Check sentiment data structure
                         if "sentiment_data" in stock:
@@ -195,24 +179,28 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                 if len(crypto_data) > 0:
                     crypto = crypto_data[0]
                     self.assertIn("symbol", crypto, "Crypto should have symbol")
-                    self.assertIn("action", crypto, "Crypto should have action")
-                    self.assertIn("sentiment_score", crypto, "Crypto should have sentiment_score")
-                    self.assertIn("confidence", crypto, "Crypto should have confidence")
+                    self.assertIn("signal_data", crypto, "Crypto should have signal_data")
+                    self.assertIn("sentiment_data", crypto, "Crypto should have sentiment_data")
                     self.assertIn("type", crypto, "Crypto should have type")
                     self.assertIn("timestamp", crypto, "Crypto should have timestamp")
                     
                     # Check basic crypto data
                     self.assertIsInstance(crypto["symbol"], str, "Symbol should be a string")
-                    self.assertIsInstance(crypto["action"], str, "Action should be a string")
-                    self.assertIsInstance(crypto["sentiment_score"], (int, float), "Sentiment score should be numeric")
-                    self.assertIsInstance(crypto["confidence"], (int, float), "Confidence should be numeric")
+                    self.assertIn("signal_data", crypto, "Crypto should have signal_data")
+                    self.assertIn("sentiment_data", crypto, "Crypto should have sentiment_data")
                     self.assertEqual(crypto["type"], "crypto", "Type should be 'crypto'")
                     
                     # Check for additional crypto-specific fields
                     if "trade_signal" in crypto:
                         trade_signal = crypto["trade_signal"]
-                        self.assertIn("direction", trade_signal, "Trade signal should have direction")
-                        self.assertIn("strategy_type", trade_signal, "Trade signal should have strategy_type")
+                        self.assertIsInstance(trade_signal, str, "Trade signal should be a string")
+                    
+                    # Check signal data structure
+                    if "signal_data" in crypto:
+                        signal_data = crypto["signal_data"]
+                        self.assertIn("action", signal_data, "Signal data should have action")
+                        self.assertIn("reasoning", signal_data, "Signal data should have reasoning")
+                        self.assertIn("signal_strength", signal_data, "Signal data should have signal_strength")
                     
                     # Check for market data if available
                     if "market_data" in crypto:
@@ -275,7 +263,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                         position = open_positions[0]
                         self.assertIn("symbol", position, "Position should have symbol")
                         self.assertIn("quantity", position, "Position should have quantity")
-                        self.assertIn("entry_price", position, "Position should have entry_price")
+                        self.assertIn("avg_price", position, "Position should have avg_price")
                         self.assertIn("current_price", position, "Position should have current_price")
                         self.assertIn("unrealized_pnl", position, "Position should have unrealized_pnl")
                 

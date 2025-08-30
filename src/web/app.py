@@ -1154,28 +1154,28 @@ def backtest_historical_recommendations():
                 query += " ORDER BY timestamp DESC"
                 cur.execute(query, params)
                 recommendations = cur.fetchall()
-                # Process recommendations
-                print(f"  rec[0] (id): {first_rec[0]}")
-                print(f"  rec[1] (symbol): {first_rec[1]}")
-                print(f"  rec[2] (timestamp): {first_rec[2]}")
-                print(f"  rec[3] (recommendation_type): {first_rec[3]}")
-                print(f"  rec[4] (action): {first_rec[4]}")
-                print(f"  rec[5] (strike_price): {first_rec[5]}")
-                print(f"  rec[6] (days_to_expiry): {first_rec[6]}")
-                print(f"  rec[7] (option_price): {first_rec[7]}")
-                print(f"  rec[8] (sentiment_confidence): {first_rec[8]}")
-                print(f"  rec[9] (historical_confidence): {first_rec[9]}")
-                print(f"  rec[10] (final_confidence): {first_rec[10]}")
-                print(
-                    f"  rec[11] (sentiment_score): {first_rec[11]} (type: {type(first_rec[11])})"
-                )
-                print(f"  rec[12] (current_stock_price): {first_rec[12]}")
-                print(f"  rec[13] (reasoning): {first_rec[13]}")
-                print(f"  rec[14] (actual_outcome): {first_rec[14]}")
-                print(f"  rec[15] (outcome_timestamp): {first_rec[15]}")
-                print(f"  rec[16] (profitable): {first_rec[16]}")
-        finally:
-            conn.close()
+                # Debug: Print first recommendation if available
+                if recommendations:
+                    first_rec = recommendations[0]
+                    print(f"  rec[0] (id): {first_rec[0]}")
+                    print(f"  rec[1] (symbol): {first_rec[1]}")
+                    print(f"  rec[2] (timestamp): {first_rec[2]}")
+                    print(f"  rec[3] (recommendation_type): {first_rec[3]}")
+                    print(f"  rec[4] (action): {first_rec[4]}")
+                    print(f"  rec[5] (strike_price): {first_rec[5]}")
+                    print(f"  rec[6] (days_to_expiry): {first_rec[6]}")
+                    print(f"  rec[7] (option_price): {first_rec[7]}")
+                    print(f"  rec[8] (sentiment_confidence): {first_rec[8]}")
+                    print(f"  rec[9] (historical_confidence): {first_rec[9]}")
+                    print(f"  rec[10] (final_confidence): {first_rec[10]}")
+                    print(
+                        f"  rec[11] (sentiment_score): {first_rec[11]} (type: {type(first_rec[11])})"
+                    )
+                    print(f"  rec[12] (current_stock_price): {first_rec[12]}")
+                    print(f"  rec[13] (reasoning): {first_rec[13]}")
+                    print(f"  rec[14] (actual_outcome): {first_rec[14]}")
+                    print(f"  rec[15] (outcome_timestamp): {first_rec[15]}")
+                    print(f"  rec[16] (profitable): {first_rec[16]}")
         if not recommendations:
             return create_api_response(
                 data={
@@ -1233,8 +1233,6 @@ def get_backtest_recommendations():
                 params.append(limit)
                 cur.execute(query, params)
                 recommendations = cur.fetchall()
-        finally:
-            conn.close()
         # Convert to list of dictionaries
         results = []
         for rec in recommendations:
@@ -1353,12 +1351,6 @@ def get_backtest_statistics():
                     params,
                 )
                 top_symbols = cur.fetchall()
-        except Exception as e:
-            log_exception("Backtest statistics database error", e)
-            return create_api_response(error=str(e), status_code=500)
-        finally:
-            if conn:
-                conn.close()
         stats = {
             "total_recommendations": total_recommendations,
             "profitable_count": profitable_count,

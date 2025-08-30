@@ -77,7 +77,7 @@ class Cache:
                     cursor.execute(
                         """
                         SELECT data, expires_at FROM api_cache
-                        WHERE key_hash = %s AND expires_at > CURRENT_TIMESTAMP
+                        WHERE cache_key = %s AND expires_at > CURRENT_TIMESTAMP
                     """,
                         (key,),
                     )
@@ -94,7 +94,7 @@ class Cache:
                             UPDATE api_cache
                             SET access_count = access_count + 1,
                                 last_accessed = CURRENT_TIMESTAMP
-                            WHERE key_hash = %s
+                            WHERE cache_key = %s
                         """,
                             (key,),
                         )
@@ -162,16 +162,17 @@ class Cache:
                     # Insert or update the cache entry
                     cursor.execute(
                         """
-                        INSERT INTO api_cache (key_hash, data, expires_at)
-                        VALUES (%s, %s, %s)
-                        ON CONFLICT (key_hash)
+                        INSERT INTO api_cache (cache_key, key_hash, data, expires_at)
+                        VALUES (%s, %s, %s, %s)
+                        ON CONFLICT (cache_key)
                         DO UPDATE SET
+                            key_hash = EXCLUDED.key_hash,
                             data = EXCLUDED.data,
                             expires_at = EXCLUDED.expires_at,
                             access_count = 0,
                             last_accessed = CURRENT_TIMESTAMP
                         """,
-                        (key, serialized_data, expires_at),
+                        (key, key, serialized_data, expires_at),
                     )
                     conn.commit()
                     return True
@@ -190,7 +191,7 @@ class Cache:
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cursor:
-                    cursor.execute("DELETE FROM api_cache WHERE key_hash = %s", (key,))
+                    cursor.execute("DELETE FROM api_cache WHERE cache_key = %s", (key,))
                     conn.commit()
                     return True
         except Exception as e:
