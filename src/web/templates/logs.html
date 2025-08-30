@@ -67,6 +67,13 @@
                                 Auto-refresh every 10 seconds
                             </label>
                         </div>
+        
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="verboseToggle" checked>
+                            <label class="form-check-label" for="verboseToggle">
+                                Verbose Logging
+                            </label>
+                        </div>
                     </div>
                     <div class="col-md-6 text-end">
                         <div class="btn-group" role="group">
@@ -149,6 +156,7 @@ let currentLogs = [];
 document.addEventListener('DOMContentLoaded', function() {
     loadLogs();
     setupEventListeners();
+    initVerboseToggle();
 });
 
 function setupEventListeners() {
@@ -157,6 +165,9 @@ function setupEventListeners() {
     
     // Auto-refresh toggle
     document.getElementById('autoRefreshLogs').addEventListener('change', toggleAutoRefresh);
+
+    // Verbose logging toggle
+    document.getElementById('verboseToggle').addEventListener('change', toggleVerbose);
     
     // Filter changes
     document.getElementById('logType').addEventListener('change', loadLogs);
@@ -357,6 +368,29 @@ function toggleAutoRefresh() {
             autoRefreshInterval = null;
         }
         showAlert('Auto-refresh disabled', 'info');
+    }
+}
+
+async function initVerboseToggle() {
+    try {
+        const res = await fetch('/api/logging/verbosity');
+        const data = await res.json();
+        document.getElementById('verboseToggle').checked = data.data?.verbose;
+    } catch (error) {
+        console.error('Error loading verbosity state', error);
+    }
+}
+
+async function toggleVerbose() {
+    const verbose = document.getElementById('verboseToggle').checked;
+    try {
+        await fetch('/api/logging/verbosity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ verbose })
+        });
+    } catch (error) {
+        console.error('Error toggling verbosity', error);
     }
 }
 

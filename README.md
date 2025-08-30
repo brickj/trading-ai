@@ -815,7 +815,7 @@ python3 -c "from src.data.preload_news_opportunities import preload_news_opportu
 ## 📈 Monitoring & Logs
 
 ### Log Locations
-- **Application Logs**: Standard Flask logging
+- **Application Logs**: Unified `PageLogger` with adjustable verbosity via `/api/logging/verbosity`
 - **Scalping Logs**: `logs/scalping_analysis.log`
 - **Scheduler Logs**: Integrated with main application logs
 
@@ -823,6 +823,9 @@ python3 -c "from src.data.preload_news_opportunities import preload_news_opportu
 - **System Status**: `/system_status` page
 - **API Health**: `/api/system_status` endpoint
 - **Database Status**: `/api/test_db` endpoint
+
+### Database Utilities
+- **Reusable Connections**: `DBManager` centralizes database access across web modules
 
 ## 🔮 Future Enhancements
 
