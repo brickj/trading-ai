@@ -9,20 +9,25 @@ import json
 import sys
 import os
 import subprocess
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-# Add src to path for database access
+# Add src to path for config access
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 async def test_stocks_page_data():
     """Test the stocks page displays correct data from market_movers table"""
-    from src.core.database import get_db_connection
+    from src.core.config import Config
     
     print("🔍 Testing Stocks Page Data Display...")
     
+    # Use database config from config.py
+    db_config = Config.DATABASE_CONFIG
+    
     # First, get the actual data from the market_movers table
     try:
-        with get_db_connection() as conn:
-            with conn.cursor() as cur:
+        conn = psycopg2.connect(**db_config)
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("""
                     SELECT symbol, type, change_percent, price, volume, timestamp
                     FROM market_movers 
@@ -34,7 +39,13 @@ async def test_stocks_page_data():
                 losers = []
                 
                 for row in rows:
-                    symbol, type_, change_percent, price, volume, timestamp = row
+                    # RealDictCursor returns dictionaries, so access by column name
+                    symbol = row['symbol']
+                    type_ = row['type']
+                    change_percent = row['change_percent']
+                    price = row['price']
+                    volume = row['volume']
+                    
                     if type_ == 'GAINER':
                         gainers.append({
                             'symbol': symbol,
@@ -61,6 +72,9 @@ async def test_stocks_page_data():
     except Exception as e:
         print(f"❌ Database error: {e}")
         return False
+    finally:
+        if 'conn' in locals():
+            conn.close()
     
     # Test the API endpoint
     try:

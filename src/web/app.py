@@ -3592,28 +3592,9 @@ preload_timestamp = None
 def preload_stock_data():
     print("[DEBUG] Starting background preload_stock_data()")
     sys.stdout.flush()
-    # Track rate limiting status for each data source
-    rate_limited_sources = set()
+    
     try:
-        # Use internal function call instead of HTTP request to avoid circular dependency
-        from src.data.data_fetcher import DataFetcher
-        # Initialize components if not already done
-        if "data_fetcher" not in globals():
-            global data_fetcher
-            data_fetcher = DataFetcher()
-        # Get S&P 500 analysis directly
-        print("[DEBUG] Fetching S&P 500 analysis for preloading...")
-        start_time = time.time()
-        # Get top 3 gainers and losers from Alpha Vantage
-        market_movers = data_fetcher.get_top_gainers_losers(limit=3)
-        gainer_symbols = market_movers.get("gainers", [])
-        loser_symbols = market_movers.get("losers", [])
-        print(f"[DEBUG] Found market movers: {market_movers}")
-        
-        # Use Alpha Vantage data directly instead of fetching individual stock prices
-        print("[DEBUG] Using Alpha Vantage data directly for accurate categorization...")
-        
-        # Get the raw Alpha Vantage data
+        # Get the raw Alpha Vantage data directly
         url = "https://www.alphavantage.co/query"
         params = {
             "function": "TOP_GAINERS_LOSERS",
@@ -3627,39 +3608,39 @@ def preload_stock_data():
                 alpha_data = response.json()
                 print(f"[DEBUG] Got raw Alpha Vantage data")
                 
-                # Process gainers using Alpha Vantage data directly
+                # Process top 3 gainers directly from Alpha Vantage
                 gainers = []
-                for gainer in alpha_data.get("top_gainers", []):
+                top_gainers = alpha_data.get("top_gainers", [])[:3]  # Take top 3
+                for gainer in top_gainers:
                     ticker = gainer.get("ticker")
-                    if ticker in gainer_symbols:
-                        gainers.append({
-                            "symbol": ticker,
-                            "type": "GAINER",
-                            "price": float(gainer.get("price", 0)),
-                            "change_amount": 0,
-                            "change_percent": float(str(gainer.get("change_percentage", 0)).replace('%', '')),
-                            "volume": int(gainer.get("volume", 0)),
-                            "timestamp": datetime.now(),
-                            "analysis_data": gainer
-                        })
-                        print(f"[DEBUG] Added gainer: {ticker} - {gainer.get('change_percentage')}% at ${gainer.get('price')}")
+                    gainers.append({
+                        "symbol": ticker,
+                        "type": "GAINER",
+                        "price": float(gainer.get("price", 0)),
+                        "change_amount": 0,
+                        "change_percent": float(str(gainer.get("change_percentage", 0)).replace('%', '')),
+                        "volume": int(gainer.get("volume", 0)),
+                        "timestamp": datetime.now(),
+                        "analysis_data": gainer
+                    })
+                    print(f"[DEBUG] Added gainer: {ticker} - {gainer.get('change_percentage')}% at ${gainer.get('price')}")
                 
-                # Process losers using Alpha Vantage data directly
+                # Process top 3 losers directly from Alpha Vantage
                 losers = []
-                for loser in alpha_data.get("top_losers", []):
+                top_losers = alpha_data.get("top_losers", [])[:3]  # Take top 3
+                for loser in top_losers:
                     ticker = loser.get("ticker")
-                    if ticker in loser_symbols:
-                        losers.append({
-                            "symbol": ticker,
-                            "type": "LOSER",
-                            "price": float(loser.get("price", 0)),
-                            "change_amount": 0,
-                            "change_percent": float(str(loser.get("change_percentage", 0)).replace('%', '')),
-                            "volume": int(loser.get("volume", 0)),
-                            "timestamp": datetime.now(),
-                            "analysis_data": loser
-                        })
-                        print(f"[DEBUG] Added loser: {ticker} - {loser.get('change_percentage')}% at ${loser.get('price')}")
+                    losers.append({
+                        "symbol": ticker,
+                        "type": "LOSER",
+                        "price": float(loser.get("price", 0)),
+                        "change_amount": 0,
+                        "change_percent": float(str(loser.get("change_percentage", 0)).replace('%', '')),
+                        "volume": int(loser.get("volume", 0)),
+                        "timestamp": datetime.now(),
+                        "analysis_data": loser
+                    })
+                    print(f"[DEBUG] Added loser: {ticker} - {loser.get('change_percentage')}% at ${loser.get('price')}")
                 
                 print(f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers from Alpha Vantage data")
             else:
@@ -3670,11 +3651,7 @@ def preload_stock_data():
             print(f"[ERROR] Exception getting raw Alpha Vantage data: {e}")
             gainers = []
             losers = []
-        # No fallback to test symbols - if no market movers found, just return empty results
-        if not gainers and not losers:
-            print("[DEBUG] No market movers data available")
-            gainers = []
-            losers = []
+        
         # Save to market_movers table using the current table structure
         try:
             with get_db_connection() as conn:
@@ -3715,17 +3692,12 @@ def preload_stock_data():
                     print(f"[DEBUG] Successfully saved {len(gainers)} gainers and {len(losers)} losers to market_movers table")
         except Exception as e:
             print(f"[ERROR] Failed to save to market_movers table: {e}")
-        print(
-            f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers for market_movers table"
-        )
-        print(
-            f"[DEBUG] Successfully preloaded stock data in {time.time() - start_time:.2f} seconds"
-        )
+        
+        print(f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers for market_movers table")
+        print("[DEBUG] Finished background preload_stock_data()")
     except Exception as e:
         print(f"[ERROR] Exception in preload_stock_data: {str(e)}")
         sys.stdout.flush()
-    print("[DEBUG] Finished background preload_stock_data()")
-    sys.stdout.flush()
 # Schedule the preload task
 scheduler = BackgroundScheduler()
 # Run at 9:35 AM on trading days for S&P 500

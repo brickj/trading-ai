@@ -12,8 +12,6 @@ from .config import Config
 from typing import Dict, Any, Optional
 import json
 import numpy as np
-import sqlite3
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -40,101 +38,39 @@ def convert_numpy_in_dict(data):
         return convert_numpy_values(data)
 
 
-def _init_sqlite_db(conn: sqlite3.Connection) -> None:
-    """Create market_movers table with sample data for SQLite fallback."""
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS market_movers (
-            symbol TEXT,
-            type TEXT,
-            change_percent REAL,
-            price REAL,
-            volume INTEGER,
-            timestamp TEXT
-        )
-        """
-    )
-    cur.execute("DELETE FROM market_movers")
-    now = datetime.now().isoformat()
-    sample_gainers = [
-        ("AAPL", "GAINER", 2.5, 150.0, 1000000, now),
-        ("MSFT", "GAINER", 1.8, 280.0, 800000, now),
-        ("GOOGL", "GAINER", 1.2, 2700.0, 500000, now),
-    ]
-    sample_losers = [
-        ("TSLA", "LOSER", -3.4, 700.0, 1200000, now),
-        ("AMZN", "LOSER", -2.1, 3300.0, 900000, now),
-        ("META", "LOSER", -1.5, 250.0, 700000, now),
-    ]
-    cur.executemany(
-        "INSERT INTO market_movers (symbol, type, change_percent, price, volume, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
-        sample_gainers + sample_losers,
-    )
-    conn.commit()
-
-
-class SQLiteCursorWrapper:
-    def __init__(self, cursor: sqlite3.Cursor):
-        self.cursor = cursor
-
-    def __enter__(self):
-        return self.cursor
-
-    def __exit__(self, exc_type, exc, tb):
-        self.cursor.close()
-
-
-class SQLiteConnectionWrapper:
-    def __init__(self, conn: sqlite3.Connection):
-        self.conn = conn
-
-    def cursor(self, *args, **kwargs):
-        return SQLiteCursorWrapper(self.conn.cursor())
-
-    def commit(self):
-        return self.conn.commit()
-
-    def rollback(self):
-        return self.conn.rollback()
-
-    def close(self):
-        return self.conn.close()
-
-
 @contextmanager
 def get_db_connection():
-    """Get a database connection with automatic cleanup.
+    """
+    Get a PostgreSQL database connection with automatic cleanup.
 
-    Tries PostgreSQL using configuration; falls back to an in-memory SQLite database
-    populated with sample market_movers data when PostgreSQL is unavailable.
+    Yields:
+        Connection: PostgreSQL database connection
     """
     conn = None
     try:
-        try:
-            # Attempt PostgreSQL connection first
-            if hasattr(Config, "DATABASE_URL") and Config.DATABASE_URL:
-                conn = psycopg2.connect(
-                    Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
-                )
-            else:
-                db_cfg = Config.DATABASE_CONFIG
-                conn = psycopg2.connect(
-                    host=db_cfg["host"],
-                    port=db_cfg["port"],
-                    database=db_cfg["database"],
-                    user=db_cfg["user"],
-                    password=db_cfg["password"],
-                    cursor_factory=psycopg2.extras.RealDictCursor,
-                )
-            yield conn
-        except Exception as e:
-            logger.error(f"PostgreSQL unavailable, falling back to SQLite: {e}")
-            sqlite_conn = sqlite3.connect(":memory:")
-            sqlite_conn.row_factory = sqlite3.Row
-            _init_sqlite_db(sqlite_conn)
-            conn = SQLiteConnectionWrapper(sqlite_conn)
-            yield conn
+        # Use individual connection parameters or DATABASE_URL if available
+        if hasattr(Config, "DATABASE_URL") and Config.DATABASE_URL:
+            conn = psycopg2.connect(
+                Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
+            )
+        else:
+            # Use individual connection parameters from Config.DATABASE_CONFIG
+            db_cfg = Config.DATABASE_CONFIG
+            conn = psycopg2.connect(
+                host=db_cfg["host"],
+                port=db_cfg["port"],
+                database=db_cfg["database"],
+                user=db_cfg["user"],
+                password=db_cfg["password"],
+                cursor_factory=psycopg2.extras.RealDictCursor,
+            )
+
+        yield conn
+    except psycopg2.Error as e:
+        logger.error(f"Database connection error: {e}")
+        if conn:
+            conn.rollback()
+        raise
     finally:
         if conn:
             conn.close()
@@ -142,16 +78,41 @@ def get_db_connection():
 
 @contextmanager
 def get_db_connection_silent():
-    """Silent wrapper around get_db_connection.
-
-    Returns a connection if available, otherwise yields None without raising.
     """
+    Get a PostgreSQL database connection with automatic cleanup (silent version).
+    Returns None if connection fails instead of raising an exception.
+
+    Yields:
+        Connection or None: PostgreSQL database connection or None if failed
+    """
+    conn = None
     try:
-        with get_db_connection() as conn:
-            yield conn
-    except Exception as e:
+        # Use individual connection parameters or DATABASE_URL if available
+        if hasattr(Config, "DATABASE_URL") and Config.DATABASE_URL:
+            conn = psycopg2.connect(
+                Config.DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor
+            )
+        else:
+            # Use individual connection parameters from Config.DATABASE_CONFIG
+            db_cfg = Config.DATABASE_CONFIG
+            conn = psycopg2.connect(
+                host=db_cfg["host"],
+                port=db_cfg["port"],
+                database=db_cfg["database"],
+                user=db_cfg["user"],
+                password=db_cfg["password"],
+                cursor_factory=psycopg2.extras.RealDictCursor,
+            )
+
+        yield conn
+    except psycopg2.Error as e:
         logger.error(f"Database connection error: {e}")
+        if conn:
+            conn.rollback()
         yield None
+    finally:
+        if conn:
+            conn.close()
 
 
 # Module-level function to check database connection
