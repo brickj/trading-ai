@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 from ..data.data_fetcher import DataFetcher
 from ..core.database import get_db_connection
+from ..core.config import Config
 
 
 def preload_stock_data():
@@ -27,6 +28,9 @@ def preload_stock_data():
         gainer_symbols = market_movers.get("gainers", [])
         loser_symbols = market_movers.get("losers", [])
         print(f"[DEBUG] Found market movers: {market_movers}")
+        print(f"[DEBUG] Alpha Vantage gainers: {gainer_symbols}")
+        print(f"[DEBUG] Alpha Vantage losers: {loser_symbols}")
+        print(f"[DEBUG] Alpha Vantage source: {market_movers.get('source', 'unknown')}")
 
         # Fetch actual price data for each symbol
         def fetch_symbol_data(symbol, symbol_type):
@@ -53,6 +57,14 @@ def preload_stock_data():
                 
                 print(f"[DEBUG] {symbol} data - Price: {current_price}, Change: {change_amount}, Change%: {change_percent}%, Volume: {volume}")
                 
+                # Log the categorization vs actual data
+                if symbol_type == "GAINER" and change_percent <= 0:
+                    print(f"[WARNING] {symbol} categorized as GAINER by Alpha Vantage but has negative change: {change_percent}%")
+                elif symbol_type == "LOSER" and change_percent > 0:
+                    print(f"[WARNING] {symbol} categorized as LOSER by Alpha Vantage but has positive change: {change_percent}%")
+                else:
+                    print(f"[DEBUG] {symbol} categorization matches data: {symbol_type} with {change_percent}% change")
+                
                 # Check if we have valid price data
                 if not current_price or current_price == 0:
                     print(f"[WARNING] {symbol} has invalid price: {current_price}")
@@ -74,18 +86,66 @@ def preload_stock_data():
                 traceback.print_exc()
                 return None
 
-        # Fetch data for gainers and losers
-        gainers = []
-        for symbol in gainer_symbols:
-            data = fetch_symbol_data(symbol, "GAINER")
-            if data:
-                gainers.append(data)
+        # Use Alpha Vantage data directly instead of fetching individual stock prices
+        print("[DEBUG] Using Alpha Vantage data directly for accurate categorization...")
         
-        losers = []
-        for symbol in loser_symbols:
-            data = fetch_symbol_data(symbol, "LOSER")
-            if data:
-                losers.append(data)
+        # Get the raw Alpha Vantage data
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "TOP_GAINERS_LOSERS",
+            "apikey": Config.ALPHA_VANTAGE_API_KEY,
+        }
+        
+        try:
+            import requests
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                alpha_data = response.json()
+                print(f"[DEBUG] Got raw Alpha Vantage data")
+                
+                # Process gainers using Alpha Vantage data directly
+                gainers = []
+                for gainer in alpha_data.get("top_gainers", []):
+                    ticker = gainer.get("ticker")
+                    if ticker in gainer_symbols:
+                        gainers.append({
+                            "symbol": ticker,
+                            "type": "GAINER",
+                            "price": float(gainer.get("price", 0)),
+                            "change_amount": 0,
+                            "change_percent": float(gainer.get("change_percentage", 0)),
+                            "volume": int(gainer.get("volume", 0)),
+                            "timestamp": datetime.now(),
+                            "analysis_data": gainer
+                        })
+                        print(f"[DEBUG] Added gainer: {ticker} - {gainer.get('change_percentage')}% at ${gainer.get('price')}")
+                
+                # Process losers using Alpha Vantage data directly
+                losers = []
+                for loser in alpha_data.get("top_losers", []):
+                    ticker = loser.get("ticker")
+                    if ticker in loser_symbols:
+                        losers.append({
+                            "symbol": ticker,
+                            "type": "LOSER",
+                            "price": float(loser.get("price", 0)),
+                            "change_amount": 0,
+                            "change_percent": float(loser.get("change_percentage", 0)),
+                            "volume": int(loser.get("volume", 0)),
+                            "timestamp": datetime.now(),
+                            "analysis_data": loser
+                        })
+                        print(f"[DEBUG] Added loser: {ticker} - {loser.get('change_percentage')}% at ${loser.get('price')}")
+                
+                print(f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers from Alpha Vantage data")
+            else:
+                print(f"[ERROR] Failed to get raw Alpha Vantage data: {response.status_code}")
+                gainers = []
+                losers = []
+        except Exception as e:
+            print(f"[ERROR] Exception getting raw Alpha Vantage data: {e}")
+            gainers = []
+            losers = []
 
 
 

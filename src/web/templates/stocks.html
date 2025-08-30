@@ -351,84 +351,53 @@
     </div>
 </div>
 
-<!-- Stock Cards Section - Required for tests -->
-<div class="row mt-4" id="stockCardsSection">
+<!-- Stock Cards Section - Will be dynamically populated with real data -->
+<div class="row mt-4" id="stockCardsSection" style="display: none;">
     <div class="col-12">
         <h5><i class="fas fa-chart-line"></i> Stock Analysis Cards</h5>
         <div class="row" id="stockCardsContainer">
-            <!-- Stock cards will be dynamically populated here -->
-            <div class="col-md-4 mb-3">
-                <div class="card stock-card">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> AAPL</h6>
+            <!-- Stock cards will be dynamically populated here with real data from the API -->
+        </div>
+    </div>
+</div>
+
+<!-- Debug Section -->
+<div class="row mt-4" id="debugSection">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5><i class="fas fa-bug"></i> Debug Information</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="toggleDebugSection()">Toggle Debug</button>
+            </div>
+            <div class="card-body" id="debugContent" style="display: none;">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>API Request</h6>
+                        <div class="bg-light p-2 rounded">
+                            <pre id="debugRequest" class="mb-0 small">No request data yet</pre>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-muted">Price</small>
-                                <h6 class="mb-0">$150.25</h6>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">Change</small>
-                                <h6 class="mb-0 text-success">+2.5%</h6>
-                            </div>
+                    <div class="col-md-6">
+                        <h6>API Response</h6>
+                        <div class="bg-light p-2 rounded">
+                            <pre id="debugResponse" class="mb-0 small">No response data yet</pre>
                         </div>
-                        <hr>
-                        <small class="text-muted">Sentiment</small>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: 75%"></div>
-                        </div>
-                        <small class="text-muted">Confidence: 85%</small>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <div class="card stock-card">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> TSLA</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-muted">Price</small>
-                                <h6 class="mb-0">$245.80</h6>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">Change</small>
-                                <h6 class="mb-0 text-danger">-1.2%</h6>
-                            </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Data Flow Debug</h6>
+                        <div class="bg-light p-2 rounded">
+                            <pre id="debugDataFlow" class="mb-0 small">No data flow information yet</pre>
                         </div>
-                        <hr>
-                        <small class="text-muted">Sentiment</small>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-danger" style="width: 35%"></div>
-                        </div>
-                        <small class="text-muted">Confidence: 72%</small>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <div class="card stock-card">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> MSFT</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-6">
-                                <small class="text-muted">Price</small>
-                                <h6 class="mb-0">$320.45</h6>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted">Change</small>
-                                <h6 class="mb-0 text-success">+1.8%</h6>
-                            </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Console Logs</h6>
+                        <div class="bg-light p-2 rounded">
+                            <pre id="debugConsole" class="mb-0 small">Console logs will appear here...</pre>
                         </div>
-                        <hr>
-                        <small class="text-muted">Sentiment</small>
-                        <div class="progress mb-2" style="height: 8px;">
-                            <div class="progress-bar bg-success" style="width: 65%"></div>
-                        </div>
-                        <small class="text-muted">Confidence: 78%</small>
                     </div>
                 </div>
             </div>

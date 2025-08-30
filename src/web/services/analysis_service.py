@@ -76,8 +76,23 @@ class AnalysisService:
                 symbol, price_data, sentiment_result, None
             )
             
+            # Determine if this is a winner or loser based on price change
+            change_percent = price_data.get("change_percent", "0%")
+            if isinstance(change_percent, str):
+                # Remove % sign and convert to float
+                try:
+                    change_percent_clean = change_percent.replace("%", "")
+                    change_percent_float = float(change_percent_clean)
+                    stock_type = "winner" if change_percent_float > 0 else "loser"
+                except ValueError:
+                    stock_type = "loser"  # Default to loser if we can't parse
+            else:
+                # If change_percent is already a number
+                stock_type = "winner" if change_percent > 0 else "loser"
+            
             result = {
                 "symbol": symbol,
+                "type": stock_type,
                 "price_data": price_data,
                 "sentiment_data": sentiment_result,
                 "signal_data": {

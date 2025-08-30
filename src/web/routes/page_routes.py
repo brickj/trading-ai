@@ -57,6 +57,14 @@ def portfolio_page():
     except Exception as e:
         return f"Error loading portfolio page: {str(e)}", 500
 
+@page_bp.route("/portfolio_page")
+def portfolio_page_alt():
+    """Portfolio management page (alternative route for compatibility)"""
+    try:
+        return render_template("portfolio.html")
+    except Exception as e:
+        return f"Error loading portfolio page: {str(e)}", 500
+
 
 @page_bp.route("/foreign_markets_overview")
 def foreign_markets_overview_page():

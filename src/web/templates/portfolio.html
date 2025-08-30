@@ -353,6 +353,38 @@
 let portfolioData = null;
 let allocationChart = null;
 
+// Utility functions
+function showAlert(message, type = 'info') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    // Insert at the top of the container
+    const container = document.querySelector('.container');
+    if (container) {
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+    }
+}
+
+function formatCurrency(amount) {
+    if (typeof amount !== 'number') {
+        amount = parseFloat(amount) || 0;
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+    }).format(amount);
+}
+
+function getSentimentClass(score) {
+    if (score >= 0.5) return 'text-success';
+    if (score <= -0.5) return 'text-danger';
+    return 'text-warning';
+}
+
 document.getElementById('refreshBtn').addEventListener('click', loadPortfolioData);
 
 async function loadPortfolioData() {

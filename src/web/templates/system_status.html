@@ -452,11 +452,11 @@ async function loadSystemStatus() {
         const response = await fetch('/api/system_status');
         const data = await response.json();
         
-        if (data.status === 'ok') {
-            updateSystemMetrics(data);
+        if (data.status === 'success') {
+            updateSystemMetrics(data.data);
         } else {
-            console.error('System status error:', data.error);
-            showAlert('Error loading system status: ' + data.error, 'danger');
+            console.error('System status error:', data.message || data.error);
+            showAlert('Error loading system status: ' + (data.message || data.error || 'Unknown error'), 'danger');
         }
     } catch (error) {
         console.error('Error loading system status:', error);
@@ -470,29 +470,31 @@ function updateSystemMetrics(data) {
     
     // CPU Usage
     const cpuElement = document.getElementById('cpuUsage');
-    if (system.cpu && system.cpu.system_percent !== undefined) {
-        cpuElement.textContent = system.cpu.system_percent.toFixed(1) + '%';
-        cpuElement.className = system.cpu.system_percent > 80 ? 'text-danger' : 
-                              system.cpu.system_percent > 60 ? 'text-warning' : 'text-primary';
+    if (system.cpu_count !== undefined) {
+        // For now, show CPU count since system_percent is not available
+        cpuElement.textContent = system.cpu_count + ' cores';
+        cpuElement.className = 'text-primary';
+    } else {
+        cpuElement.textContent = 'N/A';
     }
     
     // Memory Usage
     const memoryElement = document.getElementById('memoryUsage');
-    if (system.memory && system.memory.system_percent !== undefined) {
-        memoryElement.textContent = system.memory.system_percent.toFixed(1) + '%';
-        memoryElement.className = system.memory.system_percent > 80 ? 'text-danger' : 
-                                 system.memory.system_percent > 60 ? 'text-warning' : 'text-success';
+    if (system.memory_percent !== undefined) {
+        memoryElement.textContent = system.memory_percent.toFixed(1) + '%';
+        memoryElement.className = system.memory_percent > 80 ? 'text-danger' : 
+                                 system.memory_percent > 60 ? 'text-warning' : 'text-success';
+    } else {
+        memoryElement.textContent = 'N/A';
     }
     
-    // Uptime (calculate from boot time)
+    // Uptime (show platform info instead since boot time not available)
     const uptimeElement = document.getElementById('uptime');
-    if (system.uptime && system.uptime.boot_time) {
-        const bootTime = new Date(system.uptime.boot_time);
-        const now = new Date();
-        const uptimeMs = now - bootTime;
-        const uptimeHours = Math.floor(uptimeMs / (1000 * 60 * 60));
-        const uptimeMinutes = Math.floor((uptimeMs % (1000 * 60 * 60)) / (1000 * 60));
-        uptimeElement.textContent = `${uptimeHours}h ${uptimeMinutes}m`;
+    if (system.platform) {
+        uptimeElement.textContent = system.platform;
+        uptimeElement.className = 'text-info';
+    } else {
+        uptimeElement.textContent = 'N/A';
     }
     
     // Cache Hit Rate (placeholder)
@@ -501,14 +503,14 @@ function updateSystemMetrics(data) {
     
     // Update performance summary
     const performanceSummary = document.getElementById('performanceSummary');
-    if (system.status === 'ok') {
+    if (system.platform && system.memory_percent !== undefined) {
         performanceSummary.className = 'alert alert-success mt-3';
         performanceSummary.innerHTML = `
             <small>
                 <strong>Performance Summary:</strong> System is running optimally. 
-                CPU: ${system.cpu?.system_percent?.toFixed(1) || 'N/A'}%, 
-                Memory: ${system.memory?.system_percent?.toFixed(1) || 'N/A'}%, 
-                Platform: ${system.system?.platform || 'N/A'}
+                CPU Cores: ${system.cpu_count || 'N/A'}, 
+                Memory: ${system.memory_percent?.toFixed(1) || 'N/A'}%, 
+                Platform: ${system.platform || 'N/A'}
             </small>
         `;
     } else {
@@ -749,8 +751,8 @@ async function loadWatchlistConfig() {
         const response = await fetch('/api/watchlist/config');
         const data = await response.json();
         
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to load watchlist configuration');
+        if (data.status !== 'success') {
+            throw new Error(data.message || data.error || 'Failed to load watchlist configuration');
         }
         
         // Display stock watchlist

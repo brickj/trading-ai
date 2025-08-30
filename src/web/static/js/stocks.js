@@ -5,6 +5,77 @@ let isRefreshing = false;
 let autoRefreshInterval = null;
 let lastUpdated = null;
 
+// Debug functions
+function updateDebugRequest(url, params) {
+    const debugRequest = document.getElementById('debugRequest');
+    if (debugRequest) {
+        debugRequest.textContent = `URL: ${url}\nParams: ${JSON.stringify(params, null, 2)}`;
+    }
+}
+
+function updateDebugResponse(response) {
+    const debugResponse = document.getElementById('debugResponse');
+    if (debugResponse) {
+        debugResponse.textContent = JSON.stringify(response, null, 2);
+    }
+}
+
+function updateDebugDataFlow(message) {
+    const debugDataFlow = document.getElementById('debugDataFlow');
+    if (debugDataFlow) {
+        const timestamp = new Date().toLocaleTimeString();
+        const currentContent = debugDataFlow.textContent;
+        const newContent = `[${timestamp}] ${message}\n${currentContent}`;
+        debugDataFlow.textContent = newContent.substring(0, 2000); // Keep last 2000 chars
+    }
+}
+
+function updateDebugConsole(message) {
+    const debugConsole = document.getElementById('debugConsole');
+    if (debugConsole) {
+        const timestamp = new Date().toLocaleTimeString();
+        const currentContent = debugConsole.textContent;
+        const newContent = `[${timestamp}] ${message}\n${currentContent}`;
+        debugConsole.textContent = newContent.substring(0, 2000); // Keep last 2000 chars
+    }
+}
+
+function toggleDebugSection() {
+    const debugContent = document.getElementById('debugContent');
+    if (debugContent) {
+        debugContent.style.display = debugContent.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+// Override console.log to capture all output
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+const originalConsoleWarn = console.warn;
+
+console.log = function(...args) {
+    originalConsoleLog.apply(console, args);
+    const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    updateDebugConsole(`LOG: ${message}`);
+};
+
+console.error = function(...args) {
+    originalConsoleError.apply(console, args);
+    const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    updateDebugConsole(`ERROR: ${message}`);
+};
+
+console.warn = function(...args) {
+    originalConsoleWarn.apply(console, args);
+    const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+    ).join(' ');
+    updateDebugConsole(`WARN: ${message}`);
+};
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 [STOCKS] Initializing stocks page...');
@@ -56,6 +127,7 @@ function setupWebSocket() {
 async function loadStocksAnalysis(forceRefresh = false) {
     if (isRefreshing) {
         console.log('⏳ [STOCKS] Already refreshing, skipping request');
+        updateDebugDataFlow('Already refreshing, skipping request');
         return;
     }
     
@@ -63,59 +135,202 @@ async function loadStocksAnalysis(forceRefresh = false) {
     showLoading(true);
     
     try {
-        console.log('🔍 [STOCKS] Loading S&P 500 analysis...');
+        console.log('🔍 [STOCKS] Loading market movers data...');
+        updateDebugDataFlow('Starting market movers data load...');
         
-        // Build API URL
-        const params = new URLSearchParams();
-        if (forceRefresh) {
-            params.append('refresh', '1');
-        }
-        params.append('limit', '6'); // 3 winners + 3 losers
-        
-        const url = `/api/sp500_analysis?${params.toString()}`;
+        // Use the market_movers endpoint directly since it contains the actual winners/losers data
+        const url = '/api/market_movers';
         console.log('🌐 [STOCKS] API request:', url);
+        updateDebugRequest(url, {});
+        updateDebugDataFlow(`Making API request to: ${url}`);
         
         const response = await fetch(url);
         const result = await response.json();
         
         console.log('📊 [STOCKS] API response:', result);
+        updateDebugResponse(result);
+        updateDebugDataFlow(`Received response with status: ${result.status}`);
         
         if (result.status === 'success' && result.data) {
-            displayStocksAnalysis(result.data);
+            updateDebugDataFlow(`Success! Data contains ${Object.keys(result.data).length} keys`);
+            // Convert market_movers format to enhanced_analysis format for compatibility
+            const convertedData = convertMarketMoversToEnhancedAnalysis(result.data);
+            displayStocksAnalysis(convertedData);
             updateLastUpdated();
         } else {
             console.error('❌ [STOCKS] API error:', result.message || 'Unknown error');
-            showError('Failed to load stocks analysis: ' + (result.message || 'Unknown error'));
+            updateDebugDataFlow(`API error: ${result.message || 'Unknown error'}`);
+            showError('Failed to load market movers data: ' + (result.message || 'Unknown error'));
         }
         
     } catch (error) {
         console.error('❌ [STOCKS] Fetch error:', error);
-        showError('Failed to load stocks analysis: ' + error.message);
+        updateDebugDataFlow(`Fetch error: ${error.message}`);
+        showError('Failed to load market movers data: ' + error.message);
     } finally {
         isRefreshing = false;
         showLoading(false);
     }
 }
 
+// Convert market_movers data format to enhanced_analysis format
+function convertMarketMoversToEnhancedAnalysis(marketMoversData) {
+    updateDebugDataFlow('Converting market_movers data format...');
+    
+    const enhancedAnalysis = [];
+    
+    // Process gainers (winners)
+    if (marketMoversData.gainers) {
+        marketMoversData.gainers.forEach(gainer => {
+            enhancedAnalysis.push({
+                symbol: gainer.symbol,
+                type: 'winner', // Convert GAINER to winner
+                price_data: {
+                    current_price: gainer.price,
+                    change_percent: gainer.change_percent + '%', // Add % sign for display
+                    change_amount: gainer.change_percent
+                },
+                sentiment_data: {
+                    sentiment_score: 0.6, // Default positive sentiment for gainers
+                    confidence: 0.7,
+                    summary: 'Price-based analysis from market movers'
+                },
+                signal_data: {
+                    action: 'BUY',
+                    confidence: 0.7
+                },
+                news_count: 0,
+                timestamp: gainer.timestamp
+            });
+        });
+    }
+    
+    // Process losers
+    if (marketMoversData.losers) {
+        marketMoversData.losers.forEach(loser => {
+            enhancedAnalysis.push({
+                symbol: loser.symbol,
+                type: 'loser', // Convert LOSER to loser
+                price_data: {
+                    current_price: loser.price,
+                    change_percent: loser.change_percent + '%', // Add % sign for display
+                    change_amount: loser.change_percent
+                },
+                sentiment_data: {
+                    sentiment_score: 0.4, // Default negative sentiment for losers
+                    confidence: 0.7,
+                    summary: 'Price-based analysis from market movers'
+                },
+                signal_data: {
+                    action: 'SELL',
+                    confidence: 0.7
+                },
+                news_count: 0,
+                timestamp: loser.timestamp
+            });
+        });
+    }
+    
+    updateDebugDataFlow(`Converted ${enhancedAnalysis.length} stocks to enhanced_analysis format`);
+    
+    return {
+        enhanced_analysis: enhancedAnalysis,
+        errors: [],
+        total_analyzed: enhancedAnalysis.length,
+        opportunities_found: enhancedAnalysis.length,
+        errors_count: 0,
+        performance: {
+            execution_time: 0,
+            success_rate: '100%'
+        },
+        timestamp: new Date().toISOString(),
+        source: 'market_movers_table'
+    };
+}
+
 // Display stocks analysis results
 function displayStocksAnalysis(data) {
-    console.log('📈 [STOCKS] Displaying analysis results:', data);
+    console.log('📈 [STOCKS] ===== DISPLAYING ANALYSIS RESULTS =====');
+    console.log('📈 [STOCKS] Raw data:', data);
+    console.log('📈 [STOCKS] Data type:', typeof data);
+    console.log('📈 [STOCKS] Data keys:', Object.keys(data));
+    
+    updateDebugDataFlow(`Displaying analysis results with ${Object.keys(data).length} data keys`);
+    updateDebugConsole(`Raw data: ${JSON.stringify(data, null, 2)}`);
+    
+    // Check if enhanced_analysis exists
+    if (data.enhanced_analysis) {
+        console.log('📈 [STOCKS] Enhanced analysis found:', data.enhanced_analysis);
+        console.log('📈 [STOCKS] Enhanced analysis length:', data.enhanced_analysis.length);
+        updateDebugDataFlow(`Enhanced analysis found with ${data.enhanced_analysis.length} stocks`);
+        
+        if (data.enhanced_analysis.length > 0) {
+            console.log('📈 [STOCKS] First result structure:', Object.keys(data.enhanced_analysis[0]));
+            console.log('📈 [STOCKS] First result:', data.enhanced_analysis[0]);
+            updateDebugDataFlow(`First result structure: ${Object.keys(data.enhanced_analysis[0]).join(', ')}`);
+        }
+    } else {
+        console.log('❌ [STOCKS] No enhanced_analysis found in data');
+        updateDebugDataFlow('No enhanced_analysis found in data');
+        
+        // No need for fallback since we're using market_movers endpoint directly
+        showError('No analysis data available');
+        return;
+    }
+    
+    // Check for other data structures
+    if (data.opportunities) {
+        console.log('📈 [STOCKS] Opportunities found:', data.opportunities);
+        console.log('📈 [STOCKS] Opportunities length:', data.opportunities.length);
+        updateDebugDataFlow(`Opportunities found: ${data.opportunities.length}`);
+    }
+    
+    if (data.errors) {
+        console.log('📈 [STOCKS] Errors found:', data.errors);
+        console.log('📈 [STOCKS] Errors length:', data.errors.length);
+        updateDebugDataFlow(`Errors found: ${data.errors.length}`);
+    }
     
     // Update market overview
+    updateDebugDataFlow('Updating market overview...');
     updateMarketOverview(data);
     
     // Update winners and losers summary
+    updateDebugDataFlow('Updating winners and losers summary...');
     updateWinnersLosersSummary(data);
     
     // Update summary statistics
+    updateDebugDataFlow('Updating summary statistics...');
     updateSummaryStats(data);
     
     // Show results sections
-    document.getElementById('summaryStats').style.display = 'block';
-    document.getElementById('enhancedAnalysisResults').style.display = 'block';
+    const summaryStats = document.getElementById('summaryStats');
+    const enhancedAnalysisResults = document.getElementById('enhancedAnalysisResults');
+    
+    if (summaryStats) {
+        summaryStats.style.display = 'block';
+        console.log('📈 [STOCKS] Summary stats section shown');
+        updateDebugDataFlow('Summary stats section shown');
+    } else {
+        console.log('❌ [STOCKS] Summary stats section not found');
+        updateDebugDataFlow('Summary stats section not found');
+    }
+    
+    if (enhancedAnalysisResults) {
+        enhancedAnalysisResults.style.display = 'block';
+        console.log('📈 [STOCKS] Enhanced analysis results section shown');
+        updateDebugDataFlow('Enhanced analysis results section shown');
+    } else {
+        console.log('❌ [STOCKS] Enhanced analysis results section not found');
+        updateDebugDataFlow('Enhanced analysis results section not found');
+    }
     
     // Update legacy table if it exists
+    updateDebugDataFlow('Updating legacy table...');
     updateLegacyTable(data);
+    
+    console.log('📈 [STOCKS] ===== DISPLAY COMPLETE =====');
+    updateDebugDataFlow('Display complete');
 }
 
 // Update market overview section
@@ -142,45 +357,118 @@ function updateMarketOverview(data) {
 
 // Update winners and losers summary
 function updateWinnersLosersSummary(data) {
+    console.log('🏆 [STOCKS] ===== UPDATING WINNERS/LOSERS SUMMARY =====');
+    console.log('🏆 [STOCKS] Input data:', data);
+    
+    updateDebugDataFlow('Starting winners/losers summary update...');
+    
     const enhancedAnalysis = data.enhanced_analysis || [];
+    console.log('🏆 [STOCKS] Enhanced analysis array:', enhancedAnalysis);
+    console.log('🏆 [STOCKS] Enhanced analysis length:', enhancedAnalysis.length);
+    updateDebugDataFlow(`Enhanced analysis array length: ${enhancedAnalysis.length}`);
     
     if (enhancedAnalysis.length === 0) {
+        console.log('❌ [STOCKS] No enhanced analysis data available');
+        updateDebugDataFlow('No enhanced analysis data available');
         showError('No analysis data available');
         return;
     }
     
-    // Separate winners and losers
-    const winners = enhancedAnalysis.filter(stock => stock.type === 'winner');
-    const losers = enhancedAnalysis.filter(stock => stock.type === 'loser');
+    // Function to extract numeric change percent
+    function getChangePercent(stock) {
+        const changePercentStr = stock.price_data?.change_percent || '0%';
+        const numericValue = parseFloat(changePercentStr.replace('%', ''));
+        updateDebugDataFlow(`Extracted change percent for ${stock.symbol}: ${changePercentStr} -> ${numericValue}`);
+        return numericValue;
+    }
     
-    console.log('🏆 [STOCKS] Winners:', winners);
-    console.log('📉 [STOCKS] Losers:', losers);
+    // Sort by change percent and separate winners and losers
+    const stocksWithChange = enhancedAnalysis.map(stock => ({
+        ...stock,
+        changePercent: getChangePercent(stock)
+    })).sort((a, b) => b.changePercent - a.changePercent);
+    
+    updateDebugDataFlow(`Sorted ${stocksWithChange.length} stocks by change percent`);
+    
+    // Get top 3 winners (highest positive change) and top 3 losers (lowest/most negative change)
+    const winners = stocksWithChange.filter(stock => stock.changePercent > 0).slice(0, 3);
+    const losers = stocksWithChange.filter(stock => stock.changePercent <= 0).slice(-3).reverse();
+    
+    console.log('🏆 [STOCKS] Winners found:', winners);
+    console.log('🏆 [STOCKS] Winners count:', winners.length);
+    console.log('📉 [STOCKS] Losers found:', losers);
+    console.log('📉 [STOCKS] Losers count:', losers.length);
+    
+    updateDebugDataFlow(`Found ${winners.length} winners and ${losers.length} losers`);
+    
+    // Log each stock's data structure
+    enhancedAnalysis.forEach((stock, index) => {
+        console.log(`🏆 [STOCKS] Stock ${index + 1}:`, stock);
+        console.log(`🏆 [STOCKS] Stock ${index + 1} symbol:`, stock.symbol);
+        console.log(`🏆 [STOCKS] Stock ${index + 1} change:`, stock.price_data?.change_percent);
+        console.log(`🏆 [STOCKS] Stock ${index + 1} keys:`, Object.keys(stock));
+        
+        updateDebugDataFlow(`Stock ${index + 1}: ${stock.symbol}, change: ${stock.price_data?.change_percent}, keys: ${Object.keys(stock).join(', ')}`);
+    });
     
     // Update winners list
+    updateDebugDataFlow('Updating winners list display...');
     updateWinnersList(winners);
     
     // Update losers list
+    updateDebugDataFlow('Updating losers list display...');
     updateLosersList(losers);
+    
+    console.log('🏆 [STOCKS] ===== WINNERS/LOSERS SUMMARY UPDATE COMPLETE =====');
+    updateDebugDataFlow('Winners/losers summary update complete');
 }
 
 // Update winners list display
 function updateWinnersList(winners) {
+    console.log('🏆 [STOCKS] ===== UPDATING WINNERS LIST =====');
+    console.log('🏆 [STOCKS] Winners input:', winners);
+    console.log('🏆 [STOCKS] Winners length:', winners.length);
+    
+    updateDebugDataFlow(`Updating winners list with ${winners.length} winners`);
+    
     const winnersList = document.getElementById('winnersList');
-    if (!winnersList) return;
+    if (!winnersList) {
+        console.log('❌ [STOCKS] Winners list element not found');
+        updateDebugDataFlow('Winners list element not found');
+        return;
+    }
+    
+    console.log('🏆 [STOCKS] Found winners list element:', winnersList);
+    updateDebugDataFlow('Found winners list element');
     
     if (winners.length === 0) {
+        console.log('🏆 [STOCKS] No winners data, showing placeholder');
+        updateDebugDataFlow('No winners data, showing placeholder');
         winnersList.innerHTML = '<div class="text-center text-muted">No winners data available</div>';
         return;
     }
     
     let html = '';
-    winners.forEach(stock => {
+    winners.forEach((stock, index) => {
+        console.log(`🏆 [STOCKS] Processing winner ${index + 1}:`, stock);
+        updateDebugDataFlow(`Processing winner ${index + 1}: ${stock.symbol}`);
+        
         const priceData = stock.price_data || {};
         const sentimentData = stock.sentiment_data || {};
         const changePercent = priceData.change_percent || '0%';
         const currentPrice = priceData.current_price || 'N/A';
         const sentimentScore = sentimentData.sentiment_score || 0;
         const confidence = sentimentData.confidence || 0;
+        
+        console.log(`🏆 [STOCKS] Winner ${index + 1} extracted data:`, {
+            symbol: stock.symbol,
+            price: currentPrice,
+            change: changePercent,
+            sentiment: sentimentScore,
+            confidence: confidence
+        });
+        
+        updateDebugDataFlow(`Winner ${index + 1} data: symbol=${stock.symbol}, price=${currentPrice}, change=${changePercent}, sentiment=${sentimentScore}, confidence=${confidence}`);
         
         html += `
             <div class="card mb-2 border-success">
@@ -208,27 +496,60 @@ function updateWinnersList(winners) {
         `;
     });
     
+    console.log('🏆 [STOCKS] Generated HTML length:', html.length);
+    updateDebugDataFlow(`Generated winners HTML with ${html.length} characters`);
     winnersList.innerHTML = html;
+    console.log('🏆 [STOCKS] Winners list updated successfully');
+    updateDebugDataFlow('Winners list updated successfully');
+    console.log('🏆 [STOCKS] ===== WINNERS LIST UPDATE COMPLETE =====');
 }
 
 // Update losers list display
 function updateLosersList(losers) {
+    console.log('📉 [STOCKS] ===== UPDATING LOSERS LIST =====');
+    console.log('📉 [STOCKS] Losers input:', losers);
+    console.log('📉 [STOCKS] Losers length:', losers.length);
+    
+    updateDebugDataFlow(`Updating losers list with ${losers.length} losers`);
+    
     const losersList = document.getElementById('losersList');
-    if (!losersList) return;
+    if (!losersList) {
+        console.log('❌ [STOCKS] Losers list element not found');
+        updateDebugDataFlow('Losers list element not found');
+        return;
+    }
+    
+    console.log('📉 [STOCKS] Found losers list element:', losersList);
+    updateDebugDataFlow('Found losers list element');
     
     if (losers.length === 0) {
+        console.log('📉 [STOCKS] No losers data, showing placeholder');
+        updateDebugDataFlow('No losers data, showing placeholder');
         losersList.innerHTML = '<div class="text-center text-muted">No losers data available</div>';
         return;
     }
     
     let html = '';
-    losers.forEach(stock => {
+    losers.forEach((stock, index) => {
+        console.log(`📉 [STOCKS] Processing loser ${index + 1}:`, stock);
+        updateDebugDataFlow(`Processing loser ${index + 1}: ${stock.symbol}`);
+        
         const priceData = stock.price_data || {};
         const sentimentData = stock.sentiment_data || {};
         const changePercent = priceData.change_percent || '0%';
         const currentPrice = priceData.current_price || 'N/A';
         const sentimentScore = sentimentData.sentiment_score || 0;
         const confidence = sentimentData.confidence || 0;
+        
+        console.log(`📉 [STOCKS] Loser ${index + 1} extracted data:`, {
+            symbol: stock.symbol,
+            price: currentPrice,
+            change: changePercent,
+            sentiment: sentimentScore,
+            confidence: confidence
+        });
+        
+        updateDebugDataFlow(`Loser ${index + 1} data: symbol=${stock.symbol}, price=${currentPrice}, change=${changePercent}, sentiment=${sentimentScore}, confidence=${confidence}`);
         
         html += `
             <div class="card mb-2 border-danger">
@@ -256,7 +577,12 @@ function updateLosersList(losers) {
         `;
     });
     
+    console.log('📉 [STOCKS] Generated HTML length:', html.length);
+    updateDebugDataFlow(`Generated losers HTML with ${html.length} characters`);
     losersList.innerHTML = html;
+    console.log('📉 [STOCKS] Losers list updated successfully');
+    updateDebugDataFlow('Losers list updated successfully');
+    console.log('📉 [STOCKS] ===== LOSERS LIST UPDATE COMPLETE =====');
 }
 
 // Update summary statistics

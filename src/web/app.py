@@ -3,7 +3,6 @@
 Trading AI Flask Web Application
 Enhanced with comprehensive logging and monitoring
 """
-
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -15,32 +14,23 @@ import traceback
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
-
 # Essential imports for remaining functionality
-from ..data.data_fetcher import DataFetcher
-from ..core.config import Config
-from ..core.logger import trading_logger, log_exception, log_user_actions, log_timing, log_info
-from ..core.recommendation_manager import RecommendationManager
-from ..core.database import save_backtest_result, get_latest_backtest, get_db_connection, ensure_job_schedules_table
-from ..core.cache import cache_result, get_cached_result
-from ..trading.trading_strategy import TradingStrategy
-from ..core.market_manager import MarketManager
-
+from src.data.data_fetcher import DataFetcher
+from src.core.config import Config
+from src.core.logger import trading_logger, log_exception, log_user_actions, log_timing, log_info, log_error
+from src.core.recommendation_manager import RecommendationManager
+from src.core.database import save_backtest_result, get_latest_backtest, get_db_connection, ensure_job_schedules_table
+from src.core.cache import cache_result, get_cached_result
+from src.trading.trading_strategy import TradingStrategy
+from src.core.market_manager import MarketManager
+from src.core.watchlist_manager import watchlist_manager
 # Import helper functions
 from .helpers import create_api_response, handle_api_error
-
 # Import and register route blueprints
 from .routes import register_routes
-
 app = Flask(__name__)
-
 # Register route blueprints
 register_routes(app)
-
-
-
-
-
 # --- Client Error Logging Endpoint ---
 @app.route("/api/log_client_error", methods=["POST"])
 def log_client_error():
@@ -57,14 +47,10 @@ def log_client_error():
         return create_api_response(message="Error logged successfully")
     except Exception as e:
         return handle_api_error(e, "log_client_error endpoint")
-
-
 @app.route("/api/frontend_logs", methods=["POST"])
 def frontend_logs():
     """Alternative endpoint for frontend logging (compatibility)"""
     return log_client_error()
-
-
 # Enable CORS for all routes
 CORS(
     app,
@@ -72,7 +58,6 @@ CORS(
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 )
-
 # TEMPORARILY ENABLE DEBUG MODE FOR TEMPLATE RELOADING
 app.debug = True
 app.config["DEBUG"] = True
@@ -91,23 +76,15 @@ socketio = SocketIO(
 # Essential component for remaining functionality
 data_fetcher = DataFetcher()
 trading_strategy = TradingStrategy()
-
-
-
-
-
+recommendation_manager = RecommendationManager()
 # index route moved to routes/page_routes.py
-
-
 @app.route("/api/dashboard/data")
 def get_dashboard_data():
     """Get dashboard data for homepage with real data"""
     try:
         from datetime import datetime
-
         # Get system stats
         system_metrics = get_system_metrics()
-
         # Get recent activity from recommendations table
         recent_analyses = []
         try:
@@ -122,7 +99,6 @@ def get_dashboard_data():
                         LIMIT 3
                     """)
                     rows = cur.fetchall()
-
                     for row in rows:
                         recent_analyses.append(
                             {
@@ -143,7 +119,6 @@ def get_dashboard_data():
             log_exception("Error fetching recent analyses", e)
             # Fallback to empty list if database error
             recent_analyses = []
-
         # Get market overview from real data
         market_overview = {}
         try:
@@ -155,7 +130,6 @@ def get_dashboard_data():
                     total_stocks = (
                         total_stocks_result["count"] if total_stocks_result else 0
                     )
-
                     # Get analyses in last 24 hours
                     cur.execute("""
                         SELECT COUNT(*) FROM recommendations 
@@ -165,7 +139,6 @@ def get_dashboard_data():
                     recent_count = (
                         recent_analyses_result["count"] if recent_analyses_result else 0
                     )
-
                     # Get success rate (profitable recommendations)
                     cur.execute("""
                         SELECT 
@@ -182,7 +155,6 @@ def get_dashboard_data():
                         success_rate_str = f"{success_rate:.1f}%"
                     else:
                         success_rate_str = "N/A"
-
                     market_overview = {
                         "total_stocks": total_stocks,
                         "active_analyses": recent_count,
@@ -198,12 +170,10 @@ def get_dashboard_data():
                 "success_rate": "N/A",
                 "last_updated": datetime.now().isoformat(),
             }
-
         # Get last analysis for homepage display
         last_analysis = None
         if recent_analyses:
             last_analysis = recent_analyses[0]
-
         return create_api_response(
             data={
                 "system_metrics": system_metrics,
@@ -238,8 +208,6 @@ def get_dashboard_data():
     except Exception as e:
         log_exception("Dashboard data endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 # Tier Management API Endpoints
 @app.route("/api/tier/status", methods=["GET"])
 def get_tier_status():
@@ -247,14 +215,12 @@ def get_tier_status():
     try:
         user_id = request.args.get("user_id", "default")
         tier_info = tier_manager.get_user_tier(user_id)
-
         # Format features for frontend
         features = tier_info.get("features", {})
         if isinstance(features, dict):
             feature_list = features.get("features", [])
         else:
             feature_list = features if isinstance(features, list) else []
-
         # Create feature access map
         feature_access = {
             "dashboard": "dashboard" in feature_list,
@@ -265,7 +231,6 @@ def get_tier_status():
             "opportunities": "opportunities" in feature_list,
             "system_status": "system_status" in feature_list,
         }
-
         return create_api_response(
             data={
                 "current_tier": tier_info["current_tier"],
@@ -278,8 +243,6 @@ def get_tier_status():
     except Exception as e:
         log_exception("Tier status endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/tier/toggle", methods=["POST"])
 def toggle_tier():
     """Toggle between free and paid tiers."""
@@ -287,25 +250,19 @@ def toggle_tier():
         data = request.get_json()
         if not data:
             return create_api_response(error="No data provided", status_code=400)
-
         tier = data.get("tier", "").lower()
         user_id = data.get("user_id", "default")
-
         if tier not in ["free", "paid"]:
             return create_api_response(
                 error=f"Invalid tier: {tier}. Must be 'free' or 'paid'", status_code=400
             )
-
         tier_info = tier_manager.upgrade_tier(user_id, tier)
-
         return create_api_response(
             data=tier_info, message=f"Successfully switched to {tier} tier"
         )
     except Exception as e:
         log_exception("Tier toggle endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/tier/check_access", methods=["POST"])
 def check_feature_access():
     """Check if user has access to a specific feature."""
@@ -313,38 +270,29 @@ def check_feature_access():
         data = request.get_json()
         if not data:
             return create_api_response(error="No data provided", status_code=400)
-
         feature = data.get("feature", "")
         user_id = data.get("user_id", "default")
-
         if not feature:
             return create_api_response(
                 error="Feature parameter is required", status_code=400
             )
-
         has_access = tier_manager.check_feature_access(user_id, feature)
-
         return create_api_response(
             data={"feature": feature, "has_access": has_access, "user_id": user_id}
         )
     except Exception as e:
         log_exception("Feature access check endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/tier/stats", methods=["GET"])
 def get_tier_stats():
     """Get tier usage statistics."""
     try:
         user_id = request.args.get("user_id", "default")
         stats = tier_manager.get_tier_stats(user_id)
-
         return create_api_response(data=stats)
     except Exception as e:
         log_exception("Tier stats endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/tier/list", methods=["GET"])
 def get_available_tiers():
     """Get all available tier configurations."""
@@ -354,14 +302,8 @@ def get_available_tiers():
     except Exception as e:
         log_exception("Available tiers endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 # analyze_stock route moved to routes/analysis_routes.py
-
-
 # analyze_bulk route moved to routes/analysis_routes.py
-
-
 @app.route("/api/stock/<symbol>/analysis")
 def analyze_stock_by_symbol(symbol):
     """Get stock analysis by symbol"""
@@ -374,14 +316,12 @@ def analyze_stock_by_symbol(symbol):
         news_data = data_fetcher.get_company_news(symbol)
         # Get price data first (needed for fallback)
         price_data = data_fetcher.get_stock_price(symbol)
-
         # Validate price_data is a dictionary with required fields
         if not isinstance(price_data, dict) or "current_price" not in price_data:
             return create_api_response(
                 error=f"Invalid price data received for {symbol}: type={type(price_data)}",
                 status_code=500,
             )
-
         # Get sentiment data with fallback to price-based analysis
         sentiment_data = analyze_sentiment_with_fallback(news_data, price_data, symbol)
         # Generate trading signal
@@ -405,35 +345,147 @@ def analyze_stock_by_symbol(symbol):
         log_exception("Stock analysis for {symbol}", e)
         return create_api_response(error=str(e), status_code=500)
 
+@app.route("/api/market_movers")
+def market_movers():
+    """API endpoint for market movers (winners and losers) from the database"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                print(f"[DEBUG] Executing database query...")
+                
+                # First, let's check if the table exists and has data
+                try:
+                    cur.execute("SELECT COUNT(*) as count FROM market_movers")
+                    count_result = cur.fetchone()
+                    if count_result is None:
+                        print(f"[DEBUG] COUNT query returned None")
+                        return create_api_response(error="Database query failed", status_code=500)
+                    
+                    # Debug: see what count_result actually contains
+                    print(f"[DEBUG] count_result type: {type(count_result)}")
+                    print(f"[DEBUG] count_result content: {count_result}")
+                    
+                    # Handle both RealDictCursor (dict) and regular cursor (tuple) results
+                    if isinstance(count_result, dict):
+                        count = count_result.get('count', 0)
+                    elif isinstance(count_result, (tuple, list)):
+                        count = count_result[0] if count_result else 0
+                    else:
+                        # Fallback: try to convert to int directly
+                        count = int(count_result) if count_result else 0
+                    
+                    print(f"[DEBUG] Table has {count} total rows")
+                    
+                    if count == 0:
+                        print(f"[DEBUG] No data in market_movers table")
+                        return create_api_response(data={
+                            'gainers': [],
+                            'losers': [],
+                            'total_gainers': 0,
+                            'total_losers': 0,
+                            'timestamp': datetime.now().isoformat(),
+                            'source': 'market_movers_table',
+                            'message': 'No market movers data available'
+                        })
+                    
+                    # Now let's check the actual data
+                    cur.execute("""
+                        SELECT symbol, type, change_percent, price, volume, timestamp
+                        FROM market_movers 
+                        ORDER BY timestamp DESC
+                    """)
+                    rows = cur.fetchall()
+                    print(f"[DEBUG] Query returned {len(rows)} rows")
+                    if rows:
+                        print(f"[DEBUG] First row: {rows[0]}")
+                    else:
+                        print(f"[DEBUG] No rows returned from query")
+                        
+                    # Let's also check what tables exist
+                    cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+                    tables = cur.fetchall()
+                    print(f"[DEBUG] Available tables: {[t['table_name'] for t in tables]}")
+                    
+                except Exception as e:
+                    print(f"[DEBUG] Database error: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return create_api_response(error=f"Database error: {e}", status_code=500)
+                
+                gainers = []
+                losers = []
+                
+                for row in rows:
+                    # RealDictCursor returns dictionaries, so access by column name
+                    symbol = row['symbol']
+                    type_ = row['type']
+                    change_percent = row['change_percent']
+                    price = row['price']
+                    volume = row['volume']
+                    timestamp = row['timestamp']
+                    
+                    print(f"[DEBUG] Processing row: symbol={symbol}, type={type_}, timestamp={timestamp}, timestamp_type={type(timestamp)}")
+                    
+                    stock_data = {
+                        'symbol': symbol,
+                        'type': type_.lower() if type_ else 'unknown',  # Convert GAINER/LOSER to winner/loser
+                        'change_percent': change_percent,
+                        'price': price,
+                        'volume': volume,
+                        'timestamp': timestamp.isoformat()
+                    }
+                    
+                    if type_ == 'GAINER':
+                        gainers.append(stock_data)
+                    elif type_ == 'LOSER':
+                        losers.append(stock_data)
+                
+                # Sort by change percentage (highest gainers first, lowest losers first)
+                gainers.sort(key=lambda x: x['change_percent'], reverse=True)
+                losers.sort(key=lambda x: x['change_percent'])
+                
+                response_data = {
+                    'gainers': gainers[:3],  # Top 3 gainers
+                    'losers': losers[:3],    # Top 3 losers
+                    'total_gainers': len(gainers),
+                    'total_losers': len(losers),
+                    'timestamp': datetime.now().isoformat(),
+                    'source': 'market_movers_table'
+                }
+                
+                return create_api_response(data=response_data)
+                
+    except Exception as e:
+        trading_logger.error_logger.error(f"Error in market_movers endpoint: {e}")
+        import traceback
+        trading_logger.error_logger.error(f"Traceback: {traceback.format_exc()}")
+        return create_api_response(error=str(e), status_code=500)
 
 @app.route("/api/sp500_analysis")
 def sp500_analysis():
     """API endpoint for S&P 500 winners and losers analysis"""
-    trading_logger.api_logger.info("[DEBUG] Entered sp500_analysis endpoint")
+    trading_logger.api_logger.info("[STOCKS_PAGE] ===== ENTERED sp500_analysis endpoint =====")
     try:
         # Get limit parameter for testing purposes
         limit = request.args.get("limit", type=int)
         refresh = request.args.get("refresh", default=0, type=int)
         trading_logger.api_logger.info(
-            f"[DEBUG] sp500_analysis request params: limit={limit}, refresh={refresh}"
+            f"[STOCKS_PAGE] Request params: limit={limit}, refresh={refresh}"
         )
-
         if limit and limit > 0:
             trading_logger.api_logger.info(
-                f"[DEBUG] TEST MODE: Limiting analysis to {limit} stocks"
+                f"[STOCKS_PAGE] TEST MODE: Limiting analysis to {limit} stocks"
             )
-
         cache_key = "sp500_analysis"
         # Only clear cache if refresh=1 is passed
         if refresh:
             trading_logger.api_logger.info(
-                "[DEBUG] Manual refresh requested, clearing cache..."
+                "[STOCKS_PAGE] Manual refresh requested, clearing cache..."
             )
             try:
                 clear_cache()
             except Exception as e:
-                trading_logger.error_logger.error(f"[ERROR] Cache clear failed: {e}")
-
+                trading_logger.error_logger.error(f"[STOCKS_PAGE] Cache clear failed: {e}")
         # Check cache first
         cached_result = get_cached_result(cache_key)
         if cached_result and not refresh:
@@ -443,7 +495,10 @@ def sp500_analysis():
                 cached_result["cached"] = True
                 cached_result["cache_timestamp"] = datetime.now().isoformat()
                 trading_logger.api_logger.info(
-                    "[DEBUG] Returning cached sp500_analysis result"
+                    f"[STOCKS_PAGE] Returning cached result with {len(cached_result.get('enhanced_analysis', []))} stocks"
+                )
+                trading_logger.api_logger.info(
+                    f"[STOCKS_PAGE] Cached data structure: {list(cached_result.keys())}"
                 )
                 # Still emit cached progress for UI consistency
                 socketio.emit(
@@ -460,10 +515,9 @@ def sp500_analysis():
             else:
                 # If cached result is not a dict (e.g., string), clear cache and proceed
                 trading_logger.error_logger.error(
-                    f"[ERROR] Invalid winners_losers data type: {type(cached_result)}"
+                    f"[STOCKS_PAGE] Invalid cached data type: {type(cached_result)}"
                 )
                 cached_result = None
-
         # Get top gainers and losers from Alpha Vantage API (much faster!)
         if cached_result and not refresh:
             # Still emit cached progress for UI consistency
@@ -478,82 +532,67 @@ def sp500_analysis():
                 },
             )
             return create_api_response(data=cached_result)
-
         # Get top gainers and losers from Alpha Vantage API (much faster!)
         limit_per_category = (
             3  # Reduced from 5 to 3 (keeping 3 winners + 3 losers = 6 total)
         )
         try:
             trading_logger.api_logger.info(
-                "[DEBUG] Fetching top gainers/losers from Alpha Vantage API"
+                "[STOCKS_PAGE] Fetching top gainers/losers from Alpha Vantage API"
             )
             winners_losers = data_fetcher.get_top_gainers_losers(
                 limit=limit_per_category
             )
             trading_logger.api_logger.info(
-                f"[DEBUG] top_gainers_losers type: {type(winners_losers)}, value: {winners_losers}"
+                f"[STOCKS_PAGE] Alpha Vantage response: gainers={winners_losers.get('gainers', [])}, losers={winners_losers.get('losers', [])}"
             )
         except Exception as e:
             trading_logger.error_logger.error(
-                f"[ERROR] Error getting top gainers/losers: {e}"
+                f"[STOCKS_PAGE] Error getting top gainers/losers: {e}"
             )
-            # Fallback to default symbols if API fails
-            winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL"],
-                "losers": ["META", "NVDA", "JPM"],
-                "timestamp": datetime.now().isoformat(),
-                "source": "fallback",
-            }
-            trading_logger.api_logger.info(
-                "[DEBUG] Using fallback symbols for gainers/losers"
+            # Return error instead of mock data
+            return create_api_response(
+                error=f"Failed to get market movers data: {str(e)}", 
+                status_code=500
             )
-
         # Ensure winners_losers is a dictionary
         if not isinstance(winners_losers, dict):
             trading_logger.error_logger.error(
-                f"[ERROR] Invalid top_gainers_losers data type: {type(winners_losers)}"
+                f"[STOCKS_PAGE] Invalid top_gainers_losers data type: {type(winners_losers)}"
             )
-            # Fallback to default symbols
-            winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL"],
-                "losers": ["META", "NVDA", "JPM"],
-                "timestamp": datetime.now().isoformat(),
-                "source": "fallback",
-            }
-            trading_logger.api_logger.info(
-                "[DEBUG] Using fallback symbols due to invalid data type"
+            # Return error instead of mock data
+            return create_api_response(
+                error="Invalid market movers data format", 
+                status_code=500
             )
-
         if not winners_losers.get("gainers") and not winners_losers.get("losers"):
-            trading_logger.error_logger.error("[ERROR] No gainers/losers data returned")
-            winners_losers = {
-                "gainers": ["AAPL", "MSFT", "GOOGL"],
-                "losers": ["META", "NVDA", "JPM"],
-                "timestamp": datetime.now().isoformat(),
-                "source": "fallback",
-            }
-            trading_logger.api_logger.info(
-                "[DEBUG] Using fallback symbols due to empty gainers/losers lists"
+            trading_logger.error_logger.error("[STOCKS_PAGE] No gainers/losers data returned")
+            # Return error instead of mock data
+            return create_api_response(
+                error="No market movers data available", 
+                status_code=500
             )
-
         # Combine gainers and losers for analysis
         symbols_to_analyze = []
         symbols_to_analyze.extend(winners_losers.get("gainers", []))
         symbols_to_analyze.extend(winners_losers.get("losers", []))
-
+        
+        # Debug logging for winners_losers data
+        trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: winners_losers data: {winners_losers}")
+        trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: gainers list: {winners_losers.get('gainers', [])}")
+        trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: losers list: {winners_losers.get('losers', [])}")
+        trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: combined symbols: {symbols_to_analyze}")
+        
         # Apply limit if specified (for testing)
         if limit and limit > 0:
             symbols_to_analyze = symbols_to_analyze[:limit]
             trading_logger.api_logger.info(
-                f"[DEBUG] TEST MODE: Limited to {len(symbols_to_analyze)} symbols: {symbols_to_analyze}"
+                f"[STOCKS_PAGE] TEST MODE: Limited to {len(symbols_to_analyze)} symbols: {symbols_to_analyze}"
             )
-
         trading_logger.api_logger.info(
-            f"[DEBUG] Running optimized analysis for {len(symbols_to_analyze)} symbols: "
-            f"{symbols_to_analyze}"
+            f"[STOCKS_PAGE] Running optimized analysis for {len(symbols_to_analyze)} symbols: {symbols_to_analyze}"
         )
         # Progress callback for WebSocket updates
-
         def progress_callback(symbol, completed, total, result):
             socketio.emit(
                 "sp500_progress",
@@ -571,21 +610,19 @@ def sp500_analysis():
                     "cached": False,
                 },
             )
-
         # Run optimized analysis for each symbol
         enhanced_results = []
         errors = []
         start_time = time.time()
-
         for i, symbol in enumerate(symbols_to_analyze):
+            # Initialize symbol_type with a default value
+            symbol_type = "unknown"
             try:
-                print(f"🔍 Analyzing {symbol} ({i + 1}/{len(symbols_to_analyze)})...")
-
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 Analyzing {symbol} ({i + 1}/{len(symbols_to_analyze)})...")
                 # OPTIMIZATION 1: Get price data first (fast)
                 price_data = data_fetcher.get_stock_price(symbol)
                 if "error" in price_data:
                     raise Exception(f"Error getting price data: {price_data['error']}")
-
                 # Validate price_data is a dictionary with required fields
                 if (
                     not isinstance(price_data, dict)
@@ -594,14 +631,13 @@ def sp500_analysis():
                     raise Exception(
                         f"Invalid price data received for {symbol}: type={type(price_data)}"
                     )
-
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] ✅ Got price data for {symbol}: ${price_data.get('current_price', 'N/A')}")
                 # OPTIMIZATION 2: Get news data with shorter timeframe (3 days instead of 7)
                 news_data = data_fetcher.get_company_news(symbol, days_back=3)
-
                 # OPTIMIZATION 3: Skip AI sentiment analysis if no news (use price-based only)
                 if not news_data or len(news_data) == 0:
-                    print(
-                        f"📊 No news articles for {symbol}, using price-based sentiment analysis only"
+                    trading_logger.api_logger.info(
+                        f"[STOCKS_PAGE] 📊 No news articles for {symbol}, using price-based sentiment analysis only"
                     )
                     # Use price-based sentiment analysis (much faster)
                     sentiment_data = {
@@ -612,15 +648,15 @@ def sp500_analysis():
                         "news_count": 0,
                     }
                 else:
-                    print(f"🔍 Analyzing {symbol} using news sentiment...")
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 Analyzing {symbol} using {len(news_data)} news articles...")
                     # Only use AI sentiment if we have news (but with timeout)
                     try:
                         sentiment_data = analyze_sentiment_with_fallback(
                             news_data, price_data, symbol
                         )
                     except Exception as e:
-                        print(
-                            f"⚠️ AI sentiment failed for {symbol}, using price-based: {e}"
+                        trading_logger.api_logger.info(
+                            f"[STOCKS_PAGE] ⚠️ AI sentiment failed for {symbol}, using price-based: {e}"
                         )
                         sentiment_data = {
                             "sentiment_score": 0.0,
@@ -629,29 +665,63 @@ def sp500_analysis():
                             "analysis_method": "price_based_fallback",
                             "news_count": len(news_data),
                         }
-
                 # OPTIMIZATION 4: Use faster signal generation
                 signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
-
                 # OPTIMIZATION 5: Skip historical data testing for speed (not needed for basic analysis)
                 # Historical data testing is very slow and not essential for S&P 500 overview
                 historical_data = []
-
                 # Generate comprehensive recommendations with position sizes and trading notes
                 comprehensive_result = (
                     enhanced_trading_strategy.get_comprehensive_recommendations(
                         symbol, price_data["current_price"], sentiment_data, signal_data
                     )
                 )
-
-                print(f"✅ Generated comprehensive recommendations for {symbol}")
-
-                # Determine if this is a winner or loser based on the symbol
-                symbol_type = (
-                    "winner" if symbol in winners_losers.get("gainers", []) else "loser"
-                )
-
-                # Create the enhanced analysis result with comprehensive analysis
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] ✅ Generated comprehensive recommendations for {symbol}")
+                # Determine if this is a winner or loser based on the actual price change
+                change_percent = price_data.get("change_percent", "0%")
+                
+                # Debug logging for symbol type determination
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: Processing {symbol}, winners_losers gainers: {winners_losers.get('gainers', [])}")
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: Processing {symbol}, winners_losers losers: {winners_losers.get('losers', [])}")
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: Processing {symbol}, symbol in gainers: {symbol in winners_losers.get('gainers', [])}")
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] DEBUG: Processing {symbol}, symbol in losers: {symbol in winners_losers.get('losers', [])}")
+                
+                # First, try to determine type from winners_losers data (more reliable)
+                if symbol in winners_losers.get("gainers", []):
+                    symbol_type = "winner"
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 📊 {symbol}: categorized as winner from Alpha Vantage data")
+                elif symbol in winners_losers.get("losers", []):
+                    symbol_type = "loser"
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 📊 {symbol}: categorized as loser from Alpha Vantage data")
+                else:
+                    # Fallback to price-based determination
+                    if isinstance(change_percent, str):
+                        # Remove % sign and convert to float
+                        change_percent_clean = change_percent.replace("%", "")
+                        try:
+                            change_percent_float = float(change_percent_clean)
+                            symbol_type = "winner" if change_percent_float > 0 else "loser"
+                            trading_logger.api_logger.info(f"[STOCKS_PAGE] 📊 {symbol}: change_percent={change_percent} -> type={symbol_type} (price-based)")
+                        except ValueError:
+                            # Final fallback - default to loser if we can't determine
+                            symbol_type = "loser"
+                            trading_logger.api_logger.info(f"[STOCKS_PAGE] 📊 {symbol}: fallback type={symbol_type} (default)")
+                    else:
+                        # If change_percent is already a number
+                        symbol_type = "winner" if change_percent > 0 else "loser"
+                        trading_logger.api_logger.info(f"[STOCKS_PAGE] 📊 {symbol}: change_percent={change_percent} -> type={symbol_type} (price-based)")
+                
+                # Ensure symbol_type is set, fallback to checking gainers/losers lists if still unknown
+                if symbol_type == "unknown":
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: symbol_type is unknown, using fallback logic")
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: winners_losers={winners_losers}")
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: gainers={winners_losers.get('gainers', [])}")
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: losers={winners_losers.get('losers', [])}")
+                    symbol_type = "winner" if symbol in winners_losers.get("gainers", []) else "loser"
+                    trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: fallback symbol_type={symbol_type}")
+                
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] 🔍 {symbol}: Final symbol_type={symbol_type}")
+                
                 result = {
                     "symbol": symbol,
                     "type": symbol_type,
@@ -662,26 +732,22 @@ def sp500_analysis():
                     "comprehensive_analysis": comprehensive_result,
                     "timestamp": datetime.now().isoformat(),
                 }
-
                 enhanced_results.append(result)
-
+                trading_logger.api_logger.info(f"[STOCKS_PAGE] ✅ Added {symbol} to results. Total results: {len(enhanced_results)}")
                 # Call progress callback
                 progress_callback(symbol, i + 1, len(symbols_to_analyze), result)
-
             except Exception as e:
                 trading_logger.error_logger.error(
-                    f"[ERROR] Error analyzing {symbol}: {e}"
+                    f"[STOCKS_PAGE] Error analyzing {symbol}: {e}"
                 )
                 errors.append({"symbol": symbol, "error": str(e)})
                 # Call progress callback with error
                 progress_callback(
                     symbol, i + 1, len(symbols_to_analyze), {"error": str(e)}
                 )
-
         # Ensure we have valid results
         if not enhanced_results:
             enhanced_results = []
-
         # Create the final response
         response_data = {
             "enhanced_analysis": enhanced_results,
@@ -697,31 +763,40 @@ def sp500_analysis():
             },
             "timestamp": datetime.now().isoformat(),
         }
-
         # Cache the results for future use
         cache_result(cache_key, response_data)  # Cache for 5 minutes
-
         trading_logger.api_logger.info(
-            f"[DEBUG] Returning sp500_analysis result with {len(enhanced_results)} stocks"
+            f"[STOCKS_PAGE] ===== RETURNING sp500_analysis result ====="
+        )
+        trading_logger.api_logger.info(
+            f"[STOCKS_PAGE] Total stocks analyzed: {len(symbols_to_analyze)}"
+        )
+        trading_logger.api_logger.info(
+            f"[STOCKS_PAGE] Successful results: {len(enhanced_results)}"
+        )
+        trading_logger.api_logger.info(
+            f"[STOCKS_PAGE] Errors: {len(errors)}"
+        )
+        trading_logger.api_logger.info(
+            f"[STOCKS_PAGE] Response data keys: {list(response_data.keys())}"
+        )
+        trading_logger.api_logger.info(
+            f"[STOCKS_PAGE] First result structure: {list(enhanced_results[0].keys()) if enhanced_results else 'No results'}"
         )
         return create_api_response(data=response_data)
-
     except Exception as e:
         trading_logger.error_logger.error(
-            f"[ERROR] Error in sp500_analysis endpoint: {str(e)}"
+            f"[STOCKS_PAGE] ===== ERROR in sp500_analysis endpoint: {str(e)} ====="
         )
         return create_api_response(
             error=f"Failed to analyze S&P 500: {str(e)}", status_code=500
         )
-
-
 @app.route("/api/crypto_analysis")
 def crypto_analysis():
     """Analyze cryptocurrencies for trading opportunities with fast preload"""
     try:
         # Get crypto symbols from database instead of config
         crypto_symbols = watchlist_manager.get_cryptos()
-
         if not crypto_symbols:
             return create_api_response(
                 data={
@@ -738,7 +813,6 @@ def crypto_analysis():
                     ),
                 }
             )
-
         # Always preload from the table unless explicitly requested to refresh
         cache_key = "crypto_analysis"
         refresh_requested = request.args.get('refresh', '0') == '1'
@@ -759,14 +833,12 @@ def crypto_analysis():
                             all_opps = row['opportunities']
                             timestamp = row['timestamp']
                             crypto_opps = [opp for opp in all_opps if opp.get('type') == 'crypto']
-                            
                             # Restructure the data to match frontend expectations
                             restructured_opps = []
                             for opp in crypto_opps:
                                 # Extract sentiment data from the nested structure
                                 sentiment_data = opp.get('sentiment_data', {})
                                 signal_data = opp.get('signal_data', {})
-                                
                                 # Create the properly structured opportunity
                                 restructured_opp = {
                                     "symbol": opp.get('symbol'),
@@ -786,7 +858,6 @@ def crypto_analysis():
                                     "news_data": opp.get('news_data', [])
                                 }
                                 restructured_opps.append(restructured_opp)
-                            
                             # Cache the result for consistency
                             cache_result(cache_key, {
                                 "opportunities": restructured_opps,
@@ -820,7 +891,6 @@ def crypto_analysis():
                     error=f"Database connection failed: {str(e)}. Cannot load crypto data.",
                     status_code=500
                 )
-
         # If refresh is requested, run full analysis
         print("🚀 Refresh requested: Starting full crypto analysis with smart batching...")
         limited_cryptos = crypto_symbols
@@ -828,7 +898,6 @@ def crypto_analysis():
             limited_cryptos, Config.BULK_ANALYSIS_NEWS_DAYS
         )
         print(f"🚀 Processing {len(tasks)} cryptocurrencies concurrently")
-
         def progress_callback(symbol, completed, total, result):
             socketio.emit(
                 "crypto_progress",
@@ -846,11 +915,9 @@ def crypto_analysis():
                     "cached": False,
                 },
             )
-
         batch_result = batch_processor_instance.process_batch_sync(
             tasks, progress_callback
         )
-
         opportunities = []
         errors = []
         for symbol, result in batch_result["results"].items():
@@ -880,22 +947,18 @@ def crypto_analysis():
                     )
             else:
                 print(f"⚪ {symbol} - No strong signal found")
-
         # Save crypto opportunities to preloaded table for future requests
         if opportunities:
             try:
                 from src.data.preload_watchlist_opportunities import get_latest_preloaded_watchlist_opportunities
                 from src.core.database import get_db_connection
                 from psycopg2.extras import Json
-                
                 # Get existing opportunities from preloaded table
                 existing_data = get_latest_preloaded_watchlist_opportunities()
                 existing_opportunities = existing_data.get("opportunities", [])
-                
                 # Filter out old crypto opportunities and add new ones
                 non_crypto_opportunities = [opp for opp in existing_opportunities if opp.get("type") != "crypto"]
                 all_opportunities = non_crypto_opportunities + opportunities
-                
                 # Save updated opportunities to database
                 with get_db_connection() as conn:
                     with conn.cursor() as cur:
@@ -910,12 +973,10 @@ def crypto_analysis():
                             len(errors),
                         ))
                         conn.commit()
-                
                 print(f"💾 Saved {len(opportunities)} crypto opportunities to preloaded table")
             except Exception as e:
                 print(f"⚠️ Warning: Failed to save crypto opportunities to preloaded table: {e}")
                 # Continue with the response even if saving fails
-
         result_data = {
             "opportunities": opportunities,
             "errors": errors,
@@ -940,9 +1001,7 @@ def crypto_analysis():
                 "cryptocurrencies with smart batching"
             ),
         }
-
         cache_result(cache_key, result_data)
-
         socketio.emit(
             "crypto_progress",
             {
@@ -956,7 +1015,6 @@ def crypto_analysis():
                 "cached": False,
             },
         )
-
         return create_api_response(data=result_data)
         print("[CRYPTO_ANALYSIS] Data sent to frontend:")
         print(json.dumps(result_data, indent=2, default=str))
@@ -966,8 +1024,6 @@ def crypto_analysis():
         traceback.print_exc()
         log_exception("Crypto analysis", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/execute_trade", methods=["POST"])
 def execute_trade():
     """Execute a trade based on analysis"""
@@ -976,14 +1032,12 @@ def execute_trade():
         symbol = data.get("symbol", "").upper()
         # Get fresh analysis
         price_data = data_fetcher.get_stock_price(symbol)
-
         # Validate price_data is a dictionary with required fields
         if not isinstance(price_data, dict) or "current_price" not in price_data:
             return create_api_response(
                 error=f"Invalid price data received for {symbol}: type={type(price_data)}",
                 status_code=500,
             )
-
         news_data = data_fetcher.get_company_news(symbol, days_back=7)
         sentiment_data = analyze_sentiment_with_fallback(news_data, price_data, symbol)
         signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
@@ -1032,8 +1086,6 @@ def execute_trade():
             ),
             500,
         )
-
-
 @app.route("/api/backtest", methods=["POST"])
 def backtest():
     """Run backtest for a symbol, with DB persistence and prepopulation."""
@@ -1056,8 +1108,6 @@ def backtest():
     except Exception as e:
         log_exception("Backtest endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/backtest/historical", methods=["POST"])
 def backtest_historical_recommendations():
     """Run backtest based on historical recommendations from the database."""
@@ -1066,7 +1116,6 @@ def backtest_historical_recommendations():
         symbol = data.get("symbol", "").upper()
         days_back = int(data.get("days_back", 30))
         strategy_type = data.get("strategy_type", "all")  # all, stocks, crypto
-
         # Create a connection without RealDictCursor for this function
         db_cfg = Config.DATABASE_CONFIG
         conn = psycopg2.connect(
@@ -1090,25 +1139,18 @@ def backtest_historical_recommendations():
                     WHERE timestamp >= NOW() - INTERVAL %s
                 """
                 params = [f"{days_back} days"]
-
                 # Add symbol filter if provided
                 if symbol:
                     query += " AND symbol = %s"
                     params.append(symbol)
-
                 if strategy_type != "all":
                     if strategy_type == "stocks":
                         query += " AND recommendation_type NOT LIKE 'crypto%'"
                     elif strategy_type == "crypto":
                         query += " AND recommendation_type LIKE 'crypto%'"
-
                 query += " ORDER BY timestamp DESC"
-
-
                 cur.execute(query, params)
                 recommendations = cur.fetchall()
-
-
                 # Process recommendations
                 print(f"  rec[0] (id): {first_rec[0]}")
                 print(f"  rec[1] (symbol): {first_rec[1]}")
@@ -1131,7 +1173,6 @@ def backtest_historical_recommendations():
                 print(f"  rec[16] (profitable): {first_rec[16]}")
         finally:
             conn.close()
-
         if not recommendations:
             return create_api_response(
                 data={
@@ -1140,12 +1181,9 @@ def backtest_historical_recommendations():
                     "backtest_results": {},
                 }
             )
-
         # Process recommendations into backtest results
         backtest_results = process_historical_recommendations(recommendations)
-
         # Debug: Print first 3 trades from backtest_results before returning
-
         if "trades" in backtest_results and backtest_results["trades"]:
             for i, trade in enumerate(backtest_results["trades"][:3]):
                 print(
@@ -1153,10 +1191,7 @@ def backtest_historical_recommendations():
                 )
         else:
             print("  No trades found in backtest_results")
-
         # Debug: Print the full trades payload being sent to the frontend
-
-
         if "trades" in backtest_results:
             print("DEBUG: FULL TRADES PAYLOAD SENT TO FRONTEND:")
             print(json.dumps(backtest_results["trades"][:10], indent=2, default=str))
@@ -1164,14 +1199,10 @@ def backtest_historical_recommendations():
         else:
             print("DEBUG: No trades in backtest_results")
             sys.stdout.flush()
-
         return create_api_response(data=backtest_results)
-
     except Exception as e:
         log_exception("Historical backtest endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/backtest/recommendations", methods=["GET"])
 def get_backtest_recommendations():
     """Get historical recommendations for backtesting analysis."""
@@ -1179,7 +1210,6 @@ def get_backtest_recommendations():
         symbol = request.args.get("symbol", "").upper()
         days_back = int(request.args.get("days_back", 30))
         limit = int(request.args.get("limit", 100))
-
         # Create a connection without RealDictCursor for this function
         db_cfg = Config.DATABASE_CONFIG
         conn = psycopg2.connect(
@@ -1202,19 +1232,15 @@ def get_backtest_recommendations():
                     WHERE timestamp >= NOW() - INTERVAL %s days
                 """
                 params = [days_back]
-
                 if symbol:
                     query += " AND symbol = %s"
                     params.append(symbol)
-
                 query += " ORDER BY timestamp DESC LIMIT %s"
                 params.append(limit)
-
                 cur.execute(query, params)
                 recommendations = cur.fetchall()
         finally:
             conn.close()
-
         # Convert to list of dictionaries
         results = []
         for rec in recommendations:
@@ -1236,7 +1262,6 @@ def get_backtest_recommendations():
                     "profitable": rec[13],
                 }
             )
-
         return create_api_response(
             data={
                 "recommendations": results,
@@ -1245,19 +1270,15 @@ def get_backtest_recommendations():
                 "days_back": days_back,
             }
         )
-
     except Exception as e:
         log_exception("Get backtest recommendations endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/backtest/stats", methods=["GET"])
 def get_backtest_statistics():
     """Get comprehensive backtesting statistics from historical recommendations."""
     try:
         days_back = int(request.args.get("days_back", 30))
         symbol = request.args.get("symbol", "").upper()
-
         # Create a connection without RealDictCursor for this function
         db_cfg = Config.DATABASE_CONFIG
         conn = psycopg2.connect(
@@ -1276,35 +1297,29 @@ def get_backtest_statistics():
                     WHERE timestamp >= NOW() - INTERVAL '{days_back} days'
                 """
                 params = []
-
                 if symbol:
                     base_query += " AND symbol = %s"
                     params.append(symbol)
-
                 # Overall statistics
                 cur.execute(f"SELECT COUNT(*) {base_query}", params)
                 result = cur.fetchone()
                 total_recommendations = result[0] if result else 0
-
                 cur.execute(
                     f"SELECT COUNT(*) {base_query} AND profitable = true", params
                 )
                 result = cur.fetchone()
                 profitable_count = result[0] if result else 0
-
                 cur.execute(
                     f"SELECT COUNT(*) {base_query} AND profitable = false", params
                 )
                 result = cur.fetchone()
                 unprofitable_count = result[0] if result else 0
-
                 # Success rate
                 success_rate = (
                     (profitable_count / total_recommendations * 100)
                     if total_recommendations > 0
                     else 0
                 )
-
                 # Average confidence scores
                 cur.execute(
                     f"""
@@ -1317,7 +1332,6 @@ def get_backtest_statistics():
                     params,
                 )
                 avg_scores = cur.fetchone()
-
                 # Action breakdown
                 cur.execute(
                     f"""
@@ -1329,7 +1343,6 @@ def get_backtest_statistics():
                     params,
                 )
                 action_breakdown = cur.fetchall()
-
                 # Recommendation type breakdown
                 cur.execute(
                     f"""
@@ -1341,7 +1354,6 @@ def get_backtest_statistics():
                     params,
                 )
                 type_breakdown = cur.fetchall()
-
                 # Top performing symbols
                 cur.execute(
                     f"""
@@ -1362,7 +1374,6 @@ def get_backtest_statistics():
         finally:
             if conn:
                 conn.close()
-
         stats = {
             "total_recommendations": total_recommendations,
             "profitable_count": profitable_count,
@@ -1392,14 +1403,10 @@ def get_backtest_statistics():
             "period_days": days_back,
             "symbol": symbol,
         }
-
         return create_api_response(data=stats)
-
     except Exception as e:
         log_exception("Backtest statistics endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 def process_historical_recommendations(recommendations):
     """Process historical recommendations into backtest results with trade simulation."""
     try:
@@ -1407,30 +1414,25 @@ def process_historical_recommendations(recommendations):
         if recommendations:
             print(f"DEBUG: First recommendation: {recommendations[0]}")
             print(f"DEBUG: Length of first recommendation: {len(recommendations[0])}")
-
         # Debug: Print first 5 actions and sentiment scores before processing
         print("DEBUG: First 5 recommendations before processing:")
         for i, rec in enumerate(recommendations[:5]):
             action = rec[4] if len(rec) > 4 else "N/A"
             sentiment = rec[11] if len(rec) > 11 else "N/A"
             print(f"  [{i}] action: {action}, sentiment: {sentiment}")
-
         # Initialize backtest parameters
         initial_capital = 10000  # $10,000 starting capital
         current_capital = initial_capital
         position_size = 0.02  # 2% of capital per trade
         trades = []  # Ensure trades list is empty at the start
         cumulative_capital = [initial_capital]
-
         # Sort recommendations by timestamp in ascending order (oldest first) for proper chronological processing
         sorted_recommendations = sorted(
             recommendations, key=lambda x: x[2] if x[2] else datetime.min
         )
-
         # Process each recommendation as a trade
         processed_trades = 0
         skipped_trades = 0
-
         for i, rec in enumerate(sorted_recommendations):
             if len(rec) != 17:
                 print(f"SKIP: Recommendation {i} has {len(rec)} columns, expected 17")
@@ -1442,7 +1444,6 @@ def process_historical_recommendations(recommendations):
                     print(
                         f"DEBUG: Processing recommendation [{i}]: action={rec[4]}, sentiment={rec[11]}, symbol={rec[1]}"
                     )
-
                 try:
                     symbol = rec[1]  # symbol (index 1)
                     timestamp = rec[2]  # timestamp (index 2)
@@ -1451,7 +1452,6 @@ def process_historical_recommendations(recommendations):
                         float(rec[10]) if rec[10] is not None else 0.5
                     )  # final_confidence (index 10)
                     sentiment_score_raw = rec[11]  # sentiment_score (index 11)
-
                     # Improved sentiment score conversion
                     if sentiment_score_raw is None:
                         # Use action-based defaults for NULL sentiment scores
@@ -1461,7 +1461,6 @@ def process_historical_recommendations(recommendations):
                             sentiment_score = -0.3  # Slightly negative for sell actions
                         else:
                             sentiment_score = 0  # Neutral for other actions
-
                         # Debug: Log when using defaults
                         if i < 10:  # Only log first 10 for debugging
                             print(
@@ -1476,10 +1475,8 @@ def process_historical_recommendations(recommendations):
                             else:
                                 # It's already a float or other numeric type
                                 sentiment_score = float(sentiment_score_raw)
-
                             # Ensure sentiment is in valid range [-1, 1]
                             sentiment_score = max(-1.0, min(1.0, sentiment_score))
-
                             # Debug: Log successful conversion for non-HOLD actions
                             if i < 5:  # Only log first 5 for debugging
                                 print(
@@ -1501,34 +1498,27 @@ def process_historical_recommendations(recommendations):
                     print(f"ERROR: Exception: {e}")
                     skipped_trades += 1
                     continue
-
                 # Skip if no valid action
                 if not action:
                     continue
-
                 # Skip HOLD actions entirely - they don't represent actual trades
                 if action == "HOLD":
                     skipped_trades += 1
                     continue
-
                 # Calculate position size based on confidence
                 trade_amount = current_capital * position_size * confidence
                 shares = int(trade_amount / current_price) if current_price > 0 else 0
-
                 # Ensure minimum position size of 1 share/contract
                 if shares == 0 and trade_amount > 0:
                     shares = 1
-
                 if shares == 0:
                     skipped_trades += 1
                     continue
-
                 # Simulate trade outcome based on sentiment and confidence
                 # Higher sentiment + higher confidence = better chance of profit
                 profit_probability = (
                     (sentiment_score + 1) / 2 * confidence
                 )  # Convert -1 to 1 range to 0 to 1
-
                 # Simulate price movement
                 if action in ["BUY", "CALL"]:
                     # For buy/call actions, positive sentiment should lead to price increase
@@ -1550,7 +1540,6 @@ def process_historical_recommendations(recommendations):
                         price_change_pct = (
                             -sentiment_score * confidence * 0.05
                         )  # 0-5% change
-
                 # Calculate profit/loss
                 if action in ["BUY", "CALL"]:
                     # Profit if price goes up
@@ -1558,17 +1547,13 @@ def process_historical_recommendations(recommendations):
                 else:  # SELL, PUT, SELL_SHORT
                     # Profit if price goes down
                     profit = shares * current_price * price_change_pct
-
                 # Add some randomness to make it more realistic
                 import random
-
                 random_factor = random.uniform(0.8, 1.2)
                 profit *= random_factor
-
                 # Update capital
                 current_capital += profit
                 cumulative_capital.append(current_capital)
-
                 # Create trade record
                 trade = {
                     "date": timestamp.isoformat() if timestamp else f"Trade_{i + 1}",
@@ -1592,22 +1577,18 @@ def process_historical_recommendations(recommendations):
                     print(
                         f"DEBUG: Created trade for {action}: shares={shares}, sentiment={sentiment_score}, profit={profit}"
                     )
-
                 # Debug: Print first 5 trade objects after creation
                 if processed_trades <= 5:
                     print(
                         f"DEBUG: Trade object [{processed_trades - 1}]: action={trade['action']}, sentiment={trade['sentiment']}"
                     )
-
             except Exception as e:
                 print(f"Error processing recommendation {i}: {e}")
                 skipped_trades += 1
                 continue
-
         print(
             f"DEBUG: Processed {processed_trades} trades, skipped {skipped_trades} trades"
         )
-
         # Calculate statistics
         total_trades = len(trades)
         winning_trades = len([t for t in trades if t["profit"] > 0])
@@ -1618,7 +1599,6 @@ def process_historical_recommendations(recommendations):
             if initial_capital > 0
             else 0
         )
-
         # Calculate trade statistics
         if trades:
             avg_trade = sum(t["profit"] for t in trades) / len(trades)
@@ -1626,14 +1606,12 @@ def process_historical_recommendations(recommendations):
             worst_trade = min(t["profit"] for t in trades)
         else:
             avg_trade = best_trade = worst_trade = 0
-
         # Action breakdown
         actions = {}
         for rec in recommendations:
             action = rec[4]  # action field
             if action and action != "HOLD":  # Exclude HOLD from action breakdown
                 actions[action] = actions.get(action, 0) + 1
-
         # Symbol breakdown
         symbols = {}
         for rec in recommendations:
@@ -1642,7 +1620,6 @@ def process_historical_recommendations(recommendations):
                 if symbol not in symbols:
                     symbols[symbol] = {"total": 0, "profitable": 0, "unprofitable": 0}
                 symbols[symbol]["total"] += 1
-
         # Calculate symbol success rates from trades
         for trade in trades:
             symbol = trade["symbol"]
@@ -1653,36 +1630,30 @@ def process_historical_recommendations(recommendations):
                 symbols[symbol]["profitable"] += 1
             else:
                 symbols[symbol]["unprofitable"] += 1
-
         for symbol in symbols:
             total = symbols[symbol]["total"]
             profitable = symbols[symbol]["profitable"]
             symbols[symbol]["success_rate"] = (
                 (profitable / total * 100) if total > 0 else 0
             )
-
         # Sort symbols by success rate
         sorted_symbols = sorted(
             symbols.items(), key=lambda x: x[1]["success_rate"], reverse=True
         )
-
         # Debug: Print first 3 trades from the main trades list before filtering
         print("DEBUG: First 3 trades from main trades list before filtering:")
         for i, trade in enumerate(trades[:3]):
             print(
                 f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}"
             )
-
         # Return recent trades (no filtering needed since we excluded HOLD)
         final_trades = trades[-20:]  # Last 20 trades
-
         # Debug: Print first 3 final_trades
         print("DEBUG: First 3 final_trades:")
         for i, trade in enumerate(final_trades[:3]):
             print(
                 f"  [{i}] action={trade.get('action')}, sentiment={trade.get('sentiment')}, symbol={trade.get('symbol')}"
             )
-
         return {
             "initial_capital": initial_capital,
             "final_capital": current_capital,
@@ -1729,7 +1700,6 @@ def process_historical_recommendations(recommendations):
                 for rec in recommendations[:10]
             ],
         }
-
     except Exception as e:
         log_exception("Process historical recommendations", e)
         return {
@@ -1738,8 +1708,6 @@ def process_historical_recommendations(recommendations):
             "success_rate": 0,
             "trades": [],
         }
-
-
 @app.route("/api/portfolio")
 def portfolio():
     """Get current portfolio status"""
@@ -1760,8 +1728,6 @@ def portfolio():
     except Exception as e:
         log_exception("Portfolio endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/telegram/test")
 def test_telegram():
     """Test Telegram bot connectivity"""
@@ -1783,8 +1749,6 @@ def test_telegram():
     except Exception as e:
         log_error("Error testing Telegram: {str(e)}")
         return jsonify({"status": "error", "working": False, "error": str(e)}), 500
-
-
 @app.route("/api/telegram/toggle", methods=["POST"])
 def toggle_telegram_alerts():
     """Toggle Telegram alerts on/of"""
@@ -1827,8 +1791,6 @@ def toggle_telegram_alerts():
             )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-
 @app.route("/api/telegram/send_test", methods=["POST"])
 def send_test_telegram():
     """Send a test Telegram message"""
@@ -1851,8 +1813,6 @@ def send_test_telegram():
             )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-
 @app.route("/api/telegram/chat_ids", methods=["GET"])
 def get_telegram_chat_ids():
     """Get current Telegram chat IDs"""
@@ -1865,8 +1825,6 @@ def get_telegram_chat_ids():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/telegram/add_chat_id", methods=["POST"])
 def add_telegram_chat_id():
     """Add a new Telegram chat ID"""
@@ -1915,8 +1873,6 @@ def add_telegram_chat_id():
             )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
-
 @app.route("/api/telegram/remove_chat_id", methods=["POST"])
 def remove_telegram_chat_id():
     """Remove a Telegram chat ID"""
@@ -1935,8 +1891,6 @@ def remove_telegram_chat_id():
     except Exception as e:
         log_exception("Remove Telegram chat ID endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/telegram/send_raw_message", methods=["POST"])
 def send_raw_telegram_message():
     """Send a custom raw message via Telegram to all recipients"""
@@ -1979,14 +1933,11 @@ def send_raw_telegram_message():
         return create_api_response(
             error="Error sending raw message: {str(e)}", status_code=500
         )
-
-
 @app.route("/stocks")
 def stocks_page():
     """S&P 500 stocks analysis page"""
     try:
         trading_logger.api_logger.info("[DEBUG] Entering stocks_page route handler")
-
         # Check if preloaded data is available and log its status
         try:
             if preloaded_data:
@@ -2001,7 +1952,6 @@ def stocks_page():
             trading_logger.error_logger.error(
                 f"[DEBUG] Error checking preloaded_data: {str(e)}"
             )
-
         trading_logger.api_logger.info("[DEBUG] Rendering stocks.html template")
         return render_template(
             "stocks.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
@@ -2015,17 +1965,9 @@ def stocks_page():
             f"<html><body><h1>Error loading stocks page</h1><p>Please try again later. Error: {str(e)}</p></body></html>",
             500,
         )
-
-
 # crypto route moved to routes/page_routes.py
-
-
 # portfolio route moved to routes/page_routes.py
-
-
 # backtest route moved to routes/backtest_routes.py
-
-
 @app.route("/foreign_markets_overview")
 def foreign_markets_overview_page():
     """Foreign markets overview page"""
@@ -2039,14 +1981,12 @@ def foreign_markets_overview_page():
             f"[ERROR] Failed to render foreign markets overview page: {str(e)}"
         )
         return "Error loading foreign markets overview page", 500
-
 @app.route("/api/foreign_markets/overview")
 def foreign_markets_overview_api():
     """Get foreign markets overview data with summary statistics"""
     try:
         # Get markets data from MarketManager
         markets_data = MarketManager.get_foreign_markets_overview()
-        
         # Add US market indices
         us_market_indices = [
             {
@@ -2069,20 +2009,16 @@ def foreign_markets_overview_api():
                 "symbol_suffix": ""
             },
         ]
-        
         # Add sample symbols to markets for demo purposes
         for market in markets_data['markets']:
             if 'symbols' not in market or not market['symbols']:
                 market['symbols'] = [f"{market['code']}.{market['currency']}"]
                 market['symbol_count'] = len(market['symbols'])
-        
         # Add US indices to the markets list for the frontend
         markets_data['markets'].extend(us_market_indices)
-        
         # Update summary with US indices
         markets_data['summary']['total_markets'] += len(us_market_indices)
         markets_data['summary']['markets_open'] += len(us_market_indices)  # Assuming all US indices are open
-        
         response = {
             "success": True,
             "data": {
@@ -2092,13 +2028,10 @@ def foreign_markets_overview_api():
             },
             "timestamp": datetime.utcnow().isoformat() + 'Z'
         }
-        
         return jsonify(response)
-        
     except Exception as e:
         error_msg = f"Error in foreign_markets_overview_api: {str(e)}"
         trading_logger.error_logger.error(error_msg, exc_info=True)
-        
         return jsonify({
             "success": False,
             "error": "Failed to fetch foreign markets data",
@@ -2107,15 +2040,12 @@ def foreign_markets_overview_api():
         }), 500
     """Trading opportunities page"""
     try:
-
         # Preload data server-side to avoid frontend API timeouts
         try:
             # Use placeholder data for now - modules moved to routes/services
             news_opps = {"success": False, "error": "Moved to service layer", "opportunities": []}
             watchlist_opps = {"success": False, "error": "Moved to service layer", "opportunities": []}
-
             # Extract data for template rendering
-
             # Extract data with proper error handling
             news_opps_list = (
                 news_opps.get("opportunities", [])
@@ -2127,10 +2057,8 @@ def foreign_markets_overview_api():
                 if watchlist_opps and isinstance(watchlist_opps, dict)
                 else []
             )
-
             news_count = len(news_opps_list)
             watchlist_count = len(watchlist_opps_list)
-
             # Log any errors from the preload functions
             if news_opps and not news_opps.get("success", False):
                 trading_logger.error_logger.error(
@@ -2140,11 +2068,9 @@ def foreign_markets_overview_api():
                 trading_logger.error_logger.error(
                     f"[ERROR] Watchlist opportunities preload failed: {watchlist_opps.get('error', 'Unknown error')}"
                 )
-
             trading_logger.api_logger.info(
                 f"[DEBUG] Opportunities page - loaded: {news_count} news, {watchlist_count} watchlist opportunities"
             )
-
             # Prepare data for template with proper structure
             preloaded_data = {
                 "data": {
@@ -2204,14 +2130,12 @@ def foreign_markets_overview_api():
                 and not watchlist_opps.get("success", False)
                 else None,
             }
-
             trading_logger.api_logger.info(
                 "[DEBUG] Rendering opportunities.html template with preloaded data"
             )
             trading_logger.api_logger.info(
                 f"[EXTRA DEBUG] preloaded_data: news_count={preloaded_data['news_count']}, watchlist_count={preloaded_data['watchlist_count']}"
             )
-
             # Safe debug logging for opportunities data
             try:
                 if preloaded_data.get("data", {}).get("news_opportunities"):
@@ -2226,7 +2150,6 @@ def foreign_markets_overview_api():
                 trading_logger.api_logger.warning(
                     f"[EXTRA DEBUG] Error logging news opportunities: {debug_e}"
                 )
-
             try:
                 if preloaded_data.get("data", {}).get("watchlist_opportunities"):
                     trading_logger.api_logger.info(
@@ -2240,7 +2163,6 @@ def foreign_markets_overview_api():
                 trading_logger.api_logger.warning(
                     f"[EXTRA DEBUG] Error logging watchlist opportunities: {debug_e}"
                 )
-
             # Ensure all data is JSON serializable
             def safe_serialize(obj):
                 if obj is None or isinstance(obj, (str, int, float, bool)):
@@ -2255,7 +2177,6 @@ def foreign_markets_overview_api():
                     return safe_serialize(obj.to_dict())
                 else:
                     return str(obj)
-
             serialized_data = safe_serialize(preloaded_data)
             preloaded_json = json.dumps(serialized_data)
             trading_logger.api_logger.info(
@@ -2266,7 +2187,6 @@ def foreign_markets_overview_api():
                 f"[ERROR] Error serializing preloaded data: {str(e)}"
             )
             preloaded_json = '{"error": "Failed to load opportunities data"}'
-
         return render_template(
             "opportunities.html",
             historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS,
@@ -2281,8 +2201,6 @@ def foreign_markets_overview_api():
             f"<html><body><h1>Error loading opportunities page</h1><p>Please try again later. Error: {str(e)}</p></body></html>",
             500,
         )
-
-
 @app.route("/weekly_plan")
 def weekly_plan_page():
     """Weekly Market Plan page"""
@@ -2299,18 +2217,14 @@ def weekly_plan_page():
             f"<html><body><h1>Error loading weekly plan page</h1><p>Please try again later. Error: {str(e)}</p></body></html>",
             500,
         )
-
-
 @app.route("/api/weekly_events")
 def weekly_events_api():
     """Get weekly market events"""
     try:
         trading_logger.api_logger.info("[DEBUG] Entered weekly_events API endpoint")
-
         # Get start_date parameter (optional)
         start_date_str = request.args.get("start_date")
         start_date = None
-
         if start_date_str:
             try:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
@@ -2320,7 +2234,6 @@ def weekly_events_api():
                     message="Invalid date format. Use YYYY-MM-DD",
                     status_code=400,
                 )
-
         # For now, return mock data since WeeklyPlanPopulator is not available
         # In the future, this should fetch from weekly_plan_events table
         mock_events = {
@@ -2374,15 +2287,12 @@ def weekly_events_api():
             ],
             "market_holidays": []
         }
-
         trading_logger.api_logger.info(
             f"[DEBUG] Successfully fetched mock weekly events: {len(mock_events.get('earnings', []))} earnings, {len(mock_events.get('economic', []))} economic events"
         )
-
         return create_api_response(
             data=mock_events, message="Weekly events retrieved successfully (mock data)"
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Failed to fetch weekly events: {str(e)}"
@@ -2392,25 +2302,18 @@ def weekly_events_api():
             message=f"Failed to fetch weekly events: {str(e)}",
             status_code=500,
         )
-
-
 @app.route("/api/weekly_plan/populate", methods=["POST"])
 def populate_weekly_plan():
     """Populate weekly plan data (admin endpoint)"""
     try:
         # from src.data.weekly_plan_populator import WeeklyPlanPopulator  # Module not available
-
         trading_logger.api_logger.info("[DEBUG] Populating weekly plan data")
-
         # populator = WeeklyPlanPopulator()  # Module not available
         # results = populator.populate_advance_data()  # Module not available
-
         trading_logger.api_logger.info("[DEBUG] Weekly plan populated: (module not available)")
-
         return create_api_response(
             data={"status": "module_not_available"}, message="Weekly plan module not available"
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Failed to populate weekly plan: {str(e)}"
@@ -2420,24 +2323,18 @@ def populate_weekly_plan():
             message=f"Failed to populate weekly plan: {str(e)}",
             status_code=500,
         )
-
-
 @app.route("/api/weekly_plan/available_weeks")
 def available_weeks_api():
     """Get list of available weeks for selection"""
     try:
         # from src.data.weekly_plan_populator import WeeklyPlanPopulator  # Module not available
-
         weeks_back = int(request.args.get("weeks_back", 4))
         weeks_ahead = int(request.args.get("weeks_ahead", 8))
-
         # populator = WeeklyPlanPopulator()  # Module not available
         # available_weeks = populator.get_available_weeks(weeks_back, weeks_ahead)  # Module not available
-
         return create_api_response(
             data={"weeks": []}, message="Weekly plan module not available"
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Failed to get available weeks: {str(e)}"
@@ -2447,8 +2344,6 @@ def available_weeks_api():
             message=f"Failed to get available weeks: {str(e)}",
             status_code=500,
         )
-
-
 @app.route("/api/market_calendar/<date_str>")
 def market_calendar_api(date_str):
     """Get market events for a specific date"""
@@ -2456,7 +2351,6 @@ def market_calendar_api(date_str):
         trading_logger.api_logger.info(
             f"[DEBUG] Entered market_calendar API endpoint for date: {date_str}"
         )
-
         # Parse date
         try:
             target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
@@ -2466,7 +2360,6 @@ def market_calendar_api(date_str):
                 message="Invalid date format. Use YYYY-MM-DD",
                 status_code=400,
             )
-
         # For now, return mock data since market_calendar is not available
         # In the future, this should fetch from weekly_plan_events table
         mock_events = [
@@ -2477,16 +2370,13 @@ def market_calendar_api(date_str):
                 "timing": "market_open"
             }
         ]
-
         trading_logger.api_logger.info(
             f"[DEBUG] Successfully fetched {len(mock_events)} mock events for {date_str}"
         )
-
         return create_api_response(
             data={"date": date_str, "events": mock_events},
             message=f"Events for {date_str} retrieved successfully (mock data)",
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Failed to fetch events for {date_str}: {str(e)}"
@@ -2496,14 +2386,11 @@ def market_calendar_api(date_str):
             message=f"Failed to fetch events for {date_str}: {str(e)}",
             status_code=500,
         )
-
-
 @app.route("/api/earnings_calendar")
 def earnings_calendar_api():
     """Get earnings calendar for watchlist symbols"""
     try:
         trading_logger.api_logger.info("[DEBUG] Entered earnings_calendar API endpoint")
-
         # Get watchlist symbols
         try:
             watchlist_symbols = Config.WATCHLIST_STOCKS or []
@@ -2515,10 +2402,8 @@ def earnings_calendar_api():
                 "AMZN",
                 "TSLA",
             ]  # Default symbols
-
         # Get days_ahead parameter (optional, default 30)
         days_ahead = int(request.args.get("days_ahead", 30))
-
         # For now, return mock data since market_calendar is not available
         # In the future, this should fetch from weekly_plan_events table
         mock_earnings = [
@@ -2538,16 +2423,13 @@ def earnings_calendar_api():
             }
         ]
         earnings = mock_earnings
-
         trading_logger.api_logger.info(
             f"[DEBUG] Successfully fetched {len(earnings)} earnings events for watchlist"
         )
-
         return create_api_response(
             data={"earnings": earnings, "symbols": watchlist_symbols},
             message="Earnings calendar retrieved successfully",
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Failed to fetch earnings calendar: {str(e)}"
@@ -2557,8 +2439,6 @@ def earnings_calendar_api():
             message=f"Failed to fetch earnings calendar: {str(e)}",
             status_code=500,
         )
-
-
 @app.route("/api/news_opportunities")
 def news_opportunities():
     """Get news-driven trading opportunities from preloaded data (fast)."""
@@ -2566,14 +2446,11 @@ def news_opportunities():
         "[DEBUG] Entered news_opportunities endpoint (preloaded mode)"
     )
     try:
-    
-
         ip = request.remote_addr or "unknown"
         user_agent = request.headers.get("User-Agent", "unknown")
         trading_logger.api_logger.info(
             f"[DEBUG] news_opportunities request | IP: {ip} | UA: {user_agent}"
         )
-
         # Optionally allow force refresh (manual re-analysis)
         refresh = request.args.get("refresh", default=0, type=int)
         if not refresh:
@@ -2581,7 +2458,6 @@ def news_opportunities():
             from src.data.preload_news_opportunities import (
                 get_latest_preloaded_news_opportunities,
             )
-
             preloaded = get_latest_preloaded_news_opportunities()
             if preloaded and preloaded.get("opportunities") is not None:
                 trading_logger.api_logger.info(
@@ -2599,7 +2475,6 @@ def news_opportunities():
                 trading_logger.api_logger.warning(
                     "[DEBUG] No preloaded news opportunities found in DB!"
                 )
-
         # If refresh=1 or no preloaded data, run a fresh analysis and update cache
         trading_logger.api_logger.info(
             "[DEBUG] Running fresh news opportunities analysis and updating cache..."
@@ -2610,13 +2485,11 @@ def news_opportunities():
                 "[DEBUG] Refresh requested - running preload to update database"
             )
             from src.data.preload_news_opportunities import preload_news_opportunities
-
             preload_news_opportunities()
             # Get the newly cached data
             from src.data.preload_news_opportunities import (
                 get_latest_preloaded_news_opportunities,
             )
-
             preloaded = get_latest_preloaded_news_opportunities()
             if preloaded and preloaded.get("opportunities") is not None:
                 return create_api_response(
@@ -2628,7 +2501,6 @@ def news_opportunities():
                         "cache_timestamp": preloaded["timestamp"],
                     }
                 )
-
         # Fallback: direct analysis (no database update)
         trading_logger.api_logger.info(
             "[DEBUG] Running fallback real-time news opportunities analysis (slow)"
@@ -2649,8 +2521,6 @@ def news_opportunities():
         )
         log_exception("News opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/watchlist_opportunities")
 def watchlist_opportunities():
     """Get watchlist-based trading opportunities from preloaded data (fast)."""
@@ -2658,26 +2528,19 @@ def watchlist_opportunities():
         "[DEBUG] Entered watchlist_opportunities endpoint (preloaded mode)"
     )
     try:
-    
-
         ip = request.remote_addr or "unknown"
         user_agent = request.headers.get("User-Agent", "unknown")
-
         trading_logger.api_logger.info(
             f"[DEBUG] watchlist_opportunities request | IP: {ip} | UA: {user_agent}"
         )
-
         # Check if refresh is requested (force real-time analysis)
         refresh = request.args.get("refresh", default=0, type=int)
-
         if not refresh:
             # Serve preloaded data from DB
             from src.data.preload_watchlist_opportunities import (
                 get_latest_preloaded_watchlist_opportunities,
             )
-
             preloaded = get_latest_preloaded_watchlist_opportunities()
-
             if preloaded and preloaded.get("opportunities") is not None:
                 trading_logger.api_logger.info(
                     f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})"
@@ -2698,7 +2561,6 @@ def watchlist_opportunities():
                 trading_logger.api_logger.warning(
                     "[DEBUG] No preloaded watchlist opportunities found in DB!"
                 )
-
         # If refresh=1 or no preloaded data, run fresh analysis and update cache
         if refresh:
             # Refresh requested - run preload function to update database
@@ -2708,13 +2570,11 @@ def watchlist_opportunities():
             from src.data.preload_watchlist_opportunities import (
                 preload_watchlist_opportunities,
             )
-
             preload_watchlist_opportunities()
             # Get the newly cached data
             from src.data.preload_watchlist_opportunities import (
                 get_latest_preloaded_watchlist_opportunities,
             )
-
             preloaded = get_latest_preloaded_watchlist_opportunities()
             if preloaded and preloaded.get("opportunities") is not None:
                 trading_logger.api_logger.info(
@@ -2732,18 +2592,15 @@ def watchlist_opportunities():
                         "timestamp": datetime.now().isoformat(),
                     }
                 )
-
         # Fallback: direct analysis without database update
         trading_logger.api_logger.info(
             "[DEBUG] Running fallback real-time watchlist opportunities analysis (slow)"
         )
-
         # Get watchlist symbols (stocks only, no crypto)
         watchlist_symbols = watchlist_manager.get_stocks()
         trading_logger.api_logger.info(
             f"[DEBUG] Processing watchlist symbols: {watchlist_symbols}"
         )
-
         if not watchlist_symbols:
             return create_api_response(
                 data={
@@ -2756,10 +2613,8 @@ def watchlist_opportunities():
                     "message": "No watchlist symbols configured",
                 }
             )
-
         # Create tasks and process
         tasks = create_watchlist_tasks(watchlist_symbols)
-
         # Progress callback for real-time updates
         def progress_callback(symbol, completed, total, result):
             socketio.emit(
@@ -2771,7 +2626,6 @@ def watchlist_opportunities():
                     "status": "processing",
                 },
             )
-
         # Execute the batch analysis
         trading_logger.api_logger.info(
             "[DEBUG] Starting real-time batch analysis for watchlist opportunities..."
@@ -2779,21 +2633,18 @@ def watchlist_opportunities():
         batch_result = batch_processor_instance.process_batch_sync(
             tasks, progress_callback
         )
-
         # Filter out successful opportunities
         opportunities = [
             result
             for result in batch_result["results"].values()
             if result and "error" not in result
         ]
-
         # Get errors
         errors = [
             result
             for result in batch_result["results"].values()
             if result and "error" in result
         ]
-
         # Normalize the data structure to match frontend expectations
         normalized_opportunities = []
         for opp in opportunities:
@@ -2828,11 +2679,9 @@ def watchlist_opportunities():
                 },
             }
             normalized_opportunities.append(normalized_opp)
-
         trading_logger.api_logger.info(
             f"[DEBUG] Real-time watchlist_opportunities result: {len(normalized_opportunities)} opportunities, {len(errors)} errors"
         )
-
         return create_api_response(
             data={
                 "opportunities": normalized_opportunities,
@@ -2845,36 +2694,29 @@ def watchlist_opportunities():
                 "timestamp": datetime.now().isoformat(),
             }
         )
-
     except Exception as e:
         trading_logger.error_logger.error(
             f"[ERROR] Error in watchlist_opportunities endpoint: {str(e)}"
         )
         log_exception("Watchlist opportunities endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 def get_system_metrics():
     """Get basic system metrics"""
     try:
         import psutil
         import platform
-
         # CPU usage
         cpu_percent = psutil.cpu_percent(interval=1)
-
         # Memory usage
         memory = psutil.virtual_memory()
         memory_percent = memory.percent
         memory_used_gb = memory.used / (1024**3)
         memory_total_gb = memory.total / (1024**3)
-
         # Disk usage
         disk = psutil.disk_usage("/")
         disk_percent = disk.percent
         disk_used_gb = disk.used / (1024**3)
         disk_total_gb = disk.total / (1024**3)
-
         # System info
         system_info = {
             "platform": platform.system(),
@@ -2882,12 +2724,10 @@ def get_system_metrics():
             "python_version": platform.python_version(),
             "architecture": platform.machine(),
         }
-
         # Process info
         process = psutil.Process()
         process_memory_mb = process.memory_info().rss / (1024**2)
         process_cpu_percent = process.cpu_percent()
-
         return {
             "status": "ok",
             "cpu": {
@@ -2915,8 +2755,6 @@ def get_system_metrics():
     except Exception as e:
         log_error(f"Error getting system metrics: {str(e)}")
         return {"status": "error", "error": str(e)}
-
-
 @app.route("/api/go_services/health")
 def go_services_health():
     """Get health status of Go microservices - DISABLED"""
@@ -2928,17 +2766,9 @@ def go_services_health():
             "message": "Go services are not implemented in this version",
         }
     )
-
-
 # system_status route moved to routes/system_routes.py
-
-
 # logs route moved to routes/page_routes.py
-
-
 # System status endpoint moved to system_routes.py blueprint
-
-
 @app.route("/api/preload_stock_data", methods=["POST"])
 def trigger_preload_stock_data():
     """Manually trigger preload_stock_data job"""
@@ -2957,17 +2787,13 @@ def trigger_preload_stock_data():
             "message": f"Failed to trigger preload_stock_data: {str(e)}",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }), 500
-
-
 @app.route("/api/historical_data/update", methods=["POST"])
 def trigger_historical_data_update():
     """Manually trigger historical data update job"""
     try:
         from src.data.historical_data_updater import update_historical_data_job
-        
         # Run the update job
         result = update_historical_data_job()
-        
         if result["status"] == "success":
             return jsonify({
                 "status": "success",
@@ -2982,7 +2808,6 @@ def trigger_historical_data_update():
                 "details": result,
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }), 500
-            
     except Exception as e:
         log_error(f"Error triggering historical data update: {str(e)}")
         return jsonify({
@@ -2990,8 +2815,6 @@ def trigger_historical_data_update():
             "message": f"Failed to trigger historical data update: {str(e)}",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }), 500
-
-
 @app.route("/api/news_services/status", methods=["GET"])
 def get_news_services_status():
     """Get status of all news services"""
@@ -3093,8 +2916,6 @@ def get_news_services_status():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/news_services/toggle", methods=["POST"])
 def toggle_news_service():
     """Toggle a news service on/of"""
@@ -3114,8 +2935,6 @@ def toggle_news_service():
     except Exception as e:
         log_exception("Toggle news service endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/news_services/test", methods=["POST"])
 def test_news_service():
     """Test a specific news service"""
@@ -3181,8 +3000,6 @@ def test_news_service():
     except Exception as e:
         log_error("Error testing news service: {str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
-
-
 @app.route("/api/news_services/config", methods=["GET"])
 def get_news_services_config():
     """Get news services configuration status"""
@@ -3221,8 +3038,6 @@ def get_news_services_config():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/performance_status")
 def performance_status():
     """Get system performance status"""
@@ -3231,7 +3046,6 @@ def performance_status():
         db_stats = {"status": "unavailable"}
         try:
             from src.core.database import get_database_stats
-
             db_stats = get_database_stats()
         except Exception:
             logging.error("Error getting database stats: {str(e)}")
@@ -3266,8 +3080,6 @@ def performance_status():
     except Exception as e:
         logging.error("Error getting performance status: {str(e)}")
         return jsonify({"status": "error", "error": str(e)}), 500
-
-
 @app.route("/api/enhanced_analysis", methods=["POST"])
 @log_user_actions(trading_logger)
 @log_timing(trading_logger)
@@ -3299,7 +3111,6 @@ def enhanced_analysis():
             return create_api_response(
                 error="Rate limit exceeded. Please try again later.", status_code=429
             )
-
         def emit_progress(step, message):
             """Emit progress updates via WebSocket"""
             socketio.emit(
@@ -3310,7 +3121,6 @@ def enhanced_analysis():
                     "timestamp": datetime.now().isoformat(),
                 },
             )
-
         try:
             emit_progress(1, "Fetching market data...")
             price_data = data_fetcher.get_stock_price(symbol)
@@ -3372,8 +3182,6 @@ def enhanced_analysis():
             f"[DEBUG] /api/enhanced_analysis error: {str(e)}", exc_info=True
         )
         return create_api_response(error=str(e), status_code=500)
-
-
 @app.route("/api/comprehensive_analysis", methods=["POST"])
 def comprehensive_analysis():
     """Enhanced analysis with both stock and options recommendations"""
@@ -3387,14 +3195,12 @@ def comprehensive_analysis():
         price_data = data_fetcher.get_stock_price(symbol)
         if "error" in price_data:
             return create_api_response(error=price_data["error"], status_code=400)
-
         # Validate price_data is a dictionary with required fields
         if not isinstance(price_data, dict) or "current_price" not in price_data:
             return create_api_response(
                 error=f"Invalid price data received for {symbol}: type={type(price_data)}",
                 status_code=500,
             )
-
         news_data = data_fetcher.get_company_news(symbol, days_back=7)
         # Analyze sentiment with fallback to price-based analysis
         sentiment_data = analyze_sentiment_with_fallback(
@@ -3421,8 +3227,6 @@ def comprehensive_analysis():
     except Exception as e:
         log_exception("Comprehensive analysis endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 def analyze_sentiment_with_fallback(news_data, price_data, symbol, ai_provider=None):
     """
     Analyze sentiment with fallback to price-based analysis when no news articles are available.
@@ -3496,8 +3300,6 @@ def analyze_sentiment_with_fallback(news_data, price_data, symbol, ai_provider=N
         else:
             # Re-raise other types of errors
             raise e
-
-
 def analyze_single_stock(symbol):
     """Analyze a single stock and return the results"""
     print(
@@ -3603,7 +3405,6 @@ def analyze_single_stock(symbol):
     trading_recommendation = trading_strategy.get_recommendation(
         symbol, price_data, sentiment_result, signal_data
     )
-
     # Add position recommendations and day trading notes to the trading recommendation
     if isinstance(trading_recommendation, dict):
         if "position_recommendations" not in trading_recommendation:
@@ -3615,7 +3416,6 @@ def analyze_single_stock(symbol):
                     "risk_reward_ratio": 2.0,
                 }
             }
-
         # Fix any template variables in position_recommendations
         if "position_recommendations" in trading_recommendation and isinstance(
             trading_recommendation["position_recommendations"], dict
@@ -3630,7 +3430,6 @@ def analyze_single_stock(symbol):
                     fixed_key = "$1000"
                 fixed_recommendations[fixed_key] = value
             trading_recommendation["position_recommendations"] = fixed_recommendations
-
         if "day_trading_notes" not in trading_recommendation:
             trading_recommendation["day_trading_notes"] = [
                 f"Current price: ${price_data.get('current_price', 0)}",
@@ -3638,7 +3437,6 @@ def analyze_single_stock(symbol):
                 f"Confidence: {sentiment_result.get('confidence', 0)}",
                 "Watch for market volatility",
             ]
-
         # Fix any template variables in day_trading_notes
         if "day_trading_notes" in trading_recommendation and isinstance(
             trading_recommendation["day_trading_notes"], list
@@ -3668,11 +3466,9 @@ def analyze_single_stock(symbol):
         return {
             "error": f"Trading recommendation returned invalid data type: {type(trading_recommendation)}"
         }
-
     # Generate options recommendation using OptionsStrategy
     try:
         from src.trading.enhanced_trading_strategy import OptionsStrategy
-
         print(
             f"[DEBUG] Successfully imported OptionsStrategy for {symbol}"
         )  # ADDED DEBUG
@@ -3690,8 +3486,6 @@ def analyze_single_stock(symbol):
         print(
             f"[ERROR] Failed to generate options recommendation for {symbol}: {str(e)}"
         )
-
-
         traceback.print_exc()  # ADDED DEBUG
         options_recommendation = {
             "symbol": symbol,
@@ -3700,7 +3494,6 @@ def analyze_single_stock(symbol):
             "reasoning": f"Error generating options recommendation: {str(e)}",
             "confidence": 0.0,
         }
-
     # Instead of nesting recommendations, merge the trading recommendation directly into the result
     # This will make it easier for the frontend to access the data
     result = {
@@ -3736,8 +3529,6 @@ def analyze_single_stock(symbol):
         f"🔍 DEBUG: options_recommendation in result: {'options_recommendation' in result}"
     )
     return result
-
-
 def analyze_stock_batch(symbols):
     """Analyze multiple stocks in a batch"""
     results = []
@@ -3749,33 +3540,23 @@ def analyze_stock_batch(symbols):
             log_error(f"Error analyzing stock {symbol}: {str(e)}")
             results.append({"symbol": symbol, "error": str(e), "status": "failed"})
     return results
-
-
 def check_rate_limit(endpoint):
     """Check rate limit for a given endpoint"""
     # Implement rate limiting logic based on your requirements
     # For example, you can use a simple counter or a more sophisticated algorithm
     # to track and limit the number of requests per time unit
     return True
-
-
 def create_app(port=5001):
     """
     Create and start the Flask application
-
     Args:
         port (int): Port number to run the server on (default: 5001)
     """
-
-
-
     print(f"[DEBUG] Entered create_app() with port={port}")
     try:
         from src.core.logger import log_info, log_system_event
-
         log_info(f"Starting Flask application on port {port}", "system")
         log_system_event(f"Flask application starting on port {port}", "INFO")
-        
         # Start job scheduler in background thread
         def start_job_scheduler():
             try:
@@ -3784,10 +3565,8 @@ def create_app(port=5001):
                 run_scheduled_jobs()
             except Exception as e:
                 print(f"[DEBUG] Job scheduler failed to start: {e}")
-        
         scheduler_thread = threading.Thread(target=start_job_scheduler, daemon=True)
         scheduler_thread.start()
-        
         print(f"[DEBUG] About to start socketio.run() on 0.0.0.0:{port}")
         sys.stdout.flush()
         # Start the SocketIO server
@@ -3801,114 +3580,105 @@ def create_app(port=5001):
     except Exception as e:
         print(f"[DEBUG] Exception in create_app: {e}")
         from src.core.logger import log_exception
-
         log_exception(f"Failed to start Flask application on port {port}", e)
         sys.stdout.flush()
-
-
 # Global cache for preloaded data
 preloaded_data = None
 preload_timestamp = None
-
 # API tracking is now handled by the dedicated api_tracker module
-
-
 # Function to preload data
 def preload_stock_data():
-
-
     print("[DEBUG] Starting background preload_stock_data()")
     sys.stdout.flush()
-
     # Track rate limiting status for each data source
     rate_limited_sources = set()
-
     try:
         # Use internal function call instead of HTTP request to avoid circular dependency
         from src.data.data_fetcher import DataFetcher
-
         # Initialize components if not already done
         if "data_fetcher" not in globals():
             global data_fetcher
             data_fetcher = DataFetcher()
-
         # Get S&P 500 analysis directly
         print("[DEBUG] Fetching S&P 500 analysis for preloading...")
         start_time = time.time()
-
         # Get top 3 gainers and losers from Alpha Vantage
         market_movers = data_fetcher.get_top_gainers_losers(limit=3)
         gainer_symbols = market_movers.get("gainers", [])
         loser_symbols = market_movers.get("losers", [])
         print(f"[DEBUG] Found market movers: {market_movers}")
-
-        # Fetch actual price data for each symbol
-        def fetch_symbol_data(symbol, symbol_type):
-            try:
-                print(f"[DEBUG] Fetching price data for {symbol} ({symbol_type})...")
-                price_data = data_fetcher.get_stock_price(symbol)
-                print(f"[DEBUG] Raw price data for {symbol}: {price_data}")
-                
-                if "error" in price_data:
-                    print(f"[WARNING] Could not get price data for {symbol}: {price_data['error']}")
-                    return None
-                
-                # Validate price data
-                current_price = price_data.get("current_price", 0)
-                change_amount = price_data.get("change", 0)
-                change_percent = price_data.get("change_percent", 0)
-                volume = price_data.get("volume", 0)
-                
-                print(f"[DEBUG] {symbol} data - Price: {current_price}, Change: {change_amount}, Change%: {change_percent}, Volume: {volume}")
-                
-                # Check if we have valid price data
-                if not current_price or current_price == 0:
-                    print(f"[WARNING] {symbol} has invalid price: {current_price}")
-                    return None
-                
-                return {
-                    "symbol": symbol,
-                    "type": symbol_type,
-                    "price": current_price,
-                    "change_amount": change_amount,
-                    "change_percent": change_percent,
-                    "volume": volume,
-                    "timestamp": datetime.now(),
-                    "analysis_data": price_data
-                }
-            except Exception as e:
-                print(f"[ERROR] Failed to fetch data for {symbol}: {e}")
-                import traceback
-                traceback.print_exc()
-                return None
-
-        # Fetch data for gainers and losers
-        gainers = []
-        for symbol in gainer_symbols:
-            data = fetch_symbol_data(symbol, "GAINER")
-            if data:
-                gainers.append(data)
         
-        losers = []
-        for symbol in loser_symbols:
-            data = fetch_symbol_data(symbol, "LOSER")
-            if data:
-                losers.append(data)
-
-        # Fallback to test symbols if no market movers found
-        if not gainers and not losers:
-            test_symbols = ["AAPL", "MSFT", "GOOGL"]
-            print("[DEBUG] Using fallback test symbols")
-            gainers = [convert_to_dict(g) for g in test_symbols]
+        # Use Alpha Vantage data directly instead of fetching individual stock prices
+        print("[DEBUG] Using Alpha Vantage data directly for accurate categorization...")
+        
+        # Get the raw Alpha Vantage data
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "TOP_GAINERS_LOSERS",
+            "apikey": Config.ALPHA_VANTAGE_API_KEY,
+        }
+        
+        try:
+            import requests
+            response = requests.get(url, params=params)
+            if response.status_code == 200:
+                alpha_data = response.json()
+                print(f"[DEBUG] Got raw Alpha Vantage data")
+                
+                # Process gainers using Alpha Vantage data directly
+                gainers = []
+                for gainer in alpha_data.get("top_gainers", []):
+                    ticker = gainer.get("ticker")
+                    if ticker in gainer_symbols:
+                        gainers.append({
+                            "symbol": ticker,
+                            "type": "GAINER",
+                            "price": float(gainer.get("price", 0)),
+                            "change_amount": 0,
+                            "change_percent": float(str(gainer.get("change_percentage", 0)).replace('%', '')),
+                            "volume": int(gainer.get("volume", 0)),
+                            "timestamp": datetime.now(),
+                            "analysis_data": gainer
+                        })
+                        print(f"[DEBUG] Added gainer: {ticker} - {gainer.get('change_percentage')}% at ${gainer.get('price')}")
+                
+                # Process losers using Alpha Vantage data directly
+                losers = []
+                for loser in alpha_data.get("top_losers", []):
+                    ticker = loser.get("ticker")
+                    if ticker in loser_symbols:
+                        losers.append({
+                            "symbol": ticker,
+                            "type": "LOSER",
+                            "price": float(loser.get("price", 0)),
+                            "change_amount": 0,
+                            "change_percent": float(str(loser.get("change_percentage", 0)).replace('%', '')),
+                            "volume": int(loser.get("volume", 0)),
+                            "timestamp": datetime.now(),
+                            "analysis_data": loser
+                        })
+                        print(f"[DEBUG] Added loser: {ticker} - {loser.get('change_percentage')}% at ${loser.get('price')}")
+                
+                print(f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers from Alpha Vantage data")
+            else:
+                print(f"[ERROR] Failed to get raw Alpha Vantage data: {response.status_code}")
+                gainers = []
+                losers = []
+        except Exception as e:
+            print(f"[ERROR] Exception getting raw Alpha Vantage data: {e}")
+            gainers = []
             losers = []
-
+        # No fallback to test symbols - if no market movers found, just return empty results
+        if not gainers and not losers:
+            print("[DEBUG] No market movers data available")
+            gainers = []
+            losers = []
         # Save to market_movers table using the current table structure
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     # Clear existing data
                     cur.execute("DELETE FROM market_movers")
-                    
                     # Insert gainers
                     for gainer in gainers:
                         cur.execute("""
@@ -3924,7 +3694,6 @@ def preload_stock_data():
                             datetime.now(),
                             json.dumps(gainer.get('analysis_data', {}))
                         ))
-                    
                     # Insert losers
                     for loser in losers:
                         cur.execute("""
@@ -3940,26 +3709,21 @@ def preload_stock_data():
                             datetime.now(),
                             json.dumps(loser.get('analysis_data', {}))
                         ))
-                    
                     conn.commit()
                     print(f"[DEBUG] Successfully saved {len(gainers)} gainers and {len(losers)} losers to market_movers table")
         except Exception as e:
             print(f"[ERROR] Failed to save to market_movers table: {e}")
-        
         print(
             f"[DEBUG] Processed {len(gainers)} gainers and {len(losers)} losers for market_movers table"
         )
         print(
             f"[DEBUG] Successfully preloaded stock data in {time.time() - start_time:.2f} seconds"
         )
-
     except Exception as e:
         print(f"[ERROR] Exception in preload_stock_data: {str(e)}")
         sys.stdout.flush()
     print("[DEBUG] Finished background preload_stock_data()")
     sys.stdout.flush()
-
-
 # Schedule the preload task
 scheduler = BackgroundScheduler()
 # Run at 9:35 AM on trading days for S&P 500
@@ -3973,7 +3737,6 @@ scheduler.add_job(
 )
 # Run at 9:40 AM on trading days for news-driven opportunities
 from ..data.preload_news_opportunities import preload_news_opportunities
-
 scheduler.add_job(
     preload_news_opportunities,
     "cron",
@@ -3982,10 +3745,8 @@ scheduler.add_job(
     minute=40,
     timezone="America/New_York",
 )
-
 # Run at 9:45 AM on trading days for watchlist opportunities
 from ..data.preload_watchlist_opportunities import preload_watchlist_opportunities
-
 scheduler.add_job(
     preload_watchlist_opportunities,
     "cron",
@@ -3994,12 +3755,8 @@ scheduler.add_job(
     minute=45,
     timezone="America/New_York",
 )
-
 # Scalping analysis is now handled by the database-configured job scheduler
-
 scheduler.start()
-
-
 # Preload data in a background thread on startup (do NOT block main thread)
 def start_preload_in_background():
     preload_thread = threading.Thread(target=preload_stock_data, daemon=True)
@@ -4014,11 +3771,7 @@ def start_preload_in_background():
         target=preload_watchlist_opportunities, daemon=True
     )
     preload_watchlist_thread.start()
-
-
 start_preload_in_background()
-
-
 @app.route("/api/preloaded_data")
 def get_preloaded_data():
     """Endpoint to get preloaded stock data directly from database"""
@@ -4032,10 +3785,8 @@ def get_preloaded_data():
                     LIMIT 1
                 """)
                 row = cur.fetchone()
-
                 if row:
                     timestamp = row["timestamp"]
-
                     # Get all market movers, ordered by type (gainers first) and change_percent (desc)
                     cur.execute("""
                         SELECT symbol, type, price, change_amount, change_percent, volume, analysis_data 
@@ -4044,10 +3795,8 @@ def get_preloaded_data():
                             CASE WHEN type = 'GAINER' THEN 0 ELSE 1 END,
                             ABS(change_percent) DESC
                     """)
-
                     rows = cur.fetchall()
                     enhanced_analysis = []
-
                     for row in rows:
                         symbol = row["symbol"]
                         type_val = row["type"]
@@ -4056,17 +3805,14 @@ def get_preloaded_data():
                         change_percent = row["change_percent"]
                         volume = row["volume"]
                         analysis_data = row["analysis_data"]
-
                         # Skip stocks with invalid prices (0.0 or None)
                         if not price or float(price) == 0.0:
                             continue
-
                         # Use the stored analysis_data directly, but ensure it has the required structure
                         if analysis_data and isinstance(analysis_data, dict):
                             # Ensure the analysis_data has the symbol
                             analysis_data["symbol"] = symbol
                             analysis_data["type"] = "Stock"
-
                             # Ensure price_data is properly structured
                             if "price_data" not in analysis_data:
                                 analysis_data["price_data"] = {
@@ -4081,25 +3827,21 @@ def get_preloaded_data():
                                     else 0.0,
                                     "volume": int(volume) if volume is not None else 0,
                                 }
-
                             # Ensure sentiment_data exists
                             if "sentiment_data" not in analysis_data:
                                 analysis_data["sentiment_data"] = {
                                     "sentiment_score": 0.0,
                                     "confidence": 0.5,
                                 }
-
                             # Ensure signal_data exists
                             if "signal_data" not in analysis_data:
                                 analysis_data["signal_data"] = {
                                     "action": "HOLD",
                                     "signal_strength": 0.0,
                                 }
-
                             # Ensure news_count exists
                             if "news_count" not in analysis_data:
                                 analysis_data["news_count"] = 0
-
                             enhanced_analysis.append(analysis_data)
                         else:
                             # Fallback to creating basic structure if analysis_data is missing
@@ -4130,11 +3872,9 @@ def get_preloaded_data():
                                 "timestamp": timestamp.isoformat(),
                             }
                             enhanced_analysis.append(stock_data)
-
                     opportunities_found = len(
                         [s for s in enhanced_analysis if s.get("change_percent", 0) > 0]
                     )
-
                     response_data = {
                         "enhanced_analysis": enhanced_analysis,
                         "total_analyzed": len(enhanced_analysis),
@@ -4142,7 +3882,6 @@ def get_preloaded_data():
                         "timestamp": timestamp.isoformat(),
                         "cache_status": "database_fresh",
                     }
-
                     return create_api_response(
                         data=response_data,
                         message=f"Successfully loaded {len(enhanced_analysis)} market movers from database",
@@ -4162,8 +3901,6 @@ def get_preloaded_data():
                     )
     except Exception as e:
         print(f"[ERROR] Failed to load preloaded data from database: {e}")
-
-
         traceback.print_exc()
         return create_api_response(
             data={
@@ -4177,25 +3914,20 @@ def get_preloaded_data():
             success=False,
             error=str(e),
         )
-
-
 @app.route("/api/refresh_market_movers", methods=["POST"])
 def refresh_market_movers():
     """Trigger full pipeline to refresh market movers data"""
     try:
         print("[INFO] Refresh market movers request received")
-
         # Run the full pipeline to get fresh market movers
         # This now uses the market_movers table directly via preload_stock_data()
         preload_stock_data()
-
         # Check if we actually have data in the database
         with get_db_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) as count FROM market_movers")
                 count_result = cur.fetchone()
                 count = count_result["count"] if count_result else 0
-
         if count > 0:
             print(
                 f"[INFO] Market movers data refreshed successfully - {count} records in database"
@@ -4214,17 +3946,12 @@ def refresh_market_movers():
                     "error": "No market movers data found in database after refresh",
                 }
             )
-
     except Exception as e:
         print(f"[ERROR] Error refreshing market movers: {e}")
-
-
         traceback.print_exc()
         return jsonify(
             {"success": False, "error": f"Error refreshing market movers: {str(e)}"}
         )
-
-
 def load_preloaded_data_from_db():
     global preloaded_data, preload_timestamp
     try:
@@ -4237,10 +3964,8 @@ def load_preloaded_data_from_db():
                     LIMIT 1
                 """)
                 row = cur.fetchone()
-
                 if row:
                     preload_timestamp = row["timestamp"]
-
                     # Get all market movers
                     cur.execute("""
                         SELECT analysis_data FROM market_movers
@@ -4248,7 +3973,6 @@ def load_preloaded_data_from_db():
                             CASE WHEN type = 'GAINER' THEN 0 ELSE 1 END,
                             change_percent DESC
                     """)
-
                     # Reconstruct the data in the expected format
                     enhanced_analysis = [row["analysis_data"] for row in cur.fetchall()]
                     preloaded_data = {
@@ -4280,8 +4004,6 @@ def load_preloaded_data_from_db():
     except Exception as e:
         log_exception("Failed to load preloaded data from database", e)
         preloaded_data = None
-
-
 @app.route("/api/logs", methods=["GET"])
 def get_logs():
     """
@@ -4298,7 +4020,6 @@ def get_logs():
         level = request.args.get("level")
         category = request.args.get("category")
         search = request.args.get("search")
-
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 # Base query
@@ -4321,34 +4042,27 @@ def get_logs():
                     WHERE 1=1
                 """
                 params = []
-
                 # Add filters
                 if level:
                     query += " AND level = %s"
                     params.append(level.upper())
-
                 if category:
                     query += " AND category = %s"
                     params.append(category)
-
                 if search:
                     query += " AND (message ILIKE %s OR exception::text ILIKE %s)"
                     search_term = f"%{search}%"
                     params.extend([search_term, search_term])
-
                 # Order and limit
                 query += " ORDER BY timestamp DESC LIMIT %s"
                 params.append(limit)
-
                 # Execute query
                 cur.execute(query, params)
                 logs = cur.fetchall()
-
                 # Convert datetime to ISO format for JSON serialization
                 for log in logs:
                     if "timestamp" in log and log["timestamp"] is not None:
                         log["timestamp"] = log["timestamp"].isoformat()
-
                 # Return logs data
                 return create_api_response(
                     {
@@ -4361,18 +4075,13 @@ def get_logs():
                         },
                     }
                 )
-
     except Exception as e:
         log_exception("Logs endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 # At startup, load from database before running preload_stock_data
 print("=== STARTUP: About to load preloaded data from database ===")
 load_preloaded_data_from_db()
 print("=== STARTUP: Finished loading preloaded data from database ===")
-
-
 @app.route("/api/watchlist/config", methods=["GET", "POST"])
 def watchlist_config():
     """Get or update watchlist configuration"""
@@ -4386,7 +4095,6 @@ def watchlist_config():
             cryptos = watchlist_manager.get_cryptos()
             log_info(f"[WATCHLIST_CONFIG] Stocks: {stocks}")
             log_info(f"[WATCHLIST_CONFIG] Cryptos: {cryptos}")
-
             # Format data for frontend (stocks and crypto)
             stock_data = [{"symbol": symbol, "notes": ""} for symbol in stocks]
             crypto_data = [{"symbol": symbol, "notes": ""} for symbol in cryptos]
@@ -4404,21 +4112,18 @@ def watchlist_config():
             }
             log_info(f"[WATCHLIST_CONFIG] Response: {response_data}")
             return create_api_response(response_data)
-
         elif request.method == "POST":
             # Update watchlist configuration (stocks and crypto)
             data = request.get_json()
             action = data.get("action")
             symbol = data.get("symbol", "").upper().strip()
             symbol_type = data.get("type", "stock")  # Default to stock
-
             if not action or not symbol:
                 return create_api_response(
                     success=False,
                     error="Missing required fields: action, symbol",
                     status_code=400,
                 )
-
             if symbol_type == "stock":
                 if action == "add":
                     success = watchlist_manager.add_stock(symbol)
@@ -4503,7 +4208,6 @@ def watchlist_config():
                     error="Only stock or crypto symbols are supported",
                     status_code=400,
                 )
-
     except Exception as e:
         log_exception("Error in watchlist config", e)
         return create_api_response(
@@ -4511,8 +4215,6 @@ def watchlist_config():
             error="Failed to manage watchlist configuration",
             status_code=500,
         )
-
-
 @app.route("/api/logs/export", methods=["GET"])
 def export_logs():
     """
@@ -4528,7 +4230,6 @@ def export_logs():
         import csv
         import io
         from datetime import datetime
-
         # Get query parameters
         export_format = request.args.get("format", "json").lower()
         limit = min(int(request.args.get("limit", 1000)), 10000)  # Max 10,000 logs
@@ -4536,14 +4237,12 @@ def export_logs():
         category = request.args.get("category") or request.args.get(
             "type"
         )  # Support both 'category' and 'type'
-
         if export_format not in ["json", "csv"]:
             return create_api_response(
                 success=False,
                 error="Invalid format. Use 'json' or 'csv'",
                 status_code=400,
             )
-
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 # Base query (same as get_logs)
@@ -4566,37 +4265,28 @@ def export_logs():
                     WHERE 1=1
                 """
                 params = []
-
                 # Add filters
                 if level:
                     query += " AND level = %s"
                     params.append(level.upper())
-
                 if category:
                     query += " AND category = %s"
                     params.append(category)
-
                 # Order and limit
                 query += " ORDER BY timestamp DESC LIMIT %s"
                 params.append(limit)
-
                 # Execute query
                 cur.execute(query, params)
                 logs = cur.fetchall()
-
                 # Convert datetime to ISO format for JSON serialization
                 for log in logs:
                     if "timestamp" in log and log["timestamp"] is not None:
                         log["timestamp"] = log["timestamp"].isoformat()
-
                 # Generate filename
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"logs_export_{timestamp}"
-
                 if export_format == "json":
                     # Export as JSON
-            
-
                     response_data = {
                         "export_info": {
                             "format": "json",
@@ -4610,24 +4300,20 @@ def export_logs():
                         },
                         "logs": logs,
                     }
-
                     response = make_response(json.dumps(response_data, indent=2))
                     response.headers["Content-Type"] = "application/json"
                     response.headers["Content-Disposition"] = (
                         f'attachment; filename="{filename}.json"'
                     )
                     return response
-
                 elif export_format == "csv":
                     # Export as CSV
                     output = io.StringIO()
                     writer = csv.writer(output)
-
                     # Write header
                     if logs:
                         headers = list(logs[0].keys())
                         writer.writerow(headers)
-
                         # Write data rows
                         for log in logs:
                             row = []
@@ -4638,34 +4324,24 @@ def export_logs():
                                     value = json.dumps(value)
                                 row.append(str(value))
                             writer.writerow(row)
-
                     response = make_response(output.getvalue())
                     response.headers["Content-Type"] = "text/csv"
                     response.headers["Content-Disposition"] = (
                         f'attachment; filename="{filename}.csv"'
                     )
                     return response
-
     except Exception as e:
         log_exception("Log export endpoint", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 # At startup, load from database before running preload_stock_data
 print("=== STARTUP: About to load preloaded data from database ===")
 load_preloaded_data_from_db()
 print("=== STARTUP: Finished loading preloaded data from database ===")
-
-
 @app.route("/recommendations")
 def recommendations_page():
     """Main recommendations dashboard page"""
     return render_template("recommendations.html")
-
-
 recommendation_manager = RecommendationManager()
-
-
 @app.route("/api/recommendations", methods=["GET"])
 def api_recommendations():
     """Paginated, filterable recommendations API"""
@@ -4676,7 +4352,6 @@ def api_recommendations():
         recommendation_type = request.args.get("type", None)
         action = request.args.get("action", None)
         outcome = request.args.get("outcome", None)
-
         offset = (page - 1) * page_size
         filters = []
         params = []
@@ -4696,7 +4371,6 @@ def api_recommendations():
                 filters.append("profitable = FALSE")
             elif outcome == "pending":
                 filters.append("profitable IS NULL")
-
         where_clause = f"WHERE {' AND '.join(filters)}" if filters else ""
         query = f"""
             SELECT id, symbol, recommendation_type, action, timestamp, final_confidence, current_stock_price, actual_outcome, profitable
@@ -4708,7 +4382,6 @@ def api_recommendations():
         count_query = f"SELECT COUNT(*) FROM recommendations {where_clause}"
         params_count = list(params)
         params.extend([page_size, offset])
-
         with recommendation_manager._get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query, params)
@@ -4716,7 +4389,6 @@ def api_recommendations():
                 cur.execute(count_query, params_count)
                 count_result = cur.fetchone()
                 total_count = count_result["count"] if count_result else 0
-
         # Format results
         recommendations = [
             {
@@ -4738,7 +4410,6 @@ def api_recommendations():
             }
             for row in rows
         ]
-
         has_more = (offset + len(recommendations)) < total_count
         return jsonify(
             {
@@ -4748,13 +4419,9 @@ def api_recommendations():
             }
         )
     except Exception as e:
-
-
         tb = traceback.format_exc()
         print(f"Error in api_recommendations: {e}\nTraceback:\n{tb}")
         return jsonify({"error": str(e), "traceback": tb}), 500
-
-
 @app.route("/api/test_db", methods=["GET"])
 def test_db():
     """Test database connection"""
@@ -4766,13 +4433,9 @@ def test_db():
                 count = count_result["count"] if count_result else 0
                 return jsonify({"success": True, "count": count})
     except Exception as e:
-
-
         print(f"Database test error: {e}")
         print(f"Traceback: {traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/recommendations/stats", methods=["GET"])
 def api_recommendations_stats():
     """Returns comprehensive recommendation statistics"""
@@ -4782,7 +4445,6 @@ def api_recommendations_stats():
                 # Total recommendations
                 cur.execute("SELECT COUNT(*) as count FROM recommendations")
                 total_recommendations = cur.fetchone()["count"] or 0
-
                 # Performance metrics
                 cur.execute("""
                     SELECT COUNT(*) as total_evaluated, 
@@ -4800,7 +4462,6 @@ def api_recommendations_stats():
                     else 0.0
                 )
                 win_rate = (wins / total_evaluated) if total_evaluated > 0 else 0.0
-
                 # Recommendation types
                 cur.execute("""
                     SELECT recommendation_type, COUNT(*) as count
@@ -4815,7 +4476,6 @@ def api_recommendations_stats():
                     }
                     for r in cur.fetchall()
                 ]
-
                 # Actions
                 cur.execute("""
                     SELECT action, COUNT(*) as count
@@ -4826,7 +4486,6 @@ def api_recommendations_stats():
                 actions = [
                     {"action": r["action"], "count": r["count"]} for r in cur.fetchall()
                 ]
-
                 # Top symbols
                 cur.execute("""
                     SELECT symbol, COUNT(*) as count
@@ -4838,7 +4497,6 @@ def api_recommendations_stats():
                 top_symbols = [
                     {"symbol": r["symbol"], "count": r["count"]} for r in cur.fetchall()
                 ]
-
                 # Symbol performance
                 cur.execute("""
                     SELECT symbol, 
@@ -4862,7 +4520,6 @@ def api_recommendations_stats():
                         if r["avg_outcome"] is not None
                         else 0.0,
                     }
-
                 # Recommendation performance by type
                 cur.execute("""
                     SELECT recommendation_type, action,
@@ -4892,12 +4549,10 @@ def api_recommendations_stats():
                             else 0.0,
                         }
                     )
-
                 # Last updated
                 cur.execute("SELECT MAX(timestamp) as max FROM recommendations")
                 last_updated_row = cur.fetchone()
                 last_updated = last_updated_row["max"] if last_updated_row else None
-
         return jsonify(
             {
                 "total_recommendations": total_recommendations,
@@ -4916,13 +4571,9 @@ def api_recommendations_stats():
             }
         )
     except Exception as e:
-
-
         tb = traceback.format_exc()
         print(f"Error in api_recommendations_stats: {e}\nTraceback:\n{tb}")
         return jsonify({"error": str(e), "traceback": tb}), 500
-
-
 @app.route("/api/recommendations/metrics", methods=["GET"])
 def api_recommendations_metrics():
     """Returns win rate, average return, top 5 symbols, top 3 types by avg return"""
@@ -4941,7 +4592,6 @@ def api_recommendations_metrics():
             wins = row[1] or 0
             avg_return = float(row[2]) if row[2] is not None else 0.0
             win_rate = (wins / total) if total > 0 else 0.0
-
             # Top 5 symbols by frequency
             cur.execute("""
                 SELECT symbol, COUNT(*) as freq
@@ -4951,7 +4601,6 @@ def api_recommendations_metrics():
                 LIMIT 5
             """)
             top_symbols = [{"symbol": r[0], "count": r[1]} for r in cur.fetchall()]
-
             # Top 3 recommendation types by avg return
             cur.execute("""
                 SELECT recommendation_type, AVG(actual_outcome) as avg_ret
@@ -4968,7 +4617,6 @@ def api_recommendations_metrics():
                 }
                 for r in cur.fetchall()
             ]
-
     return jsonify(
         {
             "win_rate": win_rate,
@@ -4977,12 +4625,8 @@ def api_recommendations_metrics():
             "top_types": top_types,
         }
     )
-
-
 # Ensure the job_schedules table exists at startup
 ensure_job_schedules_table()
-
-
 @app.route("/api/job_schedules", methods=["GET"])
 def get_job_schedules():
     """Return all job schedules."""
@@ -5011,8 +4655,6 @@ def get_job_schedules():
         return jsonify({"schedules": schedules})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/job_schedules", methods=["POST"])
 def set_job_schedule():
     """Add or update a job schedule."""
@@ -5036,8 +4678,6 @@ def set_job_schedule():
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/job_schedules/<int:schedule_id>/enable", methods=["POST"])
 def enable_job_schedule(schedule_id):
     """Enable or disable a job schedule."""
@@ -5054,8 +4694,6 @@ def enable_job_schedule(schedule_id):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 @app.route("/api/job_schedules/<int:schedule_id>", methods=["DELETE"])
 def delete_job_schedule(schedule_id):
     """Delete a job schedule."""
@@ -5069,7 +4707,6 @@ def delete_job_schedule(schedule_id):
                 job = cur.fetchone()
                 if not job:
                     return jsonify({"error": "Job schedule not found"}), 404
-
                 # Delete the job schedule
                 cur.execute("DELETE FROM job_schedules WHERE id = %s", (schedule_id,))
                 conn.commit()
@@ -5081,25 +4718,18 @@ def delete_job_schedule(schedule_id):
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
 # Removed save_preloaded_data_to_db function - now using market_movers table directly
-
-
 @app.route("/reporting")
 def reporting_page():
     """Reporting and analytics page"""
     # Set default dates (last 30 days)
     end_date = datetime.now()
     start_date = end_date - timedelta(days=30)
-
     return render_template(
         "reporting.html",
         default_start_date=start_date.strftime("%Y-%m-%d"),
         default_end_date=end_date.strftime("%Y-%m-%d"),
     )
-
-
 @app.route("/api/reporting/generate", methods=["POST"])
 def generate_report():
     """Generate comprehensive trading report"""
@@ -5108,55 +4738,41 @@ def generate_report():
         start_date = data.get("start_date")
         end_date = data.get("end_date")
         report_type = data.get("report_type", "comprehensive")
-
         # Parse dates
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
         end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-
         # Generate real report data from database
         report_data = generate_real_report_data(start_dt, end_dt, report_type)
-
         return create_api_response(data=report_data)
     except Exception as e:
         log_exception("Generate report", e)
         return create_api_response(error=str(e), status_code=500)
-
-
 def generate_real_report_data(start_date, end_date, report_type):
     """Generate real report data from database with mock data clearly marked"""
     import random
     from datetime import timedelta
-
     # Generate date range
     date_range = []
     current_date = start_date
     while current_date <= end_date:
         date_range.append(current_date.strftime("%Y-%m-%d"))
         current_date += timedelta(days=1)
-
     # REAL DATA: Get recommendations statistics
     recommendations_data = get_real_recommendations_data(start_date, end_date)
-
     # REAL DATA: Get scalping signals statistics
     scalping_data = get_real_scalping_data(start_date, end_date)
-
     # REAL DATA: Get market movers data
     market_movers_data = get_real_market_movers_data(start_date, end_date)
-
     # REAL DATA: Get backtest results
     backtest_data = get_real_backtest_data(start_date, end_date)
-
     # REAL DATA: Get system metrics
     system_data = get_real_system_metrics(start_date, end_date)
-
     # MOCK DATA: Portfolio performance (no real portfolio tracking yet)
     portfolio_values = [10000]
     for i in range(1, len(date_range)):
         daily_return = random.uniform(-0.03, 0.05)
         portfolio_values.append(portfolio_values[-1] * (1 + daily_return))
-
     total_return = (portfolio_values[-1] - portfolio_values[0]) / portfolio_values[0]
-
     return {
         "performance": {
             "total_return": total_return,
@@ -5293,8 +4909,6 @@ def generate_real_report_data(start_date, end_date, report_type):
             ],
         },
     }
-
-
 def get_real_recommendations_data(start_date, end_date):
     """Get real recommendations data from database"""
     try:
@@ -5312,18 +4926,14 @@ def get_real_recommendations_data(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 result = cur.fetchone()
                 if not result:
                     return {"total_recommendations": 0, "win_rate": 0.0}
-
                 total = result["total"] or 0
                 evaluated = result["evaluated"] or 0
                 profitable = result["profitable"] or 0
                 avg_outcome = result["avg_outcome"] or 0.0
-
                 win_rate = (profitable / evaluated * 100) if evaluated > 0 else 0.0
-
                 # Get top symbols by recommendation count
                 cur.execute(
                     """
@@ -5337,7 +4947,6 @@ def get_real_recommendations_data(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 top_symbols = []
                 for row in cur.fetchall():
                     symbol = row["symbol"]
@@ -5353,7 +4962,6 @@ def get_real_recommendations_data(start_date, end_date):
                             * 100,  # Using overall average as proxy
                         }
                     )
-
                 return {
                     "total_recommendations": total,
                     "evaluated_recommendations": evaluated,
@@ -5371,8 +4979,6 @@ def get_real_recommendations_data(start_date, end_date):
     except Exception as e:
         log_error(f"Error getting recommendations data: {e}")
         return {"total_recommendations": 0, "win_rate": 0.0}
-
-
 def get_real_scalping_data(start_date, end_date):
     """Get real scalping signals data from database"""
     try:
@@ -5390,11 +4996,9 @@ def get_real_scalping_data(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 result = cur.fetchone()
                 if not result:
                     return {"total_signals": 0}
-
                 return {
                     "total_signals": result["total"] or 0,
                     "bullish_signals": result["bullish"] or 0,
@@ -5404,8 +5008,6 @@ def get_real_scalping_data(start_date, end_date):
     except Exception as e:
         log_error(f"Error getting scalping data: {e}")
         return {"total_signals": 0}
-
-
 def get_real_market_movers_data(start_date, end_date):
     """Get real market movers data from database"""
     try:
@@ -5423,11 +5025,9 @@ def get_real_market_movers_data(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 result = cur.fetchone()
                 if not result:
                     return {"total_movers": 0}
-
                 return {
                     "total_movers": result["total"] or 0,
                     "gainers": result["gainers"] or 0,
@@ -5437,8 +5037,6 @@ def get_real_market_movers_data(start_date, end_date):
     except Exception as e:
         log_error(f"Error getting market movers data: {e}")
         return {"total_movers": 0}
-
-
 def get_real_backtest_data(start_date, end_date):
     """Get real backtest results data from database"""
     try:
@@ -5456,11 +5054,9 @@ def get_real_backtest_data(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 result = cur.fetchone()
                 if not result:
                     return {"total_backtests": 0}
-
                 return {
                     "total_backtests": result["total"] or 0,
                     "avg_return": result["avg_return"] or 0.0,
@@ -5472,12 +5068,9 @@ def get_real_backtest_data(start_date, end_date):
     except Exception as e:
         log_error(f"Error getting backtest data: {e}")
         return {"total_backtests": 0}
-
-
 def get_real_system_metrics(start_date, end_date):
     """Get real system metrics from database"""
     import random
-
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -5490,12 +5083,10 @@ def get_real_system_metrics(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 cache_result = cur.fetchone()
                 cache_entries = (
                     cache_result["total_cache_entries"] if cache_result else 0
                 )
-
                 # Get API cache statistics
                 cur.execute(
                     """
@@ -5505,14 +5096,12 @@ def get_real_system_metrics(start_date, end_date):
                 """,
                     (start_date, end_date),
                 )
-
                 api_cache_result = cur.fetchone()
                 api_cache_entries = (
                     api_cache_result["total_api_cache_entries"]
                     if api_cache_result
                     else 0
                 )
-
                 return {
                     "uptime": 0.98,  # Mock - not tracked
                     "data_freshness": 5,  # Mock - not tracked
@@ -5527,7 +5116,5 @@ def get_real_system_metrics(start_date, end_date):
     except Exception as e:
         log_error(f"Error getting system metrics: {e}")
         return {"uptime": 0.98, "data_freshness": 5}
-
-
 if __name__ == "__main__":
     create_app()

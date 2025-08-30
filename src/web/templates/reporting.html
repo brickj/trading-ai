@@ -712,14 +712,17 @@ async function generateReport() {
         document.getElementById('debugReportResponse').textContent = 
             JSON.stringify(data, null, 2);
         
-        if (data.success) {
+        if (data.status === 'success') {
+            // Show the report results section
+            document.getElementById('reportResults').style.display = 'block';
             populateReport(data.data);
         } else {
-            console.error('Report generation failed:', data.error);
-            alert('Failed to generate report: ' + data.error);
+            console.error('Report generation failed:', data.message || 'Unknown error');
+            alert('Failed to generate report: ' + (data.message || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error generating report:', error);
+        console.error('Error stack:', error.stack);
         alert('Error generating report: ' + error.message);
     } finally {
         document.getElementById('reportLoading').style.display = 'none';
@@ -727,8 +730,11 @@ async function generateReport() {
 }
 
 function populateReport(data) {
+    console.log('Populating report with data:', data);
+    
     // Populate performance metrics
     if (data.performance) {
+        console.log('Populating performance metrics:', data.performance);
         document.getElementById('totalReturn').textContent = formatPercentage(data.performance.total_return);
         document.getElementById('winRate').textContent = formatPercentage(data.performance.win_rate);
         document.getElementById('sharpeRatio').textContent = formatNumber(data.performance.sharpe_ratio, 2);
@@ -1255,17 +1261,17 @@ function formatMetric(value) {
 }
 
 function formatPercentage(value) {
-    if (value === null || value === undefined) return '-';
+    if (value === null || value === undefined || isNaN(value)) return '-';
     return (value * 100).toFixed(2) + '%';
 }
 
 function formatCurrency(value) {
-    if (value === null || value === undefined) return '-';
+    if (value === null || value === undefined || isNaN(value)) return '-';
     return '$' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatNumber(value, decimals = 2) {
-    if (value === null || value === undefined) return '-';
+    if (value === null || value === undefined || isNaN(value)) return '-';
     return value.toFixed(decimals);
 }
 
