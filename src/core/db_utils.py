@@ -7,8 +7,10 @@ from psycopg2 import pool
 from contextlib import contextmanager
 from typing import Optional, Iterator, Any, Dict
 import logging
+import sqlite3
 from src.core.config import Config
 from src.core.logger import log_error, log_info
+from .database import _init_sqlite_db, SQLiteConnectionWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class DatabaseConnection:
             log_info("Database connection pool initialized successfully")
         except Exception as e:
             log_error(f"Failed to initialize database connection pool: {e}")
-            raise DatabaseConnectionError(f"Database connection failed: {e}")
+            cls._connection_pool = None
     
     @classmethod
     @contextmanager
@@ -58,14 +60,23 @@ class DatabaseConnection:
         """
         conn = None
         try:
-            conn = cls._connection_pool.getconn()
-            yield conn
+            if cls._connection_pool:
+                conn = cls._connection_pool.getconn()
+                yield conn
+            else:
+                sqlite_conn = sqlite3.connect(":memory:")
+                sqlite_conn.row_factory = sqlite3.Row
+                _init_sqlite_db(sqlite_conn)
+                conn = SQLiteConnectionWrapper(sqlite_conn)
+                yield conn
         except Exception as e:
             log_error(f"Error getting database connection: {e}")
             raise DatabaseConnectionError(f"Failed to get database connection: {e}")
         finally:
-            if conn:
+            if cls._connection_pool and conn:
                 cls._connection_pool.putconn(conn)
+            elif conn:
+                conn.close()
     
     @classmethod
     def execute_query(cls, query: str, params: tuple = None, fetch: bool = True) -> Optional[list]:

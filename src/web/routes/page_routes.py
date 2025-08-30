@@ -7,6 +7,7 @@ from datetime import datetime
 
 # Import helper functions
 from ..helpers import create_api_response, handle_api_error
+from ...core.database import get_db_connection
 
 # Create blueprint
 page_bp = Blueprint('pages', __name__)
@@ -31,10 +32,40 @@ def index():
 def stocks_page():
     """S&P 500 stocks analysis page"""
     try:
+        gainers = []
+        losers = []
+        # Try to get initial data from the market_movers table
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        SELECT symbol, type, change_percent, price
+                        FROM market_movers
+                        ORDER BY timestamp DESC
+                        """
+                    )
+                    rows = cur.fetchall()
+                    for row in rows:
+                        stock = {
+                            "symbol": row["symbol"],
+                            "change_percent": row["change_percent"],
+                            "price": row["price"],
+                        }
+                        if row["type"] == "GAINER":
+                            gainers.append(stock)
+                        elif row["type"] == "LOSER":
+                            losers.append(stock)
+        except Exception:
+            # If database is unavailable, continue with empty lists
+            pass
+
         return render_template(
             "stocks.html",
             page_title="Stock Analysis",
-            current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            initial_gainers=gainers[:3],
+            initial_losers=losers[:3],
         )
     except Exception as e:
         return f"Error loading stocks page: {str(e)}", 500
