@@ -651,28 +651,28 @@ def test_foreign_markets_api():
                 # Get foreign exchanges from database
                 cur.execute("""
                     SELECT 
-                        exchange_code,
-                        exchange_name,
+                        code,
+                        name,
                         country,
                         currency,
                         timezone,
                         symbol_suffix,
-                        status,
+                        active,
                         created_at
                     FROM foreign_exchanges 
-                    ORDER BY exchange_name
+                    ORDER BY name
                 """)
                 exchanges = cur.fetchall()
                 
-                # Get count of foreign symbols
-                cur.execute("SELECT COUNT(*) as total FROM foreign_symbols")
+                # Get count of foreign symbols from watchlists (symbols with dots like .L, .T, etc.)
+                cur.execute("SELECT COUNT(*) as total FROM watchlists WHERE symbol LIKE '%.%'")
                 foreign_symbols_result = cur.fetchone()
                 total_foreign_symbols = foreign_symbols_result['total'] if foreign_symbols_result else 0
                 
-                # Get count of watchlist symbols
-                cur.execute("SELECT COUNT(*) as total FROM watchlist WHERE symbol LIKE '%.%'")
+                # Get count of all watchlist symbols
+                cur.execute("SELECT COUNT(*) as total FROM watchlists")
                 watchlist_result = cur.fetchone()
-                watchlist_symbols = watchlist_result['total'] if watchlist_result else 0
+                total_watchlist_symbols = watchlist_result['total'] if watchlist_result else 0
                 
                 # Process exchanges data
                 markets = []
@@ -680,30 +680,38 @@ def test_foreign_markets_api():
                 markets_closed = 0
                 
                 for exchange in exchanges:
+                    # Determine status based on active field
+                    status = "unknown"
+                    if exchange['active'] is not None:
+                        if exchange['active']:
+                            status = "open"
+                            markets_open += 1
+                        else:
+                            status = "closed"
+                            markets_closed += 1
+                    else:
+                        status = "unknown"
+                    
                     market_data = {
-                        'code': exchange['exchange_code'],
-                        'name': exchange['exchange_name'],
+                        'code': exchange['code'],
+                        'name': exchange['name'],
                         'country': exchange['country'],
                         'currency': exchange['currency'],
                         'timezone': exchange['timezone'],
                         'symbol_suffix': exchange['symbol_suffix'],
-                        'status': exchange['status'],
+                        'status': status,
+                        'active': exchange['active'],
                         'created_at': exchange['created_at'].isoformat() if exchange['created_at'] else None
                     }
                     markets.append(market_data)
-                    
-                    if exchange['status'] == 'open':
-                        markets_open += 1
-                    elif exchange['status'] == 'closed':
-                        markets_closed += 1
                 
                 summary = {
                     'total_markets': len(markets),
                     'markets_open': markets_open,
                     'markets_closed': markets_closed,
                     'total_foreign_symbols': total_foreign_symbols,
-                    'watchlist_symbols': watchlist_symbols,
-                    'foreign_coverage': f"{watchlist_symbols}/{total_foreign_symbols}"
+                    'total_watchlist_symbols': total_watchlist_symbols,
+                    'foreign_coverage': f"{total_foreign_symbols}/{total_watchlist_symbols}"
                 }
                 
                 return jsonify({
@@ -725,7 +733,7 @@ def test_foreign_markets_api():
                     'markets_open': 0,
                     'markets_closed': 0,
                     'total_foreign_symbols': 0,
-                    'watchlist_symbols': 0,
+                    'total_watchlist_symbols': 0,
                     'foreign_coverage': '0/0'
                 }
             }
