@@ -73,25 +73,8 @@ class Config:
     DEFAULT_CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "SOLUSD"]
     CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "DOTUSD", "LINKUSD"]
 
-    # Tier Configuration
-    DEFAULT_TIER = "free"
-    CURRENT_TIER = "free"
-    TIER_NAMES = {"free": "Free Tier", "paid": "Paid Tier"}
-
-    # Tier Page Access Configuration
-    FREE_TIER_PAGES = ["/", "/system_status", "/logs"]
-    PAID_TIER_PAGES = [
-        "/stocks",
-        "/crypto",
-        "/portfolio_page",
-        "/backtest",
-        "/opportunities",
-        "/recommendations",
-    ]
-    TIER_CONTACT_INFO = {
-        "email": "support@example.com",
-        "message": "Contact support to upgrade to Paid Tier",
-    }
+    # Tier Configuration - REMOVED
+    # All tier functionality has been removed from the system
 
     # Logging Configuration
     LOG_LEVEL = "INFO"
