@@ -25,15 +25,24 @@ def test_telegram():
     """Test Telegram bot connectivity"""
     try:
         # Test telegram connection
-        is_working = telegram_alerter.test_connection()
+        connection_result = telegram_alerter.test_connection()
         
-        return create_api_response(
-            data={
-                "working": is_working,
-                "timestamp": datetime.now().isoformat(),
-                "message": "Telegram connection successful" if is_working else "Telegram connection failed"
+        # Construct response with working field at top level as expected by test
+        response_data = {
+            "status": "success",
+            "message": "Telegram connection successful" if connection_result.get("working") else "Telegram connection failed",
+            "timestamp": datetime.now().isoformat(),
+            "working": connection_result.get("working", False),  # Working field at top level
+            "data": {
+                "bot_name": connection_result.get("bot_name", "Unknown"),
+                "username": connection_result.get("username", "Unknown"),
+                "chat_count": connection_result.get("chat_count", 0),
+                "chat_ids": connection_result.get("chat_ids", []),
+                "working": connection_result.get("working", False)
             }
-        )
+        }
+        
+        return jsonify(response_data), 200
     except Exception as e:
         return handle_api_error(e, "test_telegram endpoint")
 
