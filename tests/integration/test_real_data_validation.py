@@ -106,11 +106,8 @@ class RealDataValidationTest(unittest.TestCase):
         for key in ["status", "system", "database", "cache", "config"]:
             self.assertIn(key, data)
 
-    def test_07_tier_telegram_foreign(self):
-        # Tier
-        code, tier = _get_json("/api/tier/status")
-        self.assertEqual(code, 200)
-        self.assertTrue(tier.get("success", False))
+    def test_07_telegram_foreign(self):
+        # Tier system removed - testing other functionality
         # Telegram stub connectivity
         code2, tg = _get_json("/api/telegram/test")
         self.assertEqual(code2, 200)

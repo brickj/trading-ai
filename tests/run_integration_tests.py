@@ -66,7 +66,7 @@ class IntegrationTestRunner:
     def is_flask_running(self):
         """Check if Flask app is responding"""
         try:
-            response = requests.get(f"{self.flask_url}/api/tier/status", timeout=2)
+            response = requests.get(f"{self.flask_url}/api/system/status", timeout=2)
             return response.status_code in [200, 404, 500]  # Any response means it's running
         except requests.exceptions.RequestException:
             return False

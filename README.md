@@ -28,7 +28,7 @@ A comprehensive **Python application** that uses AI-powered sentiment analysis t
 - **🔧 Easy Startup**: One-click startup scripts with comprehensive health checks
 - **🎨 Modern Web Interface**: Beautiful, responsive Flask application
 - **⚡ Performance Monitoring**: Real-time system status and cache analytics
-- **🔐 Tier Management**: Database-backed user tier system with feature access control
+- **🔐 Tier Management**: REMOVED - All features now available to all users
 
 ## 🏆 Performance Achievements
 
@@ -203,11 +203,9 @@ python -m src.data.news_scanner --continuous --interval 15
 - **Reliability**: Automatic fallback to fresh analysis
 
 ### Tier Management System
-- **Database**: `trading_db` with `user_tiers` table
-- **Features**: Database-backed user tier management with feature access control
-- **Tiers**: Free and Paid tiers with configurable features
-- **API Endpoints**: `/api/tier/status`, `/api/tier/upgrade`, `/api/tier/check_access`, `/api/tier/stats`
-- **Development**: Default paid tier for testing with all features enabled
+- **Status**: REMOVED - Tier system has been eliminated from the application
+- **Features**: All features are now available to all users without restrictions
+- **Access**: No more tier-based access control - full application access for everyone
 
 ### Smart Batching
 - **Concurrent Processing**: 5-10 symbols processed simultaneously

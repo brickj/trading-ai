@@ -278,29 +278,12 @@ class ComprehensiveSystemTest(unittest.TestCase):
         print("✅ Configuration validation test passed")
     
     def test_10_tier_system(self):
-        """Test tier system functionality"""
+        """Test tier system functionality - REMOVED"""
         print("Testing tier system...")
         
-        from src.core.tier_manager import tier_manager
+        # Tier system has been eliminated from the application
         
-        # Test tier functionality
-        user_tier = tier_manager.get_user_tier()
-        self.assertIsInstance(user_tier, dict)
-        self.assertIn("current_tier", user_tier)
-        self.assertIn("features", user_tier)
-        
-        # Test feature access
-        self.assertTrue(tier_manager.check_feature_access("default", "basic_analysis"))
-        
-        # Test tier stats
-        tier_stats = tier_manager.get_tier_stats()
-        self.assertIsInstance(tier_stats, dict)
-        
-        # Test all tiers
-        all_tiers = tier_manager.get_all_tiers()
-        self.assertIsInstance(all_tiers, list)
-        
-        print("✅ Tier system test passed")
+        print("✅ Tier system test passed (system removed)")
     
     def test_11_market_movers(self):
         """Test market movers functionality"""
@@ -407,7 +390,7 @@ class ComprehensiveSystemTest(unittest.TestCase):
             "Logging system",
             "Job scheduler",
             "Configuration",
-            "Tier system",
+            # "Tier system",  # REMOVED - Tier system eliminated
             "Market movers",
             "News monitoring",
             "Telegram alerts",

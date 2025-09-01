@@ -30,42 +30,70 @@ def index():
 
 @page_bp.route("/stocks")
 def stocks_page():
-    """S&P 500 stocks analysis page"""
+    """S&P 500 stocks analysis page - Loads initial data from backend table"""
     try:
-        gainers = []
-        losers = []
-        # Try to get initial data from the market_movers table
+        # Get initial market movers data from database for immediate display
+        initial_data = {"gainers": [], "losers": []}
+        
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
+                    # Get market movers with enhanced analysis data from recommendations
                     cur.execute(
                         """
-                        SELECT symbol, type, change_percent, price
-                        FROM market_movers
-                        ORDER BY timestamp DESC
+                        SELECT 
+                            mm.symbol, 
+                            mm.type, 
+                            mm.change_percent, 
+                            mm.price, 
+                            mm.timestamp,
+                            r.sentiment_score,
+                            r.final_confidence,
+                            r.action,
+                            r.reasoning
+                        FROM market_movers mm
+                        LEFT JOIN LATERAL (
+                            SELECT 
+                                symbol,
+                                sentiment_score,
+                                final_confidence,
+                                action,
+                                reasoning
+                            FROM recommendations 
+                            WHERE symbol = mm.symbol 
+                            ORDER BY timestamp DESC 
+                            LIMIT 1
+                        ) r ON true
+                        ORDER BY mm.timestamp DESC
+                        LIMIT 10
                         """
                     )
                     rows = cur.fetchall()
+                    
                     for row in rows:
                         stock = {
                             "symbol": row["symbol"],
                             "change_percent": row["change_percent"],
                             "price": row["price"],
+                            "timestamp": row["timestamp"],
+                            "sentiment_score": row["sentiment_score"] if row["sentiment_score"] is not None else None,
+                            "confidence": row["final_confidence"] if row["final_confidence"] is not None else None,
+                            "signal": row["action"] if row["action"] is not None else None,
+                            "reasoning": row["reasoning"] if row["reasoning"] is not None else None
                         }
                         if row["type"] == "GAINER":
-                            gainers.append(stock)
+                            initial_data["gainers"].append(stock)
                         elif row["type"] == "LOSER":
-                            losers.append(stock)
+                            initial_data["losers"].append(stock)
         except Exception:
             # If database is unavailable, continue with empty lists
             pass
-
+        
         return render_template(
             "stocks.html",
             page_title="Stock Analysis",
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            initial_gainers=gainers[:3],
-            initial_losers=losers[:3],
+            initial_data=initial_data
         )
     except Exception as e:
         return f"Error loading stocks page: {str(e)}", 500

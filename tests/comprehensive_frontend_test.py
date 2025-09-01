@@ -878,28 +878,11 @@ class ComprehensiveFrontendTest(unittest.TestCase):
         print("✅ Telegram functionality test passed")
     
     def test_15_tier_system_functionality(self):
-        """Test tier system functionality and data"""
+        """Test tier system functionality and data - REMOVED"""
         print("Testing tier system functionality...")
         
-        # Test tier status endpoint
-        response = self.session.get(f"{self.base_url}/api/tier/status")
-        self.assertEqual(response.status_code, 200, "Tier status API should respond")
-        
-        data = response.json()
-        self.assertIn("success", data, "Tier API should have success field")
-        
-        if data.get("success"):
-            self.assertIn("data", data, "Tier API should have data field")
-            if "data" in data:
-                tier_data = data["data"]
-                self.assertIn("current_tier", tier_data, "Tier should have current tier")
-                self.assertIn("features", tier_data, "Tier should have features")
-        
-        # Test tier list endpoint
-        response = self.session.get(f"{self.base_url}/api/tier/list")
-        self.assertEqual(response.status_code, 200, "Tier list API should respond")
-        
-        print("✅ Tier system functionality test passed")
+        # Tier system has been removed from the application
+        print("✅ Tier system functionality test passed (system removed)")
     
     def test_16_market_data_functionality(self):
         """Test market data functionality and data"""
@@ -1029,7 +1012,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             "/api/portfolio",
             "/api/recommendations",
             "/api/telegram/test",
-            "/api/tier/status"
+            # "/api/tier/status"  # REMOVED - Tier system eliminated
         ]
         
         for endpoint in api_endpoints:
@@ -1106,7 +1089,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             self.test_12_weekly_plan_page,
             self.test_13_foreign_markets_overview_page,
             self.test_14_telegram_functionality,
-            self.test_15_tier_system_functionality,
+            # self.test_15_tier_system_functionality,  # REMOVED - Tier system eliminated
             self.test_16_market_data_functionality,
             self.test_17_job_scheduler_functionality,
             self.test_18_data_validation_and_integrity,

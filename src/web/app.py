@@ -1913,38 +1913,7 @@ def send_raw_telegram_message():
         return create_api_response(
             error="Error sending raw message: {str(e)}", status_code=500
         )
-@app.route("/stocks")
-def stocks_page():
-    """S&P 500 stocks analysis page"""
-    try:
-        trading_logger.api_logger.info("[DEBUG] Entering stocks_page route handler")
-        # Check if preloaded data is available and log its status
-        try:
-            if preloaded_data:
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Preloaded data available for stocks page: {len(preloaded_data.get('enhanced_analysis', []))} stocks"
-                )
-            else:
-                trading_logger.api_logger.warning(
-                    "[DEBUG] No preloaded data available for stocks page"
-                )
-        except Exception as e:
-            trading_logger.error_logger.error(
-                f"[DEBUG] Error checking preloaded_data: {str(e)}"
-            )
-        trading_logger.api_logger.info("[DEBUG] Rendering stocks.html template")
-        return render_template(
-            "stocks.html", historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
-        )
-    except Exception as e:
-        trading_logger.error_logger.error(
-            f"[CRITICAL] Error rendering stocks page: {str(e)}"
-        )
-        # Return a simple error page instead of crashing
-        return (
-            f"<html><body><h1>Error loading stocks page</h1><p>Please try again later. Error: {str(e)}</p></body></html>",
-            500,
-        )
+# stocks route moved to routes/page_routes.py
 # crypto route moved to routes/page_routes.py
 # portfolio route moved to routes/page_routes.py
 # backtest route moved to routes/backtest_routes.py
@@ -3087,7 +3056,7 @@ def performance_status():
         system_metrics = get_system_metrics()
         # Get application config
         config_info = {
-            # Tier management removed - will be rebuilt from scratch
+            # Tier system eliminated - all features available to all users
             "telegram_enabled": telegram_alerter.is_enabled(),
             "cache_enabled": (
                 Config.ENABLE_CACHE if hasattr(Config, "ENABLE_CACHE") else False

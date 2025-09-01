@@ -42,7 +42,7 @@ Performance & Scalability,Rate Limiting,Completed,90%,High,API rate limiting and
 Performance & Scalability,Background Processing,Completed,85%,High,Scheduled jobs for market data updates,src/web/app.py
 Performance & Scalability,WebSocket Progress Updates,Completed,95%,Medium,Real-time progress for bulk operations,src/web/app.py
 ,,,,,
-Database & Storage,User Tier Management,Completed,100%,High,Database-backed tier system with feature control,src/core/tier_manager.py
+Database & Storage,User Tier Management,REMOVED,0%,Low,Tier system eliminated - all features available to all users,N/A
 Database & Storage,Market Movers Storage,Completed,100%,High,S&P 500 gainers/losers with analysis data,migrations/001_create_market_movers_table.sql
 Database & Storage,Scalping Signals Storage,Completed,100%,High,Real-time scalping opportunities database,migrations/003_create_scalping_signals_table.sql
 Database & Storage,Backtest Results Storage,Completed,100%,High,Historical backtest results persistence,migrations/003_create_backtest_results_table.sql
@@ -59,7 +59,7 @@ Communication & Alerts,Telegram Integration,Completed,90%,High,Real-time trading
 Communication & Alerts,Alert Configuration,Completed,85%,Medium,Configurable alert thresholds and recipients,src/core/telegram_alerts.py
 Communication & Alerts,System Notifications,Completed,80%,Medium,System status and error notifications,src/core/telegram_alerts.py
 ,,,,,
-Security & Access Control,Tier-based Feature Access,Completed,100%,High,Free/Paid tier feature gating,src/core/tier_manager.py
+Security & Access Control,Tier-based Feature Access,REMOVED,0%,Low,Tier system eliminated - all features available to all users,N/A
 Security & Access Control,API Rate Limiting,Completed,90%,High,Per-endpoint rate limiting and quotas,src/web/app.py
 Security & Access Control,Configuration Security,Completed,100%,Critical,API keys excluded from repository,src/core/config.template.py
 ,,,,,

@@ -173,20 +173,10 @@ class TestSystemStatus(unittest.TestCase):
         self.assertTrue(Config.validate())
     
     def test_tier_system(self):
-        """Test tier system functionality"""
-        from src.core.tier_manager import tier_manager
+        """Test tier system functionality - REMOVED"""
+        # Tier system has been eliminated from the application
         
-        # Test tier access
-        free_pages = tier_manager.get_free_tier_pages()
-        paid_pages = tier_manager.get_paid_tier_pages()
-        
-        self.assertIsInstance(free_pages, list)
-        self.assertIsInstance(paid_pages, list)
-        
-        # Test page access validation
-        self.assertTrue(tier_manager.can_access_page("/", "free"))
-        self.assertFalse(tier_manager.can_access_page("/stocks", "free"))
-        self.assertTrue(tier_manager.can_access_page("/stocks", "paid"))
+        print("✅ Tier system functionality test passed (system removed)")
 
 if __name__ == '__main__':
     unittest.main() 

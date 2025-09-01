@@ -217,31 +217,8 @@ CREATE TABLE IF NOT EXISTS logs (
 
 # Preloaded data table - REMOVED (migrated to market_movers table)
 
-# Tier management table
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-CREATE TABLE IF NOT EXISTS user_tiers (
-    id SERIAL PRIMARY KEY,
-    user_id VARCHAR(100) UNIQUE NOT NULL,
-    tier_name VARCHAR(50) NOT NULL DEFAULT 'free',
-    tier_level INTEGER NOT NULL DEFAULT 0,
-    features JSONB NOT NULL DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE
-);"
-
-# Insert default tier configuration
-psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "
-INSERT INTO user_tiers (user_id, tier_name, tier_level, features) 
-VALUES 
-    ('default', 'free', 0, '{\"max_api_calls\": 100, \"max_symbols\": 5, \"features\": [\"basic_analysis\", \"system_status\"]}'),
-    ('default', 'paid', 1, '{\"max_api_calls\": 1000, \"max_symbols\": 50, \"features\": [\"basic_analysis\", \"enhanced_analysis\", \"portfolio\", \"backtest\", \"opportunities\", \"recommendations\", \"system_status\"]}')
-ON CONFLICT (user_id) DO UPDATE SET 
-    tier_name = EXCLUDED.tier_name,
-    tier_level = EXCLUDED.tier_level,
-    features = EXCLUDED.features,
-    updated_at = CURRENT_TIMESTAMP;"
+# Tier management table - REMOVED
+# Tier system has been eliminated from the application
 
 # Create the market_movers table
 psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "

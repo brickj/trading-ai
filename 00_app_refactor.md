@@ -53,7 +53,7 @@ Create the following route modules to organize endpoints by functionality:
 src/web/routes/
 ├── __init__.py
 ├── api_routes.py          # Core API endpoints
-├── tier_routes.py         # Tier management endpoints  
+# tier_routes.py         # REMOVED - Tier system eliminated  
 ├── analysis_routes.py     # Stock/crypto analysis endpoints
 ├── backtest_routes.py     # Backtesting endpoints
 ├── telegram_routes.py     # Telegram integration endpoints

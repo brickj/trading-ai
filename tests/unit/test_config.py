@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Unit tests for configuration system.
-Tests the Config class and tier management functionality.
+Tests the Config class functionality.
 """
 
 import unittest
@@ -27,55 +27,30 @@ class ConfigTest(unittest.TestCase):
         # Restore original values
         Config.CURRENT_TIER = self.original_tier
 
-    def test_default_tier_configuration(self):
-        """Test default tier configuration."""
-        self.assertEqual(Config.DEFAULT_TIER, "free")
-        self.assertIn(Config.DEFAULT_TIER, ["free", "paid"])
-
+        def test_default_tier_configuration(self):
+        """Test default tier configuration - REMOVED"""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
+    
     def test_tier_names_configuration(self):
-        """Test tier names are properly configured."""
-        self.assertIn("free", Config.TIER_NAMES)
-        self.assertIn("paid", Config.TIER_NAMES)
-        self.assertEqual(Config.TIER_NAMES["free"], "Free Tier")
-        self.assertEqual(Config.TIER_NAMES["paid"], "Paid Tier")
+        """Test tier names configuration - REMOVED"""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_free_tier_pages_configuration(self):
-        """Test free tier pages configuration."""
-        self.assertIsInstance(Config.FREE_TIER_PAGES, list)
-        self.assertIn("/", Config.FREE_TIER_PAGES)
-        self.assertIn("/system_status", Config.FREE_TIER_PAGES)
-
-        # Ensure no paid pages are in free tier
-        for page in Config.PAID_TIER_PAGES:
-            self.assertNotIn(page, Config.FREE_TIER_PAGES)
+        """Test free tier pages configuration - REMOVED"""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_paid_tier_pages_configuration(self):
-        """Test paid tier pages configuration."""
-        self.assertIsInstance(Config.PAID_TIER_PAGES, list)
-        expected_paid_pages = [
-            "/stocks", "/crypto", "/portfolio_page",
-            "/backtest", "/opportunities"
-        ]
-
-        for page in expected_paid_pages:
-            self.assertIn(page, Config.PAID_TIER_PAGES)
-
-        # Ensure no free pages are in paid tier
-        for page in Config.FREE_TIER_PAGES:
-            self.assertNotIn(page, Config.PAID_TIER_PAGES)
+        """Test paid tier pages configuration - REMOVED"""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_contact_info_configuration(self):
-        """Test contact information configuration."""
-        self.assertIn("email", Config.TIER_CONTACT_INFO)
-        self.assertIn("message", Config.TIER_CONTACT_INFO)
-
-        email = Config.TIER_CONTACT_INFO["email"]
-        message = Config.TIER_CONTACT_INFO["message"]
-
-        self.assertIsInstance(email, str)
-        self.assertIsInstance(message, str)
-        self.assertIn("@", email)  # Basic email validation
-        self.assertGreater(len(message), 10)  # Message should be descriptive
+        """Test contact information configuration - REMOVED"""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_ai_provider_configuration(self):
         """Test AI provider configuration."""
@@ -227,62 +202,22 @@ class ConfigTest(unittest.TestCase):
 
 
 class TierLogicTest(unittest.TestCase):
-    """Unit tests for tier-related logic."""
+    """Unit tests for tier-related logic - REMOVED."""
 
     def test_page_categorization(self):
-        """Test that pages are properly categorized."""
-        free_pages = set(Config.FREE_TIER_PAGES)
-        paid_pages = set(Config.PAID_TIER_PAGES)
-
-        # No overlap between free and paid pages
-        overlap = free_pages.intersection(paid_pages)
-        self.assertEqual(len(overlap), 0, f"Pages should not be in both tiers: {overlap}")
-
-        # All pages should start with "/"
-        all_pages = free_pages.union(paid_pages)
-        for page in all_pages:
-            self.assertTrue(page.startswith("/"), f"Page should start with '/': {page}")
+        """Test that pages are properly categorized - REMOVED."""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_tier_access_logic(self):
-        """Test tier access logic."""
-        # Free tier access logic
-        def has_free_tier_access(page):
-            return page in Config.FREE_TIER_PAGES
-
-        # Paid tier access logic (can access everything)
-        def has_paid_tier_access(page):
-            return True
-
-        # Test free tier access
-        for page in Config.FREE_TIER_PAGES:
-            self.assertTrue(has_free_tier_access(page))
-
-        for page in Config.PAID_TIER_PAGES:
-            self.assertFalse(has_free_tier_access(page))
-
-        # Test paid tier access
-        all_pages = Config.FREE_TIER_PAGES + Config.PAID_TIER_PAGES
-        for page in all_pages:
-            self.assertTrue(has_paid_tier_access(page))
+        """Test tier access logic - REMOVED."""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
     def test_contact_info_completeness(self):
-        """Test that contact info is complete and valid."""
-        contact_info = Config.TIER_CONTACT_INFO
-
-        # Required fields
-        self.assertIn("email", contact_info)
-        self.assertIn("message", contact_info)
-
-        # Email validation
-        email = contact_info["email"]
-        self.assertIn("@", email)
-        self.assertIn(".", email)
-        self.assertGreater(len(email), 5)
-
-        # Message validation
-        message = contact_info["message"]
-        self.assertGreater(len(message), 20)
-        self.assertIn("Paid Tier", message)
+        """Test that contact info is complete and valid - REMOVED."""
+        # Tier system has been eliminated from the application
+        self.assertTrue(True, "Tier system removed")
 
 
 class NewsSourceConfigurationTest(unittest.TestCase):

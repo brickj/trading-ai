@@ -94,8 +94,44 @@ document.addEventListener('DOMContentLoaded', function() {
         autoRefreshToggle.addEventListener('click', toggleAutoRefresh);
     }
     
-    // Load initial data
-    loadStocksAnalysis(false);
+    // Check if there's already initial data displayed (from backend)
+    const winnersList = document.getElementById('winnersList');
+    const losersList = document.getElementById('losersList');
+    const stocksTableBody = document.getElementById('stocksTableBody');
+    
+    // Check if initial data is present
+    let hasInitialData = false;
+    if (winnersList && losersList && stocksTableBody) {
+        const hasWinners = winnersList.querySelectorAll('.card').length > 0;
+        const hasLosers = losersList.querySelectorAll('.card').length > 0;
+        const hasTableData = stocksTableBody.querySelectorAll('tr').length > 1; // More than just header
+        
+        hasInitialData = hasWinners || hasLosers || hasTableData;
+    }
+    
+    if (hasInitialData) {
+        console.log('🚀 [STOCKS] Initial data already displayed from backend');
+        updateLastUpdated();
+        
+        // Hide any loading spinners
+        const progressContainer = document.getElementById('sp500-progress-container');
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+        
+        // Show the results sections
+        const summaryStats = document.getElementById('summaryStats');
+        const enhancedAnalysisResults = document.getElementById('enhancedAnalysisResults');
+        if (summaryStats) summaryStats.style.display = 'block';
+        if (enhancedAnalysisResults) enhancedAnalysisResults.style.display = 'block';
+        
+        // Update market overview with initial data
+        updateMarketOverviewWithInitialData();
+        
+    } else {
+        console.log('🚀 [STOCKS] No initial data found, loading fresh data...');
+        loadStocksAnalysis(false);
+    }
     
     // Set up WebSocket connection for real-time updates
     setupWebSocket();
@@ -138,29 +174,29 @@ async function loadStocksAnalysis(forceRefresh = false) {
         console.log('🔍 [STOCKS] Loading market movers data...');
         updateDebugDataFlow('Starting market movers data load...');
         
-        // Use the market_movers endpoint directly since it contains the actual winners/losers data
-        const url = '/api/market_movers';
-        console.log('🌐 [STOCKS] API request:', url);
-        updateDebugRequest(url, {});
-        updateDebugDataFlow(`Making API request to: ${url}`);
+        // Get market movers data first to identify winners/losers
+        const marketMoversUrl = '/api/market_movers';
+        console.log('🌐 [STOCKS] Getting market movers from:', marketMoversUrl);
+        updateDebugRequest(marketMoversUrl, {});
+        updateDebugDataFlow(`Getting market movers from: ${marketMoversUrl}`);
         
-        const response = await fetch(url);
-        const result = await response.json();
+        const marketMoversResponse = await fetch(marketMoversUrl);
+        const marketMoversResult = await marketMoversResponse.json();
         
-        console.log('📊 [STOCKS] API response:', result);
-        updateDebugResponse(result);
-        updateDebugDataFlow(`Received response with status: ${result.status}`);
+        console.log('📊 [STOCKS] Market movers response:', marketMoversResult);
+        updateDebugResponse(marketMoversResult);
         
-        if (result.status === 'success' && result.data) {
-            updateDebugDataFlow(`Success! Data contains ${Object.keys(result.data).length} keys`);
-            // Convert market_movers format to enhanced_analysis format for compatibility
-            const convertedData = convertMarketMoversToEnhancedAnalysis(result.data);
-            displayStocksAnalysis(convertedData);
+        if (marketMoversResult.status === 'success' && marketMoversResult.data) {
+            updateDebugDataFlow(`Market movers loaded successfully`);
+            
+            // Get real enhanced analysis for top winners and losers
+            const enhancedAnalysisData = await getEnhancedAnalysisForSymbols(marketMoversResult.data);
+            displayStocksAnalysis(enhancedAnalysisData);
             updateLastUpdated();
         } else {
-            console.error('❌ [STOCKS] API error:', result.message || 'Unknown error');
-            updateDebugDataFlow(`API error: ${result.message || 'Unknown error'}`);
-            showError('Failed to load market movers data: ' + (result.message || 'Unknown error'));
+            console.error('❌ [STOCKS] Market movers API error:', marketMoversResult.message || 'Unknown error');
+            updateDebugDataFlow(`Market movers API error: ${marketMoversResult.message || 'Unknown error'}`);
+            showError('Failed to load market movers data: ' + (marketMoversResult.message || 'Unknown error'));
         }
         
     } catch (error) {
@@ -173,65 +209,71 @@ async function loadStocksAnalysis(forceRefresh = false) {
     }
 }
 
-// Convert market_movers data format to enhanced_analysis format
-function convertMarketMoversToEnhancedAnalysis(marketMoversData) {
-    updateDebugDataFlow('Converting market_movers data format...');
+// Get real enhanced analysis for symbols from market movers
+async function getEnhancedAnalysisForSymbols(marketMoversData) {
+    updateDebugDataFlow('Getting real enhanced analysis for symbols...');
     
     const enhancedAnalysis = [];
+    const symbolsToAnalyze = [];
     
-    // Process gainers (winners)
+    // Collect symbols from gainers and losers (top 3 each)
     if (marketMoversData.gainers) {
-        marketMoversData.gainers.forEach(gainer => {
-            enhancedAnalysis.push({
-                symbol: gainer.symbol,
-                type: 'winner', // Convert GAINER to winner
-                price_data: {
-                    current_price: gainer.price,
-                    change_percent: gainer.change_percent + '%', // Add % sign for display
-                    change_amount: gainer.change_percent
-                },
-                sentiment_data: {
-                    sentiment_score: 0.6, // Default positive sentiment for gainers
-                    confidence: 0.7,
-                    summary: 'Price-based analysis from market movers'
-                },
-                signal_data: {
-                    action: 'BUY',
-                    confidence: 0.7
-                },
-                news_count: 0,
-                timestamp: gainer.timestamp
-            });
-        });
+        symbolsToAnalyze.push(...marketMoversData.gainers.slice(0, 3).map(g => g.symbol));
     }
-    
-    // Process losers
     if (marketMoversData.losers) {
-        marketMoversData.losers.forEach(loser => {
-            enhancedAnalysis.push({
-                symbol: loser.symbol,
-                type: 'loser', // Convert LOSER to loser
-                price_data: {
-                    current_price: loser.price,
-                    change_percent: loser.change_percent + '%', // Add % sign for display
-                    change_amount: loser.change_percent
-                },
-                sentiment_data: {
-                    sentiment_score: 0.4, // Default negative sentiment for losers
-                    confidence: 0.7,
-                    summary: 'Price-based analysis from market movers'
-                },
-                signal_data: {
-                    action: 'SELL',
-                    confidence: 0.7
-                },
-                news_count: 0,
-                timestamp: loser.timestamp
-            });
-        });
+        symbolsToAnalyze.push(...marketMoversData.losers.slice(0, 3).map(l => l.symbol));
     }
     
-    updateDebugDataFlow(`Converted ${enhancedAnalysis.length} stocks to enhanced_analysis format`);
+    console.log('🔍 [STOCKS] Analyzing symbols:', symbolsToAnalyze);
+    updateDebugDataFlow(`Analyzing ${symbolsToAnalyze.length} symbols: ${symbolsToAnalyze.join(', ')}`);
+    
+    // Get real enhanced analysis for each symbol
+    for (const symbol of symbolsToAnalyze) {
+        try {
+            console.log(`📊 [STOCKS] Getting enhanced analysis for ${symbol}...`);
+            updateDebugDataFlow(`Getting enhanced analysis for ${symbol}...`);
+            
+            const response = await fetch('/api/enhanced_analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symbol: symbol })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.data) {
+                // Determine if this is a winner or loser based on market movers data
+                const isWinner = marketMoversData.gainers?.some(g => g.symbol === symbol);
+                const isLoser = marketMoversData.losers?.some(l => l.symbol === symbol);
+                
+                const analysisData = {
+                    symbol: symbol,
+                    type: isWinner ? 'winner' : 'loser',
+                    price_data: result.data.price_data,
+                    sentiment_data: result.data.sentiment_data,
+                    signal_data: result.data.signal_data,
+                    news_count: result.data.news_data?.article_count || 0,
+                    timestamp: new Date().toISOString(),
+                    analysis_time: result.data.analysis_time
+                };
+                
+                enhancedAnalysis.push(analysisData);
+                console.log(`✅ [STOCKS] Enhanced analysis loaded for ${symbol}`);
+                updateDebugDataFlow(`Enhanced analysis loaded for ${symbol}`);
+            } else {
+                console.warn(`⚠️ [STOCKS] Failed to get enhanced analysis for ${symbol}:`, result.error);
+                updateDebugDataFlow(`Failed to get enhanced analysis for ${symbol}: ${result.error}`);
+            }
+        } catch (error) {
+            console.error(`❌ [STOCKS] Error getting enhanced analysis for ${symbol}:`, error);
+            updateDebugDataFlow(`Error getting enhanced analysis for ${symbol}: ${error.message}`);
+        }
+    }
+    
+    console.log(`📊 [STOCKS] Enhanced analysis completed for ${enhancedAnalysis.length} symbols`);
+    updateDebugDataFlow(`Enhanced analysis completed for ${enhancedAnalysis.length} symbols`);
     
     return {
         enhanced_analysis: enhancedAnalysis,
@@ -244,7 +286,7 @@ function convertMarketMoversToEnhancedAnalysis(marketMoversData) {
             success_rate: '100%'
         },
         timestamp: new Date().toISOString(),
-        source: 'market_movers_table'
+        source: 'real_enhanced_analysis'
     };
 }
 
@@ -331,6 +373,25 @@ function displayStocksAnalysis(data) {
     
     console.log('📈 [STOCKS] ===== DISPLAY COMPLETE =====');
     updateDebugDataFlow('Display complete');
+}
+
+// Update market overview with initial data from backend
+function updateMarketOverviewWithInitialData() {
+    const winnersList = document.getElementById('winnersList');
+    const losersList = document.getElementById('losersList');
+    
+    if (winnersList && losersList) {
+        const winnersCount = winnersList.querySelectorAll('.card').length;
+        const losersCount = losersList.querySelectorAll('.card').length;
+        
+        // Update market overview numbers
+        const marketGainers = document.getElementById('marketGainers');
+        const marketLosers = document.getElementById('marketLosers');
+        if (marketGainers) marketGainers.textContent = winnersCount;
+        if (marketLosers) marketLosers.textContent = losersCount;
+        
+        console.log('📊 [STOCKS] Market overview updated with initial data:', { winners: winnersCount, losers: losersCount });
+    }
 }
 
 // Update market overview section

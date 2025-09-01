@@ -15,7 +15,7 @@ Tests the core system functionality:
 - **Job scheduler** and background tasks
 - **API endpoints** and responses
 - **Configuration validation**
-- **Tier system** access control
+- **Tier system** - REMOVED (system eliminated)
 - **Market movers** data
 - **News monitoring** services
 - **Telegram alerts** functionality
@@ -38,7 +38,7 @@ Tests all web pages and user interactions:
 - **Scalping Signals page** - Scalping opportunities
 - **Weekly Plan page** - Market calendar
 - **Telegram functionality** - Bot integration
-- **Tier system** - Access control
+- **Tier system** - REMOVED (system eliminated)
 - **Market data** - Real-time data feeds
 - **Job scheduler** - Background task management
 - **Data validation** - Data integrity checks

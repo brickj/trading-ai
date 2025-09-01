@@ -132,10 +132,8 @@ class DeepValidationTest(unittest.TestCase):
             self.assertIn(key, data)
         self.report.record_endpoint("system_status", {"status": code, "time": t})
 
-    def test_tier_telegram_foreign_strict(self):
-        code, tier, t1 = get_json("/api/tier/status", timeout=30)
-        self.assertEqual(code, 200)
-        self.assertTrue(tier.get("success", False))
+    def test_telegram_foreign_strict(self):
+        # Tier system removed - testing other functionality
         code2, tg, t2 = get_json("/api/telegram/test", timeout=30)
         self.assertEqual(code2, 200)
         self.assertIn("status", tg)
