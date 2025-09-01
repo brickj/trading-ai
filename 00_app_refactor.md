@@ -37,14 +37,7 @@ The current `app.py` file is **5,861 lines** and violates multiple software engi
 - **Add query performance monitoring**: Track slow queries and optimize
 - **Implement proper transaction management**: ACID compliance and rollback handling
 
-#### 1.3 Error Handling & Logging Infrastructure
-- **Centralized error handling**: Implement global error handlers
-- **Structured logging**: Use structured logging with proper levels
-- **Error tracking**: Integrate with error tracking services (Sentry, etc.)
-- **Performance monitoring**: Add request timing and performance metrics
-- **Health check endpoints**: Implement application health monitoring
-
-#### 1.4 Configuration Management
+#### 1.3 Configuration Management
 - **Environment-based config**: Separate dev/staging/prod configurations
 - **Configuration validation**: Validate all configuration values at startup
 - **Secret management**: Use proper secret management (AWS Secrets Manager, etc.)
