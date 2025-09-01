@@ -2,10 +2,10 @@
 
 ## Executive Summary
 
-The current `app.py` file is **5,861 lines** and violates multiple software engineering best practices. This comprehensive refactoring plan will transform it into a well-architected, secure, and maintainable application following industry standards.
+The current `app.py` file is **5,120 lines** and violates multiple software engineering best practices. This comprehensive refactoring plan will transform it into a well-architected, secure, and maintainable application following industry standards.
 
 ### Critical Problems Identified:
-- **Massive file size** (5,861 lines - violates Single Responsibility Principle)
+- **Massive file size** (5,120 lines - violates Single Responsibility Principle)
 - **Mixed concerns** (routes, business logic, data processing, configuration)
 - **No dependency injection** - hard-coded dependencies throughout
 - **Poor error handling** - inconsistent error responses and logging
@@ -45,9 +45,9 @@ The current `app.py` file is **5,861 lines** and violates multiple software engi
 
 ### Phase 2: Route Extraction & Organization (Week 2-3)
 
-#### 2.1 Create Route Modules by Domain
+#### 2.1 Verify Existing Route Modules
 
-Create the following route modules to organize endpoints by functionality:
+Route modules already exist in `src/web/routes/` and are imported in `app.py`. Verify that all endpoints are organized within these modules and move any remaining routes out of `app.py`:
 
 ```
 src/web/routes/
@@ -88,7 +88,9 @@ src/web/routes/
 
 ### Phase 3: Business Logic Extraction (Week 3-4)
 
-#### 3.1 Create Service Layer
+#### 3.1 Utilize Service Layer
+
+The service layer already exists in `src/web/services/` and its modules are imported in `app.py`. Continue extracting business logic into these services:
 
 ```
 src/web/services/
@@ -232,16 +234,16 @@ src/web/utils/
 
 | Phase | Lines Removed | Remaining Lines | Progress | Timeline |
 |-------|---------------|-----------------|----------|----------|
-| **Current** | 0 | 5,861 | 0% | Week 0 |
-| **Phase 1** | 0 | 5,861 | 0% | Week 1-2 |
-| **Phase 2** | -1,850 | 4,011 | 32% | Week 2-3 |
-| **Phase 3** | -1,200 | 2,811 | 52% | Week 3-4 |
-| **Phase 4** | -600 | 2,211 | 62% | Week 4-5 |
-| **Phase 5** | -400 | 1,811 | 69% | Week 5 |
-| **Phase 6** | 0 | 1,811 | 69% | Week 6 |
-| **Phase 7** | 0 | 1,811 | 69% | Week 7 |
-| **Phase 8** | 0 | 1,811 | 69% | Week 8 |
-| **Phase 9** | 0 | **1,811** | **69%** | **Week 9** |
+| **Current** | 0 | 5,120 | 0% | Week 0 |
+| **Phase 1** | 0 | 5,120 | 0% | Week 1-2 |
+| **Phase 2** | -1,500 | 3,620 | 29% | Week 2-3 |
+| **Phase 3** | -1,000 | 2,620 | 49% | Week 3-4 |
+| **Phase 4** | -500 | 2,120 | 59% | Week 4-5 |
+| **Phase 5** | -309 | 1,811 | 65% | Week 5 |
+| **Phase 6** | 0 | 1,811 | 65% | Week 6 |
+| **Phase 7** | 0 | 1,811 | 65% | Week 7 |
+| **Phase 8** | 0 | 1,811 | 65% | Week 8 |
+| **Phase 9** | 0 | **1,811** | **65%** | **Week 9** |
 
 ### Final Project Structure
 
@@ -475,7 +477,7 @@ This comprehensive refactoring plan follows industry best practices and will tra
 5. **Monitoring** - Monitor performance and errors throughout process
 
 ### Expected Outcomes:
-- **69% reduction** in main file size (5,861 → 1,811 lines)
+- **65% reduction** in main file size (5,120 → 1,811 lines)
 - **Significantly improved** code maintainability and testability
 - **Enhanced security** with proper validation and authentication
 - **Better performance** through caching and optimization
