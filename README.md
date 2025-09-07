@@ -8,7 +8,7 @@ This file contains critical recommendation logic used throughout the application
 
 ---
 
-A comprehensive **Python application** that uses AI-powered sentiment analysis to generate options trading signals. This educational tool combines news sentiment analysis with options trading strategies, featuring a modern Flask web interface, PostgreSQL caching for 2,400x performance improvements, and enterprise-grade architecture.
+A comprehensive **Python application** that uses AI-powered sentiment analysis to generate stock, options and crypto trading signals. This educational tool combines news sentiment analysis with options trading strategies, featuring a modern Flask web interface, PostgreSQL caching for 2,400x performance improvements, and enterprise-grade architecture.
 
 **🚀 Production-Ready**: Optimized with PostgreSQL cache, smart batching, and WebSocket updates for enterprise performance.
 
