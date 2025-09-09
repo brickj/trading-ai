@@ -1,0 +1,22 @@
+Trading AI Test Execution Summary
+=================================
+Execution Date: Sun Sep  7 15:55:55 EDT 2025
+Test Results Directory: test_results/run_20250907_155300
+
+Test Results:
+- Total Tests: 5
+- Passed: 2
+- Failed: 3
+- Success Rate: 40%
+
+Individual Test Logs:
+- Comprehensive System Test: comprehensive_system_test.log
+- Web Page Data Test: web_page_data_test.log
+- Integration Tests: integration_tests.log
+- Unit Tests: unit_tests.log
+- API Endpoint Tests: api_test.log
+- Detailed Log: test_log.txt
+
+JSON Reports (if available):
+- test_results.json
+- test_report_web_pages_*.json

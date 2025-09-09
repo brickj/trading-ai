@@ -2,10 +2,14 @@ import unittest
 import time
 import requests
 import os
-from tests.utils.validators import (
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+from utils.validators import (
     is_iso_timestamp, is_percent_like, ensure_keys, is_number, within_range, recent_timestamp
 )
-from tests.utils.report_writer import ReportWriter
+from utils.report_writer import ReportWriter
 
 BASE_URL = os.environ.get("TRADING_APP_URL", "http://localhost:5001")
 
@@ -60,18 +64,18 @@ class DeepValidationTest(unittest.TestCase):
         self.assertEqual(code, 200)
         self.assertTrue(data.get("success", False))
         payload = data.get("data", {})
-        analysis = payload.get("enhanced_analysis", [])
+        analysis = payload.get("comprehensive_analysis", [])
         self.assertIsInstance(analysis, list)
-        self.assertGreaterEqual(len(analysis), 1, "enhanced_analysis empty (unexpected)")
+        self.assertGreaterEqual(len(analysis), 1, "comprehensive_analysis empty (unexpected)")
         # No fallback allowed
         if payload.get("source") == "fallback":
             self.fail("sp500_analysis returned fallback source")
         # Validate first item schema
         item = analysis[0]
-        miss = ensure_keys(item, ["symbol", "price_data", "sentiment_data", "comprehensive_analysis"]) \
+        miss = ensure_keys(item, ["symbol", "price_data", "sentiment_data", "signal_data"]) \
             or ensure_keys(item.get("price_data", {}), ["current_price"]) \
             or ensure_keys(item.get("sentiment_data", {}), ["sentiment_score"]) \
-            or ensure_keys(item.get("comprehensive_analysis", {}), ["top_recommendation"])
+            or ensure_keys(item.get("signal_data", {}), ["action"])
         self.assertFalse(miss, f"sp500_analysis schema missing: {miss}")
         self.assertTrue(is_number(item.get("price_data", {}).get("current_price")))
         self.assertTrue(within_range(item.get("sentiment_data", {}).get("sentiment_score"), -1, 1))
@@ -128,8 +132,12 @@ class DeepValidationTest(unittest.TestCase):
     def test_system_status_strict(self):
         code, data, t = get_json("/api/system_status", timeout=30)
         self.assertEqual(code, 200)
-        for key in ["status", "system", "database", "cache", "config"]:
-            self.assertIn(key, data)
+        # Check that response has success field
+        self.assertTrue(data.get("success", False))
+        # Check that data contains the expected keys
+        response_data = data.get("data", {})
+        for key in ["system", "database", "cache", "config"]:
+            self.assertIn(key, response_data)
         self.report.record_endpoint("system_status", {"status": code, "time": t})
 
     def test_telegram_foreign_strict(self):

@@ -215,27 +215,27 @@ class AnalysisService:
             analysis_results = self.analyze_bulk_stocks(symbols, max_concurrent=8)
             
             # Process results for SP500 specific format
-            enhanced_analysis = analysis_results["results"]
+            comprehensive_analysis = analysis_results["results"]
             
             response_data = {
-                "enhanced_analysis": enhanced_analysis,
+                "comprehensive_analysis": comprehensive_analysis,
                 "errors": analysis_results["errors"],
                 "total_analyzed": len(symbols),
-                "opportunities_found": len(enhanced_analysis),
+                "opportunities_found": len(comprehensive_analysis),
                 "errors_count": len(analysis_results["errors"]),
                 "performance": {
                     "execution_time": round(time.time() - start_time, 2),
-                    "success_rate": f"{round(len(enhanced_analysis) / len(symbols) * 100, 1)}%" if symbols else "0%",
+                    "success_rate": f"{round(len(comprehensive_analysis) / len(symbols) * 100, 1)}%" if symbols else "0%",
                     "avg_analysis_time": round(
-                        sum(r.get("analysis_time", 0) for r in enhanced_analysis) / len(enhanced_analysis), 3
-                    ) if enhanced_analysis else 0
+                        sum(r.get("analysis_time", 0) for r in comprehensive_analysis) / len(comprehensive_analysis), 3
+                    ) if comprehensive_analysis else 0
                 },
                 "timestamp": datetime.now().isoformat(),
                 "cached": False
             }
             
             # Cache successful results
-            if enhanced_analysis:
+            if comprehensive_analysis:
                 cache_result(cache_key, response_data, ttl=self._cache_timeout * 2)  # Cache for 10 minutes
             
             return response_data
@@ -243,7 +243,7 @@ class AnalysisService:
         except Exception as e:
             log_exception("Error in SP500 analysis", e)
             return {
-                "enhanced_analysis": [],
+                "comprehensive_analysis": [],
                 "errors": [{"error": str(e)}],
                 "total_analyzed": 0,
                 "opportunities_found": 0,

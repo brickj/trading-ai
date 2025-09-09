@@ -131,6 +131,7 @@ def format_api_response(data: Any = None, message: str = "Success",
     """
     response = {
         "status": status,
+        "success": status == "success",  # Add success field for test compatibility
         "message": message,
         "timestamp": datetime.now().isoformat()
     }

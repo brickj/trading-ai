@@ -84,12 +84,12 @@ class TestStocksPageDB:
         
         # Verify response structure
         assert 'data' in data
-        assert 'enhanced_analysis' in data['data']
-        assert isinstance(data['data']['enhanced_analysis'], list)
+        assert 'comprehensive_analysis' in data['data']
+        assert isinstance(data['data']['comprehensive_analysis'], list)
         
         # Verify data integrity
         for i, mover in enumerate(SAMPLE_MARKET_MOVERS):
-            api_mover = data['data']['enhanced_analysis'][i]
+            api_mover = data['data']['comprehensive_analysis'][i]
             assert api_mover['symbol'] == mover['symbol']
             assert float(api_mover['price']) == pytest.approx(mover['price'])
             assert float(api_mover['change_percent']) == pytest.approx(mover['change_percent'])
@@ -143,6 +143,6 @@ class TestStocksPageDB:
         assert response.status_code == 200
         data = response.get_json()
         
-        assert data['data']['enhanced_analysis'] == []
+        assert data['data']['comprehensive_analysis'] == []
         assert data['data']['total_analyzed'] == 0
         assert data['data']['opportunities_found'] == 0

@@ -842,3 +842,14 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                 "reasoning": reasoning,
             }
         }
+
+    def _get_mock_sentiment(self) -> Dict:
+        """
+        Get mock sentiment data for testing purposes
+        """
+        return {
+            "sentiment_score": 0.5,
+            "confidence": 0.8,
+            "summary": "Mock sentiment data for testing",
+            "provider": "mock"
+        }

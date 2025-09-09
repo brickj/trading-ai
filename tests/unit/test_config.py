@@ -19,15 +19,15 @@ class ConfigTest(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment."""
-        # Store original values
-        self.original_tier = getattr(Config, 'CURRENT_TIER', Config.DEFAULT_TIER)
+        # Tier system has been removed - no setup needed
+        pass
 
     def tearDown(self):
         """Clean up after tests."""
-        # Restore original values
-        Config.CURRENT_TIER = self.original_tier
+        # Tier system has been removed - no cleanup needed
+        pass
 
-        def test_default_tier_configuration(self):
+    def test_default_tier_configuration(self):
         """Test default tier configuration - REMOVED"""
         # Tier system has been eliminated from the application
         self.assertTrue(True, "Tier system removed")

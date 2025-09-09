@@ -114,9 +114,9 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                 stocks_data = data["data"]
                 
                 # Verify enhanced analysis data structure
-                self.assertIn("enhanced_analysis", stocks_data, "Stocks data should have enhanced_analysis")
-                if "enhanced_analysis" in stocks_data:
-                    enhanced_data = stocks_data["enhanced_analysis"]
+                self.assertIn("comprehensive_analysis", stocks_data, "Stocks data should have comprehensive_analysis")
+                if "comprehensive_analysis" in stocks_data:
+                    enhanced_data = stocks_data["comprehensive_analysis"]
                     self.assertIsInstance(enhanced_data, list, "Enhanced analysis should be a list")
                     
                     # Verify stock data structure
@@ -901,9 +901,17 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             if "data" in data:
                 analysis_data = data["data"]
                 self.assertIn("symbol", analysis_data, "Analysis should have symbol")
-                self.assertIn("current_price", analysis_data, "Analysis should have current price")
-                self.assertIn("sentiment_score", analysis_data, "Analysis should have sentiment score")
-                self.assertIn("action", analysis_data, "Analysis should have action")
+                self.assertIn("price_data", analysis_data, "Analysis should have price_data")
+                self.assertIn("sentiment_data", analysis_data, "Analysis should have sentiment_data")
+                self.assertIn("signal_data", analysis_data, "Analysis should have signal_data")
+                
+                # Check nested data
+                if "price_data" in analysis_data:
+                    self.assertIn("current_price", analysis_data["price_data"], "Price data should have current_price")
+                if "sentiment_data" in analysis_data:
+                    self.assertIn("sentiment_score", analysis_data["sentiment_data"], "Sentiment data should have sentiment_score")
+                if "signal_data" in analysis_data:
+                    self.assertIn("action", analysis_data["signal_data"], "Signal data should have action")
         
         # Test bulk analysis
         response = self.session.post(f"{self.base_url}/api/analyze_bulk", 
@@ -944,14 +952,14 @@ class ComprehensiveFrontendTest(unittest.TestCase):
         response = self.session.get(f"{self.base_url}/api/sp500_analysis")
         if response.status_code == 200:
             data = response.json()
-            if data.get("success") and "data" in data and "enhanced_analysis" in data["data"]:
-                enhanced_analysis = data["data"]["enhanced_analysis"]
+            if data.get("success") and "data" in data and "comprehensive_analysis" in data["data"]:
+                enhanced_analysis = data["data"]["comprehensive_analysis"]
                 if len(enhanced_analysis) > 0:
                     stock = enhanced_analysis[0]
                     
                     # Check if stock has the expected structure
-                    if "enhanced_analysis" in stock and "price_data" in stock["enhanced_analysis"]:
-                        price_data = stock["enhanced_analysis"]["price_data"]
+                    if "price_data" in stock:
+                        price_data = stock["price_data"]
                         # Verify numeric fields
                         if "current_price" in price_data:
                             self.assertIsInstance(price_data["current_price"], (int, float), "Current price should be numeric")

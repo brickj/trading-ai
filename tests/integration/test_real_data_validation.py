@@ -52,8 +52,8 @@ class RealDataValidationTest(unittest.TestCase):
         code, data = _get_json("/api/sp500_analysis?limit=3", timeout=60)
         self.assertEqual(code, 200)
         self.assertTrue(data.get("success", False))
-        stocks = data.get("data", {}).get("enhanced_analysis", [])
-        self.assertIsInstance(stocks, list, "enhanced_analysis should be a list")
+        stocks = data.get("data", {}).get("comprehensive_analysis", [])
+        self.assertIsInstance(stocks, list, "comprehensive_analysis should be a list")
 
         # Detect permanent fallback (if API provided source field)
         src = data.get("data", {}).get("source")
@@ -103,8 +103,12 @@ class RealDataValidationTest(unittest.TestCase):
     def test_06_system_status(self):
         code, data = _get_json("/api/system_status")
         self.assertEqual(code, 200)
-        for key in ["status", "system", "database", "cache", "config"]:
-            self.assertIn(key, data)
+        # Check that response has success field
+        self.assertTrue(data.get("success", False))
+        # Check that data contains the expected keys
+        response_data = data.get("data", {})
+        for key in ["system", "database", "cache", "config"]:
+            self.assertIn(key, response_data)
 
     def test_07_telegram_foreign(self):
         # Tier system removed - testing other functionality
