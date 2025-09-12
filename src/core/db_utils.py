@@ -6,11 +6,8 @@ import psycopg2
 from psycopg2 import pool
 from contextlib import contextmanager
 from typing import Optional, Iterator, Any, Dict
-import logging
 from src.core.config import Config
 from src.core.logger import log_error, log_info
-
-logger = logging.getLogger(__name__)
 
 class DatabaseConnectionError(Exception):
     """Custom exception for database connection issues"""

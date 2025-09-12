@@ -6,14 +6,12 @@ Provides connection handling for PostgreSQL database.
 
 import psycopg2
 import psycopg2.extras
-import logging
 from contextlib import contextmanager
 from .config import Config
 from typing import Dict, Any, Optional
 import json
 import numpy as np
-
-logger = logging.getLogger(__name__)
+from .logger import trading_logger as logger
 
 
 def convert_numpy_values(value):

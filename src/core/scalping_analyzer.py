@@ -10,15 +10,12 @@ from datetime import datetime, date
 from typing import Dict, List, Any
 import json
 import time
-import logging
 
 from .database import execute_query
 from .config import Config
 from .logger import log_info, log_error, log_warning, log_debug
 from .sentiment_analyzer import SentimentAnalyzer
 from ..data.data_fetcher import DataFetcher
-
-logger = logging.getLogger(__name__)
 
 
 class ScalpingAnalyzer:

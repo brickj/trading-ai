@@ -5,12 +5,12 @@ Helper functions for the Flask web application - optimized with utilities
 
 from flask import jsonify, request
 from datetime import datetime
-from functools import wraps
 from typing import Tuple, List, Dict, Any
 
 # Import optimized utilities
 from .utils.formatters import format_api_response, format_error_response
 from .utils.validators import validate_symbol as validate_symbol_util
+from .utils.error_handler import handle_api_error
 from .repositories import market_data_repo
 from ..core.logger import log_exception
 
@@ -37,18 +37,6 @@ def create_api_response(data=None, success=True, message="", error_code=None,
 
     response = format_api_response(data, message)
     return jsonify(response), status_code
-
-
-def handle_api_error(e, context="API operation"):
-    """Standardized error handling for API endpoints"""
-    log_exception(f"Error in {context}", e)
-    return create_api_response(
-        success=False,
-        error=str(e),
-        status_code=500,
-        path=request.path,
-        method=request.method
-    )
 
 
 def get_request_params(required_params=None, optional_params=None):
@@ -112,16 +100,3 @@ def get_preloaded_opportunities(opportunity_type=None):
     except Exception as e:
         log_exception("Error getting preloaded opportunities", e)
         return [], None
-
-
-def api_error_handler(context="API operation"):
-    """Decorator for standardized API error handling"""
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                return handle_api_error(e, context)
-        return wrapper
-    return decorator
