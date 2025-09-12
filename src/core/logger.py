@@ -282,41 +282,41 @@ class TradingLogger:
 
     def log_user_action(self, action, symbol=None, details=None, user_ip=None):
         """Log user actions"""
-        message = "{action}"
+        message = f"{action}"
         if symbol:
-            message += " | Symbol: {symbol}"
+            message += f" | Symbol: {symbol}"
         if user_ip:
-            message += " | IP: {user_ip}"
+            message += f" | IP: {user_ip}"
         if details:
-            message += " | Details: {details}"
+            message += f" | Details: {details}"
         self.user_logger.info(message)
 
     def log_performance(self, operation, duration_ms, details=None):
         """Log performance metrics"""
-        message = "{operation} | Duration: {duration_ms:.2f}ms"
+        message = f"{operation} | Duration: {duration_ms:.2f}ms"
         if details:
-            message += " | {details}"
+            message += f" | {details}"
         self.perf_logger.info(message)
 
     def log_system_event(self, event, status="INFO", details=None):
         """Log system events"""
-        message = "{status} | {event}"
+        message = f"{status} | {event}"
         if details:
-            message += " | {details}"
+            message += f" | {details}"
         self.system_logger.info(message)
 
     def log_timeout(self, operation, timeout_duration, details=None):
         """Log timeout events"""
-        message = "TIMEOUT | {operation} | Timeout: {timeout_duration}s"
+        message = f"TIMEOUT | {operation} | Timeout: {timeout_duration}s"
         if details:
-            message += " | {details}"
+            message += f" | {details}"
         self.error_logger.warning(message)
 
     def log_exception(self, operation, exception, context=None):
         """Log exceptions with full traceback"""
-        message = "EXCEPTION in {operation}: {str(exception)}"
+        message = f"EXCEPTION in {operation}: {str(exception)}"
         if context:
-            message += " | Context: {context}"
+            message += f" | Context: {context}"
         self.error_logger.error(message, exc_info=exception)
 
     def log_telegram_message(
