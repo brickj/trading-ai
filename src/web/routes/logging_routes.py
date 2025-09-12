@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from datetime import datetime
+import json
 
 from ..helpers import create_api_response, handle_api_error
 from ..utils.page_logger import page_logger
@@ -33,5 +34,31 @@ def log_client_error():
 
 @logging_bp.route("/api/frontend_logs", methods=["POST"])
 def frontend_logs():
-    """Alternative endpoint for frontend logging (compatibility)."""
-    return log_client_error()
+    """Handle frontend logging with proper data structure."""
+    try:
+        data = request.get_json(force=True)
+        
+        # Handle different data formats
+        if 'level' in data and 'message' in data:
+            # New format from FrontendLogger
+            level = data.get("level", "INFO")
+            message = data.get("message", "No message")
+            category = data.get("category", "frontend")
+            timestamp = data.get("timestamp", datetime.now().isoformat())
+            session_id = data.get("sessionId", "unknown")
+            url = data.get("url", "unknown")
+            
+            log_message = f"[FRONTEND {level}] [{category}] {message} | Session: {session_id} | URL: {url} | Time: {timestamp}"
+            trading_logger.error_logger.info(log_message)
+            
+        elif 'page' in data and 'error' in data:
+            # Legacy format - redirect to client error handler
+            return log_client_error()
+        else:
+            # Fallback for unknown format
+            log_message = f"[FRONTEND LOG] {json.dumps(data)}"
+            trading_logger.error_logger.info(log_message)
+            
+        return create_api_response(message="Frontend log received successfully")
+    except Exception as e:
+        return handle_api_error(e, "frontend_logs endpoint")

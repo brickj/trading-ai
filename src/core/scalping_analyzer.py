@@ -441,8 +441,7 @@ class ScalpingAnalyzer:
             insert_data = convert_numpy_in_dict(insert_data)
 
             # Use UPSERT to handle duplicates
-            # Fix: ON CONFLICT must match the actual unique constraint (ticker, date, time_collected)
-            # Fix: Add time_collected to INSERT to satisfy NOT NULL constraint
+            # Fix: ON CONFLICT must match the actual unique constraint (ticker, date)
             query = """
             INSERT INTO scalping_signals (
                 ticker, asset_type, date, time_collected, price_open, price_now, volume_ratio,
@@ -453,7 +452,7 @@ class ScalpingAnalyzer:
                 %(volume_ratio)s, %(price_change_pct)s, %(gap_pct)s, %(bid_ask_spread)s,
                 %(sentiment_score)s, %(sentiment_class)s, %(recommendation)s, %(headlines_json)s
             )
-            ON CONFLICT (ticker, date, time_collected)
+            ON CONFLICT (ticker, date)
             DO UPDATE SET
                 price_now = EXCLUDED.price_now,
                 volume_ratio = EXCLUDED.volume_ratio,
