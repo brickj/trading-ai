@@ -218,17 +218,10 @@ class BatchProcessor:
                 or price_data.get("current_price") is None
                 or price_data.get("current_price") == 0
             ):
-                # Check if this is a foreign stock that we can't get data for
-                if symbol.endswith(('.HK', '.T', '.L', '.DE', '.TO', '.MX')):
-                    log_warning(
-                        f"Skipping foreign stock {symbol} - no price data available"
-                    )
-                    return {"symbol": symbol, "skipped": "Foreign stock - no price data available"}
-                else:
-                    log_error(
-                        f"Analysis skipped for {symbol}", "Missing critical price data"
-                    )
-                    return {"symbol": symbol, "error": "Missing critical price data"}
+                log_error(
+                    f"Analysis skipped for {symbol}", "Missing critical price data"
+                )
+                return {"symbol": symbol, "error": "Missing critical price data"}
 
             news = self.data_fetcher.get_company_news(symbol, days_back)
             articles = news[:3] if news else []
@@ -297,13 +290,8 @@ class BatchProcessor:
 
             return None
         except Exception as e:
-            # Check if this is a foreign stock that we can't get data for
-            if symbol.endswith(('.HK', '.T', '.L', '.DE', '.TO', '.MX')):
-                log_warning(f"Foreign stock {symbol} - analysis skipped: {str(e)}")
-                return {"symbol": symbol, "skipped": f"Foreign stock - {str(e)}"}
-            else:
-                log_error(f"Unexpected error in analyze_stock for {symbol}", str(e))
-                return {"symbol": symbol, "error": f"Unexpected error: {e}"}
+            log_error(f"Unexpected error in analyze_stock for {symbol}", str(e))
+            return {"symbol": symbol, "error": f"Unexpected error: {e}"}
 
     def analyze_crypto(self, symbol: str, days_back: Optional[int] = None):
         """New simplified crypto analysis function for batch processing"""

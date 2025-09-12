@@ -78,11 +78,26 @@ class DataFetcher:
             quote = data["Global Quote"]
             # Check if the quote is empty or contains error information
             if not quote or "Error Message" in data:
-                return {
-                    "symbol": symbol,
-                    "current_price": 0,
-                    "error": f"Symbol {symbol} may be delisted or invalid",
-                }
+                # Try yfinance fallback for foreign stocks
+                fallback_price = self._get_yfinance_last_price(symbol)
+                if fallback_price and fallback_price > 0:
+                    result = {
+                        "symbol": symbol,
+                        "current_price": float(fallback_price),
+                        "change": 0.0,
+                        "change_percent": "0%",
+                        "volume": 0,
+                        "timestamp": datetime.now().isoformat(),
+                        "source": "yfinance_fallback",
+                    }
+                    cache.set(cache_key, result, ttl=300)
+                    return result
+                else:
+                    return {
+                        "symbol": symbol,
+                        "current_price": 0,
+                        "error": f"Symbol {symbol} may be delisted or invalid",
+                    }
 
             # For test compatibility, return expected values for specific symbols
             if symbol == "AAPL":

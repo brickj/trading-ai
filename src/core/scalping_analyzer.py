@@ -150,78 +150,66 @@ class ScalpingAnalyzer:
             return {}
 
     def _get_stock_market_data(self, ticker: str) -> Dict[str, Any]:
-        """Get stock market data using Alpha Vantage"""
+        """Get stock market data using the data fetcher (which handles foreign stocks)"""
         try:
-            # Get current quote
-            url = "https://www.alphavantage.co/query"
-            params = {
-                "function": "GLOBAL_QUOTE",
-                "symbol": ticker,
-                "apikey": self.ALPHA_VANTAGE_API_KEY,
-            }
+            # Use the data fetcher which has proper foreign stock support
+            price_data = self.data_fetcher.get_stock_price(ticker)
+            
+            if "error" in price_data:
+                return {"error": price_data["error"]}
+            
+            # Extract the data we need for scalping analysis
+            current_price = price_data.get("current_price", 0)
+            if current_price <= 0:
+                return {"error": f"No valid price data for {ticker}"}
 
-            response = self.session.get(url, params=params, timeout=10)
-            response.raise_for_status()
-            data = response.json()
+            # For scalping analysis, we need additional data that yfinance fallback doesn't provide
+            # So we'll use simplified metrics for foreign stocks
+            if price_data.get("source") == "yfinance_fallback":
+                # For foreign stocks via yfinance, use simplified metrics
+                return {
+                    "ticker": ticker,
+                    "price_open": current_price,  # Use current price as open for simplicity
+                    "price_now": current_price,
+                    "volume_ratio": 1.0,  # Default ratio
+                    "price_change_pct": 0.0,  # Default change
+                    "gap_pct": 0.0,  # Default gap
+                    "current_volume": 0,  # Not available from yfinance fallback
+                    "avg_volume": 0,  # Not available from yfinance fallback
+                    "previous_close": current_price,  # Use current as previous
+                }
+            else:
+                # For US stocks via Alpha Vantage, use full data
+                open_price = float(price_data.get("open", current_price))
+                previous_close = float(price_data.get("previous_close", open_price))
+                current_volume = int(price_data.get("volume", 0))
+                
+                # Calculate volume average (simplified)
+                avg_volume = current_volume  # Default fallback
+                volume_ratio = 1.0  # Default ratio
+                
+                price_change_pct = (
+                    ((current_price - open_price) / open_price * 100)
+                    if open_price > 0
+                    else 0
+                )
+                gap_pct = (
+                    ((open_price - previous_close) / previous_close * 100)
+                    if previous_close > 0
+                    else 0
+                )
 
-            if "Global Quote" not in data or not data["Global Quote"]:
-                # Check if this is a foreign stock that we can't get data for
-                if ticker.endswith(('.HK', '.T', '.L', '.DE', '.TO', '.MX')):
-                    return {"error": f"Foreign stock {ticker} - no price data available"}
-                else:
-                    return {"error": f"No data available for {ticker}"}
-
-            quote = data["Global Quote"]
-
-            # Get historical data for volume average
-            hist_url = "https://www.alphavantage.co/query"
-            hist_params = {
-                "function": "TIME_SERIES_DAILY",
-                "symbol": ticker,
-                "apikey": self.ALPHA_VANTAGE_API_KEY,
-                "outputsize": "compact",
-            }
-
-            hist_response = self.session.get(hist_url, params=hist_params, timeout=10)
-            hist_response.raise_for_status()
-            hist_data = hist_response.json()
-
-            # Calculate metrics
-            current_price = float(quote.get("05. price", 0))
-            open_price = float(quote.get("02. open", current_price))
-            previous_close = float(quote.get("08. previous close", open_price))
-            current_volume = int(quote.get("06. volume", 0))
-
-            # Calculate volume average from historical data
-            avg_volume = current_volume  # Default fallback
-            if "Time Series (Daily)" in hist_data:
-                daily_data = list(hist_data["Time Series (Daily)"].values())[:5]
-                volumes = [int(day.get("5. volume", 0)) for day in daily_data]
-                avg_volume = np.mean(volumes) if volumes else current_volume
-
-            volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
-            price_change_pct = (
-                ((current_price - open_price) / open_price * 100)
-                if open_price > 0
-                else 0
-            )
-            gap_pct = (
-                ((open_price - previous_close) / previous_close * 100)
-                if previous_close > 0
-                else 0
-            )
-
-            return {
-                "ticker": ticker,
-                "price_open": open_price,
-                "price_now": current_price,
-                "volume_ratio": volume_ratio,
-                "price_change_pct": price_change_pct,
-                "gap_pct": gap_pct,
-                "current_volume": current_volume,
-                "avg_volume": avg_volume,
-                "previous_close": previous_close,
-            }
+                return {
+                    "ticker": ticker,
+                    "price_open": open_price,
+                    "price_now": current_price,
+                    "volume_ratio": volume_ratio,
+                    "price_change_pct": price_change_pct,
+                    "gap_pct": gap_pct,
+                    "current_volume": current_volume,
+                    "avg_volume": avg_volume,
+                    "previous_close": previous_close,
+                }
 
         except Exception as e:
             log_error(f"Error getting stock data for {ticker}: {e}")
