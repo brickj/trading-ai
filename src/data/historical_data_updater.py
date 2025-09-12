@@ -6,7 +6,6 @@ This module handles updating 2-year historical data for stocks and crypto
 to ensure Enhanced Analysis has fresh data for backtesting.
 """
 
-import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import pandas as pd
@@ -14,9 +13,10 @@ import time
 
 from ..core.config import Config
 from ..core.database import get_db_connection
+from ..core.logger import trading_logger
 from .data_fetcher import DataFetcher
 
-logger = logging.getLogger(__name__)
+logger = trading_logger
 
 
 class HistoricalDataUpdater:

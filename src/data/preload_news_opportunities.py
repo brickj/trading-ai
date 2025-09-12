@@ -1,12 +1,12 @@
-import logging
 from datetime import datetime
 from src.data.news_monitor import NewsMonitor
 from src.core.database import get_db_connection
 from psycopg2.extras import Json
+from src.core.logger import trading_logger
 
 NEWS_OPPORTUNITIES_TABLE = "preloaded_news_opportunities"
 
-logger = logging.getLogger(__name__)
+logger = trading_logger
 
 def ensure_news_opportunities_table():
     """

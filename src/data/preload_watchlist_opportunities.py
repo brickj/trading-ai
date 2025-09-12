@@ -8,7 +8,6 @@ to the database for fast retrieval. The opportunities are calculated early each
 trading day and stored for quick access.
 """
 
-import logging
 import sys
 import json
 import traceback
@@ -26,10 +25,11 @@ from src.core.batch_processor import (
     create_watchlist_tasks,
 )
 from psycopg2.extras import Json
+from src.core.logger import trading_logger
 
 WATCHLIST_OPPORTUNITIES_TABLE = "preloaded_watchlist_opportunities"
 
-logger = logging.getLogger(__name__)
+logger = trading_logger
 
 def ensure_watchlist_opportunities_table():
     """

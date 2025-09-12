@@ -17,15 +17,13 @@ Any changes here affect ALL trading recommendations across the entire
 application.
 """
 
-import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
 from contextlib import contextmanager
 import numpy as np
 import psycopg2.extras
 from src.core.database import get_db_connection
-
-logger = logging.getLogger(__name__)
+from .logger import trading_logger as logger
 
 
 def convert_numpy_values(value):

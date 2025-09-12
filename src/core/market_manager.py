@@ -1,13 +1,10 @@
 """
 Market Manager - Centralized management of foreign exchanges and markets
 """
-import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 from src.core.db_utils import execute_query
 from src.core.logger import log_info, log_error, log_debug
-
-logger = logging.getLogger(__name__)
 
 class MarketManager:
     """Manages foreign exchange and market information"""
