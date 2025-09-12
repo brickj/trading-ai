@@ -10,7 +10,7 @@ import psycopg2.extras
 
 # Import helper functions
 from ..helpers import create_api_response
-from ..utils import api_error_handler
+from ..utils import api_error_handler, handle_api_error
 
 # Import core modules
 from ...core.database import get_db_connection

@@ -5,8 +5,6 @@ Page routes for HTML template rendering
 from flask import Blueprint, render_template, request
 from datetime import datetime
 
-# Import helper functions
-from ..helpers import create_api_response, handle_api_error
 from ...core.database import get_db_connection
 
 # Create blueprint
