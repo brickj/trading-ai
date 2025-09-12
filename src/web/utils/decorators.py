@@ -24,29 +24,35 @@ def api_error_handler(operation_name: str = None):
         def wrapper(*args, **kwargs):
             start_time = time.time()
             op_name = operation_name or f"{func.__module__}.{func.__name__}"
-            
+            request_path = request.path if request else "unknown"
+
+            trading_logger.api_logger.info(
+                f"Handling request for {op_name} at {request_path}"
+            )
+
             try:
                 result = func(*args, **kwargs)
-                
+
                 # Log successful operations (optional performance tracking)
                 execution_time = time.time() - start_time
                 if execution_time > 1.0:  # Log slow operations
                     trading_logger.api_logger.warning(
-                        f"Slow operation {op_name}: {execution_time:.3f}s"
+                        f"Slow operation {op_name} at {request_path}: {execution_time:.3f}s"
                     )
-                
+
                 return result
-                
+
             except Exception as e:
                 execution_time = time.time() - start_time
                 trading_logger.error_logger.error(
-                    f"Error in {op_name} after {execution_time:.3f}s: {str(e)}"
+                    f"Error in {op_name} at {request_path} after {execution_time:.3f}s: {str(e)}"
                 )
-                log_exception(f"Error in {op_name}", e)
-                
+                log_exception(f"Error in {op_name} at {request_path}", e)
+
                 # Create error response directly to avoid circular import
                 from .formatters import format_error_response
                 response = format_error_response(str(e))
+                response["path"] = request_path
                 return jsonify(response), 500
         
         return wrapper
