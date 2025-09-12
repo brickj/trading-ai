@@ -228,11 +228,12 @@ function updateSentimentChart(cryptos) {
     const neutral = cryptos.filter(c => (c.sentiment_data?.sentiment_score || 0) === 0).length;
     
     // Destroy existing chart if it exists
-    if (window.sentimentChart) {
-        window.sentimentChart.destroy();
+    const existingChart = Chart.getChart('sentimentDistributionChart');
+    if (existingChart) {
+        existingChart.destroy();
     }
-    
-    window.sentimentChart = new Chart(ctx, {
+
+    new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Positive', 'Negative', 'Neutral'],
@@ -265,11 +266,12 @@ function updateSignalChart(cryptos) {
     const holdSignals = cryptos.filter(c => c.signal_data?.action === 'HOLD').length;
     
     // Destroy existing chart if it exists
-    if (window.signalChart) {
-        window.signalChart.destroy();
+    const existingChart = Chart.getChart('signalChart');
+    if (existingChart) {
+        existingChart.destroy();
     }
-    
-    window.signalChart = new Chart(ctx, {
+
+    new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['BUY', 'SELL', 'HOLD'],
