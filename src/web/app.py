@@ -27,7 +27,8 @@ from src.trading.trading_strategy import TradingStrategy
 from src.core.market_manager import MarketManager
 from src.core.watchlist_manager import watchlist_manager
 # Import helper functions
-from .helpers import create_api_response, handle_api_error
+from .helpers import create_api_response
+from .utils import handle_api_error
 # Import and register route blueprints
 from .routes import register_routes
 

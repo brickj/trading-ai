@@ -2,9 +2,12 @@
 Utilities module for common functionality
 """
 
+from .error_handler import (
+    api_error_handler,
+    handle_api_error
+)
 from .decorators import (
-    api_error_handler, 
-    cache_response, 
+    cache_response,
     validate_request,
     timing_decorator,
     log_request
@@ -28,7 +31,8 @@ from .formatters import (
 __all__ = [
     # Decorators
     'api_error_handler',
-    'cache_response', 
+    'handle_api_error',
+    'cache_response',
     'validate_request',
     'timing_decorator',
     'log_request',

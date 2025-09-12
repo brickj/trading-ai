@@ -2,7 +2,8 @@ from flask import Blueprint, request
 from datetime import datetime
 import json
 
-from ..helpers import create_api_response, handle_api_error
+from ..helpers import create_api_response
+from ..utils import handle_api_error
 from ..utils.page_logger import page_logger
 
 logging_bp = Blueprint("logging", __name__)

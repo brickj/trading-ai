@@ -8,55 +8,8 @@ from datetime import datetime
 from typing import Callable, Any, Dict, Optional
 from flask import request, jsonify
 
-from ...core.logger import trading_logger, log_exception
+from ...core.logger import trading_logger
 from ...core.cache import get_cached_result, cache_result
-
-
-def api_error_handler(operation_name: str = None):
-    """
-    Optimized decorator for consistent API error handling with performance tracking
-    
-    Args:
-        operation_name: Optional operation name for logging
-    """
-    def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            start_time = time.time()
-            op_name = operation_name or f"{func.__module__}.{func.__name__}"
-            request_path = request.path if request else "unknown"
-
-            trading_logger.api_logger.info(
-                f"Handling request for {op_name} at {request_path}"
-            )
-
-            try:
-                result = func(*args, **kwargs)
-
-                # Log successful operations (optional performance tracking)
-                execution_time = time.time() - start_time
-                if execution_time > 1.0:  # Log slow operations
-                    trading_logger.api_logger.warning(
-                        f"Slow operation {op_name} at {request_path}: {execution_time:.3f}s"
-                    )
-
-                return result
-
-            except Exception as e:
-                execution_time = time.time() - start_time
-                trading_logger.error_logger.error(
-                    f"Error in {op_name} at {request_path} after {execution_time:.3f}s: {str(e)}"
-                )
-                log_exception(f"Error in {op_name} at {request_path}", e)
-
-                # Create error response directly to avoid circular import
-                from .formatters import format_error_response
-                response = format_error_response(str(e))
-                response["path"] = request_path
-                return jsonify(response), 500
-        
-        return wrapper
-    return decorator
 
 
 def cache_response(cache_key_prefix: str = None, timeout: int = 300, 

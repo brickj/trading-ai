@@ -7,10 +7,9 @@ from datetime import datetime
 
 # Import helper functions
 from ..helpers import (
-    create_api_response, 
-    handle_api_error, 
-    api_error_handler
+    create_api_response
 )
+from ..utils import handle_api_error
 
 # Import core modules
 from ...core.logger import trading_logger, log_exception
