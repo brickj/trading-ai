@@ -118,6 +118,121 @@ if ! check_auth; then
     setup_auth
 fi
 
+# Function to sync with remote repository
+sync_with_remote() {
+    print_status "Syncing local repository with GitHub..."
+    
+    # Fetch latest changes from remote
+    print_status "Fetching latest changes from GitHub..."
+    git fetch origin
+    
+    if [ $? -ne 0 ]; then
+        print_error "Failed to fetch from remote repository"
+        return 1
+    fi
+    
+    # Check if local branch is behind remote
+    LOCAL=$(git rev-parse HEAD)
+    REMOTE=$(git rev-parse origin/main)
+    
+    if [ "$LOCAL" = "$REMOTE" ]; then
+        print_success "Local repository is up to date with GitHub"
+        return 0
+    fi
+    
+    # Check if local is behind remote
+    if git merge-base --is-ancestor "$LOCAL" "$REMOTE"; then
+        print_warning "Local repository is behind GitHub. Pulling latest changes..."
+        git pull origin main
+        
+        if [ $? -eq 0 ]; then
+            print_success "Successfully pulled latest changes from GitHub"
+            return 0
+        else
+            print_error "Failed to pull changes from GitHub"
+            return 1
+        fi
+    fi
+    
+    # Check if local is ahead of remote
+    if git merge-base --is-ancestor "$REMOTE" "$LOCAL"; then
+        print_warning "Local repository is ahead of GitHub. This is normal for new commits."
+        return 0
+    fi
+    
+    # Check if branches have diverged
+    print_warning "Local and remote branches have diverged"
+    print_status "Local commits: $(git rev-list --count origin/main..HEAD)"
+    print_status "Remote commits: $(git rev-list --count HEAD..origin/main)"
+    
+    echo ""
+    echo "You have several options:"
+    echo "1. Merge remote changes (recommended)"
+    echo "2. Rebase local changes on top of remote"
+    echo "3. Force push (DANGEROUS - will overwrite remote changes)"
+    echo "4. Abort and resolve manually"
+    echo ""
+    
+    read -p "Choose an option (1/2/3/4): " sync_option
+    
+    case $sync_option in
+        1)
+            print_status "Merging remote changes..."
+            git merge origin/main
+            if [ $? -eq 0 ]; then
+                print_success "Successfully merged remote changes"
+                return 0
+            else
+                print_error "Merge failed. Please resolve conflicts manually"
+                return 1
+            fi
+            ;;
+        2)
+            print_status "Rebasing local changes on top of remote..."
+            git rebase origin/main
+            if [ $? -eq 0 ]; then
+                print_success "Successfully rebased local changes"
+                return 0
+            else
+                print_error "Rebase failed. Please resolve conflicts manually"
+                return 1
+            fi
+            ;;
+        3)
+            print_warning "Force pushing local changes (this will overwrite remote changes)"
+            read -p "Are you sure? This action cannot be undone (y/N): " confirm
+            if [[ $confirm =~ ^[Yy]$ ]]; then
+                git push --force origin main
+                if [ $? -eq 0 ]; then
+                    print_success "Force push completed"
+                    return 0
+                else
+                    print_error "Force push failed"
+                    return 1
+                fi
+            else
+                print_status "Force push cancelled"
+                return 1
+            fi
+            ;;
+        4)
+            print_status "Sync aborted. Please resolve conflicts manually"
+            return 1
+            ;;
+        *)
+            print_error "Invalid option"
+            return 1
+            ;;
+    esac
+}
+
+# Sync with remote repository
+if ! sync_with_remote; then
+    print_error "Failed to sync with remote repository"
+    print_error "Please resolve any conflicts and try again"
+    exit 1
+fi
+
 # Check if there are any changes to commit
 if git diff-index --quiet HEAD --; then
     print_warning "No changes to commit. Working directory is clean."
