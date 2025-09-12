@@ -146,32 +146,41 @@ def format_api_response(data: Any = None, message: str = "Success",
 
 
 def format_error_response(error: Union[str, Exception], error_code: str = None,
-                         details: Dict = None) -> Dict:
+                         details: Dict = None, path: Optional[str] = None,
+                         method: Optional[str] = None) -> Dict:
     """
     Optimized error response formatter
-    
+
     Args:
         error: Error message or exception
         error_code: Optional error code
         details: Additional error details
-        
+        path: Optional request path where the error occurred
+        method: Optional HTTP method of the request
+
     Returns:
         Formatted error response dictionary
     """
     error_message = str(error)
-    
+
     response = {
         "status": "error",
         "error": error_message,
         "timestamp": datetime.now().isoformat()
     }
-    
+
     if error_code:
         response["error_code"] = error_code
-    
+
     if details:
         response["details"] = details
-    
+
+    if path:
+        response["path"] = path
+
+    if method:
+        response["method"] = method
+
     return response
 
 
