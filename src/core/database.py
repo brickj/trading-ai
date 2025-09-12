@@ -11,7 +11,8 @@ from .config import Config
 from typing import Dict, Any, Optional
 import json
 import numpy as np
-from .logger import trading_logger as logger
+# Lazy import to avoid circular dependency
+# from .logger import trading_logger as logger
 
 
 def convert_numpy_values(value):
@@ -65,6 +66,7 @@ def get_db_connection():
 
         yield conn
     except psycopg2.Error as e:
+        from .logger import trading_logger as logger
         logger.error(f"Database connection error: {e}")
         if conn:
             conn.rollback()
@@ -104,6 +106,7 @@ def get_db_connection_silent():
 
         yield conn
     except psycopg2.Error as e:
+        from .logger import trading_logger as logger
         logger.error(f"Database connection error: {e}")
         if conn:
             conn.rollback()
@@ -127,6 +130,7 @@ def check_database_connection():
                 cur.execute("SELECT 1")
                 return True
     except Exception as e:
+        from .logger import trading_logger as logger
         logger.error(f"Database connection check failed: {e}")
         return False
 
@@ -164,6 +168,7 @@ def execute_query(query, params=None, fetch_all=True):
                 else:
                     return cur.fetchone()
     except Exception as e:
+        from .logger import trading_logger as logger
         logger.error(f"Query execution error: {e}")
         raise
 
@@ -243,6 +248,7 @@ def get_database_stats() -> Dict[str, Any]:
 
             return stats
     except Exception as e:
+        from .logger import trading_logger as logger
         logger.error(f"Error getting database stats: {str(e)}")
         stats["error"] = str(e)
         return stats
@@ -273,6 +279,7 @@ def get_system_flag(flag_name: str) -> Optional[str]:
                     )
                 return None
     except Exception as e:
+        from .logger import trading_logger as logger
         logger.error(f"Error getting system flag '{flag_name}': {e}")
         return None
 
@@ -295,6 +302,7 @@ def set_system_flag(flag_name: str, flag_value: str, description: Optional[str] 
                 )
                 conn.commit()
     except Exception as e:
+        from .logger import trading_logger as logger
         logger.error(f"Error setting system flag '{flag_name}': {e}")
 
 

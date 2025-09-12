@@ -19,6 +19,7 @@ class DatabaseHandler(logging.Handler):
     def _ensure_logs_table(self):
         """Ensure the logs table exists"""
         try:
+            # Lazy import to avoid circular dependency
             from src.core.database import get_db_connection
 
             with get_db_connection() as conn:
@@ -48,6 +49,7 @@ class DatabaseHandler(logging.Handler):
     def emit(self, record):
         """Emit a log record to the database"""
         try:
+            # Lazy import to avoid circular dependency
             from src.core.database import get_db_connection
 
             # Extract information from the log record
