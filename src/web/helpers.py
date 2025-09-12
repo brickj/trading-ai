@@ -15,12 +15,26 @@ from .repositories import market_data_repo
 from ..core.logger import log_exception
 
 
-def create_api_response(data=None, success=True, message="", error_code=None, error=None, status_code=200):
+def create_api_response(data=None, success=True, message="", error_code=None,
+                        error=None, status_code=200, path: str = None,
+                        method: str = None):
     """Create standardized API response using optimized formatter"""
     if error or not success:
-        response = format_error_response(error or "Operation failed", error_code=error_code)
+        if path is None or method is None:
+            try:
+                path = path or request.path
+                method = method or request.method
+            except RuntimeError:
+                # Request context may not be available
+                pass
+        response = format_error_response(
+            error or "Operation failed",
+            error_code=error_code,
+            path=path,
+            method=method
+        )
         return jsonify(response), status_code
-    
+
     response = format_api_response(data, message)
     return jsonify(response), status_code
 
@@ -31,7 +45,9 @@ def handle_api_error(e, context="API operation"):
     return create_api_response(
         success=False,
         error=str(e),
-        status_code=500
+        status_code=500,
+        path=request.path,
+        method=request.method
     )
 
 
