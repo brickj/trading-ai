@@ -165,7 +165,11 @@ class ScalpingAnalyzer:
             data = response.json()
 
             if "Global Quote" not in data or not data["Global Quote"]:
-                return {"error": f"No data available for {ticker}"}
+                # Check if this is a foreign stock that we can't get data for
+                if ticker.endswith(('.HK', '.T', '.L', '.DE', '.TO', '.MX')):
+                    return {"error": f"Foreign stock {ticker} - no price data available"}
+                else:
+                    return {"error": f"No data available for {ticker}"}
 
             quote = data["Global Quote"]
 
@@ -497,7 +501,11 @@ class ScalpingAnalyzer:
                 # Step 2: Get market data
                 market_data = self.get_market_data(ticker, asset_type)
                 if "error" in market_data:
-                    log_warning(f"Skipping {ticker}: {market_data['error']}")
+                    # Check if this is a foreign stock that we can't get data for
+                    if "Foreign stock" in market_data['error']:
+                        log_warning(f"Skipping {ticker}: {market_data['error']}")
+                    else:
+                        log_warning(f"Skipping {ticker}: {market_data['error']}")
                     continue
 
                 # Step 3: Get news and sentiment
