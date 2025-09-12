@@ -113,7 +113,7 @@ def preload_stock_data():
                             "type": "GAINER",
                             "price": float(gainer.get("price", 0)),
                             "change_amount": 0,
-                            "change_percent": float(gainer.get("change_percentage", 0)),
+                            "change_percent": float(gainer.get("change_percentage", "0").replace("%", "")),
                             "volume": int(gainer.get("volume", 0)),
                             "timestamp": datetime.now(),
                             "analysis_data": gainer
@@ -130,7 +130,7 @@ def preload_stock_data():
                             "type": "LOSER",
                             "price": float(loser.get("price", 0)),
                             "change_amount": 0,
-                            "change_percent": float(loser.get("change_percentage", 0)),
+                            "change_percent": float(loser.get("change_percentage", "0").replace("%", "")),
                             "volume": int(loser.get("volume", 0)),
                             "timestamp": datetime.now(),
                             "analysis_data": loser
