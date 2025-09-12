@@ -163,23 +163,9 @@ class ScalpingAnalyzer:
             if current_price <= 0:
                 return {"error": f"No valid price data for {ticker}"}
 
-            # For scalping analysis, we need additional data that yfinance fallback doesn't provide
-            # So we'll use simplified metrics for foreign stocks
-            if price_data.get("source") == "yfinance_fallback":
-                # For foreign stocks via yfinance, use simplified metrics
-                return {
-                    "ticker": ticker,
-                    "price_open": current_price,  # Use current price as open for simplicity
-                    "price_now": current_price,
-                    "volume_ratio": 1.0,  # Default ratio
-                    "price_change_pct": 0.0,  # Default change
-                    "gap_pct": 0.0,  # Default gap
-                    "current_volume": 0,  # Not available from yfinance fallback
-                    "avg_volume": 0,  # Not available from yfinance fallback
-                    "previous_close": current_price,  # Use current as previous
-                }
-            else:
-                # For US stocks via Alpha Vantage, use full data
+            # Check if we have full Alpha Vantage data (including foreign stocks via mapping)
+            if price_data.get("source") == "alpha_vantage":
+                # For Alpha Vantage data (US stocks and mapped foreign stocks), use full data
                 open_price = float(price_data.get("open", current_price))
                 previous_close = float(price_data.get("previous_close", open_price))
                 current_volume = int(price_data.get("volume", 0))
@@ -209,6 +195,19 @@ class ScalpingAnalyzer:
                     "current_volume": current_volume,
                     "avg_volume": avg_volume,
                     "previous_close": previous_close,
+                }
+            else:
+                # For yfinance fallback, use simplified metrics
+                return {
+                    "ticker": ticker,
+                    "price_open": current_price,  # Use current price as open for simplicity
+                    "price_now": current_price,
+                    "volume_ratio": 1.0,  # Default ratio
+                    "price_change_pct": 0.0,  # Default change
+                    "gap_pct": 0.0,  # Default gap
+                    "current_volume": 0,  # Not available from yfinance fallback
+                    "avg_volume": 0,  # Not available from yfinance fallback
+                    "previous_close": current_price,  # Use current as previous
                 }
 
         except Exception as e:

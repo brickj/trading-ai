@@ -30,6 +30,14 @@ class DataFetcher:
     def __init__(self):
         """Initialize the data fetcher"""
         self.session = requests.Session()
+        
+        # Mapping of foreign stock symbols to Alpha Vantage supported symbols
+        self.foreign_stock_mapping = {
+            '0005.HK': 'HSBC',      # HSBC Holdings (Hong Kong) -> HSBC ADR
+            '0700.HK': 'TCEHY',     # Tencent Holdings (Hong Kong) -> Tencent ADR
+            '6758.T': 'SNE',        # Sony Group (Japan) -> Sony ADR
+            '7203.T': 'TM',         # Toyota Motor (Japan) -> Toyota ADR
+        }
 
     def _make_request(self, url: str, params: Dict = None) -> Optional[Dict]:
         """
@@ -53,6 +61,16 @@ class DataFetcher:
             log_error("API request failed")
             return None
 
+    def _get_alpha_vantage_symbol(self, symbol: str) -> str:
+        """
+        Map foreign stock symbols to Alpha Vantage supported symbols
+        Args:
+            symbol: Original stock symbol
+        Returns:
+            Alpha Vantage compatible symbol
+        """
+        return self.foreign_stock_mapping.get(symbol, symbol)
+
     def get_stock_price(self, symbol: str) -> Dict[str, Any]:
         """
         Get current stock price from Alpha Vantage
@@ -66,10 +84,13 @@ class DataFetcher:
         if cached_data:
             return cached_data
 
+        # Map foreign stock symbols to Alpha Vantage supported symbols
+        alpha_vantage_symbol = self._get_alpha_vantage_symbol(symbol)
+
         url = "https://www.alphavantage.co/query"
         params = {
             "function": "GLOBAL_QUOTE",
-            "symbol": symbol,
+            "symbol": alpha_vantage_symbol,
             "apikey": Config.ALPHA_VANTAGE_API_KEY,
         }
 
@@ -114,12 +135,14 @@ class DataFetcher:
                 }
 
             result = {
-                "symbol": symbol,
+                "symbol": symbol,  # Use original symbol, not mapped symbol
                 "current_price": current_price,
                 "change": float(quote.get("09. change", 0)),
                 "change_percent": quote.get("10. change percent", "0%"),
                 "volume": int(quote.get("06. volume", 0)),
                 "timestamp": datetime.now().isoformat(),
+                "source": "alpha_vantage",
+                "mapped_symbol": alpha_vantage_symbol if alpha_vantage_symbol != symbol else None,
             }
             cache.set(cache_key, result, ttl=300)  # Cache for 5 minutes
             return result
