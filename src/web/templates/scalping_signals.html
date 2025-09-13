@@ -2,11 +2,15 @@
 
 {% block title %}Scalping Signals - Trading AI{% endblock %}
 
+{% block layout_container %}
+<div class="container-fluid" id="scalpingSignalsContainer">
+    {{ self.content() }}
+</div>
+{% endblock %}
+
 {% block content %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/scalping_signals.css') }}">
-</head>
-<body>
-    <div class="container-fluid" id="scalpingSignalsContainer">
+    
         <!-- Header -->
         <div class="row bg-primary text-white p-3 mb-4">
             <div class="col">
@@ -216,12 +220,11 @@
         <div class="row" id="noDataMessage" style="display: none;">
             <div class="col text-center">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No scalping opportunities found. 
+                    <i class="fas fa-info-circle"></i> No scalping opportunities found.
                     Click "Run Analysis" to scan for new opportunities.
                 </div>
             </div>
         </div>
-    </div>
 
     <!-- Floating Refresh Button -->
     <button class="btn btn-primary btn-lg refresh-btn" onclick="refreshData()" title="Refresh Data">
