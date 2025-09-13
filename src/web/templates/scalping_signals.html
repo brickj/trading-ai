@@ -127,8 +127,8 @@
             <!-- Modern Summary Pill -->
             <div id="stockSummaryPill"></div>
             <div id="cryptoSummaryPill"></div>
-            <!-- Modern Grid for Opportunities -->
-            <div class="modern-grid" id="opportunitiesGrid"></div>
+            <!-- Responsive Grid for Opportunities -->
+            <div id="opportunitiesGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
         </div>
 
         <!-- Signal Cards Section - Required for tests -->
@@ -441,8 +441,8 @@
                         <span class="pill-stat"><i class="fas fa-arrow-down text-danger"></i> <span>${shortOpportunities}</span> <span class="pill-label">Short</span></span>
                     </div>
                 `;
-                // Modern grid of cards
-                return group.map(opp => `<div class="modern-card-wrapper">${renderOpportunityCard(opp)}</div>`).join('');
+                // Modern grid of cards replaced by Bootstrap grid
+                return group.map(opp => renderOpportunityCard(opp)).join('');
             }
             function renderOpportunityCard(opp) {
                 // Asset badge
@@ -466,47 +466,49 @@
                         `</div>`;
                 }
                 return `
-                    <div class="modern-card">
-                        <div class="modern-card-header">
-                            <span class="fw-bold">${opp.ticker}</span>
-                            <span class="${badgeClass}"><i class="fas ${badgeIcon}"></i>${opp.asset_type}</span>
-                        </div>
-                        <div class="modern-card-body">
-                            <div class="modern-card-row">
-                                <span class="label">Price Open</span>
-                                <span class="value">$${opp.price_open?.toFixed(2) || 'N/A'}</span>
+                    <div class="col">
+                        <div class="modern-card">
+                            <div class="modern-card-header">
+                                <span class="fw-bold">${opp.ticker}</span>
+                                <span class="${badgeClass}"><i class="fas ${badgeIcon}"></i>${opp.asset_type}</span>
                             </div>
-                            <div class="modern-card-row">
-                                <span class="label">Current Price</span>
-                                <span class="value">$${opp.price_now?.toFixed(2) || 'N/A'}</span>
+                            <div class="modern-card-body">
+                                <div class="modern-card-row">
+                                    <span class="label">Price Open</span>
+                                    <span class="value">$${opp.price_open?.toFixed(2) || 'N/A'}</span>
+                                </div>
+                                <div class="modern-card-row">
+                                    <span class="label">Current Price</span>
+                                    <span class="value">$${opp.price_now?.toFixed(2) || 'N/A'}</span>
+                                </div>
+                                <div class="modern-card-row">
+                                    <span class="label">Volume Ratio</span>
+                                    <span class="value ${opp.volume_ratio >= 2 ? 'positive' : 'neutral'}">${opp.volume_ratio?.toFixed(2) || 'N/A'}x</span>
+                                </div>
+                                <div class="modern-card-row">
+                                    <span class="label">Price Change</span>
+                                    <span class="value ${opp.price_change_pct > 0 ? 'positive' : opp.price_change_pct < 0 ? 'negative' : 'neutral'}">${opp.price_change_pct?.toFixed(2) || 'N/A'}%</span>
+                                </div>
+                                <div class="modern-card-row">
+                                    <span class="label">Sentiment</span>
+                                    <span class="sentiment"><i class="fas ${sentimentIcon}"></i>${opp.sentiment || 'Neutral'}</span>
+                                </div>
+                                <div class="modern-card-row">
+                                    <span class="label">Recommendation</span>
+                                    <span class="${recClass}">${opp.recommendation || 'No Strong Edge'}</span>
+                                </div>
+                                ${headlinesHtml}
                             </div>
-                            <div class="modern-card-row">
-                                <span class="label">Volume Ratio</span>
-                                <span class="value ${opp.volume_ratio >= 2 ? 'positive' : 'neutral'}">${opp.volume_ratio?.toFixed(2) || 'N/A'}x</span>
+                            <div class="modern-card-footer">
+                                <button title="View Details" onclick="viewDetails('${opp.ticker}')"><i class="fas fa-eye"></i></button>
+                                <button title="Add to Watchlist" onclick="addToWatchlist('${opp.ticker}')"><i class="fas fa-plus"></i></button>
+                                <button title="Set Alert" onclick="setAlert('${opp.ticker}')"><i class="fas fa-bell"></i></button>
                             </div>
-                            <div class="modern-card-row">
-                                <span class="label">Price Change</span>
-                                <span class="value ${opp.price_change_pct > 0 ? 'positive' : opp.price_change_pct < 0 ? 'negative' : 'neutral'}">${opp.price_change_pct?.toFixed(2) || 'N/A'}%</span>
-                            </div>
-                            <div class="modern-card-row">
-                                <span class="label">Sentiment</span>
-                                <span class="sentiment"><i class="fas ${sentimentIcon}"></i>${opp.sentiment || 'Neutral'}</span>
-                            </div>
-                            <div class="modern-card-row">
-                                <span class="label">Recommendation</span>
-                                <span class="${recClass}">${opp.recommendation || 'No Strong Edge'}</span>
-                            </div>
-                            ${headlinesHtml}
-                        </div>
-                        <div class="modern-card-footer">
-                            <button title="View Details" onclick="viewDetails('${opp.ticker}')"><i class="fas fa-eye"></i></button>
-                            <button title="Add to Watchlist" onclick="addToWatchlist('${opp.ticker}')"><i class="fas fa-plus"></i></button>
-                            <button title="Set Alert" onclick="setAlert('${opp.ticker}')"><i class="fas fa-bell"></i></button>
                         </div>
                     </div>
                 `;
             }
-            // --- Render both groups in the modern grid ---
+            // --- Render both groups in the opportunities grid ---
             function renderAllOpportunities(stocks, cryptos) {
                 const grid = document.getElementById('opportunitiesGrid');
                 grid.innerHTML =
