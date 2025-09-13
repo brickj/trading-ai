@@ -20,8 +20,8 @@
         </div>
 
         <!-- Stats Cards -->
-        <div class="row mb-4" id="statsCards">
-            <div class="col-md-3">
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-4" id="statsCards">
+            <div class="col">
                 <div class="card stats-card">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-signal"></i> Total Signals</h5>
@@ -29,7 +29,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <div class="card stats-card">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-rocket"></i> Opportunities</h5>
@@ -37,7 +37,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <div class="card stats-card">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-chart-bar"></i> Stocks</h5>
@@ -45,7 +45,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col">
                 <div class="card stats-card">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-coins"></i> Cryptos</h5>
@@ -58,25 +58,37 @@
         <!-- Controls -->
         <div class="row mb-4">
             <div class="col-md-6">
-                <div class="filter-buttons">
-                    <button class="btn btn-outline-primary filter-btn active" data-filter="all">
-                        <i class="fas fa-list"></i> All
-                    </button>
-                    <button class="btn btn-outline-success filter-btn" data-filter="long">
-                        <i class="fas fa-arrow-up"></i> Long Opportunities
-                    </button>
-                    <button class="btn btn-outline-danger filter-btn" data-filter="short">
-                        <i class="fas fa-arrow-down"></i> Short Opportunities
-                    </button>
-                    <button class="btn btn-outline-warning filter-btn" data-filter="momentum">
-                        <i class="fas fa-fire"></i> High Momentum
-                    </button>
-                    <button class="btn btn-outline-info filter-btn" data-filter="stocks">
-                        <i class="fas fa-chart-bar"></i> Stocks Only
-                    </button>
-                    <button class="btn btn-outline-secondary filter-btn" data-filter="crypto">
-                        <i class="fas fa-coins"></i> Crypto Only
-                    </button>
+                <div class="btn-toolbar flex-wrap filter-buttons" role="toolbar">
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-primary filter-btn active" data-filter="all">
+                            <i class="fas fa-list"></i> All
+                        </button>
+                    </div>
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-success filter-btn" data-filter="long">
+                            <i class="fas fa-arrow-up"></i> Long Opportunities
+                        </button>
+                    </div>
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-danger filter-btn" data-filter="short">
+                            <i class="fas fa-arrow-down"></i> Short Opportunities
+                        </button>
+                    </div>
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-warning filter-btn" data-filter="momentum">
+                            <i class="fas fa-fire"></i> High Momentum
+                        </button>
+                    </div>
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-info filter-btn" data-filter="stocks">
+                            <i class="fas fa-chart-bar"></i> Stocks Only
+                        </button>
+                    </div>
+                    <div class="btn-group me-2 mb-2" role="group">
+                        <button class="btn btn-outline-secondary filter-btn" data-filter="crypto">
+                            <i class="fas fa-coins"></i> Crypto Only
+                        </button>
+                    </div>
                 </div>
             </div>
             <div class="col-md-6 text-end">
