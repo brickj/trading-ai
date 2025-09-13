@@ -246,24 +246,3 @@
     background: #e0eaf6;
     color: #1a5fd7;
 }
-.modern-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2rem;
-    justify-content: center;
-}
-.modern-grid .modern-card-wrapper {
-    flex: 1 1 320px;
-    max-width: 350px;
-    min-width: 300px;
-    display: flex;
-}
-@media (max-width: 900px) {
-    .modern-grid {
-        gap: 1.2rem;
-    }
-    .modern-card-wrapper {
-        min-width: 90vw;
-        max-width: 98vw;
-    }
-}
