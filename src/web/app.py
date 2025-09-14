@@ -6,7 +6,7 @@ import threading
 import logging
 import psutil
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -37,7 +37,7 @@ def create_api_response(data=None, success=True, error=None, status_code=200):
         status_code,
     )
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 CORS(
     app,
     origins="*",
@@ -303,6 +303,12 @@ def get_preloaded_data():
             error=str(e),
             success=False,
         )
+
+
+@app.route("/scalping_signals")
+def scalping_signals():
+    """Render the scalping signals page."""
+    return render_template("scalping_signals.html")
 
 
 def create_app(port: int = 5001):
