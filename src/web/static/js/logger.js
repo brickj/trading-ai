@@ -236,48 +236,43 @@ FrontendLogger.prototype = {
     }
 };
 
-// Create global logger instance
-var frontendLogger;
+// Create global logger instance immediately
+try {
+    // Create logger and expose globally
+    window.frontendLogger = new FrontendLogger();
+    var frontendLogger = window.frontendLogger;
 
-// Initialize logger when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Create logger instance
-        frontendLogger = new FrontendLogger();
-        
-        // Make it available globally
-        window.frontendLogger = frontendLogger;
-        
-        // Log that logger is initialized
-        frontendLogger.info('Logger initialized', 'system');
-        
-        // Log page load event
+    // Log that logger is initialized
+    frontendLogger.info('Logger initialized', 'system');
+
+    // Log DOM ready event
+    document.addEventListener('DOMContentLoaded', function() {
         frontendLogger.info('DOM Content Loaded', 'system');
-        
-        // Set up window load event
-        window.addEventListener('load', function() {
-            frontendLogger.info('Page fully loaded', 'system');
-        });
-        
-        // Set up beforeunload event
-        window.addEventListener('beforeunload', function() {
-            frontendLogger.info('Page unloading', 'system');
-        });
-        
-        // Set up visibility change events
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                frontendLogger.info('Page hidden', 'system');
-            } else {
-                frontendLogger.info('Page visible', 'system');
-            }
-        });
-        
-    } catch (e) {
-        // Fallback error handling if logger fails to initialize
-        console.error('Failed to initialize logger:', e);
-    }
-});
+    });
+
+    // Set up window load event
+    window.addEventListener('load', function() {
+        frontendLogger.info('Page fully loaded', 'system');
+    });
+
+    // Set up beforeunload event
+    window.addEventListener('beforeunload', function() {
+        frontendLogger.info('Page unloading', 'system');
+    });
+
+    // Set up visibility change events
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            frontendLogger.info('Page hidden', 'system');
+        } else {
+            frontendLogger.info('Page visible', 'system');
+        }
+    });
+
+} catch (e) {
+    // Fallback error handling if logger fails to initialize
+    console.error('Failed to initialize logger:', e);
+}
 
 // Export for Node.js/CommonJS if needed
 if (typeof module !== 'undefined' && module.exports) {
