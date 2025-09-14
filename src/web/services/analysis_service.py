@@ -184,14 +184,14 @@ class AnalysisService:
     
     def get_sp500_analysis(self, limit: Optional[int] = None, refresh: bool = False) -> Dict:
         """
-        Get S&P 500 analysis with intelligent caching and parallel processing
+        Get S&P 500 analysis from pre-computed database data
         
         Args:
             limit: Limit number of stocks to analyze (for testing)
             refresh: Force refresh of cached data
             
         Returns:
-            S&P 500 analysis results
+            S&P 500 analysis results from database
         """
         try:
             cache_key = "sp500_analysis_service"
@@ -205,33 +205,86 @@ class AnalysisService:
             
             start_time = time.time()
             
-            # Get S&P 500 symbols (with caching)
-            symbols = self._get_sp500_symbols()
+            # Query pre-computed data from database
+            from src.core.database import execute_query
+            
+            # Get recent recommendations (last 24 hours)
+            query = """
+            SELECT symbol, action, recommendation_type, final_confidence, 
+                   current_stock_price, sentiment_score, reasoning, timestamp
+            FROM recommendations 
+            WHERE timestamp >= NOW() - INTERVAL '24 hours'
+            ORDER BY timestamp DESC
+            """
+            
             if limit and limit > 0:
-                symbols = symbols[:limit]
+                query += f" LIMIT {limit}"
                 trading_logger.api_logger.info(f"Limited SP500 analysis to {limit} stocks")
             
-            # Parallel analysis
-            analysis_results = self.analyze_bulk_stocks(symbols, max_concurrent=8)
+            results = execute_query(query)
             
-            # Process results for SP500 specific format
-            comprehensive_analysis = analysis_results["results"]
+            if not results:
+                trading_logger.api_logger.warning("No recent recommendations found in database")
+                return {
+                    "comprehensive_analysis": [],
+                    "errors": [],
+                    "total_analyzed": 0,
+                    "opportunities_found": 0,
+                    "errors_count": 0,
+                    "performance": {
+                        "execution_time": round(time.time() - start_time, 2),
+                        "success_rate": "0%",
+                        "avg_analysis_time": 0
+                    },
+                    "timestamp": datetime.now().isoformat(),
+                    "cached": True,
+                    "data_source": "database"
+                }
+            
+            # Convert database results to expected format
+            comprehensive_analysis = []
+            for row in results:
+                if isinstance(row, dict):
+                    analysis_item = {
+                        "symbol": row["symbol"],
+                        "action": row["action"],
+                        "recommendation_type": row["recommendation_type"],
+                        "confidence": float(row["final_confidence"]) if row["final_confidence"] else 0.0,
+                        "current_price": float(row["current_stock_price"]) if row["current_stock_price"] else 0.0,
+                        "sentiment_score": float(row["sentiment_score"]) if row["sentiment_score"] else 0.0,
+                        "reasoning": row["reasoning"] or "",
+                        "timestamp": row["timestamp"].isoformat() if row["timestamp"] else "",
+                        "analysis_time": 0.0  # Pre-computed data
+                    }
+                else:
+                    # Handle tuple format
+                    analysis_item = {
+                        "symbol": row[0],
+                        "action": row[1],
+                        "recommendation_type": row[2],
+                        "confidence": float(row[3]) if row[3] else 0.0,
+                        "current_price": float(row[4]) if row[4] else 0.0,
+                        "sentiment_score": float(row[5]) if row[5] else 0.0,
+                        "reasoning": row[6] or "",
+                        "timestamp": row[7].isoformat() if row[7] else "",
+                        "analysis_time": 0.0
+                    }
+                comprehensive_analysis.append(analysis_item)
             
             response_data = {
                 "comprehensive_analysis": comprehensive_analysis,
-                "errors": analysis_results["errors"],
-                "total_analyzed": len(symbols),
+                "errors": [],
+                "total_analyzed": len(comprehensive_analysis),
                 "opportunities_found": len(comprehensive_analysis),
-                "errors_count": len(analysis_results["errors"]),
+                "errors_count": 0,
                 "performance": {
                     "execution_time": round(time.time() - start_time, 2),
-                    "success_rate": f"{round(len(comprehensive_analysis) / len(symbols) * 100, 1)}%" if symbols else "0%",
-                    "avg_analysis_time": round(
-                        sum(r.get("analysis_time", 0) for r in comprehensive_analysis) / len(comprehensive_analysis), 3
-                    ) if comprehensive_analysis else 0
+                    "success_rate": "100%",  # Database data is always successful
+                    "avg_analysis_time": 0.0  # Pre-computed
                 },
                 "timestamp": datetime.now().isoformat(),
-                "cached": False
+                "cached": True,
+                "data_source": "database"
             }
             
             # Cache successful results

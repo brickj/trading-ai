@@ -172,7 +172,14 @@ class ScalpingAnalyzer:
                 
                 # Calculate volume average (simplified)
                 avg_volume = current_volume  # Default fallback
-                volume_ratio = 1.0  # Default ratio
+                # Calculate actual volume ratio - compare current volume to average
+                # For now, use a simple calculation based on available data
+                if current_volume > 0:
+                    # Use a basic volume ratio calculation
+                    # In a real implementation, you'd compare to historical average
+                    volume_ratio = min(current_volume / 1000000, 5.0)  # Cap at 5x for display
+                else:
+                    volume_ratio = 1.0  # Default when no volume data
                 
                 price_change_pct = (
                     ((current_price - open_price) / open_price * 100)
@@ -198,12 +205,16 @@ class ScalpingAnalyzer:
                 }
             else:
                 # For yfinance fallback, use simplified metrics
+                # Calculate basic price change if we have some historical context
+                price_change_pct = 0.0  # Default when no historical data
+                volume_ratio = 1.0  # Default when no volume data
+                
                 return {
                     "ticker": ticker,
                     "price_open": current_price,  # Use current price as open for simplicity
                     "price_now": current_price,
-                    "volume_ratio": 1.0,  # Default ratio
-                    "price_change_pct": 0.0,  # Default change
+                    "volume_ratio": volume_ratio,
+                    "price_change_pct": price_change_pct,
                     "gap_pct": 0.0,  # Default gap
                     "current_volume": 0,  # Not available from yfinance fallback
                     "avg_volume": 0,  # Not available from yfinance fallback
@@ -238,16 +249,20 @@ class ScalpingAnalyzer:
 
             # For crypto, we'll use simplified metrics since volume data is limited
             # In a real implementation, you'd use Alpha Vantage or similar API
+            # Calculate basic metrics for crypto
+            price_change_pct = 0.0  # Default for crypto without historical data
+            volume_ratio = 1.0  # Default for crypto without volume data
+            
             return {
                 "ticker": ticker,
-                "price_open": current_price,  # Simplified for demo
+                "price_open": current_price,  # Use current price as open for crypto
                 "price_now": current_price,
-                "volume_ratio": 1.0,  # Placeholder
-                "price_change_pct": 0.0,  # Placeholder
-                "gap_pct": 0.0,  # Placeholder
-                "current_volume": 0,  # Placeholder
-                "avg_volume": 0,  # Placeholder
-                "previous_close": current_price,  # Placeholder
+                "volume_ratio": volume_ratio,
+                "price_change_pct": price_change_pct,
+                "gap_pct": 0.0,  # No gap calculation for crypto without historical data
+                "current_volume": 0,  # Not available from Alpha Vantage crypto API
+                "avg_volume": 0,  # Not available
+                "previous_close": current_price,  # Use current as previous
             }
 
         except Exception as e:

@@ -59,10 +59,18 @@ def analyze_stock():
     result = analysis_service.analyze_single_stock(symbol, use_cache=True)
 
     if "error" in result:
-        return create_api_response(
-            error=result["error"],
-            status_code=500
-        )
+        # Check if it's a data fetching error (invalid symbol) vs server error
+        error_msg = result["error"].lower()
+        if any(keyword in error_msg for keyword in ["no data found", "delisted", "invalid", "not found", "404", "may be delisted"]):
+            return create_api_response(
+                error=f"Invalid symbol '{symbol}': {result['error']}",
+                status_code=400
+            )
+        else:
+            return create_api_response(
+                error=result["error"],
+                status_code=500
+            )
 
     return create_api_response(
         data=result,

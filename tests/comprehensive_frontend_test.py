@@ -980,9 +980,16 @@ class ComprehensiveFrontendTest(unittest.TestCase):
         response = self.session.get(f"{self.base_url}/api/system_status")
         if response.status_code == 200:
             data = response.json()
-            required_fields = ["status", "timestamp", "system", "database", "cache", "config"]
-            for field in required_fields:
+            # Check top-level fields
+            top_level_fields = ["status", "timestamp", "success", "message"]
+            for field in top_level_fields:
                 self.assertIn(field, data, f"System status should have {field} field")
+            
+            # Check data-level fields
+            if "data" in data:
+                data_fields = ["system", "database", "cache", "config", "api_status", "historical_data", "job_schedules"]
+                for field in data_fields:
+                    self.assertIn(field, data["data"], f"System status data should have {field} field")
         
         print("✅ Data validation and integrity test passed")
     
