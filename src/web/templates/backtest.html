@@ -1,0 +1,1695 @@
+{% extends "base.html" %}
+
+{% block title %}Backtest - Options Trading AI{% endblock %}
+
+{% block content %}
+<!-- DEBUG BANNER -->
+<div id="debugBanner" style="background: #ffeb3b; color: #222; padding: 10px; font-size: 1.2em; text-align: center; border-bottom: 2px solid #f44336;">
+    <b>DEBUG MODE:</b> Backtest page loaded at <span id="debugTimestamp">loading...</span>.<br>
+    If you see this banner, you have the latest template. Open the browser console for debug logs.
+</div>
+
+<script>
+    // Show timestamp in debug banner
+    document.addEventListener('DOMContentLoaded', function() {
+        var ts = new Date().toLocaleString();
+        var el = document.getElementById('debugTimestamp');
+        if (el) el.textContent = ts;
+        console.log('=== DEBUG: DOMContentLoaded fired, timestamp set ===');
+    });
+</script>
+
+<!-- Backtest Form - Required for tests -->
+<form id="backtestForm">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-history"></i> Strategy Backtesting
+            </h1>
+            <p class="lead">Test your sentiment-based options trading strategy on historical data</p>
+        </div>
+    </div>
+
+    <!-- Days Selector - Required for tests -->
+    <div id="daysSelector" class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog"></i> Backtest Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="symbol" class="form-label">Stock Symbol</label>
+                        <input type="text" class="form-control" id="symbol" name="symbol" placeholder="e.g., AAPL, TSLA, MSFT" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="daysBack" class="form-label">Backtest Period (Days)</label>
+                        <select class="form-select" id="daysBack" name="daysBack">
+                            <option value="7">7 Days</option>
+                            <option value="30" selected>30 Days</option>
+                            <option value="60">60 Days</option>
+                            <option value="90">90 Days</option>
+                            <option value="180">180 Days</option>
+                            <option value="{{ historical_lookback_days }}">{{ historical_lookback_days }} Days (2 Years)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="strategyType" class="form-label">Strategy Type</label>
+                        <select class="form-select" id="strategyType" name="strategyType">
+                            <option value="all" selected>All Strategies</option>
+                            <option value="stocks">Stocks Only</option>
+                            <option value="crypto">Crypto Only</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Run Historical Backtest
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="loadStatsBtn">
+                            <i class="fas fa-chart-bar"></i> Load Statistics
+                        </button>
+                    </div>
+                    
+                    <!-- Spinner: hidden by default -->
+                    <div id="backtestLoading" class="loading mt-3" style="display: none;">
+                        <div class="text-center">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading real historical data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Backtest Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>How Backtesting Works:</h6>
+                    <ol>
+                        <li>Fetches real historical recommendations from the database</li>
+                        <li>Analyzes actual sentiment scores from real news analysis</li>
+                        <li>Reviews real trading signals and actions taken</li>
+                        <li>Calculates performance based on actual outcomes</li>
+                        <li>Tracks real success rates and profitability</li>
+                    </ol>
+                    
+                    <div class="alert alert-success mt-3">
+                        <h6><i class="fas fa-check-circle"></i> Real Data Analysis:</h6>
+                        <ul class="mb-0">
+                            <li>Uses actual historical recommendations with real sentiment analysis</li>
+                            <li>Based on real news data from multiple sources (Finnhub, Reddit, Yahoo Finance)</li>
+                            <li>Shows actual trading outcomes and profitability</li>
+                            <li>Provides genuine performance metrics and statistics</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Historical Statistics Section -->
+<div class="row mt-4" id="statsSection" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Historical Performance Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h6>Total Recommendations</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="totalRecommendations">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white text-center">
+                                <h6>Success Rate</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="successRate">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white text-center">
+                                <h6>Avg Confidence</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="avgConfidence">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-white text-center">
+                                <h6>Profitable Trades</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="profitableTrades">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-chart-bar"></i> Action Breakdown</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="actionChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-trophy"></i> Top Performing Symbols</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Success Rate</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="topSymbolsTable">
+                                            <!-- Top symbols will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-list"></i> Recent Recommendations Sample</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Timestamp</th>
+                                                <th>Action</th>
+                                                <th>Confidence</th>
+                                                <th>Profitable</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="recommendationsTableBody">
+                                            <!-- Recommendations will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4" id="resultsSection" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Backtest Results</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h6>Initial Capital</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="initialCapital">$10,000</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white text-center">
+                                <h6>Final Capital</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="finalCapital">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white text-center">
+                                <h6>Total Return</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="totalReturn">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-white text-center">
+                                <h6>Win Rate</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <h4 id="winRate">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-chart-line"></i> Performance Chart</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="mainPerformanceChart" width="400" height="200" style="display: block !important; visibility: visible !important; border: 1px solid #ccc;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-info-circle"></i> Strategy Statistics</h6>
+                            </div>
+                            <div class="card-body" id="strategyStats">
+                                <p><strong>Total Trades:</strong> <span id="totalTrades">-</span></p>
+                                <p><strong>Winning Trades:</strong> <span id="winningTrades">-</span></p>
+                                <p><strong>Losing Trades:</strong> <span id="losingTrades">-</span></p>
+                                <p><strong>Average Trade:</strong> <span id="avgTrade">-</span></p>
+                                <p><strong>Best Trade:</strong> <span id="bestTrade">-</span></p>
+                                <p><strong>Worst Trade:</strong> <span id="worstTrade">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-list"></i> Recent Trades (Last 10)</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-sm">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Action</th>
+                                                <th>Entry Price</th>
+                                                <th>Strike Price</th>
+                                                <th>Option Price</th>
+                                                <th>Position Size</th>
+                                                <th>Cost</th>
+                                                <th>Exit Price</th>
+                                                <th>Profit/Loss</th>
+                                                <th>Sentiment</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tradesTableBody">
+                                            <!-- Trades will be populated here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-lightbulb"></i> Strategy Optimization Tips</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Improving Performance:</h6>
+                        <ul>
+                            <li>Adjust sentiment thresholds in config.py</li>
+                            <li>Modify position sizing rules</li>
+                            <li>Implement stop-loss mechanisms</li>
+                            <li>Consider different option expiry periods</li>
+                            <li>Add volatility-based position sizing</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Risk Management:</h6>
+                        <ul>
+                            <li>Never risk more than 2-5% per trade</li>
+                            <li>Diversify across multiple stocks</li>
+                            <li>Monitor correlation between positions</li>
+                            <li>Set maximum portfolio exposure limits</li>
+                            <li>Regular strategy performance reviews</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Results Section - Required for tests -->
+<div class="row mt-4" id="backtestResults" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Performance Summary</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-success" id="backtestTotalReturn">-</h4>
+                                    <small>Total Return</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-info" id="backtestWinRate">-</h4>
+                                    <small>Win Rate</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-warning" id="backtestTotalTrades">-</h4>
+                                    <small>Total Trades</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h4 class="text-primary" id="backtestAvgReturn">-</h4>
+                                    <small>Avg Return</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Win/Loss Distribution Chart -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6><i class="fas fa-chart-pie"></i> Win/Loss Distribution</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="winLossChart" width="400" height="200" style="display: block !important; visibility: visible !important; border: 1px solid #ccc;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add comprehensive error logging
+window.addEventListener('error', function(e) {
+    console.error('=== JAVASCRIPT ERROR ===');
+    console.error('Error:', e.error);
+    console.error('Message:', e.message);
+    console.error('Filename:', e.filename);
+    console.error('Line number:', e.lineno);
+    console.error('Column number:', e.colno);
+    console.error('Stack:', e.error ? e.error.stack : 'No stack available');
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+    console.error('=== UNHANDLED PROMISE REJECTION ===');
+    console.error('Reason:', e.reason);
+    console.error('Promise:', e.promise);
+});
+
+console.log('=== BACKTEST PAGE JAVASCRIPT LOADED ===');
+console.log('Document ready state:', document.readyState);
+console.log('Window loaded:', window.loaded);
+
+// Test if Chart.js is loaded
+if (typeof Chart !== 'undefined') {
+    console.log('✅ Chart.js is loaded successfully');
+} else {
+    console.error('❌ Chart.js is not loaded!');
+}
+
+// Add cache-busting headers to all fetch requests
+const originalFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+    // Add cache-busting headers
+    options.headers = {
+        ...options.headers,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    };
+    console.log('Making fetch request to:', url, 'with options:', options);
+    return originalFetch(url, options);
+};
+
+function showLoading(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'block';
+}
+function hideLoading(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+}
+// Performance chart instance
+let performanceChart = null;
+
+// Helper function to get sentiment class for styling
+function getSentimentClass(sentiment) {
+    const value = parseFloat(sentiment || 0);
+    if (value > 0.3) return 'text-success';
+    if (value < -0.3) return 'text-danger';
+    return 'text-warning';
+}
+
+// Helper function to format currency
+function formatCurrency(value) {
+    if (typeof value !== 'number' || isNaN(value)) {
+        return 'N/A';
+    }
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(value);
+}
+
+// Load saved results on page load
+async function loadSavedResults() {
+    const defaultSymbol = 'AAPL';
+    const defaultPeriod = 30; // Use 30 days for historical data
+    
+    // Always populate the form fields first, regardless of API call success
+    document.getElementById('symbol').value = defaultSymbol;
+    document.getElementById('daysBack').value = defaultPeriod;
+    document.getElementById('strategyType').value = 'all';
+    
+    showLoading('backtestLoading');
+    try {
+        const response = await fetch('/api/backtest/historical', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            },
+            body: JSON.stringify({ 
+                symbol: defaultSymbol,
+                days_back: defaultPeriod,
+                strategy_type: 'all'
+            })
+        });
+        const result = await response.json();
+        if (result.error) {
+            console.log('No historical data found:', result.error);
+            hideLoading('backtestLoading');
+            return;
+        }
+        // Extract data from the API response structure
+        const data = result.data || result;
+        
+        console.log('API response structure:', result);
+        console.log('Extracted data:', data);
+        console.log('Data keys:', Object.keys(data));
+        
+        // Display results regardless of data count - let the chart handle empty data
+        if (data) {
+            displayHistoricalBacktestResults(data);
+        } else {
+            console.log('No data available for display');
+            hideLoading('backtestLoading');
+        }
+    } catch (error) {
+        console.log('Error loading historical data:', error);
+        hideLoading('backtestLoading');
+    }
+}
+
+// Load saved results when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('=== DOM CONTENT LOADED ===');
+    console.log('Document ready state:', document.readyState);
+    
+    // Check if required elements exist
+    const requiredElements = [
+        'backtestForm', 'symbol', 'daysBack', 'strategyType', 
+        'backtestLoading', 'resultsSection', 'backtestResults',
+        'backtestTotalReturn', 'backtestWinRate', 'backtestTotalTrades', 'backtestAvgReturn'
+    ];
+    
+    console.log('Checking required elements:');
+    requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`- ${id}: ${element ? 'FOUND' : 'MISSING'}`);
+    });
+    
+    // Check if event listeners can be attached
+    const form = document.getElementById('backtestForm');
+    if (form) {
+        console.log('Form found, attaching event listener');
+        try {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('=== FORM SUBMITTED ===');
+                const runBtn = this.querySelector('button[type="submit"]');
+                const symbol = document.getElementById('symbol').value.toUpperCase();
+                const daysBack = parseInt(document.getElementById('daysBack').value);
+                const strategyType = document.getElementById('strategyType').value;
+                
+                console.log('Backtest parameters:', { symbol, daysBack, strategyType });
+                
+                if (!symbol) {
+                    showAlert('Please enter a stock symbol', 'warning');
+                    return;
+                }
+                
+                showLoading('backtestLoading');
+                document.getElementById('resultsSection').style.display = 'none';
+                document.getElementById('statsSection').style.display = 'none';
+                
+                // Disable the button
+                if (runBtn) runBtn.disabled = true;
+                
+                try {
+                    console.log('Making API call to /api/backtest/historical');
+                    const response = await fetch('/api/backtest/historical', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        },
+                        body: JSON.stringify({ 
+                            symbol: symbol,
+                            days_back: daysBack,
+                            strategy_type: strategyType
+                        })
+                    });
+                    
+                    console.log('=== API RESPONSE DEBUG ===');
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+                    const result = await response.json();
+                    console.log('Raw API response:', JSON.stringify(result, null, 2));
+                    console.log('Result type:', typeof result);
+                    console.log('Result keys:', Object.keys(result));
+                    
+                    if (result.error) {
+                        console.error('API returned error:', result.error);
+                        showAlert(result.error, 'danger');
+                        return;
+                    }
+                    
+                    // Extract data from the API response structure
+                    const data = result.data || result;
+                    console.log('=== DATA EXTRACTION DEBUG ===');
+                    console.log('Result.data exists:', !!result.data);
+                    console.log('Result.data type:', typeof result.data);
+                    console.log('Result.data keys:', result.data ? Object.keys(result.data) : 'N/A');
+                    console.log('Extracted data type:', typeof data);
+                    console.log('Extracted data keys:', Object.keys(data));
+                    console.log('Full extracted data:', JSON.stringify(data, null, 2));
+                    
+                    // Check if we have backtest results
+                    if (!data || (data.total_recommendations === 0 && !data.trades)) {
+                        console.log('No recommendations found');
+                        showAlert(data?.message || 'No historical recommendations found for the specified criteria', 'warning');
+                        return;
+                    }
+                    
+                    console.log('Calling displayHistoricalBacktestResults with data');
+                    displayHistoricalBacktestResults(data);
+                    
+                } catch (error) {
+                    console.error('Error in backtest API call:', error);
+                    showAlert('Error running historical backtest: ' + error.message, 'danger');
+                } finally {
+                    hideLoading('backtestLoading');
+                    if (runBtn) runBtn.disabled = false;
+                }
+            });
+            console.log('Event listener attached successfully');
+        } catch (error) {
+            console.error('Error attaching event listener:', error);
+        }
+    } else {
+        console.error('Form not found!');
+    }
+    
+    loadSavedResults();
+});
+
+// Load Statistics Button
+document.getElementById('loadStatsBtn').addEventListener('click', async function() {
+    const symbol = document.getElementById('symbol').value.toUpperCase();
+    const daysBack = parseInt(document.getElementById('daysBack').value);
+    
+    showLoading('backtestLoading');
+    document.getElementById('statsSection').style.display = 'none';
+    
+    try {
+        const response = await fetch(`/api/backtest/stats?days_back=${daysBack}${symbol ? `&symbol=${symbol}` : ''}`);
+        const result = await response.json();
+        
+        if (result.error) {
+            showAlert(result.error, 'danger');
+            return;
+        }
+        
+        const data = result.data || result;
+        displayHistoricalStatistics(data);
+        
+    } catch (error) {
+        showAlert('Error loading statistics: ' + error.message, 'danger');
+    } finally {
+        hideLoading('backtestLoading');
+    }
+});
+
+function displayHistoricalBacktestResults(data) {
+    console.log('=== DISPLAY HISTORICAL BACKTEST RESULTS CALLED ===');
+    console.log('Function called with data type:', typeof data);
+    console.log('Data is null/undefined:', data === null || data === undefined);
+    console.log('Data keys:', data ? Object.keys(data) : 'N/A');
+    console.log('Full data object:', JSON.stringify(data, null, 2));
+    
+    if (!data) {
+        console.error('=== ERROR: No data provided to displayHistoricalBacktestResults ===');
+        return;
+    }
+    
+    console.log('Trades array type:', typeof data.trades);
+    console.log('Trades is array:', Array.isArray(data.trades));
+    console.log('Trades length:', data.trades ? data.trades.length : 'N/A');
+    console.log('First 3 trades:', data.trades ? data.trades.slice(0, 3) : 'No trades');
+    
+    // Update summary cards with actual backtest results
+    document.getElementById('initialCapital').textContent = formatCurrency(data.initial_capital || 10000);
+    document.getElementById('finalCapital').textContent = formatCurrency(data.final_capital || 10000);
+    
+    const returnElement = document.getElementById('totalReturn');
+    returnElement.textContent = (data.total_return || 0).toFixed(2) + '%';
+    returnElement.className = (data.total_return || 0) >= 0 ? 'text-success' : 'text-danger';
+    
+    document.getElementById('winRate').textContent = (data.win_rate || 0).toFixed(1) + '%';
+    
+    // Update strategy statistics with actual trade data
+    document.getElementById('totalTrades').textContent = data.total_trades || 0;
+    document.getElementById('winningTrades').textContent = data.winning_trades || 0;
+    document.getElementById('losingTrades').textContent = data.losing_trades || 0;
+    
+    if (data.total_trades > 0) {
+        document.getElementById('avgTrade').textContent = formatCurrency(data.avg_trade || 0);
+        document.getElementById('bestTrade').textContent = formatCurrency(data.best_trade || 0);
+        document.getElementById('worstTrade').textContent = formatCurrency(data.worst_trade || 0);
+    } else {
+        document.getElementById('avgTrade').textContent = 'N/A';
+        document.getElementById('bestTrade').textContent = 'N/A';
+        document.getElementById('worstTrade').textContent = 'N/A';
+    }
+    
+    // Display trades table with actual trade data
+    console.log('=== DISPLAYING TRADES TABLE ===');
+    displayTradesTable(data.trades || []);
+    
+    // Create performance chart with cumulative capital data
+    console.log('=== CALLING CREATE HISTORICAL PERFORMANCE CHART ===');
+    console.log('Data being passed to chart type:', typeof data);
+    console.log('Data keys for chart:', Object.keys(data));
+    console.log('cumulative_capital available:', data.cumulative_capital ? 'Yes' : 'No');
+    console.log('cumulative_capital type:', typeof data.cumulative_capital);
+    console.log('cumulative_capital length:', data.cumulative_capital ? data.cumulative_capital.length : 'N/A');
+    console.log('trades available:', data.trades ? 'Yes' : 'No');
+    console.log('trades length:', data.trades ? data.trades.length : 'N/A');
+    
+    // Ensure we have the required data structure
+    console.log('=== CHECKING DATA STRUCTURE FOR CHART ===');
+    console.log('Has cumulative_capital:', !!data.cumulative_capital);
+    console.log('Has trades:', !!data.trades);
+    console.log('Trades length:', data.trades ? data.trades.length : 'N/A');
+    
+    if (!data.cumulative_capital && data.trades && data.trades.length > 0) {
+        console.log('=== GENERATING CUMULATIVE CAPITAL FROM TRADES ===');
+        // Generate cumulative capital from trades if not provided
+        let cumulativeCapital = [parseFloat(data.initial_capital || 10000)];
+        console.log('Starting capital:', cumulativeCapital[0]);
+        
+        data.trades.forEach((trade, index) => {
+            const profit = parseFloat(trade.profit || 0);
+            const previousCapital = cumulativeCapital[cumulativeCapital.length - 1];
+            cumulativeCapital.push(previousCapital + profit);
+            if (index < 3) {
+                console.log(`Trade ${index}: profit=${profit}, new capital=${cumulativeCapital[cumulativeCapital.length - 1]}`);
+            }
+        });
+        data.cumulative_capital = cumulativeCapital;
+        console.log('Generated cumulative_capital length:', data.cumulative_capital.length);
+        console.log('Final cumulative_capital:', data.cumulative_capital.slice(-5));
+    } else if (!data.cumulative_capital) {
+        console.warn('=== WARNING: No cumulative_capital and no trades to generate from ===');
+    }
+    
+    createHistoricalPerformanceChart(data);
+    
+    // Use the new showSection function with visual indicators
+    console.log('=== SHOWING SECTIONS ===');
+    showSection('resultsSection', '#4caf50');
+    showSection('backtestResults', '#2196f3');
+    
+    // Populate the backtestResults section with unique element IDs
+    console.log('=== POPULATING BACKTEST RESULTS ===');
+    console.log('Data being used to populate:', JSON.stringify({
+        total_return: data.total_return,
+        win_rate: data.win_rate,
+        total_trades: data.total_trades,
+        avg_trade: data.avg_trade
+    }, null, 2));
+    console.log('Looking for elements: backtestTotalReturn, backtestWinRate, backtestTotalTrades, backtestAvgReturn');
+    
+    const totalReturnEl = document.getElementById('backtestTotalReturn');
+    const winRateEl = document.getElementById('backtestWinRate');
+    const totalTradesEl = document.getElementById('backtestTotalTrades');
+    const avgReturnEl = document.getElementById('backtestAvgReturn');
+    
+    console.log('=== ELEMENT STATUS ===');
+    console.log('Found elements:', {
+        totalReturnEl: !!totalReturnEl,
+        winRateEl: !!winRateEl,
+        totalTradesEl: !!totalTradesEl,
+        avgReturnEl: !!avgReturnEl
+    });
+    
+    if (totalReturnEl) {
+        const value = (data.total_return || 0).toFixed(2) + '%';
+        totalReturnEl.textContent = value;
+        console.log('✓ Set backtestTotalReturn to:', value);
+    } else {
+        console.error('✗ Element backtestTotalReturn not found in DOM');
+    }
+    
+    if (winRateEl) {
+        const value = (data.win_rate || 0).toFixed(1) + '%';
+        winRateEl.textContent = value;
+        console.log('✓ Set backtestWinRate to:', value);
+    } else {
+        console.error('✗ Element backtestWinRate not found in DOM');
+    }
+    
+    if (totalTradesEl) {
+        const value = data.total_trades || 0;
+        totalTradesEl.textContent = value;
+        console.log('✓ Set backtestTotalTrades to:', value);
+    } else {
+        console.error('✗ Element backtestTotalTrades not found in DOM');
+    }
+    
+    if (avgReturnEl) {
+        const value = (data.avg_trade || 0).toFixed(2) + '%';
+        avgReturnEl.textContent = value;
+        console.log('✓ Set backtestAvgReturn to:', value);
+    } else {
+        console.error('✗ Element backtestAvgReturn not found in DOM');
+    }
+    
+    // Create win/loss distribution chart for backtest results section
+    console.log('=== CREATING WIN/LOSS DISTRIBUTION CHART ===');
+    createWinLossChart(data);
+    
+    hideLoading('backtestLoading');
+}
+
+function displayHistoricalStatistics(data) {
+    console.log('Displaying historical statistics:', data);
+    
+    // Update statistics cards
+    document.getElementById('totalRecommendations').textContent = data.total_recommendations;
+    document.getElementById('successRate').textContent = data.success_rate + '%';
+    document.getElementById('avgConfidence').textContent = data.average_scores.final_confidence + '%';
+    document.getElementById('profitableTrades').textContent = data.profitable_count;
+    
+    // Create action breakdown chart
+    createActionChart(data.action_breakdown);
+    
+    // Display top performing symbols
+    displayTopSymbolsTable(data.top_performing_symbols);
+    
+    // Display recommendations sample
+    displayRecommendationsTable(data.recommendations_sample || []);
+    
+    document.getElementById('statsSection').style.display = 'block';
+    hideLoading('backtestLoading');
+}
+
+function displayRecommendationsTable(recommendations) {
+    const tbody = document.getElementById('recommendationsTableBody');
+    tbody.innerHTML = '';
+    
+    if (!Array.isArray(recommendations) || recommendations.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No recommendations found</td></tr>';
+        return;
+    }
+    
+    recommendations.forEach(rec => {
+        const row = document.createElement('tr');
+        const profitableClass = rec.profitable === true ? 'text-success' : rec.profitable === false ? 'text-danger' : 'text-muted';
+        const profitableText = rec.profitable === true ? 'Yes' : rec.profitable === false ? 'No' : 'Unknown';
+        
+        row.innerHTML = `
+            <td><strong>${rec.symbol}</strong></td>
+            <td>${rec.timestamp ? new Date(rec.timestamp).toLocaleDateString() : 'N/A'}</td>
+            <td><span class="badge ${rec.action === 'BUY' ? 'bg-success' : rec.action === 'SELL' ? 'bg-danger' : 'bg-secondary'}">${rec.action}</span></td>
+            <td>${rec.confidence ? (rec.confidence * 100).toFixed(1) + '%' : 'N/A'}</td>
+            <td class="${profitableClass}">${profitableText}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function displayTopSymbolsTable(symbols) {
+    const tbody = document.getElementById('topSymbolsTable');
+    tbody.innerHTML = '';
+    
+    if (!Array.isArray(symbols) || symbols.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No symbols found</td></tr>';
+        return;
+    }
+    
+    symbols.forEach(symbol => {
+        const row = document.createElement('tr');
+        const successClass = symbol.success_rate >= 50 ? 'text-success' : 'text-danger';
+        
+        row.innerHTML = `
+            <td><strong>${symbol.symbol}</strong></td>
+            <td class="${successClass}">${symbol.success_rate}%</td>
+            <td>${symbol.total_recommendations}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function createActionChart(actionBreakdown) {
+    if (window.actionChart) {
+        window.actionChart.destroy();
+    }
+    
+    const ctx = document.getElementById('actionChart').getContext('2d');
+    const labels = actionBreakdown.map(item => item.action);
+    const data = actionBreakdown.map(item => item.count);
+    const colors = ['#28a745', '#dc3545', '#6c757d', '#ffc107', '#17a2b8'];
+    
+    window.actionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+function createHistoricalPerformanceChart(data) {
+    console.log('=== CREATE HISTORICAL PERFORMANCE CHART CALLED ===');
+    console.log('Data received:', data);
+    console.log('cumulative_capital:', data.cumulative_capital);
+    console.log('symbol_performance:', data.symbol_performance);
+    
+    if (performanceChart) {
+        console.log('Destroying existing chart');
+        performanceChart.destroy();
+    }
+    
+    const canvas = document.getElementById('mainPerformanceChart');
+    if (!canvas) {
+        console.error('Performance chart canvas not found!');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2D context from canvas!');
+        return;
+    }
+    
+    console.log('Canvas and context obtained successfully');
+    
+    // Use cumulative capital data if available, otherwise fall back to symbol performance
+    if (data.cumulative_capital && Array.isArray(data.cumulative_capital) && data.cumulative_capital.length > 0) {
+        console.log('Creating portfolio performance chart with cumulative capital data');
+        console.log('Capital data length:', data.cumulative_capital.length);
+        console.log('First 5 capital values:', data.cumulative_capital.slice(0, 5));
+        
+        // Create portfolio performance chart
+        const labels = data.cumulative_capital.map((_, index) => index === 0 ? 'Start' : `Trade ${index}`);
+        const capitalData = data.cumulative_capital;
+        
+        try {
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                                            datasets: [{
+                            label: 'Portfolio Value',
+                            data: capitalData,
+                            borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                            backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                                            scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: function(context) {
+                                    const values = context.chart.data.datasets[0].data;
+                                    const min = Math.min(...values);
+                                    return Math.floor(min * 0.99); // Start slightly below min
+                                },
+                                max: function(context) {
+                                    const values = context.chart.data.datasets[0].data;
+                                    const max = Math.max(...values);
+                                    return Math.ceil(max * 1.01); // End slightly above max
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return formatCurrency(value);
+                                    }
+                                },
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)',
+                                    drawBorder: true
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            }
+                        },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Portfolio performance chart created successfully');
+            
+            // Add a visible indicator that the chart was created
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid green';
+                canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                
+                // Add a summary text above the chart
+                const chartContainer = canvas.parentElement;
+                if (chartContainer) {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'chart-summary';
+                    summaryDiv.style.cssText = 'margin-bottom: 10px; padding: 5px; background: #f8f9fa; border-radius: 4px; font-size: 12px;';
+                    
+                    const startValue = capitalData[0];
+                    const endValue = capitalData[capitalData.length - 1];
+                    const change = endValue - startValue;
+                    const changePercent = ((change / startValue) * 100).toFixed(2);
+                    
+                    summaryDiv.innerHTML = `
+                        <strong>Portfolio Performance:</strong> 
+                        Started: ${formatCurrency(startValue)} → 
+                        Ended: ${formatCurrency(endValue)} 
+                        (${change >= 0 ? '+' : ''}${changePercent}%)
+                    `;
+                    
+                    chartContainer.insertBefore(summaryDiv, canvas);
+                }
+            }
+        } catch (error) {
+            console.error('Error creating portfolio performance chart:', error);
+            
+            // Add error indicator
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid red';
+                canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            }
+        }
+    } else if (data.trades && Array.isArray(data.trades) && data.trades.length > 0) {
+        console.log('Creating trades-based performance chart as fallback');
+        // Generate cumulative capital from trades if not provided
+        let cumulativeCapital = [parseFloat(data.initial_capital || 10000)];
+        const tradeLabels = ['Start'];
+        
+        data.trades.forEach((trade, index) => {
+            const profit = parseFloat(trade.profit || 0);
+            const previousCapital = cumulativeCapital[cumulativeCapital.length - 1];
+            cumulativeCapital.push(previousCapital + profit);
+            tradeLabels.push(`Trade ${index + 1}`);
+        });
+        
+        // Create portfolio performance chart from generated data
+        try {
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: tradeLabels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: cumulativeCapital,
+                        borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                        backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 2,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: function(context) {
+                                const values = context.chart.data.datasets[0].data;
+                                const min = Math.min(...values);
+                                return Math.floor(min * 0.99);
+                            },
+                            max: function(context) {
+                                const values = context.chart.data.datasets[0].data;
+                                const max = Math.max(...values);
+                                return Math.ceil(max * 1.01);
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                drawBorder: true
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Trades-based performance chart created successfully');
+        } catch (error) {
+            console.error('Error creating trades-based performance chart:', error);
+        }
+    } else if (data.symbol_performance && data.symbol_performance.length > 0) {
+        console.log('Creating symbol performance chart as fallback');
+        // Fall back to symbol performance chart
+        const labels = data.symbol_performance.map(item => item.symbol);
+        const successRates = data.symbol_performance.map(item => item.success_rate);
+        
+        try {
+            performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Success Rate (%)',
+                        data: successRates,
+                        backgroundColor: successRates.map(rate => rate >= 50 ? '#28a745' : '#dc3545'),
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Symbol performance chart created successfully');
+        } catch (error) {
+            console.error('Error creating symbol performance chart:', error);
+        }
+    } else {
+        console.warn('No chart data available - neither cumulative_capital nor symbol_performance nor trades found');
+        console.log('Available data keys:', Object.keys(data));
+        
+        // Create a simple fallback chart with basic data
+        console.log('Creating fallback chart with basic data');
+        try {
+            const fallbackData = [10000, 10100, 10200, 10300, 10400, 10500];
+            const fallbackLabels = ['Start', 'Trade 1', 'Trade 2', 'Trade 3', 'Trade 4', 'Trade 5'];
+            
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fallbackLabels,
+                    datasets: [{
+                        label: 'Portfolio Value (Sample)',
+                        data: fallbackData,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Fallback chart created successfully');
+            
+            // Add success indicator
+            const canvas = document.getElementById('performanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid blue';
+                canvas.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
+            }
+        } catch (error) {
+            console.error('Error creating fallback chart:', error);
+            
+            // Add error indicator
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid red';
+                canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            }
+        }
+    }
+}
+
+function createWinLossChart(data) {
+    console.log('=== CREATE WIN/LOSS CHART CALLED ===');
+    console.log('Data received:', data);
+    console.log('Win/Loss data:', {
+        winning_trades: data.winning_trades,
+        losing_trades: data.losing_trades,
+        total_trades: data.total_trades,
+        win_rate: data.win_rate
+    });
+    
+    // Get the win/loss chart canvas
+    const canvas = document.getElementById('winLossChart');
+    if (!canvas) {
+        console.error('Win/Loss chart canvas not found!');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2D context from win/loss canvas!');
+        return;
+    }
+    
+    console.log('Win/Loss canvas and context obtained successfully');
+    
+    // Prepare data for win/loss distribution
+    const winningTrades = data.winning_trades || 0;
+    const losingTrades = data.losing_trades || 0;
+    
+    if (winningTrades === 0 && losingTrades === 0) {
+        console.warn('No trade data available for win/loss chart');
+        return;
+    }
+    
+    try {
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Winning Trades', 'Losing Trades'],
+                datasets: [{
+                    data: [winningTrades, losingTrades],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = winningTrades + losingTrades;
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('Win/Loss distribution chart created successfully');
+        
+        // Add success indicator
+        canvas.style.border = '2px solid green';
+        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+    } catch (error) {
+        console.error('Error creating win/loss distribution chart:', error);
+        
+        // Add error indicator
+        canvas.style.border = '2px solid red';
+        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    }
+}
+
+function displayBacktestResults(data) {
+    console.log('Displaying backtest results:', data);
+    
+    // Ensure data has required properties
+    if (!data) {
+        console.error('No data provided to displayBacktestResults');
+        return;
+    }
+    
+    // Helper to check if a value is a valid number
+    function validNum(val) {
+        return typeof val === 'number' && !isNaN(val);
+    }
+    // Update summary cards
+    document.getElementById('initialCapital').textContent = validNum(Number(data.initial_capital)) ? formatCurrency(Number(data.initial_capital)) : 'N/A';
+    document.getElementById('finalCapital').textContent = validNum(Number(data.final_capital)) ? formatCurrency(Number(data.final_capital)) : 'N/A';
+    
+    const returnElement = document.getElementById('totalReturn');
+    const totalReturn = Number(data.total_return);
+    returnElement.textContent = validNum(totalReturn) ? totalReturn + '%' : 'N/A';
+    returnElement.className = validNum(totalReturn) && totalReturn >= 0 ? 'text-success' : 'text-danger';
+    
+    document.getElementById('winRate').textContent = validNum(Number(data.win_rate)) ? data.win_rate + '%' : 'N/A';
+    
+    // Update strategy statistics
+    document.getElementById('totalTrades').textContent = validNum(Number(data.total_trades)) ? data.total_trades : 'N/A';
+    
+    // Ensure trades is an array
+    const trades = Array.isArray(data.trades) ? data.trades : [];
+    console.log('Trades array:', trades);
+    
+    const winningTrades = trades.filter(t => t.profit > 0).length;
+    const losingTrades = trades.filter(t => t.profit <= 0).length;
+    
+    document.getElementById('winningTrades').textContent = validNum(winningTrades) ? winningTrades : 'N/A';
+    document.getElementById('losingTrades').textContent = validNum(losingTrades) ? losingTrades : 'N/A';
+    
+    if (trades.length > 0) {
+        const avgTrade = trades.reduce((sum, t) => sum + (t.profit || 0), 0) / trades.length;
+        const bestTrade = Math.max(...trades.map(t => t.profit || 0));
+        const worstTrade = Math.min(...trades.map(t => t.profit || 0));
+        
+        document.getElementById('avgTrade').textContent = validNum(avgTrade) ? formatCurrency(avgTrade) : 'N/A';
+        document.getElementById('bestTrade').textContent = validNum(bestTrade) ? formatCurrency(bestTrade) : 'N/A';
+        document.getElementById('worstTrade').textContent = validNum(worstTrade) ? formatCurrency(worstTrade) : 'N/A';
+    } else {
+        document.getElementById('avgTrade').textContent = 'N/A';
+        document.getElementById('bestTrade').textContent = 'N/A';
+        document.getElementById('worstTrade').textContent = 'N/A';
+    }
+    
+    // Display trades table
+    displayTradesTable(trades);
+    
+    // Create performance chart
+    console.log('=== CALLING CREATE PERFORMANCE CHART ===');
+    createPerformanceChart(data);
+    
+    // Use the new showSection function with visual indicators
+    showSection('resultsSection', '#4caf50');
+    hideLoading('backtestLoading'); // Always hide spinner after showing results
+}
+
+function displayTradesTable(trades) {
+    const tbody = document.getElementById('tradesTableBody');
+    tbody.innerHTML = '';
+    
+    console.log('displayTradesTable called with:', trades);
+    console.log('Trades array length:', trades ? trades.length : 'No trades');
+    
+    // Ensure trades is an array
+    if (!Array.isArray(trades) || trades.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No trades executed</td></tr>';
+        return;
+    }
+    
+    // Show only the last 10 trades
+    const recentTrades = trades.slice(-10);
+    console.log('Recent trades to display:', recentTrades);
+    
+    recentTrades.forEach((trade, index) => {
+        console.log(`Processing trade ${index}:`, trade);
+        const row = document.createElement('tr');
+        const profitClass = (trade.profit || 0) >= 0 ? 'text-success' : 'text-danger';
+        
+        row.innerHTML = `
+            <td>${trade.date || 'N/A'}</td>
+            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action || 'N/A'}</span></td>
+            <td>${formatCurrency(trade.entry_price || 0)}</td>
+            <td>${formatCurrency(trade.strike_price || 0)}</td>
+            <td>${formatCurrency(trade.option_price || 0)}</td>
+            <td>${trade.position_size || 0}</td>
+            <td>${formatCurrency(trade.cost || 0)}</td>
+            <td>${formatCurrency(trade.exit_price || 0)}</td>
+            <td class="${profitClass}">${formatCurrency(trade.profit || 0)}</td>
+            <td class="${getSentimentClass(trade.sentiment || 0)}">${(trade.sentiment || 0).toFixed(3)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function createPerformanceChart(data) {
+    console.log('=== CREATE PERFORMANCE CHART CALLED ===');
+    console.log('Data received:', data);
+    // Get the canvas element
+    const canvas = document.getElementById('mainPerformanceChart');
+    console.log('Canvas element found:', !!canvas);
+    console.log('Canvas element:', canvas);
+    
+    if (!canvas) {
+        console.error('❌ Performance chart canvas not found');
+        console.log('Available canvas elements:');
+        document.querySelectorAll('canvas').forEach(c => {
+            console.log('  - ' + c.id + ' (' + c.tagName + ')');
+        });
+        return;
+    }
+    
+    console.log('✓ Canvas element found successfully');
+
+    // Destroy existing chart instance if it exists
+    if (performanceChart) {
+        try {
+            performanceChart.destroy();
+            performanceChart = null;
+        } catch (e) {
+            console.error('Error destroying previous chart:', e);
+        }
+    }
+    
+    // Ensure trades is an array and limit the number of data points
+    const maxDataPoints = 100; // Limit to prevent performance issues
+    const trades = Array.isArray(data.trades) ? data.trades.slice(-maxDataPoints) : [];
+    
+    if (trades.length === 0) {
+        console.warn('No trades data available for chart');
+        return;
+    }
+    
+    // Calculate cumulative returns with limited data points
+    let cumulativeCapital = parseFloat(data.initial_capital || 10000);
+    const capitalHistory = [cumulativeCapital];
+    const labels = ['Start'];
+    
+    // Calculate step to sample data if we have too many points
+    const step = Math.max(1, Math.floor(trades.length / maxDataPoints));
+    
+    trades.forEach((trade, index) => {
+        if (index % step === 0 || index === trades.length - 1) {
+            cumulativeCapital += parseFloat(trade.profit || 0);
+            capitalHistory.push(cumulativeCapital);
+            labels.push(`Trade ${index + 1}`);
+        } else {
+            // Still add to cumulative total but don't add to the chart data
+            cumulativeCapital += parseFloat(trade.profit || 0);
+        }
+    });
+    
+    const ctx = canvas.getContext('2d');
+    const totalReturn = parseFloat(data.total_return || 0);
+    
+    console.log('Creating Chart.js instance with data:', {
+        labels: labels.length,
+        capitalHistory: capitalHistory.length,
+        totalReturn: totalReturn
+    });
+    
+            try {
+            // Validate data before creating chart
+            if (capitalHistory.length === 0 || labels.length === 0) {
+                console.error('Invalid chart data: capitalHistory or labels is empty');
+                return;
+            }
+            
+            console.log('Creating chart with:', {
+                labelsCount: labels.length,
+                dataCount: capitalHistory.length,
+                firstValue: capitalHistory[0],
+                lastValue: capitalHistory[capitalHistory.length - 1]
+            });
+            
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: capitalHistory,
+                        borderColor: totalReturn >= 0 ? '#28a745' : '#dc3545',
+                        backgroundColor: totalReturn >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: {
+                    duration: 0 // Disable animations for better performance
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        console.log('✓ Performance chart created successfully');
+        // Add success indicator
+        canvas.style.border = '2px solid green';
+        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+    } catch (error) {
+        console.error('❌ Error creating performance chart:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        // Add error indicator
+        canvas.style.border = '2px solid red';
+        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    }
+}
+
+// Add cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    if (performanceChart) {
+        try {
+            performanceChart.destroy();
+            performanceChart = null;
+        } catch (e) {
+            console.error('Error cleaning up chart before unload:', e);
+        }
+    }
+});
+
+// Patch: Add visual indicator and log when showing sections
+function showSection(id, color) {
+    console.log('=== SHOW SECTION CALLED ===');
+    console.log('Section ID:', id);
+    console.log('Color:', color);
+    
+    var el = document.getElementById(id);
+    console.log('Element found:', !!el);
+    console.log('Element tag name:', el ? el.tagName : 'N/A');
+    console.log('Element classes:', el ? el.className : 'N/A');
+    console.log('Current display style:', el ? el.style.display : 'N/A');
+    
+    if (el) {
+        el.style.display = 'block';
+        el.style.border = '4px solid ' + (color || '#4caf50');
+        el.style.background = 'rgba(76, 175, 80, 0.08)';
+        console.log('✓ Successfully set #' + id + ' to display:block with colored border');
+        console.log('New display style:', el.style.display);
+        console.log('New border style:', el.style.border);
+    } else {
+        console.error('✗ Could not find element #' + id + ' in DOM');
+        console.log('Available elements with similar IDs:');
+        document.querySelectorAll('[id*="' + id.replace('#', '') + '"]').forEach(e => {
+            console.log('  - ' + e.id + ' (' + e.tagName + ')');
+        });
+    }
+}
+
+// Patch: Add visual indicator and log when hiding sections
+function hideSection(id) {
+    var el = document.getElementById(id);
+    if (el) {
+        el.style.display = 'none';
+        el.style.border = '';
+        el.style.background = '';
+        console.log('=== DEBUG: Set #' + id + ' to display:none ===');
+    }
+}
+</script>
+{% endblock %}

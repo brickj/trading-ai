@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Options Trading AI{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Moment.js -->
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/min/moment.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- Frontend Logger -->
+    <script src="{{ url_for('static', filename='js/logger.js') }}"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Include Navigation -->
+    {% include 'navbar.html' %}
+
+    <!-- Main Content -->
+    {% block layout_container %}
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer class="footer mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Trading AI Dashboard</h6>
+                    <p class="text-muted small">Advanced sentiment analysis and options trading recommendations powered by AI.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted small">
+                        <i class="fas fa-shield-alt"></i> Demo Version - Not Financial Advice
+                    </p>
+                        </div>
+                    </div>
+                </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
+    <!-- Base JavaScript Functions -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

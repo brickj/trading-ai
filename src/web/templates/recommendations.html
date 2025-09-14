@@ -1,0 +1,835 @@
+{% extends "base.html" %}
+
+{% block title %}Trading AI - Recommendation Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-chart-line"></i> Trading Recommendations Dashboard</h1>
+        <p class="lead">Track recommendation performance and statistics</p>
+    </div>
+</div>
+
+<!-- Summary Stats Cards -->
+<div class="row mt-3">
+    <div class="col-md-3">
+        <div class="card performance-card bg-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Recommendations</h5>
+                <h2 class="card-text" id="total-recommendations">...</h2>
+                <p class="card-text text-muted">Total recommendations tracked</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card performance-card bg-white">
+            <div class="card-body">
+                <h5 class="card-title">Win Rate</h5>
+                <h2 class="card-text" id="win-rate">...</h2>
+                <p class="card-text text-muted"><span id="evaluated-count">...</span> recommendations evaluated</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card performance-card bg-white">
+            <div class="card-body">
+                <h5 class="card-title">Average Return</h5>
+                <h2 class="card-text" id="avg-return">...</h2>
+                <p class="card-text text-muted">Across all recommendations</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card performance-card bg-white">
+            <div class="card-body">
+                <h5 class="card-title">Last Updated</h5>
+                <h2 class="card-text" id="last-updated">...</h2>
+                <p class="card-text text-muted">Latest recommendation date</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card performance-card">
+            <div class="card-body">
+                <h5 class="card-title">Recommendation Types</h5>
+                <div class="chart-container position-relative">
+                    <canvas id="recommendation-types-chart"></canvas>
+                    <div class="loading-overlay" id="types-chart-loader">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card performance-card">
+            <div class="card-body">
+                <h5 class="card-title">Recommendation Performance</h5>
+                <div class="chart-container position-relative">
+                    <canvas id="performance-chart"></canvas>
+                    <div class="loading-overlay" id="performance-chart-loader">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations Container - Required for tests -->
+<div class="row mt-4" id="recommendationsContainer">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Trading Recommendations</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Action</th>
+                                <th>Confidence</th>
+                                <th>Entry Price</th>
+                                <th>Exit Price</th>
+                                <th>Outcome</th>
+                                <th>Profitable</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recommendations-table-body">
+                            <tr>
+                                <td>Jul 30, 2025 2:30 PM</td>
+                                <td><span class="symbol-badge">AAPL</span></td>
+                                <td>Enhanced</td>
+                                <td>BUY</td>
+                                <td class="positive">85.2%</td>
+                                <td>$150.25</td>
+                                <td>$155.80</td>
+                                <td class="positive">+3.7%</td>
+                                <td class="positive">Yes</td>
+                            </tr>
+                            <tr>
+                                <td>Jul 30, 2025 1:45 PM</td>
+                                <td><span class="symbol-badge">TSLA</span></td>
+                                <td>Standard</td>
+                                <td>SELL</td>
+                                <td class="negative">45.8%</td>
+                                <td>$245.80</td>
+                                <td>$242.50</td>
+                                <td class="negative">-1.3%</td>
+                                <td class="negative">No</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendation Filters -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="recommendation-filters">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="symbol-filter">Symbol</label>
+                        <input type="text" class="form-control" id="symbol-filter" placeholder="e.g. AAPL">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="type-filter">Recommendation Type</label>
+                        <select class="form-control" id="type-filter">
+                            <option value="">All Types</option>
+                            <option value="stock">Stock</option>
+                            <option value="option">Option</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="action-filter">Action</label>
+                        <select class="form-control" id="action-filter">
+                            <option value="">All Actions</option>
+                            <option value="buy">Buy</option>
+                            <option value="sell">Sell</option>
+                            <option value="hold">Hold</option>
+                            <option value="call">Call Option</option>
+                            <option value="put">Put Option</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="outcome-filter">Outcome</label>
+                        <select class="form-control" id="outcome-filter">
+                            <option value="">All Outcomes</option>
+                            <option value="profitable">Profitable</option>
+                            <option value="unprofitable">Not Profitable</option>
+                            <option value="pending">Pending Evaluation</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12 d-flex justify-content-end">
+                    <button id="apply-filters" class="btn btn-primary">Apply Filters</button>
+                    <button id="reset-filters" class="btn btn-secondary ms-2">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recommendations Table -->
+<div id="recommendationsSection" class="row mt-3">
+    <div class="col-12">
+        <div class="card performance-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Recommendations</h5>
+                <div id="performance-summary"></div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover rec-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Symbol</th>
+                                <th>Type</th>
+                                <th>Action</th>
+                                <th>Confidence</th>
+                                <th>Entry Price</th>
+                                <th>Current/Exit Price</th>
+                                <th>Outcome</th>
+                                <th>Profitable</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recommendations-table-body">
+                            <tr>
+                                <td colspan="9" class="text-center">Loading recommendations...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <span id="showing-results">Showing 0 of 0 recommendations</span>
+                    </div>
+                    <div>
+                        <button id="load-more" class="btn btn-outline-primary">Load More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Symbols and Actions -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card performance-card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Symbols</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Count</th>
+                                <th>Win Rate</th>
+                                <th>Avg Return</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-symbols-body">
+                            <tr>
+                                <td colspan="4" class="text-center">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card performance-card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Performing Recommendation Types</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Action</th>
+                                <th>Count</th>
+                                <th>Win Rate</th>
+                                <th>Avg Return</th>
+                            </tr>
+                        </thead>
+                        <tbody id="top-types-body">
+                            <tr>
+                                <td colspan="5" class="text-center">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .performance-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .performance-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    
+    .positive {
+        color: #28a745;
+    }
+    
+    .negative {
+        color: #dc3545;
+    }
+    
+    .rec-table {
+        font-size: 0.9rem;
+    }
+    
+    .rec-table th {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    .symbol-badge {
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        margin-right: 5px;
+    }
+    
+    .recommendation-filters {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin-bottom: 20px;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    #performance-summary {
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255,255,255,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        console.log('Document ready, jQuery version:', $.fn.jquery);
+        
+        // Initialize variables at the top to avoid hoisting issues
+        let typeChart = null;
+        let performanceChart = null;
+        let currentPage = 1;
+        let hasMore = true;
+        
+        // Load initial data
+        loadRecommendationStats();
+        loadRecommendations();
+        
+        // Set up event handlers
+        $('#apply-filters').click(function() {
+            loadRecommendations(true);
+        });
+        
+        $('#reset-filters').click(function() {
+            // Clear all filters
+            $('#symbol-filter').val('');
+            $('#type-filter').val('');
+            $('#action-filter').val('');
+            $('#outcome-filter').val('');
+            
+            // Reload data
+            loadRecommendations(true);
+        });
+        
+        $('#load-more').click(function() {
+            loadMoreRecommendations();
+        });
+        
+        function loadRecommendationStats() {
+            $.ajax({
+                url: '/api/recommendations/stats',
+                method: 'GET',
+                success: function(response) {
+                    updateSummaryStats(response);
+                    updateTypeChart(response);
+                    updatePerformanceChart(response);
+                    updateTopSymbols(response);
+                    updateTopTypes(response);
+                },
+                error: function(xhr) {
+                    console.error('Error loading recommendation stats:', xhr.responseText);
+                    showError('Failed to load recommendation statistics');
+                }
+            });
+        }
+        
+        function updateSummaryStats(data) {
+            const totalRecs = data.total_recommendations || 0;
+            const performance = data.performance || {};
+            const totalEvaluated = performance.total_evaluated || 0;
+            const winRate = performance.win_rate || 0;
+            const avgOutcome = performance.avg_outcome || 0;
+            
+            $('#total-recommendations').text(totalRecs.toLocaleString());
+            $('#evaluated-count').text(totalEvaluated.toLocaleString());
+            $('#win-rate').text((winRate * 100).toFixed(1) + '%');
+            $('#avg-return').text((avgOutcome * 100).toFixed(2) + '%')
+                .removeClass('positive negative')
+                .addClass(avgOutcome >= 0 ? 'positive' : 'negative');
+            
+            // Format last updated date
+            const lastUpdated = data.last_updated ? moment(data.last_updated).format('MMM D, YYYY') : 'N/A';
+            $('#last-updated').text(lastUpdated);
+        }
+        
+        function updateTypeChart(data) {
+            const recTypes = data.recommendation_types || [];
+            
+            // Prepare data for chart
+            const labels = [];
+            const counts = [];
+            const backgroundColors = [];
+            
+            // Color palette
+            const colors = [
+                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                '#5a5c69', '#858796', '#6f42c1', '#20c9a6', '#f8f9fc'
+            ];
+            
+            recTypes.forEach((type, index) => {
+                labels.push(type.recommendation_type);
+                counts.push(type.count);
+                backgroundColors.push(colors[index % colors.length]);
+            });
+            
+            // Create or update chart
+            const ctx = document.getElementById('recommendation-types-chart').getContext('2d');
+            
+            if (typeChart) {
+                typeChart.destroy();
+            }
+            
+            typeChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: backgroundColors,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Hide loader
+            $('#types-chart-loader').hide();
+        }
+        
+        function updatePerformanceChart(data) {
+            const actions = data.actions || [];
+            
+            // Prepare data for chart
+            const labels = [];
+            const counts = [];
+            const winRates = [];
+            
+            // Color mapping for actions
+            const actionColors = {
+                'buy': '#1cc88a',
+                'sell': '#e74a3b',
+                'hold': '#f6c23e',
+                'call': '#4e73df',
+                'put': '#36b9cc'
+            };
+            
+            const backgroundColors = [];
+            
+            actions.forEach(action => {
+                labels.push(action.action);
+                counts.push(action.count);
+                
+                // Calculate win rate if available in the data
+                const actionPerformance = (data.action_performance || []).find(p => p.action === action.action);
+                const winRate = actionPerformance ? actionPerformance.win_rate * 100 : 0;
+                winRates.push(winRate);
+                
+                // Get color or use default
+                backgroundColors.push(actionColors[action.action] || '#858796');
+            });
+            
+            // Create or update chart
+            const ctx = document.getElementById('performance-chart').getContext('2d');
+            
+            if (performanceChart) {
+                performanceChart.destroy();
+            }
+            
+            performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Count',
+                            data: counts,
+                            backgroundColor: backgroundColors,
+                            order: 1
+                        },
+                        {
+                            label: 'Win Rate %',
+                            data: winRates,
+                            type: 'line',
+                            borderColor: '#4e73df',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#4e73df',
+                            fill: false,
+                            yAxisID: 'y1',
+                            order: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Count'
+                            }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Win Rate %'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Hide loader
+            $('#performance-chart-loader').hide();
+        }
+        
+        function updateTopSymbols(data) {
+            const topSymbols = data.top_symbols || [];
+            const symbolPerformance = data.symbol_performance || {};
+            
+            let html = '';
+            
+            if (topSymbols.length === 0) {
+                html = '<tr><td colspan="4" class="text-center">No symbol data available</td></tr>';
+            } else {
+                topSymbols.forEach(symbol => {
+                    const symbolData = symbolPerformance[symbol.symbol] || {};
+                    const winRate = symbolData.win_rate || 0;
+                    const avgReturn = symbolData.avg_outcome || 0;
+                    
+                    html += `
+                        <tr>
+                            <td><span class="symbol-badge">${symbol.symbol}</span></td>
+                            <td>${symbol.count}</td>
+                            <td>${(winRate * 100).toFixed(1)}%</td>
+                            <td class="${avgReturn >= 0 ? 'positive' : 'negative'}">
+                                ${(avgReturn * 100).toFixed(2)}%
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            $('#top-symbols-body').html(html);
+        }
+        
+        function updateTopTypes(data) {
+            const topTypes = data.recommendation_performance || [];
+            
+            let html = '';
+            
+            if (topTypes.length === 0) {
+                html = '<tr><td colspan="5" class="text-center">No performance data available</td></tr>';
+            } else {
+                // Sort by win rate
+                topTypes.sort((a, b) => (b.win_rate || 0) - (a.win_rate || 0));
+                
+                // Show top 5
+                topTypes.slice(0, 5).forEach(type => {
+                    const winRate = type.win_rate || 0;
+                    const avgOutcome = type.avg_outcome || 0;
+                    
+                    html += `
+                        <tr>
+                            <td>${type.recommendation_type}</td>
+                            <td>${type.action}</td>
+                            <td>${type.count}</td>
+                            <td>${(winRate * 100).toFixed(1)}%</td>
+                            <td class="${avgOutcome >= 0 ? 'positive' : 'negative'}">
+                                ${(avgOutcome * 100).toFixed(2)}%
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            $('#top-types-body').html(html);
+        }
+        
+        function loadRecommendations(reset = false) {
+            console.log('loadRecommendations called, reset:', reset);
+            if (reset) {
+                currentPage = 1;
+                hasMore = true;
+            }
+            
+            // Get filter values
+            const symbolFilter = $('#symbol-filter').val();
+            const typeFilter = $('#type-filter').val();
+            const actionFilter = $('#action-filter').val();
+            const outcomeFilter = $('#outcome-filter').val();
+            
+            console.log('Making AJAX request to /api/recommendations');
+            // Show loading
+            $('#recommendations-table-body').html('<tr><td colspan="9" class="text-center">Loading recommendations...</td></tr>');
+            
+            $.ajax({
+                url: '/api/recommendations',
+                method: 'GET',
+                data: {
+                    page: currentPage,
+                    symbol: symbolFilter,
+                    type: typeFilter,
+                    action: actionFilter,
+                    outcome: outcomeFilter
+                },
+                success: function(response) {
+                    console.log('AJAX success, response:', response);
+                    updateRecommendationsTable(response, reset);
+                },
+                error: function(xhr) {
+                    console.error('Error loading recommendations:', xhr.responseText);
+                    $('#recommendations-table-body').html('<tr><td colspan="9" class="text-center text-danger">Error loading recommendations</td></tr>');
+                }
+            });
+        }
+        
+        function loadMoreRecommendations() {
+            if (!hasMore) return;
+            
+            currentPage++;
+            
+            // Get filter values
+            const symbolFilter = $('#symbol-filter').val();
+            const typeFilter = $('#type-filter').val();
+            const actionFilter = $('#action-filter').val();
+            const outcomeFilter = $('#outcome-filter').val();
+            
+            // Show loading at the bottom of the table
+            $('#load-more').text('Loading...').prop('disabled', true);
+            
+            $.ajax({
+                url: '/api/recommendations',
+                method: 'GET',
+                data: {
+                    page: currentPage,
+                    symbol: symbolFilter,
+                    type: typeFilter,
+                    action: actionFilter,
+                    outcome: outcomeFilter
+                },
+                success: function(response) {
+                    updateRecommendationsTable(response, false);
+                    $('#load-more').text('Load More').prop('disabled', false);
+                },
+                error: function(xhr) {
+                    console.error('Error loading more recommendations:', xhr.responseText);
+                    $('#load-more').text('Load More').prop('disabled', false);
+                    showError('Failed to load more recommendations');
+                }
+            });
+        }
+        
+        function updateRecommendationsTable(data, reset) {
+            console.log('updateRecommendationsTable called, data:', data, 'reset:', reset);
+            const recommendations = data.recommendations || [];
+            const totalCount = data.total_count || 0;
+            hasMore = data.has_more || false;
+            console.log('Parsed data - recommendations count:', recommendations.length, 'total_count:', totalCount, 'has_more:', hasMore);
+            
+            let html = '';
+            
+            if (recommendations.length === 0) {
+                html = '<tr><td colspan="9" class="text-center">No recommendations found</td></tr>';
+            } else {
+                recommendations.forEach(rec => {
+                    const timestamp = moment(rec.timestamp).format('MMM D, YYYY h:mm A');
+                    const confidenceClass = rec.final_confidence >= 0.7 ? 'positive' : 
+                                           rec.final_confidence <= 0.3 ? 'negative' : '';
+                    
+                    // Format outcome
+                    let outcomeText = 'Pending';
+                    let outcomeClass = '';
+                    let profitableText = '-';
+                    let profitableClass = '';
+                    
+                    if (rec.actual_outcome !== null) {
+                        const outcome = rec.actual_outcome;
+                        outcomeText = (outcome * 100).toFixed(2) + '%';
+                        outcomeClass = outcome >= 0 ? 'positive' : 'negative';
+                        
+                        profitableText = rec.profitable ? 'Yes' : 'No';
+                        profitableClass = rec.profitable ? 'positive' : 'negative';
+                    }
+                    
+                    // Format prices
+                    const entryPrice = rec.current_stock_price ? '$' + rec.current_stock_price.toFixed(2) : '-';
+                    
+                    // Current or exit price
+                    let exitPrice = '-';
+                    if (rec.exit_price) {
+                        exitPrice = '$' + rec.exit_price.toFixed(2);
+                    }
+                    
+                    html += `
+                        <tr>
+                            <td>${timestamp}</td>
+                            <td><span class="symbol-badge">${rec.symbol}</span></td>
+                            <td>${rec.recommendation_type}</td>
+                            <td>${rec.action}</td>
+                            <td class="${confidenceClass}">${(rec.final_confidence * 100).toFixed(1)}%</td>
+                            <td>${entryPrice}</td>
+                            <td>${exitPrice}</td>
+                            <td class="${outcomeClass}">${outcomeText}</td>
+                            <td class="${profitableClass}">${profitableText}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            if (reset) {
+                $('#recommendations-table-body').html(html);
+            } else {
+                $('#recommendations-table-body').append(html);
+            }
+            
+            // Update showing results text
+            const currentShowing = $('#recommendations-table-body tr').length;
+            $('#showing-results').text(`Showing ${currentShowing} of ${totalCount} recommendations`);
+            
+            // Update load more button
+            $('#load-more').prop('disabled', !hasMore).toggle(hasMore);
+            
+            // Update performance summary
+            updatePerformanceSummary(data);
+        }
+        
+        function updatePerformanceSummary(data) {
+            if (!data.filtered_stats) return;
+            
+            const stats = data.filtered_stats;
+            const totalFiltered = stats.total || 0;
+            const evaluatedCount = stats.evaluated || 0;
+            const profitableCount = stats.profitable || 0;
+            
+            if (evaluatedCount === 0) {
+                $('#performance-summary').text('No evaluated recommendations in this filter');
+                return;
+            }
+            
+            const winRate = profitableCount / evaluatedCount;
+            const avgOutcome = stats.avg_outcome || 0;
+            
+            $('#performance-summary').html(`
+                Win Rate: <span class="${winRate >= 0.5 ? 'positive' : 'negative'}">${(winRate * 100).toFixed(1)}%</span> | 
+                Avg Return: <span class="${avgOutcome >= 0 ? 'positive' : 'negative'}">${(avgOutcome * 100).toFixed(2)}%</span>
+            `);
+        }
+        
+        function showError(message) {
+            // Simple error toast
+            alert(message);
+        }
+    });
+</script>
+{% endblock %} 

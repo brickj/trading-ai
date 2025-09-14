@@ -1,0 +1,78 @@
+{
+  "run": {
+    "timestamp": "2025-09-07T17:20:34.583896"
+  },
+  "endpoints": {
+    "crypto_fast": {
+      "status": 200,
+      "time": 0.004864931106567383,
+      "count": 5
+    },
+    "crypto_full": {
+      "status": 200,
+      "time": 0.004971027374267578,
+      "count": 5
+    },
+    "dashboard": {
+      "status": 200,
+      "time": 1.0332541465759277,
+      "market_overview": {
+        "active_analyses": 5,
+        "last_updated": "2025-09-07T17:20:35.711121",
+        "success_rate": "0.0%",
+        "total_stocks": 129
+      }
+    },
+    "opportunities": {
+      "status_news": 200,
+      "status_watchlist": 200,
+      "time_news": 0.022169113159179688,
+      "time_watchlist": 0.01794290542602539,
+      "news_count": 0,
+      "watchlist_count": 29
+    },
+    "portfolio": {
+      "status": 200,
+      "time": 0.002530813217163086
+    },
+    "scalping": {
+      "/api/scalping/opportunities": {
+        "status": 200,
+        "time": 0.028989076614379883,
+        "has_error": false
+      },
+      "/api/scalping/today": {
+        "status": 200,
+        "time": 0.011280059814453125,
+        "has_error": false
+      },
+      "/api/scalping/history": {
+        "status": 200,
+        "time": 0.009487152099609375,
+        "has_error": false
+      },
+      "/api/scalping/stats": {
+        "status": 200,
+        "time": 0.011630058288574219,
+        "has_error": false
+      }
+    },
+    "sp500_analysis": {
+      "status": 200,
+      "time": 0.006906986236572266,
+      "count": 1
+    },
+    "system_status": {
+      "status": 200,
+      "time": 0.06159186363220215
+    },
+    "foreign_markets_overview": {
+      "status": 200,
+      "time": 0.004408121109008789,
+      "markets": 12
+    }
+  },
+  "pages": {},
+  "warnings": [],
+  "failures": []
+}
