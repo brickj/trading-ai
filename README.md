@@ -86,16 +86,12 @@ nano src/core/config.py  # or use your preferred editor
 
 **Note:** The config file contains sensitive API keys and is excluded from the repository for security.
 
-### 4. One-Click Startup
+### 4. Startup
 ```bash
-# Recommended: Shell script with comprehensive checks
-./start_app.sh
-
-# Alternative: Cross-platform Python script
 python start_app.py
 ```
 
-The startup scripts automatically:
+The startup script automatically:
 - ✅ Set up PostgreSQL database and cache tables
 - ✅ Check for port conflicts and dependencies
 - ✅ Activate virtual environment
@@ -107,58 +103,26 @@ Navigate to `http://localhost:5001` in your browser
 
 ## 🏗️ Project Structure
 
-This project follows **modern Python packaging best practices** with optimized organization:
-
 ```
 trading/
-├── src/                          # Source code (src layout)
-│   ├── core/                    # Core functionality
-│   │   ├── config.py           # Configuration with PostgreSQL settings
-│   │   ├── sentiment_analyzer.py # AI sentiment analysis
-│   │   └── go_service_client.py # Future Go microservices client
-│   ├── data/                    # Data fetching and monitoring
-│   │   ├── data_fetcher.py     # Market data fetching
-│   │   ├── news_monitor.py     # News monitoring with caching
-│   │   └── news_scanner.py     # Standalone news scanner
-│   ├── trading/                 # Trading strategies and execution
-│   │   └── trading_strategy.py # Trading strategy implementation
-│   ├── web/                     # Web application
-│   │   ├── app.py              # Flask app with WebSocket support
-│   │   ├── templates/          # HTML templates
-│   │   │   ├── base.html       # Base template with navigation
-│   │   │   ├── index.html      # Main dashboard
-│   │   │   ├── opportunities.html # Trading opportunities
-│   │   │   ├── stocks.html     # S&P 500 analysis
-│   │   │   ├── crypto.html     # Crypto analysis
-│   │   │   ├── portfolio.html  # Portfolio management
-│   │   │   └── system_status.html # Performance monitoring
-│   │   └── static/             # Static assets (CSS, JS, images)
-│   └── utils/                   # Utilities and documentation
-│       ├── setup_postgres.py   # Database setup script
-│       ├── PERFORMANCE_OPTIMIZATION.md # Performance guide
-│       ├── NEWS_SOURCES.md     # News sources documentation
-│       ├── GO_ANALYSIS.md      # Go microservices analysis
-│       └── README.md           # Utilities documentation
-├── tests/                       # Test suite
-│   ├── unit/                   # Unit tests
-│   └── integration/            # Integration tests
-├── start_app.sh                # Shell startup script (recommended)
-├── start_app.py                # Cross-platform Python startup
-├── requirements.txt            # Python dependencies
-├── TODO.md                     # Development roadmap
-└── README.md                   # This file
+├── src/
+│   ├── core/
+│   ├── data/
+│   ├── trading/
+│   └── web/
+├── start_app.py
+├── requirements.txt
+└── README.md
 ```
 
 ### 🎯 Organization Benefits
 
 **Cleaner Structure:**
-- ✅ Main directory focuses on user-facing files
-- ✅ Technical utilities organized in `src/utils/`
-- ✅ Clear separation of concerns
+- ✅ Main directory focuses on essential user-facing files
+- ✅ Clear separation of core, data, trading, and web modules
 
 **Developer Experience:**
-- ✅ All utility scripts and docs in one location
-- ✅ Enterprise startup scripts with health checks
+- ✅ Simple startup with `start_app.py`
 - ✅ Comprehensive documentation
 
 ## 🚀 Usage
@@ -272,21 +236,6 @@ OLLAMA_MODEL = 'qwen2.5:3b'  # Local model for sentiment analysis
 - `POST /api/execute_trade` - Execute simulated trade
 - `GET /api/portfolio` - Portfolio status and performance
 
-## 🔧 Utility Scripts
-
-Located in `src/utils/`:
-
-### Database Setup
-```bash
-# Set up PostgreSQL database and cache
-python src/utils/setup_postgres.py
-```
-
-### Documentation
-- **Performance Guide**: `src/utils/PERFORMANCE_OPTIMIZATION.md`
-- **News Sources**: `src/utils/NEWS_SOURCES.md`
-- **Go Analysis**: `src/utils/GO_ANALYSIS.md`
-
 ## 🎯 Performance Monitoring
 
 ### Real-time Metrics
@@ -342,13 +291,12 @@ python src/utils/setup_postgres.py
 ### Common Issues
 
 1. **Port 5001 in use**: The startup scripts check and help resolve port conflicts
-2. **PostgreSQL issues**: Run `python src/utils/setup_postgres.py` to reset database
+2. **PostgreSQL issues**: Ensure the PostgreSQL service is running and configuration is correct
 3. **API rate limits**: Check API key quotas and usage
 4. **Cache issues**: Monitor cache stats via `/api/performance_status`
 
 ### Getting Help
 - Check console logs for detailed error messages
-- Review `src/utils/` documentation for setup guidance
 - Ensure all prerequisites are installed and configured
 
 ## 🙏 Acknowledgments
@@ -362,20 +310,18 @@ python src/utils/setup_postgres.py
 
 ---
 
-**🎯 Ready to Start?** Use `./start_app.sh` for one-click setup and launch!
+**🎯 Ready to Start?** Run `python start_app.py` for one-click setup and launch!
 
 **Remember**: This is an educational tool for learning options trading and sentiment analysis. Always do your own research and consult financial professionals before making investment decisions.
 
 ## 🔧 **Installation**
 
-### **Option 1: One-Click Startup (Recommended)**
+### **Quick Start**
 ```bash
-# Clone and start everything automatically
+# Clone and start the application
 git clone <repository-url>
 cd trading
-./start_app.sh  # On macOS/Linux
-# OR
-python start_app.py  # Cross-platform alternative
+python start_app.py
 ```
 
 ### **Option 2: Manual Setup**
@@ -383,8 +329,7 @@ python start_app.py  # Cross-platform alternative
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Set up PostgreSQL database (one-time setup)
-python src/utils/setup_postgres.py
+# 2. Ensure PostgreSQL is running and configured
 
 # 3. Start the application
 python -m src.web.app

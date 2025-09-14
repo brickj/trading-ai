@@ -1,1 +1,0 @@
-Dashboard page is now working correctly with all API endpoints functional
