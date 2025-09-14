@@ -22,6 +22,10 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- Frontend Logger -->
+    <script src="{{ url_for('static', filename='js/logger.js') }}"></script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <!-- Include Navigation -->
@@ -56,10 +60,7 @@
     
     <!-- Socket.IO for real-time updates -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    
-    <!-- Frontend Logger (MUST BE FIRST) -->
-    <script src="{{ url_for('static', filename='js/logger.js') }}"></script>
-    
+
     <!-- Base JavaScript Functions -->
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
 
