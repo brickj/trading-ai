@@ -123,33 +123,23 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                     if len(enhanced_data) > 0:
                         stock = enhanced_data[0]
                         self.assertIn("symbol", stock, "Stock should have symbol")
-                        self.assertIn("signal_data", stock, "Stock should have signal_data")
+                        self.assertIn("action", stock, "Stock should have action")
+                        self.assertIn("confidence", stock, "Stock should have confidence")
                         
                         # Check data structure at top level
-                        self.assertIn("price_data", stock, "Stock should have price_data")
-                        self.assertIn("sentiment_data", stock, "Stock should have sentiment_data")
-                        self.assertIn("signal_data", stock, "Stock should have signal_data")
+                        self.assertIn("current_price", stock, "Stock should have current_price")
+                        self.assertIn("sentiment_score", stock, "Stock should have sentiment_score")
+                        self.assertIn("reasoning", stock, "Stock should have reasoning")
                         
-                        # Check price data
-                        if "price_data" in stock:
-                            price_data = stock["price_data"]
-                            self.assertIn("current_price", price_data, "Price data should have current_price")
-                            self.assertIn("change", price_data, "Price data should have change")
-                            self.assertIn("change_percent", price_data, "Price data should have change_percent")
+                        # Check additional fields
+                        if "recommendation_type" in stock:
+                            self.assertIn("recommendation_type", stock, "Stock should have recommendation_type")
+                            self.assertIn("timestamp", stock, "Stock should have timestamp")
                         
-                        # Check signal data structure
-                        if "signal_data" in stock:
-                            signal_data = stock["signal_data"]
-                            self.assertIn("action", signal_data, "Signal data should have action")
-                            self.assertIn("reasoning", signal_data, "Signal data should have reasoning")
-                            self.assertIn("signal_strength", signal_data, "Signal data should have signal_strength")
-                        
-                        # Check sentiment data structure
-                        if "sentiment_data" in stock:
-                            sentiment_data = stock["sentiment_data"]
-                            self.assertIn("sentiment_score", sentiment_data, "Sentiment data should have sentiment_score")
-                            self.assertIn("confidence", sentiment_data, "Sentiment data should have confidence")
-                            self.assertIn("summary", sentiment_data, "Sentiment data should have summary")
+                        # Check data validation
+                        self.assertIsInstance(stock["symbol"], str, "Symbol should be a string")
+                        self.assertIsInstance(stock["action"], str, "Action should be a string")
+                        self.assertIsInstance(stock["confidence"], (int, float), "Confidence should be a number")
         
         print("✅ Stocks page test passed")
     

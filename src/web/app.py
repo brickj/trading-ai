@@ -52,8 +52,8 @@ app.debug = True
 app.config["DEBUG"] = True
 app.config["ENV"] = "development"
 app.config["SECRET_KEY"] = "trading_ai_secret_key_change_in_production"
-# No cache for development
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+# 1 year cache for static files
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000
 # Configure app timeouts for long-running enhanced analysis
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=10)
 socketio = SocketIO(
@@ -3549,7 +3549,7 @@ def create_app(port=5001):
         sys.stdout.flush()
         # Start the SocketIO server
         socketio.run(
-            app, host="0.0.0.0", port=port, debug=True, allow_unsafe_werkzeug=True
+            app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True
         )
         print(
             "[DEBUG] socketio.run() has exited (should not happen unless server stops)"
