@@ -63,4 +63,4 @@ src/core/config.py
 
 # Test artifacts
 .pytest_cache/
-test-artifacts/
+test-artifacts/src/core/config.py
