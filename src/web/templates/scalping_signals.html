@@ -166,8 +166,8 @@
     </div>
 </div>
 
-<!-- Signal Cards Section - Required for tests -->
-<div class="row mb-4" id="signalCardsSection">
+<!-- Signal Cards Section - Dynamically populated with real data only -->
+<div class="row mb-4" id="signalCardsSection" style="display: none;">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
@@ -175,82 +175,7 @@
             </div>
             <div class="card-body">
                 <div class="row g-3" id="signalCardsContainer">
-                    <!-- Signal cards will be dynamically populated here -->
-                    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                        <div class="card signal-card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-chart-line"></i> AAPL</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <small class="text-muted">Price</small>
-                                        <h6 class="mb-0">$150.25</h6>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted">Change</small>
-                                        <h6 class="mb-0 text-success">+2.5%</h6>
-                                    </div>
-                                </div>
-                                <hr>
-                                <small class="text-muted">Signal</small>
-                                <div class="progress mb-2" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 85%"></div>
-                                </div>
-                                <small class="text-muted">Confidence: 85%</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                        <div class="card signal-card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-chart-line"></i> TSLA</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <small class="text-muted">Price</small>
-                                        <h6 class="mb-0">$245.80</h6>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted">Change</small>
-                                        <h6 class="mb-0 text-danger">-1.2%</h6>
-                                    </div>
-                                </div>
-                                <hr>
-                                <small class="text-muted">Signal</small>
-                                <div class="progress mb-2" style="height: 8px;">
-                                    <div class="progress-bar bg-danger" style="width: 35%"></div>
-                                </div>
-                                <small class="text-muted">Confidence: 72%</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
-                        <div class="card signal-card">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-chart-line"></i> MSFT</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <small class="text-muted">Price</small>
-                                        <h6 class="mb-0">$320.45</h6>
-                                    </div>
-                                    <div class="col-6">
-                                        <small class="text-muted">Change</small>
-                                        <h6 class="mb-0 text-success">+1.8%</h6>
-                                    </div>
-                                </div>
-                                <hr>
-                                <small class="text-muted">Signal</small>
-                                <div class="progress mb-2" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 65%"></div>
-                                </div>
-                                <small class="text-muted">Confidence: 78%</small>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Signal cards will be dynamically populated here with real data only -->
                 </div>
             </div>
         </div>
