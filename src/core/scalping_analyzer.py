@@ -28,9 +28,9 @@ class ScalpingAnalyzer:
         self.session = requests.Session()
 
         # Scalping thresholds
-        self.VOLUME_RATIO_THRESHOLD = 2.0
-        self.PRICE_CHANGE_THRESHOLD = 2.0
-        self.SENTIMENT_THRESHOLD = 2
+        self.VOLUME_RATIO_THRESHOLD = 1.5  # Lowered from 2.0
+        self.PRICE_CHANGE_THRESHOLD = 1.0  # Lowered from 2.0
+        self.SENTIMENT_THRESHOLD = 0.2     # Lowered from 2.0
 
         # Market data APIs
         self.ALPHA_VANTAGE_API_KEY = Config.ALPHA_VANTAGE_API_KEY
@@ -377,16 +377,25 @@ class ScalpingAnalyzer:
                             {
                                 "title": headline,
                                 "sentiment": "Positive"
-                                if sentiment_result.get("score", 0) > 0
+                                if sentiment_result.get("sentiment_score", 0) > 0
                                 else "Negative"
-                                if sentiment_result.get("score", 0) < 0
+                                if sentiment_result.get("sentiment_score", 0) < 0
                                 else "Neutral",
                             }
                         )
 
+            # Convert sentiment score to class
+            sentiment_score = sentiment_result.get("sentiment_score", 0)
+            if sentiment_score > 0.2:
+                sentiment_class = "Bullish"
+            elif sentiment_score < -0.2:
+                sentiment_class = "Bearish"
+            else:
+                sentiment_class = "Neutral"
+
             return {
-                "sentiment_score": sentiment_result.get("score", 0),
-                "sentiment_class": sentiment_result.get("sentiment", "Neutral"),
+                "sentiment_score": sentiment_score,
+                "sentiment_class": sentiment_class,
                 "headlines": headlines,
             }
 
@@ -684,6 +693,7 @@ class ScalpingAnalyzer:
 
                     # Ensure all required fields are present with correct types
                     signal["sentiment"] = signal.get("sentiment_class", "Neutral")
+                    signal["sentiment_score"] = signal.get("sentiment_score", 0)
                     signal["price_open"] = (
                         float(signal.get("price_open", 0))
                         if signal.get("price_open") is not None
@@ -807,6 +817,7 @@ class ScalpingAnalyzer:
 
                 # Ensure all required fields are present with correct types
                 signal["sentiment"] = signal.get("sentiment_class", "Neutral")
+                signal["sentiment_score"] = signal.get("sentiment_score", 0)
                 signal["price_open"] = (
                     float(signal.get("price_open", 0))
                     if signal.get("price_open") is not None
