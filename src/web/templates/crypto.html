@@ -54,54 +54,12 @@
                         <strong>Note:</strong> Showing all cryptocurrencies from your watchlist with their current sentiment analysis and trading signals.
                     </div>
                     <div id="cryptoCardsRow" class="row">
-                        <!-- Real crypto cards with current data -->
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card border-warning h-100">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5>BTC</h5>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Price:</strong> $112,258.40</p>
-                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
-                                    <p><strong>Signal Strength:</strong> 50%</p>
-                                </div>
+                        <!-- Crypto cards will be dynamically populated with real data -->
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
                             </div>
-                        </div>
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card border-warning h-100">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5>ETH</h5>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Price:</strong> $4,575.58</p>
-                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
-                                    <p><strong>Signal Strength:</strong> 45%</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card border-warning h-100">
-                                <div class="card-header bg-success text-white">
-                                    <h5>SOL</h5>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Price:</strong> $196.38</p>
-                                    <p><strong>Action:</strong> <span class="badge bg-success">BUY</span></p>
-                                    <p><strong>Signal Strength:</strong> 75%</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card border-warning h-100">
-                                <div class="card-header bg-warning text-dark">
-                                    <h5>USDT</h5>
-                                </div>
-                                <div class="card-body">
-                                    <p><strong>Price:</strong> $0.9998</p>
-                                    <p><strong>Action:</strong> <span class="badge bg-secondary">HOLD</span></p>
-                                    <p><strong>Signal Strength:</strong> 20%</p>
-                                </div>
-                            </div>
+                            Loading crypto data...
                         </div>
                     </div>
 
@@ -121,25 +79,25 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-success" id="cryptoGainers">1</h4>
+                                <h4 class="text-success" id="cryptoGainers">-</h4>
                                 <small>Gainers</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-danger" id="cryptoLosers">0</h4>
+                                <h4 class="text-danger" id="cryptoLosers">-</h4>
                                 <small>Losers</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-info" id="cryptoVolume">5</h4>
+                                <h4 class="text-info" id="cryptoVolume">-</h4>
                                 <small>Volume</small>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-warning" id="cryptoVolatility">15.2%</h4>
+                                <h4 class="text-warning" id="cryptoVolatility">-</h4>
                                 <small>Volatility</small>
                             </div>
                         </div>
@@ -183,25 +141,25 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-success" id="bullishCount">1</h4>
+                                <h4 class="text-success" id="bullishCount">-</h4>
                                 <p>Bullish Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-danger" id="bearishCount">0</h4>
+                                <h4 class="text-danger" id="bearishCount">-</h4>
                                 <p>Bearish Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-secondary" id="neutralCount">4</h4>
+                                <h4 class="text-secondary" id="neutralCount">-</h4>
                                 <p>Neutral Signals</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-info" id="avgSentiment">0.04</h4>
+                                <h4 class="text-info" id="avgSentiment">-</h4>
                                 <p>Avg Sentiment</p>
                             </div>
                         </div>

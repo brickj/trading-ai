@@ -918,7 +918,7 @@ class ScalpingAnalyzer:
                 "opportunities": len(opportunities),
                 "data": serializable_opportunities,
             }
-            log_info(f"[SCALPING] Created response object: {response}")
+            log_info(f"[SCALPING] Created response object: {len(serializable_opportunities)} opportunities, {len(signals)} total signals")
 
             return response
 

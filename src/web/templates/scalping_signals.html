@@ -400,13 +400,12 @@
             let recClass = 'recommendation';
             if (opp.recommendation === 'Short Scalping Opportunity') recClass += ' short';
             if (opp.recommendation === 'High Momentum - Monitor Sentiment') recClass += ' momentum';
-            // Headlines (collapsible)
+            // Headlines (show first headline only)
             let headlinesHtml = '';
             if (opp.top_headlines && opp.top_headlines.length > 0) {
-                const allHeadlines = opp.top_headlines.map(h => `<div class='headline-item'>${h.title}</div>`).join('');
+                const firstHeadline = opp.top_headlines[0].title;
                 headlinesHtml = `<div class='modern-headlines'>` +
-                    opp.top_headlines.slice(0, 1).map(h => `<div class='headline-item'>${h.title}</div>`).join('') +
-                    (opp.top_headlines.length > 1 ? `<div class='show-more' onclick='this.parentNode.innerHTML = \`${allHeadlines}\`'>Show More</div>` : '') +
+                    `<div class='headline-item'>${firstHeadline}</div>` +
                     `</div>`;
             }
             return `
@@ -446,7 +445,6 @@
                         <div class="modern-card-footer">
                             <button title="View Details" onclick="viewDetails('${opp.ticker}')"><i class="fas fa-eye"></i></button>
                             <button title="Add to Watchlist" onclick="addToWatchlist('${opp.ticker}')"><i class="fas fa-plus"></i></button>
-                            <button title="Set Alert" onclick="setAlert('${opp.ticker}')"><i class="fas fa-bell"></i></button>
                         </div>
                     </div>
                 </div>
@@ -626,10 +624,5 @@
             showAlert(`${ticker} added to watchlist!`, 'success');
         }
 
-        function setAlert(ticker) {
-            frontendLogger.logUserAction('Set alert clicked', 'setAlert', {ticker: ticker});
-            // TODO: Implement alert functionality
-            showAlert(`Alert set for ${ticker}!`, 'info');
-        }
 </script>
 {% endblock %}
