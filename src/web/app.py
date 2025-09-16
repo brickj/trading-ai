@@ -1,59 +1,44 @@
 """Application factory and Socket.IO setup for Trading AI UI."""
-from datetime import timedelta
+from __future__ import annotations
 
 from flask import Flask
-from flask_cors import CORS
 
-from .extensions import socketio
-from .routes import register_routes
-from .utils.page_logger import page_logger
 from src.core.config import Config
 
-
-log_info = page_logger.info
-log_error = page_logger.error
-log_exception = page_logger.exception
-trading_logger = page_logger.logger
+from .extensions import init_extensions, socketio
+from .routes import register_routes
+from .utils.page_logger import page_logger
 
 
-def create_flask_app() -> Flask:
+def create_flask_app(config_object: type[Config] = Config) -> Flask:
     """Create and configure the Flask application instance."""
+
     app = Flask(__name__)
+    app.config.from_object(config_object)
     register_routes(app)
-
-    CORS(
-        app,
-        origins="*",
-        allow_headers=["Content-Type", "Authorization"],
-        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    )
-
-    app.debug = True
-    app.config.update(
-        DEBUG=True,
-        ENV="development",
-        SECRET_KEY="trading_ai_secret_key_change_in_production",
-        SEND_FILE_MAX_AGE_DEFAULT=31536000,
-        PERMANENT_SESSION_LIFETIME=timedelta(minutes=10),
-    )
-
-    socketio.init_app(
-        app,
-        cors_allowed_origins="*",
-        ping_timeout=getattr(Config, "ENHANCED_ANALYSIS_TIMEOUT", 60),
-        ping_interval=25,
-    )
-
+    init_extensions(app)
     return app
 
 
 app = create_flask_app()
 
 
-def create_app(host: str = "0.0.0.0", port: int = 5001) -> Flask:
+def create_app(host: str | None = None, port: int | None = None) -> Flask:
     """Entry point used by start_app.py to launch the server."""
-    log_info(f"Starting Trading AI UI on {host}:{port}", "system")
-    socketio.run(app, host=host, port=port, debug=False, allow_unsafe_werkzeug=True)
+
+    host = host or app.config.get("HOST", "0.0.0.0")
+    port = port or app.config.get("PORT", 5001)
+    page_logger.info(
+        f"Starting Trading AI UI on {host}:{port} (debug={app.debug})",
+        "system",
+    )
+    socketio.run(
+        app,
+        host=host,
+        port=port,
+        debug=app.debug,
+        allow_unsafe_werkzeug=True,
+    )
     return app
 
 

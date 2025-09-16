@@ -59,8 +59,11 @@ populate_market_movers.py.log
 node_modules/
 
 # Sensitive configuration files
-src/core/config.py
+config/secrets.yaml
+config/secrets.yml
+secrets.yaml
+secrets.yml
 
 # Test artifacts
 .pytest_cache/
-test-artifacts/src/core/config.py
+test-artifacts/
