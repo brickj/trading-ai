@@ -1,7 +1,6 @@
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List
-import yfinance as yf
 # from ..core.go_service_client import GoServiceClient  # Module removed
 
 
@@ -319,89 +318,6 @@ class TradingStrategy:
             "remaining_capital": self.current_capital,
         }
 
-    def backtest_strategy(self, symbol: str, days_back: int = 30) -> Dict:
-        """
-        Simple backtest of the strategy
-        """
-        try:
-            # Get historical data
-            stock = yf.Ticker(symbol)
-            end_date = datetime.now()
-            start_date = end_date - timedelta(days=days_back)
-            hist = stock.history(start=start_date, end=end_date)
-            if hist.empty:
-                return {"error": f"No historical data for {symbol}"}
-            # Simulate random sentiment scores for backtest
-            np.random.seed(42)
-            sentiment_scores = np.random.normal(0, 0.3, len(hist))
-            trades = []
-            capital = 10000
-            for i, (date, row) in enumerate(hist.iterrows()):
-                if i < 5:  # Skip first few days
-                    continue
-                current_price = row["Close"]
-                sentiment = sentiment_scores[i]
-                # Generate signal based on sentiment
-                if sentiment > 0.2:
-                    action = "CALL"
-                elif sentiment < -0.2:
-                    action = "PUT"
-                else:
-                    continue
-                # Calculate option price and simulate trade
-                strike_price = current_price * (1.02 if action == "CALL" else 0.98)
-                option_price = self.calculate_option_price_estimate(
-                    current_price, strike_price, 30, action.lower()
-                )
-                position_size = min(10, int(capital * 0.05 / option_price))
-                if position_size > 0:
-                    trade_cost = option_price * position_size
-                    # Simulate outcome after 5 days
-                    if i + 5 < len(hist):
-                        future_price = hist.iloc[i + 5]["Close"]
-                        if action == "CALL":
-                            profit = (
-                                max(0, future_price - strike_price) * position_size
-                                - trade_cost
-                            )
-                        else:  # PUT
-                            profit = (
-                                max(0, strike_price - future_price) * position_size
-                                - trade_cost
-                            )
-                        capital += profit
-                        trades.append(
-                            {
-                                "date": date.strftime("%Y-%m-%d"),
-                                "action": action,
-                                "entry_price": current_price,
-                                "strike_price": strike_price,
-                                "option_price": option_price,
-                                "position_size": position_size,
-                                "cost": trade_cost,
-                                "exit_price": future_price,
-                                "profit": profit,
-                                "sentiment": sentiment,
-                            }
-                        )
-            total_return = ((capital - 10000) / 10000) * 100
-            win_rate = (
-                len([t for t in trades if t["profit"] > 0]) / len(trades)
-                if trades
-                else 0
-            )
-            return {
-                "symbol": symbol,
-                "initial_capital": 10000,
-                "final_capital": round(capital, 2),
-                "total_return": round(total_return, 2),
-                "total_trades": len(trades),
-                "win_rate": round(win_rate * 100, 2),
-                "trades": trades[-10:],  # Return last 10 trades
-            }
-        except Exception:
-            return {"error": "Backtest failed: {str(e)}"}
-
     def get_portfolio_summary(self) -> Dict:
         """
         Get current portfolio summary
@@ -444,24 +360,6 @@ class TradingStrategy:
             symbol, current_price, sentiment_data, signal_data
         )
 
-    def get_options_recommendation(
-        self, symbol: str, current_price: float, sentiment_data: Dict
-    ) -> Dict:
-        """
-        Get options trading recommendation - alias for get_recommendation
-        """
-        # Create signal data from sentiment
-        signal_data = {
-            "action": "HOLD",
-            "signal_strength": 0.5,
-            "confidence": sentiment_data.get("confidence", 0.5),
-            "reasoning": "No clear signal available",
-        }
-        # Use the existing generate_trade_signal method
-        return self.generate_trade_signal(
-            symbol, current_price, sentiment_data, signal_data
-        )
-
     def _get_conviction_level(self, sentiment_score: float) -> str:
         """Get the conviction level based on sentiment score."""
         score = abs(sentiment_score)
@@ -470,35 +368,3 @@ class TradingStrategy:
         elif score >= 0.5:
             return "Medium"
         return "Low"
-
-    def _get_strategy_notes(
-        self, sentiment_score: float, confidence: float, strategy_type: str
-    ) -> List[str]:
-        """Generate specific notes for day trading execution"""
-        notes = [
-            f"Strategy: {strategy_type} based on sentiment analysis",
-            f"Conviction Level: {self._get_conviction_level(sentiment_score)}",
-            "⚠️ Day trading options carries high risk - never risk more than you can afford to lose",
-            "📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay",
-            "⏰ Time decay accelerates rapidly on 0-2 DTE options",
-            "💧 Ensure sufficient liquidity - avoid wide bid-ask spreads",
-            "📈 Consider market conditions: trending vs. choppy markets affect success rates",
-        ]
-        if abs(sentiment_score) >= 0.7:
-            notes.append(
-                "🚀 High conviction trade - sentiment strongly supports direction"
-            )
-            notes.append("⚡ Consider larger position size within risk limits")
-        elif abs(sentiment_score) >= 0.5:
-            notes.append("📊 Moderate conviction - wait for technical confirmation")
-            notes.append("🎯 Stick to planned exit levels")
-        else:
-            notes.append("⚠️ Lower conviction - consider paper trading first")
-            notes.append("🛡️ Use smaller position sizes")
-        if confidence >= 0.8:
-            notes.append("✅ High confidence in sentiment analysis")
-        elif confidence >= 0.6:
-            notes.append("⚖️ Moderate confidence - monitor for changes")
-        else:
-            notes.append("❓ Lower confidence - be extra cautious")
-        return notes

@@ -258,29 +258,6 @@ class Cache:
             log_debug(f"Cache stats unavailable: {e}")
             return {}
 
-    def cleanup_expired(self) -> int:
-        """
-        Remove expired cache entries
-        Returns:
-            Number of entries removed
-        """
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(
-                        """
-                        DELETE FROM api_cache
-                        WHERE expires_at <= CURRENT_TIMESTAMP
-                    """
-                    )
-                    deleted_count = cursor.rowcount
-                    conn.commit()
-                    return deleted_count
-        except Exception as e:
-            log_error(f"Cache cleanup error: {e}")
-            return 0
-
-
 # Global cache instance
 cache = Cache()
 
@@ -299,8 +276,3 @@ def cache_result(cache_key: str, data: Any, ttl: int = 3600) -> bool:
 def get_cache_stats() -> Dict[str, Any]:
     """Get cache statistics"""
     return cache.get_stats()
-
-
-def clear_cache() -> bool:
-    """Clear all cache entries"""
-    return cache.clear()

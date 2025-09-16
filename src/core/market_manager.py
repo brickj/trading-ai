@@ -2,82 +2,14 @@
 Market Manager - Centralized management of foreign exchanges and markets
 """
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 from src.core.db_utils import execute_query
-from src.core.logger import log_info, log_error, log_debug
+from src.core.logger import log_error
 
 class MarketManager:
     """Manages foreign exchange and market information"""
     
-    @staticmethod
-    def get_all_markets() -> List[Dict]:
-        """Get all active foreign exchanges"""
-        try:
-            query = """
-                SELECT code, name, country, currency, timezone, symbol_suffix, 
-                       trading_hours_open, trading_hours_close, active
-                FROM foreign_exchanges 
-                WHERE active = TRUE 
-                ORDER BY country, name
-            """
-            return execute_query(query) or []
-        except Exception as e:
-            log_error(f"Error fetching markets: {e}")
-            return []
-    
-    @staticmethod
-    def get_market_by_code(code: str) -> Optional[Dict]:
-        """Get market by exchange code"""
-        try:
-            query = """
-                SELECT code, name, country, currency, timezone, symbol_suffix, 
-                       trading_hours_open, trading_hours_close, active
-                FROM foreign_exchanges 
-                WHERE code = %s AND active = TRUE
-                LIMIT 1
-            """
-            result = execute_query(query, (code,))
-            return result[0] if result else None
-        except Exception as e:
-            log_error(f"Error fetching market {code}: {e}")
-            return None
-    
-    @staticmethod
-    def get_market_by_symbol(symbol: str) -> Optional[Dict]:
-        """Get market information by symbol (using suffix matching)"""
-        try:
-            # Try to match by symbol suffix first
-            suffix_query = """
-                SELECT code, name, country, currency, timezone, symbol_suffix, 
-                       trading_hours_open, trading_hours_close, active
-                FROM foreign_exchanges 
-                WHERE symbol_suffix = %s AND active = TRUE
-                LIMIT 1
-            """
-            result = execute_query(suffix_query, (symbol,))
-            if result:
-                return result[0]
-            
-            # If no suffix match and no dot in symbol, check US exchanges
-            if '.' not in symbol:
-                us_query = """
-                    SELECT code, name, country, currency, timezone, symbol_suffix, 
-                           trading_hours_open, trading_hours_close, active
-                    FROM foreign_exchanges 
-                    WHERE code IN ('NASDAQ', 'NYSE') AND active = TRUE
-                    LIMIT 1
-                """
-                result = execute_query(us_query)
-                if result:
-                    return result[0]
-            
-            return None
-        except Exception as e:
-            log_error(f"Error fetching market for symbol {symbol}: {e}")
-            return None
-    
-    @staticmethod
-    def get_markets_for_dropdown() -> List[Dict]:
+    def get_markets_for_dropdown(self) -> List[Dict]:
         """Get markets formatted for frontend dropdown"""
         try:
             query = """
@@ -134,26 +66,17 @@ class MarketManager:
         except Exception as e:
             log_error(f"Error in get_markets_for_dropdown: {e}")
             return []
-    
-    @staticmethod
-    def get_exchange_currency_from_symbol(symbol: str) -> Tuple[str, str]:
-        """Get exchange and currency from symbol (backend version)"""
-        market = MarketManager.get_market_by_symbol(symbol)
-        if market:
-            return market['code'], market['currency']
-        return 'US', 'USD'  # Default fallback
-        
-    @staticmethod
-    def get_foreign_markets_overview() -> Dict:
+
+    def get_foreign_markets_overview(self) -> Dict:
         """
         Get overview of foreign markets with summary statistics
-        
+
         Returns:
             Dict: Contains 'markets' list and 'summary' statistics
         """
         try:
             # Get all active markets
-            markets = MarketManager.get_markets_for_dropdown()
+            markets = self.get_markets_for_dropdown()
             
             # Add additional fields needed by frontend
             for market in markets:

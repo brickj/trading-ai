@@ -4,8 +4,7 @@ Analysis service for handling stock and crypto analysis business logic
 
 import time
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
-import asyncio
+from typing import Dict, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ...data.data_fetcher import DataFetcher
@@ -29,11 +28,9 @@ class AnalysisService:
         
         # Performance optimization: thread pool for parallel processing
         self.thread_pool = ThreadPoolExecutor(max_workers=10)
-        
+
         # Cache frequently used data
         self._cache_timeout = 300  # 5 minutes
-        self._last_sp500_symbols = None
-        self._sp500_symbols_cache_time = None
     
     def analyze_single_stock(self, symbol: str, use_cache: bool = True) -> Dict:
         """
@@ -376,27 +373,6 @@ class AnalysisService:
         except Exception as e:
             trading_logger.error_logger.error(f"Error fetching news for {symbol}: {e}")
             return []
-    
-    def _get_sp500_symbols(self) -> List[str]:
-        """Get S&P 500 symbols with caching"""
-        current_time = time.time()
-        
-        # Check if cached symbols are still valid
-        if (self._last_sp500_symbols and self._sp500_symbols_cache_time and
-            current_time - self._sp500_symbols_cache_time < 3600):  # 1 hour cache
-            return self._last_sp500_symbols
-        
-        # Sample S&P 500 symbols (in production, this would come from a data source)
-        symbols = [
-            "AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "V", "UNH",
-            "HD", "PG", "MA", "DIS", "PYPL", "ADBE", "CRM", "NFLX", "PFE", "TMO"
-        ]
-        
-        # Cache the symbols
-        self._last_sp500_symbols = symbols
-        self._sp500_symbols_cache_time = current_time
-        
-        return symbols
     
     def _perform_fresh_crypto_analysis(self, crypto_symbols: List[str]) -> Dict:
         """Perform fresh crypto analysis when preloaded data isn't available"""

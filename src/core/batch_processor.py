@@ -21,28 +21,6 @@ class BatchProcessor:
         self.data_fetcher = DataFetcher()
         self.recommendation_manager = get_recommendation_manager()
         self.sentiment_analyzer = SentimentAnalyzer()
-        self.max_workers = Config.MAX_CONCURRENT_REQUESTS
-
-    def process_crypto_concurrently(
-        self, crypto_symbols: List[str], days_back: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Process multiple cryptocurrencies concurrently
-        Args:
-            crypto_symbols: List of crypto symbols to analyze
-            days_back: Number of days of news to fetch
-        Returns:
-            List of crypto analysis results
-        """
-        days_back = (
-            days_back if days_back is not None else Config.BULK_ANALYSIS_NEWS_DAYS
-        )
-        shared_crypto_news = self.data_fetcher.get_crypto_news(days_back=days_back)
-        results = [
-            self._process_single_crypto(symbol, shared_crypto_news, days_back)
-            for symbol in crypto_symbols
-        ]
-        return [r for r in results if r is not None]
 
     def _process_single_crypto(
         self, symbol: str, shared_news: List[Dict], days_back: int
@@ -144,20 +122,6 @@ class BatchProcessor:
         except Exception as e:
             print(f"Error analyzing {symbol}: {e}")
             return None
-
-    def get_opportunities_only(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """
-        Filter results to only include strong trading opportunities
-        """
-        opportunities = []
-        for result in results:
-            sentiment_score = result.get("sentiment_data", {}).get("sentiment_score", 0)
-            confidence = result.get("sentiment_data", {}).get("confidence", 0)
-            if abs(sentiment_score) > 0.3 and confidence > 0.5:
-                opportunities.append(result)
-        return opportunities
 
     def process_batch_sync(self, tasks, progress_callback=None):
         """
