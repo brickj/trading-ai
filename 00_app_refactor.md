@@ -8,16 +8,18 @@
 
 ## 2. Current State Mapping
 - **Proprietary modules**
-  - `src/core` – DB layer, caching, watchlist, telegram, etc.
+  - `src/core` – DB layer, caching, watchlist, telegram, and low-level helpers (`db_utils`, `cache`, etc.).
   - `src/data` – `DataFetcher` and external market/news APIs.
   - `src/trading` – `trading_strategy.py`, `enhanced_trading_strategy.py` and related logic.
-  - `src/utils` – DB/job setup scripts.
 - **UI modules (mixed with core today)**
-  - `src/web/app.py` and `src/web/routes/*` – routes import core classes, perform SQL queries, and call external APIs.
-  - `src/web/helpers.py`, `src/web/repositories` – direct DB access.
+  - `src/web/app.py` – 5,070 lines with 54 `@app.route` endpoints that embed business logic and DB calls.
+  - `src/web/routes/*` – blueprints for analysis, backtest, system, page, telegram, and logging routes (remaining endpoints still in `app.py`).
+  - `src/web/services` – `AnalysisService`, `BacktestService`, `DataService`, `ReportService` exist; other planned services not yet created.
+  - `src/web/helpers.py`, `src/web/repositories`, `src/web/utils` – direct DB access via `src.core.database.get_db_connection` and related helpers.
   - Templates & static files under `src/web/templates` and `src/web/static`.
-- **Pain points**
-  - 54 routes still live in `app.py` with business logic and DB calls.
+- **Coupling & gaps**
+  - UI modules import core classes directly (`Config`, `RecommendationManager`, `SentimentAnalyzer`, etc.) and run SQL queries through shared helpers.
+  - CORS remains wildcard; no token-based auth or rate limiting implemented yet.
   - Tight coupling makes unit testing and performance tuning difficult.
 
 ## 3. Target Architecture
@@ -62,9 +64,9 @@ Responses are JSON with `{error: string}` on failure.
 | Phase | Focus | Key Actions |
 |-------|-------|-------------|
 |0. Inventory|Tag files as UI vs Core|Identify modules to move; mark remaining 54 routes in `app.py`|
-|1. Route Modularization (Week 1‑2)|Finish moving routes out of `app.py`|Relocate dashboard, market_movers, portfolio, foreign markets, news, watchlist, recommendations, and remaining 47+ routes into blueprints; update `routes/__init__.py`|
-|2. Service Layer Completion (Week 2‑3)|Isolate business logic|Finalize `analysis_service.py`, create `dashboard_service`, `market_service`, `portfolio_service`, `news_service`, `recommendation_service`; introduce dependency injection|
-|3. Core Extraction & HTTP Client (Week 3‑4)|Split repo and expose REST endpoints|Move proprietary modules to new `core-service`; implement API layer; add `core_client` in UI; replace direct imports and DB calls with HTTP requests|
+|1. Route Modularization (Week 1‑2)|Finish moving routes out of `app.py`|Audit existing blueprints (analysis, backtest, system, page, telegram, logging) and migrate remaining endpoints—dashboard, market movers, portfolio, foreign markets, news, watchlist, recommendations, opportunities, etc.—into dedicated blueprints; update `routes/__init__.py`|
+|2. Service Layer Completion (Week 2‑3)|Isolate business logic|Harden current services (`AnalysisService`, `BacktestService`, `DataService`, `ReportService`) and add the missing `dashboard`, `market`, `portfolio`, `news`, and `recommendation` services; introduce dependency injection|
+|3. Core Extraction & HTTP Client (Week 3‑4)|Split repo and expose REST endpoints|Move proprietary modules to new `core-service`; implement API layer; add `core_client` in UI; replace direct imports (`Config`, `RecommendationManager`, DB helpers, etc.) and SQL calls with HTTP requests|
 |4. Data Layer Optimization (Week 4)|Connection pooling, repositories, caching|Implement `DatabaseConnector`, standardize repositories, add Redis/TTL caching, eliminate duplicate queries|
 |5. Performance Enhancements (Week 4‑5)|Async & batching|Move long I/O tasks to background jobs, optimize SP500 analysis, batch queries, add in-memory caches|
 |6. Testing & Observability (Week 5‑6)|Quality and monitoring|Unit tests for services/repos, integration tests hitting core API, logging & timing metrics, fix missing deps (`lxml`, XML parser)|
