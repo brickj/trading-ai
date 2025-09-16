@@ -225,13 +225,13 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             self.assertIn("data", data, "Portfolio API should have data field")
             if "data" in data:
                 portfolio_data = data["data"]
-                self.assertIn("portfolio_summary", portfolio_data, "Portfolio should have portfolio_summary")
+                self.assertIn("summary", portfolio_data, "Portfolio should have summary")
                 self.assertIn("open_positions", portfolio_data, "Portfolio should have open_positions")
                 self.assertIn("recent_trades", portfolio_data, "Portfolio should have recent_trades")
                 
                 # Check portfolio summary structure
-                if "portfolio_summary" in portfolio_data:
-                    summary = portfolio_data["portfolio_summary"]
+                if "summary" in portfolio_data:
+                    summary = portfolio_data["summary"]
                     self.assertIn("current_capital", summary, "Portfolio summary should have current_capital")
                     self.assertIn("total_value", summary, "Portfolio summary should have total_value")
                     self.assertIn("unrealized_pnl", summary, "Portfolio summary should have unrealized_pnl")
@@ -253,7 +253,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                         position = open_positions[0]
                         self.assertIn("symbol", position, "Position should have symbol")
                         self.assertIn("quantity", position, "Position should have quantity")
-                        self.assertIn("avg_price", position, "Position should have avg_price")
+                        self.assertIn("entry_price", position, "Position should have entry_price")
                         self.assertIn("current_price", position, "Position should have current_price")
                         self.assertIn("unrealized_pnl", position, "Position should have unrealized_pnl")
                 

@@ -404,11 +404,11 @@ async function loadPortfolioData() {
         }
         
         portfolioData = data.data;
-        updatePortfolioSummary(data.data.portfolio_summary);
+        updatePortfolioSummary(data.data.summary);
         displayOpenPositions(data.data.open_positions);
         displayRecentTrades(data.data.recent_trades);
         updateAllocationChart(data.data.open_positions);
-        updatePortfolioStats(data.data.portfolio_summary, data.data.recent_trades);
+        updatePortfolioStats(data.data.summary, data.data.recent_trades);
         
         document.getElementById('lastUpdated').textContent = 
             `Last updated: ${new Date().toLocaleString()}`;

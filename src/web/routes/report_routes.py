@@ -337,7 +337,7 @@ def get_real_system_metrics(start_date: datetime, end_date: datetime) -> Dict[st
                 cur.execute(
                     """
                     SELECT COUNT(*) as total_events
-                    FROM system_logs
+                    FROM logs
                     WHERE timestamp BETWEEN %s AND %s
                     """,
                     (start_date, end_date),
