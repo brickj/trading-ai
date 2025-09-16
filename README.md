@@ -65,14 +65,14 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configure API Keys
-**⚠️ IMPORTANT: Copy and configure the config file before starting:**
+**⚠️ IMPORTANT: Provide your API keys before starting:**
 
 ```bash
-# Copy the template configuration
-cp src/core/config.template.py src/core/config.py
+# Copy the secrets template
+cp config/secrets.example.yaml config/secrets.yaml
 
-# Edit the config file with your API keys
-nano src/core/config.py  # or use your preferred editor
+# Edit the secrets file with your API keys
+nano config/secrets.yaml  # or use your preferred editor
 ```
 
 **Required API Keys:**
@@ -84,7 +84,9 @@ nano src/core/config.py  # or use your preferred editor
 - **News API**: At [newsapi.org](https://newsapi.org) (optional)
 - **Telegram**: Create bot at [@BotFather](https://t.me/botfather) (optional)
 
-**Note:** The config file contains sensitive API keys and is excluded from the repository for security.
+**Note:** `config/secrets.yaml` is excluded from version control. You can also
+set environment variables (for example `ALPHA_VANTAGE_API_KEY`) to override the
+values stored in the secrets file.
 
 ### 4. Startup
 ```bash
@@ -624,28 +626,22 @@ Advanced trading platform with enhanced analysis capabilities.
 
 ### Required Setup Steps:
 
-1. **Copy the template configuration:**
+1. **Copy the secrets template:**
    ```bash
-   cp src/core/config.template.py src/core/config.py
+   cp config/secrets.example.yaml config/secrets.yaml
    ```
 
-2. **Update API keys in `src/core/config.py`:**
-   ```python
-   # Required API Keys
-   ALPHA_VANTAGE_API_KEY = "your_alpha_vantage_api_key_here"
-   FINNHUB_API_KEY = "your_finnhub_api_key_here"
-   NEWS_API_KEY = "your_news_api_key_here"
-   OPENAI_API_KEY = "your_openai_api_key_here"
-   
-   # Optional API Keys
-   CRYPTOPANIC_API_KEY = "your_cryptopanic_api_key_here"
-   TELEGRAM_API_KEY = "your_telegram_api_key_here"
-   REDDIT_CLIENT_ID = "your_reddit_client_id_here"
-   REDDIT_SECRET_KEY = "your_reddit_secret_key_here"
-   DEEPSEEK_API_KEY = "your_deepseek_api_key_here"
-   ```
+2. **Fill in your keys:**
+   Update `config/secrets.yaml` with the required API keys (or set the matching
+   environment variables). The configuration loader automatically picks up
+   values from either location.
 
-3. **Get your API keys:**
+3. **Override via environment (optional):**
+   Any configuration entry can be overridden with environment variables such as
+   `ALPHA_VANTAGE_API_KEY`, `TRADING_AI_ALPHA_VANTAGE_API_KEY`, or
+   `FLASK_SECRET_KEY`. These take precedence over `secrets.yaml`.
+
+4. **Get your API keys:**
    - **Finnhub**: Free at [finnhub.io](https://finnhub.io) (required)
    - **Alpha Vantage**: Free at [alphavantage.co](https://alphavantage.co) (optional)
    - **OpenAI**: At [platform.openai.com](https://platform.openai.com) (optional if using Ollama)
@@ -657,12 +653,14 @@ Advanced trading platform with enhanced analysis capabilities.
 
 The following files contain sensitive information and are excluded from the repository:
 
-- `src/core/config.py` - Contains API keys and configuration settings
 - `.env` - Environment variables (if used)
-- `docs/NOTES.txt` - Contains AWS credentials  
+- `docs/NOTES.txt` - Contains AWS credentials
 - `git_manager.py` - Contains GitHub token
 
-**Note:** The `src/core/config.template.py` file is included as a template for easy setup.
+**Note:** `src/core/config.py` is now committed and reads from environment
+variables or `config/secrets.yaml`. The original
+`src/core/config.template.py` remains as an extended reference of the available
+settings.
 
 **Security:** All sensitive files are properly excluded via `.gitignore` to prevent accidental commits of API keys and credentials.
 
