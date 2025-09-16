@@ -122,6 +122,8 @@ paths:
   /api/market/events:        {get: {weeks_back?, weeks_ahead?}}
 ```
 
+> **Implementation note:** Start by covering the handful of endpoints the existing UI actually calls today (analysis detail, watchlist, opportunities, backtest results, portfolio overview). Treat the rest of the wishlist above as backlog items that can be exposed iteratively once the core boundary is stable.
+
 ### **Frontend API Client Interface**
 ```python
 # Frontend will use this client to call backend
@@ -156,44 +158,54 @@ class BackendAPIClient:
 - **Environment Variables**: All secrets in backend only
 - **Staging Backend**: Consultant gets test instance with sample data
 
-## 6. UPDATED Migration Phases
+### **Implementation Principles (keep it simple)**
+- Reuse as much of the existing codebase as possible; only introduce new modules when it reduces coupling.
+- Ship a thin HTTP layer in front of the existing services instead of rewriting business logic.
+- Move files between repos only after the HTTP boundary is in place and verified by the UI.
 
-| Phase | Focus | Key Actions | Status |
-|-------|-------|-------------|--------|
-|~~0. Inventory~~|~~Tag files as UI vs Core~~|~~Identify modules to move~~|✅ **COMPLETE** |
-|~~1. Route Modularization~~|~~Move routes out of app.py~~|~~Create blueprints and register routes~~|✅ **COMPLETE** |
-|~~2. Service Layer~~|~~Isolate business logic~~|~~Create service classes~~|✅ **MOSTLY COMPLETE** |
-|3. Backend Service Creation (Week 1)|Extract backend with API layer|Move `src/core`, `src/data`, `src/trading` to `backend-service`; implement REST API|❌ **NOT STARTED** |
-|4. Frontend Repository Creation (Week 1)|Create consultant-accessible frontend|Extract templates/static to `frontend` repo; create API client|❌ **NOT STARTED** |
-|5. API Client Implementation (Week 1-2)|Replace direct imports with HTTP calls|Create `BackendAPIClient`; update all routes to use API calls|❌ **NOT STARTED** |
-|6. Consultant Setup (Week 2)|Enable consultant collaboration|Create staging backend; API docs; frontend development guide|❌ **NOT STARTED** |
-|7. Testing & Validation (Week 2-3)|Ensure separation works|Integration tests; consultant can work independently|❌ **NOT STARTED** |
-|8. Production Deployment (Week 3-4)|Deploy separated services|Deploy backend service; update frontend to use production API|❌ **NOT STARTED** |
+## 6. Simplified Migration Plan
 
-## 7. Immediate Next Steps (Phase 3-4)
+| Phase | Focus | Why it matters |
+|-------|-------|----------------|
+|✅ **0. Inventory** | Tag files as UI vs. Core | Already complete — confirms what stays private vs. shareable. |
+|✅ **1. Route Modularization** | Keep UI endpoints together | Done — makes it easy to swap data sources later. |
+|🟡 **2. Add API Boundary (Week 1)** | Introduce `/api` blueprint that wraps existing services | UI can fetch data only through HTTP; proves separation without moving files yet. |
+|⚪ **3. Frontend API Client (Week 1)** | Replace direct imports with HTTP calls | Ensures UI works with the API layer and is ready to live in a separate repo. |
+|⚪ **4. Repo Split (Week 2)** | Create `backend-service` (private) and `frontend-ui` (shareable) repos | Move only after UI runs fully on the API. |
+|⚪ **5. Consultant Enablement (Week 2)** | Staging backend, docs, mock data | Lets consultant work without backend access. |
+|⚪ **6. Hardening & Deploy (Week 3)** | Automated tests, monitoring, production rollout | Final polish before handing off to consultant. |
 
-### **Week 1: Backend Service Creation**
-1. **Create `backend-service` repository** (private)
-2. **Move proprietary modules**: `src/core`, `src/data`, `src/trading` → `backend-service/src/`
-3. **Implement REST API layer** in `backend-service/src/api/`
-4. **Add authentication** and CORS configuration
-5. **Create OpenAPI specification** and Postman collection
+### **Phase 2 – Add API Boundary (Week 1)**
+1. Introduce a dedicated `/api` blueprint in the current repo.
+2. Expose read/write methods that the templates need by calling existing services (`AnalysisService`, `BacktestService`, etc.).
+3. Implement request/response schemas (pydantic or dataclasses) for consistent payloads.
+4. Lock down cross-origin access to only the planned frontend origin(s).
 
-### **Week 1: Frontend Repository Creation**
-1. **Create `frontend` repository** (public)
-2. **Move UI components**: `templates/`, `static/` → `frontend/`
-3. **Create `BackendAPIClient`** module for HTTP communication
-4. **Extract thin Flask routes** that only call API client
-5. **Create development guide** for consultant
+### **Phase 3 – Frontend API Client (Week 1)**
+1. Build a `BackendAPIClient` that wraps HTTP calls (requests or httpx).
+2. Update each blueprint in `src/web/routes` to call the client instead of importing core modules.
+3. Provide simple fixtures or mock responses so UI can be exercised when the backend is offline.
+4. Once all routes depend on the client, mark direct imports from `src/core`, `src/data`, and `src/trading` as deprecated.
 
-### **Week 2: Consultant Setup**
-1. **Deploy staging backend** with sample data
-2. **Create API documentation** (OpenAPI + Postman)
-3. **Set up consultant access** to frontend repo
-4. **Test consultant workflow** independently
-5. **Create mock data responses** for offline development
+### **Phase 4 – Repo Split (Week 2)**
+1. Create the private `backend-service` repo and move the proprietary packages (`src/core`, `src/data`, `src/trading`, plus the new `/api` blueprint).
+2. Keep the Flask UI (templates, static assets, thin routes, and the API client) in a new `frontend-ui` repo.
+3. Replace local imports between repos with pip-installable packages or a git submodule during transition (short-term vendor folder works).
+4. Add CI that runs UI integration tests against a staged backend container.
 
-## 8. Success Metrics
+### **Phase 5 – Consultant Enablement (Week 2)**
+1. Publish the OpenAPI schema and a Postman collection generated from the `/api` blueprint.
+2. Spin up a staging backend (Docker compose or managed service) with anonymized/sample data.
+3. Document how to point the frontend at staging vs. production via `.env` or config file.
+4. Provide JSON fixtures so the consultant can run UI pages without live services when needed.
+
+### **Phase 6 – Hardening & Deploy (Week 3)**
+1. Add automated integration tests that hit the HTTP boundary.
+2. Enable authentication/authorization (Bearer tokens or session cookies) and tighten CORS.
+3. Roll production to the new backend service, update DNS/env vars on the frontend, and monitor.
+4. Schedule periodic contract tests to catch breaking API changes early.
+
+## 7. Success Metrics
 
 ### **Frontend/Backend Separation:**
 - ✅ **Frontend repo** contains ONLY templates, static assets, and API client
@@ -213,7 +225,7 @@ class BackendAPIClient:
 - ✅ **Authentication** and CORS properly configured
 - ✅ **Test coverage** ≥80% for both services
 
-## 9. Risks & Mitigation
+## 8. Risks & Mitigation
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | Hidden coupling between frontend and backend | Runtime failures | Comprehensive integration testing |
@@ -222,7 +234,7 @@ class BackendAPIClient:
 | API authentication complexity | Security issues | Use proven token-based auth libraries |
 | Backend API changes break frontend | Development friction | Version API endpoints, maintain backward compatibility |
 
-## 10. Acceptance Criteria
+## 9. Acceptance Criteria
 
 ### **Frontend Repository:**
 - ✅ Contains ONLY templates, static assets, and API client
