@@ -11,6 +11,7 @@ import psycopg2.extras
 # Import helper functions
 from ..helpers import create_api_response
 from ..utils import api_error_handler, handle_api_error
+from ..dependencies import market_manager
 
 # Import core modules
 from ...core.database import get_db_connection
@@ -656,84 +657,16 @@ def get_news_services_config():
 def test_foreign_markets_api():
     """Test foreign markets API endpoint by querying real database data"""
     try:
-        from ...core.database import get_db_connection
-        
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                # Get foreign exchanges from database
-                cur.execute("""
-                    SELECT 
-                        code,
-                        name,
-                        country,
-                        currency,
-                        timezone,
-                        symbol_suffix,
-                        active,
-                        created_at
-                    FROM foreign_exchanges 
-                    ORDER BY name
-                """)
-                exchanges = cur.fetchall()
-                
-                # Get count of foreign symbols from watchlists (symbols with dots like .L, .T, etc.)
-                cur.execute("SELECT COUNT(*) as total FROM watchlists WHERE symbol LIKE '%.%'")
-                foreign_symbols_result = cur.fetchone()
-                total_foreign_symbols = foreign_symbols_result['total'] if foreign_symbols_result else 0
-                
-                # Get count of all watchlist symbols
-                cur.execute("SELECT COUNT(*) as total FROM watchlists")
-                watchlist_result = cur.fetchone()
-                total_watchlist_symbols = watchlist_result['total'] if watchlist_result else 0
-                
-                # Process exchanges data
-                markets = []
-                markets_open = 0
-                markets_closed = 0
-                
-                for exchange in exchanges:
-                    # Determine status based on active field
-                    status = "unknown"
-                    if exchange['active'] is not None:
-                        if exchange['active']:
-                            status = "open"
-                            markets_open += 1
-                        else:
-                            status = "closed"
-                            markets_closed += 1
-                    else:
-                        status = "unknown"
-                    
-                    market_data = {
-                        'code': exchange['code'],
-                        'name': exchange['name'],
-                        'country': exchange['country'],
-                        'currency': exchange['currency'],
-                        'timezone': exchange['timezone'],
-                        'symbol_suffix': exchange['symbol_suffix'],
-                        'status': status,
-                        'active': exchange['active'],
-                        'created_at': exchange['created_at'].isoformat() if exchange['created_at'] else None
-                    }
-                    markets.append(market_data)
-                
-                summary = {
-                    'total_markets': len(markets),
-                    'markets_open': markets_open,
-                    'markets_closed': markets_closed,
-                    'total_foreign_symbols': total_foreign_symbols,
-                    'total_watchlist_symbols': total_watchlist_symbols,
-                    'foreign_coverage': f"{total_foreign_symbols}/{total_watchlist_symbols}"
-                }
-                
-                return jsonify({
-                    'success': True,
-                    'data': {
-                        'markets': markets,
-                        'summary': summary
-                    }
-                })
-                
+        overview = market_manager.get_foreign_markets_overview()
+
+        success = bool(overview.get('markets'))
+        status_code = 200 if success else 404
+
+        return jsonify({
+            'success': success,
+            'data': overview,
+        }), status_code
+
     except Exception as e:
         return jsonify({
             'success': False,
