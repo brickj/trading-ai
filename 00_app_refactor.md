@@ -6,21 +6,22 @@
 - Leave only templates, static assets, and thin Flask routes in a public **app-ui** repo that talks to the core via HTTP.
 - Maintain existing functionality with minimal downtime while improving performance and testability.
 
-## 2. Current State Mapping
+## 2. Current State Mapping (UPDATED - Based on Actual Code)
 - **Proprietary modules**
   - `src/core` – DB layer, caching, watchlist, telegram, and low-level helpers (`db_utils`, `cache`, etc.).
   - `src/data` – `DataFetcher` and external market/news APIs.
   - `src/trading` – `trading_strategy.py`, `enhanced_trading_strategy.py` and related logic.
-- **UI modules (mixed with core today)**
-  - `src/web/app.py` – 5,070 lines with 54 `@app.route` endpoints that embed business logic and DB calls.
-  - `src/web/routes/*` – blueprints for analysis, backtest, system, page, telegram, and logging routes (remaining endpoints still in `app.py`).
-  - `src/web/services` – `AnalysisService`, `BacktestService`, `DataService`, `ReportService` exist; other planned services not yet created.
-  - `src/web/helpers.py`, `src/web/repositories`, `src/web/utils` – direct DB access via `src.core.database.get_db_connection` and related helpers.
+- **UI modules (ALREADY MODULARIZED)**
+  - `src/web/app.py` – **47 lines** - just factory function, NO routes embedded
+  - `src/web/routes/*` – **13 blueprints** with **70 route decorators** covering all endpoints
+  - `src/web/services` – **4 services implemented**: `AnalysisService`, `BacktestService`, `DataService`, `ReportService`
+  - `src/web/helpers.py`, `src/web/repositories`, `src/web/utils` – direct DB access via `src.core.database.get_db_connection`
   - Templates & static files under `src/web/templates` and `src/web/static`.
-- **Coupling & gaps**
-  - UI modules import core classes directly (`Config`, `RecommendationManager`, `SentimentAnalyzer`, etc.) and run SQL queries through shared helpers.
-  - CORS remains wildcard; no token-based auth or rate limiting implemented yet.
-  - Tight coupling makes unit testing and performance tuning difficult.
+- **Current coupling & gaps**
+  - UI modules import core classes directly (`Config`, `RecommendationManager`, `SentimentAnalyzer`, etc.)
+  - Direct DB access through shared helpers instead of HTTP API
+  - CORS remains wildcard; no token-based auth or rate limiting implemented yet
+  - **ROUTE MODULARIZATION IS COMPLETE** - all endpoints moved to blueprints
 
 ## 3. Target Architecture
 ```

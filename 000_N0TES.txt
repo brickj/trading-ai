@@ -9,3 +9,7 @@ DO NOT tell me the page is working until it is
 DO NOT guess, READ THE CODE
 I repeat DO NOT guess, READ THE CODE
 when you can confirm that the page works, let me know
+
+
+READ THE FUCKING CODE BEFORE YOU ADD SHIT.  CHECK HOW THE LOGS PAGE ARE BEING POPULATED.  don't just add another table.  the table probably already exists.  
+READ THE FUCKING CODE AND STOP GUESSING.  YOU KEEP FUCKING GUESSING AND BREAKING SHIT
