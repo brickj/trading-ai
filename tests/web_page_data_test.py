@@ -460,7 +460,8 @@ def test_web_page_data():
         for error in results["errors"]:
             print(f"  - {error}")
     
-    return results["failed"] == 0
+    # Use assertions instead of return values for pytest
+    assert results["failed"] == 0, f"Test failed with {results['failed']} failures: {results['errors']}"
 
 if __name__ == "__main__":
     success = test_web_page_data()
