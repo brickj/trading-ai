@@ -7,6 +7,13 @@ from flask import Blueprint
 def register_routes(app):
     """Register all route blueprints with the Flask app"""
     from .analysis_routes import analysis_bp
+    from .dashboard_routes import dashboard_bp
+    from .market_routes import market_bp
+    from .admin_routes import admin_bp
+    from .report_routes import report_bp
+    from .opportunity_routes import opportunities_bp
+    from .recommendation_routes import recommendation_bp
+    from .portfolio_routes import portfolio_bp
     from .backtest_routes import backtest_bp
     from .system_routes import system_bp
     from .page_routes import page_bp
@@ -15,6 +22,13 @@ def register_routes(app):
     
     # Register blueprints
     app.register_blueprint(analysis_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(market_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(report_bp)
+    app.register_blueprint(opportunities_bp)
+    app.register_blueprint(portfolio_bp)
+    app.register_blueprint(recommendation_bp)
     app.register_blueprint(backtest_bp)
     app.register_blueprint(system_bp)
     app.register_blueprint(page_bp)
