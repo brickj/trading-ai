@@ -31,14 +31,6 @@
 .loading-spinner {
     display: none;
 }
-.headline-item {
-    font-size: 0.9em;
-    padding: 8px;
-    margin: 4px 0;
-    background-color: #f8f9fa;
-    border-radius: 4px;
-    border-left: 3px solid #007bff;
-}
 .filter-buttons {
     margin-bottom: 20px;
 }
@@ -68,17 +60,6 @@
 .group-summary-card {
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border: 1px solid #dee2e6;
-}
-.headline-item {
-    max-height: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.headline-item:hover {
-    white-space: normal;
-    max-height: none;
-    overflow: visible;
 }
 .modern-container {
     max-width: 1100px;
@@ -198,28 +179,6 @@
 }
 .modern-card-row .recommendation.momentum {
     color: #ffc107;
-}
-.modern-headlines {
-    margin-top: 0.5rem;
-}
-.modern-headlines .headline-item {
-    background: #f3f7fa;
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.8rem;
-    margin-bottom: 0.3rem;
-    font-size: 0.97rem;
-    color: #333;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-.modern-headlines .headline-item:hover {
-    background: #e0eaf6;
-}
-.modern-headlines .show-more {
-    color: #4f8cff;
-    cursor: pointer;
-    font-size: 0.95rem;
-    margin-top: 0.2rem;
 }
 .modern-card-footer {
     background: linear-gradient(90deg, #fafdff 0%, #e9f3ff 100%);
