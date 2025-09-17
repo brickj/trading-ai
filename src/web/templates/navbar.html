@@ -1,114 +1,33 @@
-<!-- Navigation -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg scale-navbar" aria-label="Primary navigation">
     <div class="container">
-        <a class="navbar-brand" href="/">
-            <span class="fa-stack fa-sm">
-                <i class="fas fa-globe-americas fa-stack-2x"></i>
-                <i class="fas fa-robot fa-stack-1x"></i>
-            </span>
-            Trading AI
+        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+            <span class="brand-mark">AI</span>
+            <span class="brand-wordmark">Trading Intelligence</span>
         </a>
-        
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <!-- Primary Trading Pages -->
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <li class="nav-item">
-                    <div class="navbar-text navbar-section primary">
-                        <i class="fas fa-chart-line"></i> Primary Trading
-                    </div>
+                    <a class="nav-link" href="/">Overview</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
+                    <a class="nav-link" href="/opportunities">Signals</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/opportunities">
-                        <i class="fas fa-bell"></i> Opportunities
-                    </a>
+                    <a class="nav-link" href="/weekly_plan">Workflows</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/weekly_plan">
-                        <i class="fas fa-calendar-week"></i> Weekly Plan
-                    </a>
+                    <a class="nav-link" href="/reporting">Reporting</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/foreign_markets_overview">
-                        <i class="fas fa-globe-americas"></i> Foreign Markets
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/recommendations">
-                        <i class="fas fa-check-circle"></i> Recommendations
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/portfolio_page">
-                        <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-warning text-dark">Premium</span>
-                    </a>
-                </li>
-                
-                <!-- Analysis & Research -->
-                <li class="nav-item">
-                    <div class="navbar-text navbar-section analysis">
-                        <i class="fas fa-search"></i> Analysis & Research
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/stocks">
-                        <i class="fas fa-chart-bar"></i> S&P 500
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/crypto">
-                        <i class="fab fa-bitcoin"></i> Crypto
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/backtest">
-                        <i class="fas fa-history"></i> Backtest
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/scalping_signals">
-                        <i class="fas fa-chart-line"></i> Scalping
-                    </a>
-                </li>
-                
-                <!-- System & Monitoring -->
-                <li class="nav-item">
-                    <div class="navbar-text navbar-section system">
-                        <i class="fas fa-cog"></i> System & Monitoring
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/reporting">
-                        <i class="fas fa-chart-bar"></i> Reporting
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/system_status">
-                        <i class="fas fa-server"></i> System Status
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/logs">
-                        <i class="fas fa-file-alt"></i> Logs
-                    </a>
+                    <a class="nav-link" href="/system_status">System Status</a>
                 </li>
             </ul>
-            
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <span class="nav-link theme-toggle" onclick="toggleTheme()">
-                        <i class="fas fa-moon" id="themeIcon"></i>
-                    </span>
-                </li>
-            </ul>
+            <div class="d-flex align-items-center mt-3 mt-lg-0">
+                <a href="/recommendations" class="btn btn-cta w-100 w-lg-auto">Launch Console</a>
+            </div>
         </div>
     </div>
-</nav> 
+</nav>

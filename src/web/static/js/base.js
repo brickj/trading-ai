@@ -1,50 +1,5 @@
 /* Trading AI Dashboard - Base JavaScript */
 
-// Theme management
-function toggleTheme() {
-    try {
-        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
-            window.frontendLogger.logUserAction('Theme Toggle Clicked');
-        }
-        
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        const icon = document.getElementById('themeIcon');
-        if (icon) {
-            if (newTheme === 'dark') {
-                icon.className = 'fas fa-moon';
-            } else {
-                icon.className = 'fas fa-sun';
-            }
-        }
-        
-        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
-            window.frontendLogger.logUserAction('Theme Changed', null, { from: currentTheme, to: newTheme });
-        }
-    } catch (e) {
-        console.error('Error in toggleTheme:', e);
-    }
-}
-
-// Initialize theme from localStorage
-function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    const html = document.documentElement;
-    html.setAttribute('data-theme', savedTheme);
-    
-    const icon = document.getElementById('themeIcon');
-    if (savedTheme === 'dark') {
-        icon.className = 'fas fa-moon';
-    } else {
-        icon.className = 'fas fa-sun';
-    }
-}
-
 // Format currency
 function formatCurrency(amount) {
     if (typeof amount !== 'number') return 'N/A';
@@ -113,7 +68,7 @@ function hideLoading(elementId) {
 // Show alert messages
 function showAlert(message, type) {
     frontendLogger.logUserAction('Alert Shown', null, { message, type });
-    
+
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
     alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
@@ -121,9 +76,9 @@ function showAlert(message, type) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     document.body.appendChild(alertDiv);
-    
+
     setTimeout(() => {
         if (alertDiv.parentNode) {
             alertDiv.remove();
@@ -144,7 +99,7 @@ socket.on('disconnect', function() {
 
 socket.on('analysis_progress', function(data) {
     frontendLogger.debug('Analysis Progress Update: ' + JSON.stringify(data), 'websocket');
-    
+
     const loadingText = document.getElementById('loadingText');
     if (loadingText && data.message) {
         loadingText.textContent = data.message;
@@ -156,10 +111,9 @@ function debugLog(message, data = null) {
     frontendLogger.debug(message + (data ? ': ' + JSON.stringify(data) : ''), 'debug');
 }
 
-// Initialize theme on page load
+// Initialize logging on page load
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        initializeTheme();
         if (window.frontendLogger && typeof window.frontendLogger.info === 'function') {
             window.frontendLogger.info('Page Loaded: ' + window.location.href, 'navigation');
         } else {
@@ -196,4 +150,4 @@ window.addEventListener('error', function(event) {
 // Global error handler for async operations
 window.addEventListener('unhandledrejection', function(event) {
     safeLogError('Unhandled Promise Rejection: ' + (event.reason || 'Unknown reason'), 'error');
-}); 
+});
