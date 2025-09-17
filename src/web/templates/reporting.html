@@ -3,19 +3,21 @@
 {% block title %}Reporting - Trading AI{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-chart-bar"></i> Trading Reports & Analytics
-        </h1>
-        <p class="lead">Comprehensive performance analysis and trading insights</p>
+<div class="section-intro animate-fade mb-4">
+    <span class="eyebrow"><i class="fas fa-chart-pie"></i> Reporting Suite</span>
+    <h1><i class="fas fa-chart-bar"></i> Trading Reports & Analytics</h1>
+    <p class="lead">Comprehensive performance analysis, automated exports, and AI-assisted interpretation to support strategy refinement.</p>
+    <div class="badge-group">
+        <span class="badge status-badge">Historical Data</span>
+        <span class="badge status-badge">AI Narratives</span>
+        <span class="badge status-badge">Shareable Reports</span>
     </div>
 </div>
 
 <!-- Date Range Selector -->
-<div class="row mb-4">
+<div class="row mb-4 g-3 animate-slide-up">
     <div class="col-12">
-        <div class="card">
+        <div class="card glass-card panel-card">
             <div class="card-header">
                 <h5><i class="fas fa-calendar"></i> Report Period</h5>
             </div>
@@ -65,9 +67,9 @@
 </div>
 
 <!-- Report Results Section - Required for tests -->
-<div id="reportResults" class="row mt-4" style="display: none;">
+<div id="reportResults" class="row mt-4 g-3 animate-fade" style="display: none;">
     <div class="col-12">
-        <div class="card">
+        <div class="card glass-card panel-card">
             <div class="card-header">
                 <h5><i class="fas fa-chart-bar"></i> Report Results</h5>
             </div>
@@ -85,69 +87,45 @@
 </div>
 
 <!-- 1. Performance Analytics Dashboard -->
-<div id="performanceSection" class="row mb-4">
+<div id="performanceSection" class="row mb-4 g-3 animate-slide-up">
     <div class="col-12">
-        <div class="card">
+        <div class="card glass-card panel-card">
             <div class="card-header">
                 <h5><i class="fas fa-chart-line"></i> Performance Analytics Dashboard</h5>
             </div>
             <div class="card-body">
                 <!-- Key Performance Metrics -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card border-primary">
-                            <div class="card-header bg-primary text-white text-center">
-                                <h6>Total Return</h6>
-                            </div>
-                                            <div class="card-body text-center">
-                    <h4 id="totalReturn">-</h4>
-                    <small class="text-muted">Period Return</small>
-                    <div id="totalReturnNote" class="text-danger small" style="display: none;"></div>
-                </div>
-                        </div>
+                <div class="metric-grid">
+                    <div class="card metric-card">
+                        <span class="metric-label">Total Return</span>
+                        <span class="metric-value" id="totalReturn">-</span>
+                        <small class="text-muted">Period Return</small>
+                        <div id="totalReturnNote" class="text-danger small" style="display: none;"></div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-success">
-                            <div class="card-header bg-success text-white text-center">
-                                <h6>Win Rate</h6>
-                            </div>
-                                            <div class="card-body text-center">
-                    <h4 id="winRate">-</h4>
-                    <small class="text-muted">Successful Trades</small>
-                    <div id="winRateNote" class="text-danger small" style="display: none;"></div>
-                </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Win Rate</span>
+                        <span class="metric-value" id="winRate">-</span>
+                        <small class="text-muted">Successful Trades</small>
+                        <div id="winRateNote" class="text-danger small" style="display: none;"></div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-info">
-                            <div class="card-header bg-info text-white text-center">
-                                <h6>Sharpe Ratio</h6>
-                            </div>
-                                            <div class="card-body text-center">
-                    <h4 id="sharpeRatio">-</h4>
-                    <small class="text-muted">Risk-Adjusted Return</small>
-                    <div id="sharpeRatioNote" class="text-danger small" style="display: none;"></div>
-                </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Sharpe Ratio</span>
+                        <span class="metric-value" id="sharpeRatio">-</span>
+                        <small class="text-muted">Risk-Adjusted Return</small>
+                        <div id="sharpeRatioNote" class="text-danger small" style="display: none;"></div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning text-white text-center">
-                                <h6>Max Drawdown</h6>
-                            </div>
-                                            <div class="card-body text-center">
-                    <h4 id="maxDrawdown">-</h4>
-                    <small class="text-muted">Largest Decline</small>
-                    <div id="maxDrawdownNote" class="text-danger small" style="display: none;"></div>
-                </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Max Drawdown</span>
+                        <span class="metric-value" id="maxDrawdown">-</span>
+                        <small class="text-muted">Largest Decline</small>
+                        <div id="maxDrawdownNote" class="text-danger small" style="display: none;"></div>
                     </div>
                 </div>
 
                 <!-- Performance Charts -->
-                <div class="row">
+                <div class="row g-3 mt-3">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card glass-card panel-card">
                             <div class="card-header">
                                 <h6><i class="fas fa-chart-area"></i> Portfolio Performance</h6>
                             </div>
@@ -157,7 +135,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card glass-card panel-card">
                             <div class="card-header">
                                 <h6><i class="fas fa-chart-pie"></i> Asset Class Performance</h6>
                             </div>
@@ -173,65 +151,41 @@
 </div>
 
 <!-- 2. Trading Activity Reports -->
-<div id="tradingActivitySection" class="row mb-4">
+<div id="tradingActivitySection" class="row mb-4 g-3 animate-fade">
     <div class="col-12">
-        <div class="card">
+        <div class="card glass-card panel-card">
             <div class="card-header">
                 <h5><i class="fas fa-exchange-alt"></i> Trading Activity Reports</h5>
             </div>
             <div class="card-body">
                 <!-- Trading Summary -->
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <div class="card border-secondary">
-                            <div class="card-header bg-secondary text-white text-center">
-                                <h6>Total Trades</h6>
-                            </div>
-                            <div class="card-body text-center">
-                                <h4 id="totalTrades">-</h4>
-                                <small class="text-muted">Period Trades</small>
-                            </div>
-                        </div>
+                <div class="metric-grid">
+                    <div class="card metric-card">
+                        <span class="metric-label">Total Trades</span>
+                        <span class="metric-value" id="totalTrades">-</span>
+                        <small class="text-muted">Period Trades</small>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-info">
-                            <div class="card-header bg-info text-white text-center">
-                                <h6>Avg Holding Period</h6>
-                            </div>
-                            <div class="card-body text-center">
-                                <h4 id="avgHoldingPeriod">-</h4>
-                                <small class="text-muted">Days</small>
-                            </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Avg Holding Period</span>
+                        <span class="metric-value" id="avgHoldingPeriod">-</span>
+                        <small class="text-muted">Days</small>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-success">
-                            <div class="card-header bg-success text-white text-center">
-                                <h6>Opportunity Conversion</h6>
-                            </div>
-                            <div class="card-body text-center">
-                                <h4 id="opportunityConversion">-</h4>
-                                <small class="text-muted">Acted Upon</small>
-                            </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Opportunity Conversion</span>
+                        <span class="metric-value" id="opportunityConversion">-</span>
+                        <small class="text-muted">Acted Upon</small>
                     </div>
-                    <div class="col-md-3">
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning text-white text-center">
-                                <h6>Avg Trade Size</h6>
-                            </div>
-                            <div class="card-body text-center">
-                                <h4 id="avgTradeSize">-</h4>
-                                <small class="text-muted">Position Value</small>
-                            </div>
-                        </div>
+                    <div class="card metric-card">
+                        <span class="metric-label">Avg Trade Size</span>
+                        <span class="metric-value" id="avgTradeSize">-</span>
+                        <small class="text-muted">Position Value</small>
                     </div>
                 </div>
 
                 <!-- Trading Activity Charts -->
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card glass-card panel-card">
                             <div class="card-header">
                                 <h6><i class="fas fa-chart-bar"></i> Daily Trading Volume</h6>
                             </div>
@@ -241,7 +195,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card glass-card panel-card">
                             <div class="card-header">
                                 <h6><i class="fas fa-clock"></i> Trading by Time of Day</h6>
                             </div>

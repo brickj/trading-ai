@@ -4,17 +4,21 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1><i class="fas fa-calendar-week text-primary"></i> Weekly Market Plan</h1>
-            <p class="lead text-muted">Plan your trading week with key market events and announcements</p>
+    <div class="section-intro animate-fade mb-4">
+        <span class="eyebrow"><i class="fas fa-calendar-alt"></i> Market Operations</span>
+        <h1><i class="fas fa-calendar-week text-primary"></i> Weekly Market Plan</h1>
+        <p class="lead text-muted">Plan your trading week with key market events, catalysts, and automated alerts designed for institutional rhythm.</p>
+        <div class="badge-group">
+            <span class="badge status-badge">Catalyst Radar</span>
+            <span class="badge status-badge">Options Triggers</span>
+            <span class="badge status-badge">Earnings Coverage</span>
         </div>
     </div>
 
     <!-- Week Navigation and Filters -->
-    <div class="row mb-4">
+    <div class="row mb-4 g-3 animate-slide-up">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card glass-card panel-card">
                 <div class="card-body">
                     <h5><i class="fas fa-calendar"></i> Week Selection</h5>
                     <div class="d-flex align-items-center gap-2">
@@ -30,7 +34,7 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card">
+            <div class="card glass-card panel-card">
                 <div class="card-body">
                     <h5><i class="fas fa-filter"></i> Event Filters</h5>
                     <div class="row">
@@ -94,45 +98,37 @@
     </div>
 
     <!-- Event Summary Cards -->
-    <div class="row mt-4" id="eventSummary">
+    <div class="row mt-4 g-3" id="eventSummary">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body text-center">
-                    <h3 id="earningsCount">0</h3>
-                    <p>Earnings Reports</p>
-                </div>
+            <div class="stat-pill">
+                <span id="earningsCount">0</span>
+                <span>Earnings Reports</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-danger text-white">
-                <div class="card-body text-center">
-                    <h3 id="fedCount">0</h3>
-                    <p>Fed Events</p>
-                </div>
+            <div class="stat-pill">
+                <span id="fedCount">0</span>
+                <span>Fed Events</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    <h3 id="economicCount">0</h3>
-                    <p>Economic Releases</p>
-                </div>
+            <div class="stat-pill">
+                <span id="economicCount">0</span>
+                <span>Economic Releases</span>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body text-center">
-                    <h3 id="optionsCount">0</h3>
-                    <p>Options Expirations</p>
-                </div>
+            <div class="stat-pill">
+                <span id="optionsCount">0</span>
+                <span>Options Expirations</span>
             </div>
         </div>
     </div>
 
     <!-- Detailed Events List -->
-    <div class="row mt-4">
+    <div class="row mt-4 g-3 animate-fade">
         <div class="col-12">
-            <div class="card">
+            <div class="card glass-card panel-card table-card">
                 <div class="card-header">
                     <h5><i class="fas fa-list"></i> Detailed Events List</h5>
                 </div>
@@ -161,9 +157,9 @@
     </div>
 
     <!-- Watchlist Events (if applicable) -->
-    <div class="row mt-4" id="watchlistEventsRow" style="display: none;">
+    <div class="row mt-4 g-3 animate-slide-up" id="watchlistEventsRow" style="display: none;">
         <div class="col-12">
-            <div class="card">
+            <div class="card glass-card panel-card">
                 <div class="card-header">
                     <h5><i class="fas fa-star"></i> Your Watchlist Events</h5>
                 </div>

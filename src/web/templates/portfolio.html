@@ -7,25 +7,22 @@
 <div id="portfolioContainer">
     <!-- Portfolio Section - Required for tests -->
     <div id="portfolioSection">
-        <div class="row">
-            <div class="col-12">
-                <h1 class="mb-4">
-                    <i class="fas fa-briefcase"></i> Portfolio Management
-                </h1>
-                <p class="lead">Track your options trading portfolio and performance</p>
-                
-                <!-- MOCK DATA WARNING -->
-                <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>MOCK DATA</strong> - This portfolio page displays simulated data for demonstration purposes only.
-                </div>
+        <div class="section-intro animate-fade mb-4">
+            <span class="eyebrow"><i class="fas fa-briefcase"></i> Portfolio Operations</span>
+            <h1><i class="fas fa-briefcase"></i> Portfolio Management</h1>
+            <p class="lead">Track your options trading portfolio and performance with AI scoring, scenario planning, and compliance-ready exports.</p>
+
+            <!-- MOCK DATA WARNING -->
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>MOCK DATA</strong> - This portfolio page displays simulated data for demonstration purposes only.
             </div>
         </div>
 
         <!-- Add Position Form - Required for tests -->
-        <form id="addPositionForm" class="row mb-4">
+        <form id="addPositionForm" class="row mb-4 g-3 animate-slide-up">
             <div class="col-12">
-                <div class="card">
+                <div class="card glass-card panel-card">
                     <div class="card-header">
                         <h5><i class="fas fa-plus"></i> Add New Position</h5>
                     </div>
@@ -62,9 +59,9 @@
         </form>
     </div>
 
-    <div class="row mb-4">
+    <div class="row mb-4 g-3 animate-fade">
         <div class="col-12">
-            <div class="card">
+            <div class="card glass-card panel-card">
                 <div class="card-body">
                     <button id="refreshBtn" class="btn btn-success">
                         <i class="fas fa-sync-alt"></i> Refresh Portfolio
@@ -75,55 +72,32 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card border-success">
-                <div class="card-header bg-success text-white">
-                    <h6><i class="fas fa-wallet"></i> Current Capital</h6>
-                </div>
-                <div class="card-body text-center">
-                    <h3 id="currentCapital">$0.00</h3>
-                </div>
-            </div>
+    <div class="metric-grid animate-slide-up">
+        <div class="card metric-card">
+            <span class="metric-label"><i class="fas fa-wallet"></i> Current Capital</span>
+            <span class="metric-value" id="currentCapital">$0.00</span>
+            <small class="text-muted">Cash available</small>
         </div>
-        
-        <div class="col-md-3">
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">
-                    <h6><i class="fas fa-chart-line"></i> Total Value</h6>
-                </div>
-                <div class="card-body text-center">
-                    <h3 id="totalValue">$0.00</h3>
-                </div>
-            </div>
+        <div class="card metric-card">
+            <span class="metric-label"><i class="fas fa-chart-line"></i> Total Value</span>
+            <span class="metric-value" id="totalValue">$0.00</span>
+            <small class="text-muted">Portfolio valuation</small>
         </div>
-        
-        <div class="col-md-3">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-white">
-                    <h6><i class="fas fa-coins"></i> Unrealized P&L</h6>
-                </div>
-                <div class="card-body text-center">
-                    <h3 id="unrealizedPnl">$0.00</h3>
-                </div>
-            </div>
+        <div class="card metric-card">
+            <span class="metric-label"><i class="fas fa-coins"></i> Unrealized P&amp;L</span>
+            <span class="metric-value" id="unrealizedPnl">$0.00</span>
+            <small class="text-muted">Open profit &amp; loss</small>
         </div>
-        
-        <div class="col-md-3">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h6><i class="fas fa-handshake"></i> Open Positions</h6>
-                </div>
-                <div class="card-body text-center">
-                    <h3 id="openPositions">0</h3>
-                </div>
-            </div>
+        <div class="card metric-card">
+            <span class="metric-label"><i class="fas fa-handshake"></i> Open Positions</span>
+            <span class="metric-value" id="openPositions">0</span>
+            <small class="text-muted">Active contracts</small>
         </div>
     </div>
 
-    <div class="row mt-4">
+    <div class="row mt-4 g-3 animate-fade">
         <div class="col-12">
-            <div class="card">
+            <div class="card glass-card panel-card table-card">
                 <div class="card-header">
                     <h5><i class="fas fa-list"></i> Open Positions</h5>
                 </div>
@@ -157,9 +131,9 @@
         </div>
     </div>
 
-    <div class="row mt-4">
+    <div class="row mt-4 g-3 animate-slide-up">
         <div class="col-12">
-            <div class="card">
+            <div class="card glass-card panel-card table-card">
                 <div class="card-header">
                     <h5><i class="fas fa-history"></i> Recent Trades</h5>
                 </div>
@@ -323,10 +297,10 @@
         </div>
     </div>
 
-    <div class="row mt-4">
+    <div class="row mt-4 g-3 animate-fade">
         <div class="col-12">
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
+            <div class="card glass-card panel-card">
+                <div class="card-header">
                     <h5><i class="fas fa-exclamation-triangle"></i> Risk Management</h5>
                 </div>
                 <div class="card-body">

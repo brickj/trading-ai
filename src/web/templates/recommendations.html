@@ -3,59 +3,49 @@
 {% block title %}Trading AI - Recommendation Dashboard{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1><i class="fas fa-chart-line"></i> Trading Recommendations Dashboard</h1>
-        <p class="lead">Track recommendation performance and statistics</p>
+<div class="section-intro animate-fade mb-4">
+    <span class="eyebrow"><i class="fas fa-diagram-project"></i> Recommendation Console</span>
+    <h1><i class="fas fa-chart-line"></i> Trading Recommendations Dashboard</h1>
+    <p class="lead">Track recommendation performance, win rates, and portfolio contributions in a live AI-assisted workspace.</p>
+    <div class="badge-group">
+        <span class="badge status-badge">Live Metrics</span>
+        <span class="badge status-badge">Confidence Scoring</span>
+        <span class="badge status-badge">Strategy Insights</span>
     </div>
 </div>
 
 <!-- Summary Stats Cards -->
-<div class="row mt-3">
-    <div class="col-md-3">
-        <div class="card performance-card bg-white">
-            <div class="card-body">
-                <h5 class="card-title">Total Recommendations</h5>
-                <h2 class="card-text" id="total-recommendations">...</h2>
-                <p class="card-text text-muted">Total recommendations tracked</p>
-            </div>
-        </div>
+<div class="metric-grid animate-slide-up">
+    <div class="card metric-card performance-card">
+        <span class="metric-label">Total Recommendations</span>
+        <span class="metric-value" id="total-recommendations">...</span>
+        <small>Total recommendations tracked</small>
     </div>
-    <div class="col-md-3">
-        <div class="card performance-card bg-white">
-            <div class="card-body">
-                <h5 class="card-title">Win Rate</h5>
-                <h2 class="card-text" id="win-rate">...</h2>
-                <p class="card-text text-muted"><span id="evaluated-count">...</span> recommendations evaluated</p>
-            </div>
-        </div>
+    <div class="card metric-card performance-card">
+        <span class="metric-label">Win Rate</span>
+        <span class="metric-value" id="win-rate">...</span>
+        <small><span id="evaluated-count">...</span> recommendations evaluated</small>
     </div>
-    <div class="col-md-3">
-        <div class="card performance-card bg-white">
-            <div class="card-body">
-                <h5 class="card-title">Average Return</h5>
-                <h2 class="card-text" id="avg-return">...</h2>
-                <p class="card-text text-muted">Across all recommendations</p>
-            </div>
-        </div>
+    <div class="card metric-card performance-card">
+        <span class="metric-label">Average Return</span>
+        <span class="metric-value" id="avg-return">...</span>
+        <small>Across all recommendations</small>
     </div>
-    <div class="col-md-3">
-        <div class="card performance-card bg-white">
-            <div class="card-body">
-                <h5 class="card-title">Last Updated</h5>
-                <h2 class="card-text" id="last-updated">...</h2>
-                <p class="card-text text-muted">Latest recommendation date</p>
-            </div>
-        </div>
+    <div class="card metric-card performance-card">
+        <span class="metric-label">Last Updated</span>
+        <span class="metric-value" id="last-updated">...</span>
+        <small>Latest recommendation date</small>
     </div>
 </div>
 
 <!-- Charts Row -->
-<div class="row mt-4">
+<div class="row mt-4 g-3 animate-fade">
     <div class="col-md-6">
-        <div class="card performance-card">
-            <div class="card-body">
-                <h5 class="card-title">Recommendation Types</h5>
+        <div class="card glass-card panel-card performance-card">
+            <div class="card-header">
+                <h5>Recommendation Types</h5>
+            </div>
+            <div class="card-body table-card">
                 <div class="chart-container position-relative">
                     <canvas id="recommendation-types-chart"></canvas>
                     <div class="loading-overlay" id="types-chart-loader">
@@ -68,9 +58,11 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card performance-card">
-            <div class="card-body">
-                <h5 class="card-title">Recommendation Performance</h5>
+        <div class="card glass-card panel-card performance-card">
+            <div class="card-header">
+                <h5>Recommendation Performance</h5>
+            </div>
+            <div class="card-body table-card">
                 <div class="chart-container position-relative">
                     <canvas id="performance-chart"></canvas>
                     <div class="loading-overlay" id="performance-chart-loader">
@@ -85,11 +77,12 @@
 </div>
 
 <!-- Recommendations Container - Required for tests -->
-<div class="row mt-4" id="recommendationsContainer">
+<div class="row mt-4 g-3 animate-slide-up" id="recommendationsContainer">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
+        <div class="card glass-card panel-card table-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5><i class="fas fa-chart-line"></i> Trading Recommendations</h5>
+                <span class="badge status-badge glow-pulse">Live feed</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -120,9 +113,9 @@
 </div>
 
 <!-- Recommendation Filters -->
-<div class="row mt-4">
+<div class="row mt-4 g-3 animate-fade">
     <div class="col-12">
-        <div class="recommendation-filters">
+        <div class="card glass-card filter-panel recommendation-filters">
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
@@ -176,9 +169,9 @@
 </div>
 
 <!-- Recommendations Table -->
-<div id="recommendationsSection" class="row mt-3">
+<div id="recommendationsSection" class="row mt-3 g-3 animate-slide-up">
     <div class="col-12">
-        <div class="card performance-card">
+        <div class="card glass-card panel-card table-card performance-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Recommendations</h5>
                 <div id="performance-summary"></div>
