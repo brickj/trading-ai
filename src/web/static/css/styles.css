@@ -1,36 +1,49 @@
 /* Trading AI Dashboard - Main Styles */
 
 :root {
-    --primary-color: #007bff;
+    --primary-color: #00c853;
     --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
+    --success-color: #00e676;
+    --danger-color: #ff3d00;
+    --warning-color: #ffd54f;
+    --info-color: #26c6da;
+    --light-color: #1b1f23;
+    --dark-color: #0a0f0d;
+    --bs-body-bg: #080b0a;
+    --bs-body-color: #e0f2f1;
+    --bs-card-bg: #101614;
+    --bs-border-color: #1d2a24;
+    --results-bg: #0f1a17;
+    --table-header-bg: #122820;
+    --table-row-bg: rgba(9, 28, 20, 0.7);
+    --table-row-hover-bg: rgba(12, 36, 25, 0.85);
+    --table-text-strong: #76ffb2;
+    --muted-green: #4caf50;
 }
 
-[data-theme="dark"] {
-    --bs-body-bg: #121212;
-    --bs-body-color: #ffffff;
-    --bs-card-bg: #1e1e1e;
-    --bs-border-color: #333333;
-    --results-bg: #252525;
-}
-
-[data-theme="light"] {
-    --bs-body-bg: #ffffff;
-    --bs-body-color: #000000;
-    --bs-card-bg: #ffffff;
-    --bs-border-color: #dee2e6;
-    --results-bg: #f8f9fa;
+html {
+    background-color: var(--bs-body-bg);
 }
 
 body {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     transition: all 0.3s ease;
+}
+
+body.dark-theme {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+a,
+.nav-link {
+    color: var(--table-text-strong);
+}
+
+a:hover,
+.nav-link:hover {
+    color: var(--success-color);
 }
 
 .card {
@@ -80,15 +93,6 @@ body {
 .status-working { background-color: #007bff; animation: pulse 1s infinite; }
 .status-success { background-color: #28a745; }
 .status-error { background-color: #dc3545; }
-
-.theme-toggle {
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-.theme-toggle:hover {
-    transform: scale(1.1);
-}
 
 .navbar-brand {
     font-weight: bold;
@@ -155,6 +159,61 @@ body {
     margin-top: 3rem;
 }
 
+table {
+    color: var(--table-text-strong);
+}
+
+.table thead th {
+    background-color: var(--table-header-bg);
+    color: var(--success-color);
+    border-bottom: 2px solid var(--bs-border-color);
+}
+
+.table tbody tr {
+    background-color: var(--table-row-bg);
+    border-color: var(--bs-border-color);
+}
+
+.table tbody tr:hover {
+    background-color: var(--table-row-hover-bg);
+}
+
+.table tbody td,
+.table tbody th {
+    color: var(--table-text-strong);
+}
+
+.text-success,
+.badge.bg-success {
+    color: var(--success-color) !important;
+}
+
+.badge.bg-success {
+    background-color: rgba(0, 230, 118, 0.15) !important;
+    border: 1px solid var(--success-color);
+}
+
+.progress-bar,
+.btn-primary,
+.bg-success {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+}
+
+.btn-outline-info {
+    color: var(--table-text-strong);
+    border-color: var(--table-text-strong);
+}
+
+.btn-outline-info:hover {
+    background-color: var(--table-text-strong);
+    color: #0a0f0d;
+}
+
+.text-muted {
+    color: #8aa899 !important;
+}
+
 /* Additional utility styles for common UI elements */
 
 /* Progress containers (used in stocks, crypto, opportunities pages) */
@@ -189,8 +248,8 @@ body {
     overflow-y: auto;
 }
 
-[data-theme="dark"] #requestData,
-[data-theme="dark"] #responseData {
+.dark-theme #requestData,
+.dark-theme #responseData {
     background-color: #2d2d2d;
     color: #e6e6e6;
 }
@@ -315,7 +374,7 @@ body {
     -webkit-backdrop-filter: blur(10px);
 }
 
-[data-theme="dark"] .sticky-controls {
+.dark-theme .sticky-controls {
     background-color: rgba(33, 37, 41, 0.95) !important;
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
@@ -325,7 +384,7 @@ body {
     background-color: rgba(0, 0, 0, 0.1);
 }
 
-[data-theme="dark"] .progress {
+.dark-theme .progress {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -434,7 +493,7 @@ body {
     background-color: rgba(0, 0, 0, 0.02);
 }
 
-[data-theme="dark"] .event-item {
+.dark-theme .event-item {
     background-color: rgba(255, 255, 255, 0.05);
 }
 

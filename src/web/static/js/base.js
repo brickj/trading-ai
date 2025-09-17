@@ -1,47 +1,25 @@
 /* Trading AI Dashboard - Base JavaScript */
 
-// Theme management
-function toggleTheme() {
-    try {
-        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
-            window.frontendLogger.logUserAction('Theme Toggle Clicked');
-        }
-        
-        const html = document.documentElement;
-        const currentTheme = html.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        html.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        const icon = document.getElementById('themeIcon');
-        if (icon) {
-            if (newTheme === 'dark') {
-                icon.className = 'fas fa-moon';
-            } else {
-                icon.className = 'fas fa-sun';
-            }
-        }
-        
-        if (window.frontendLogger && typeof window.frontendLogger.logUserAction === 'function') {
-            window.frontendLogger.logUserAction('Theme Changed', null, { from: currentTheme, to: newTheme });
-        }
-    } catch (e) {
-        console.error('Error in toggleTheme:', e);
-    }
-}
-
-// Initialize theme from localStorage
-function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
+// Enforce dark theme
+function enforceDarkTheme() {
     const html = document.documentElement;
-    html.setAttribute('data-theme', savedTheme);
-    
-    const icon = document.getElementById('themeIcon');
-    if (savedTheme === 'dark') {
-        icon.className = 'fas fa-moon';
-    } else {
-        icon.className = 'fas fa-sun';
+    const body = document.body;
+
+    if (html.getAttribute('data-theme') !== 'dark') {
+        html.setAttribute('data-theme', 'dark');
+    }
+
+    if (html.getAttribute('data-bs-theme') !== 'dark') {
+        html.setAttribute('data-bs-theme', 'dark');
+    }
+
+    if (body && !body.classList.contains('dark-theme')) {
+        body.classList.add('dark-theme');
+    }
+    try {
+        localStorage.setItem('theme', 'dark');
+    } catch (error) {
+        console.warn('Unable to persist dark theme preference:', error);
     }
 }
 
@@ -159,7 +137,7 @@ function debugLog(message, data = null) {
 // Initialize theme on page load
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        initializeTheme();
+        enforceDarkTheme();
         if (window.frontendLogger && typeof window.frontendLogger.info === 'function') {
             window.frontendLogger.info('Page Loaded: ' + window.location.href, 'navigation');
         } else {
