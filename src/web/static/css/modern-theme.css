@@ -1,0 +1,259 @@
+/* Modern theme enhancements for the Trading AI dashboard */
+
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.01em;
+}
+
+::selection {
+    background: rgba(99, 102, 241, 0.45);
+    color: #ffffff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: 0.015em;
+    color: var(--bs-body-color);
+}
+
+h1, .display-4 {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.lead {
+    color: rgba(226, 232, 240, 0.85);
+}
+
+[data-theme="light"] .lead {
+    color: rgba(15, 23, 42, 0.75);
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.subtle-divider {
+    height: 1px;
+    margin: 2rem 0;
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.35), transparent);
+}
+
+/* Buttons */
+.btn-primary,
+.btn-info,
+.btn-success,
+.btn-warning {
+    border-radius: 0.8rem;
+    border: none;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.3);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.btn-primary:hover,
+.btn-info:hover,
+.btn-success:hover,
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 38px rgba(15, 23, 42, 0.35);
+}
+
+.btn-outline-light,
+.btn-outline-secondary {
+    border-radius: 0.8rem;
+    border-width: 1px;
+    backdrop-filter: blur(calc(var(--glass-blur) - 10px));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 10px));
+}
+
+.btn-outline-light:hover,
+.btn-outline-secondary:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(14, 165, 233, 0.2));
+    color: #ffffff;
+}
+
+/* Form controls */
+.form-control,
+.form-select {
+    border-radius: 0.75rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background-color: rgba(15, 23, 42, 0.4);
+    color: var(--bs-body-color);
+    transition: border-color 0.35s ease, box-shadow 0.35s ease, background-color 0.35s ease;
+}
+
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select {
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    background-color: rgba(15, 23, 42, 0.6);
+}
+
+[data-theme="light"] .form-control:focus,
+[data-theme="light"] .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Tables */
+.table {
+    color: var(--bs-body-color);
+    border-color: rgba(148, 163, 184, 0.15);
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(calc(var(--glass-blur) - 6px));
+    -webkit-backdrop-filter: blur(calc(var(--glass-blur) - 6px));
+}
+
+.table thead {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.22), rgba(14, 165, 233, 0.22));
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    --bs-table-accent-bg: rgba(99, 102, 241, 0.08);
+}
+
+.table-hover > tbody > tr:hover {
+    color: inherit;
+    background-color: rgba(14, 165, 233, 0.12);
+}
+
+/* Chips & status */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.24), rgba(14, 165, 233, 0.24));
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+
+[data-theme="light"] .status-chip {
+    color: rgba(15, 23, 42, 0.85);
+}
+
+.stat-highlight {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 18px 40px rgba(15, 23, 42, 0.55);
+}
+
+[data-theme="light"] .stat-highlight {
+    color: var(--primary-color);
+    text-shadow: none;
+}
+
+/* Card utilities */
+.card-hover {
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.4);
+}
+
+.glass-panel {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(14, 165, 233, 0.16));
+    border-radius: 1.2rem;
+    padding: 2rem;
+    box-shadow: var(--surface-shadow);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+
+.badge {
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+    padding: 0.35em 0.65em;
+}
+
+.badge.bg-warning {
+    color: var(--dark-color);
+}
+
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes shimmer {
+    0% { background-position: -40rem 0; }
+    100% { background-position: 40rem 0; }
+}
+
+.float-animation {
+    animation: float 6s ease-in-out infinite;
+}
+
+.skeleton {
+    position: relative;
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.15) 0%, rgba(148, 163, 184, 0.35) 50%, rgba(148, 163, 184, 0.15) 100%);
+    background-size: 80rem 100%;
+    border-radius: 1rem;
+    animation: shimmer 2.2s infinite;
+}
+
+.animate-delay-1 { animation-delay: 0.1s; }
+.animate-delay-2 { animation-delay: 0.2s; }
+.animate-delay-3 { animation-delay: 0.3s; }
+
+/* Links */
+a {
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+
+a:hover {
+    color: var(--accent-color);
+    text-shadow: 0 6px 20px rgba(34, 211, 238, 0.3);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.65), rgba(14, 165, 233, 0.65));
+    border-radius: 999px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+    background: rgba(226, 232, 240, 0.7);
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(14, 165, 233, 0.35));
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
