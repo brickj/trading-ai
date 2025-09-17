@@ -63,6 +63,7 @@ config/secrets.yaml
 config/secrets.yml
 secrets.yaml
 secrets.yml
+00_config.py
 
 # Test artifacts
 .pytest_cache/
