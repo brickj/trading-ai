@@ -46,16 +46,22 @@ class BacktestService:
                 historical_prices, historical_recommendations, initial_capital
             )
             
+            # Ensure final_value is not None
+            final_value = backtest_results.get("final_value", initial_capital)
+            if final_value is None:
+                final_value = initial_capital
+                
             result = {
                 "symbol": symbol,
                 "days_back": days_back,
                 "initial_capital": initial_capital,
-                "final_value": backtest_results["final_value"],
-                "total_return": backtest_results["total_return"],
-                "total_return_percent": backtest_results["total_return_percent"],
-                "trades": backtest_results["trades"],
-                "trade_count": len(backtest_results["trades"]),
-                "win_rate": backtest_results["win_rate"],
+                "final_capital": final_value,  # Map final_value to final_capital for DB
+                "final_value": final_value,  # Keep for API response
+                "total_return": backtest_results.get("total_return", 0),
+                "total_return_percent": backtest_results.get("total_return_percent", 0),
+                "trades": backtest_results.get("trades", []),
+                "trade_count": len(backtest_results.get("trades", [])),
+                "win_rate": backtest_results.get("win_rate", 0),
                 "sharpe_ratio": backtest_results.get("sharpe_ratio", 0),
                 "max_drawdown": backtest_results.get("max_drawdown", 0),
                 "processing_time": round(time.time() - start_time, 3),
@@ -92,8 +98,8 @@ class BacktestService:
             # Build optimized query
             query = """
                 SELECT id, symbol, timestamp, recommendation_type, action, 
-                       confidence, target_price, stop_loss, sentiment_score, 
-                       price_at_recommendation, analysis_summary
+                       final_confidence as confidence, sentiment_score, 
+                       current_stock_price as price_at_recommendation, reasoning as analysis_summary
                 FROM recommendations 
                 WHERE timestamp >= %s
             """
@@ -125,8 +131,8 @@ class BacktestService:
                     "recommendation_type": rec["recommendation_type"],
                     "action": rec["action"],
                     "confidence": rec["confidence"],
-                    "target_price": rec["target_price"],
-                    "stop_loss": rec["stop_loss"],
+                    "target_price": None,  # Column doesn't exist
+                    "stop_loss": None,  # Column doesn't exist
                     "sentiment_score": rec["sentiment_score"],
                     "price_at_recommendation": rec["price_at_recommendation"],
                     "analysis_summary": rec["analysis_summary"]
@@ -165,7 +171,7 @@ class BacktestService:
             stats_query = """
                 SELECT 
                     COUNT(*) as total_recommendations,
-                    AVG(confidence) as avg_confidence,
+                    AVG(final_confidence) as avg_confidence,
                     COUNT(CASE WHEN action = 'BUY' THEN 1 END) as buy_count,
                     COUNT(CASE WHEN action = 'SELL' THEN 1 END) as sell_count,
                     COUNT(CASE WHEN action = 'HOLD' THEN 1 END) as hold_count,
@@ -251,11 +257,16 @@ class BacktestService:
                     "trades": [],
                     "total_return": 0,
                     "final_value": 10000,
+                    "initial_capital": 10000,
+                    "final_capital": 10000,
+                    "cumulative_capital": [10000],
                     "message": "No recommendations to process"
                 }
             
             trades = []
             portfolio_value = 10000  # Starting value
+            initial_capital = 10000
+            cumulative_capital = [initial_capital]  # Track portfolio value over time
             positions = {}  # Track open positions
             
             for rec in recommendations:
@@ -263,10 +274,11 @@ class BacktestService:
                 if trade_result:
                     trades.append(trade_result)
                     portfolio_value = trade_result.get("portfolio_value", portfolio_value)
+                    cumulative_capital.append(portfolio_value)
             
             # Calculate performance metrics
-            total_return = portfolio_value - 10000
-            total_return_percent = (total_return / 10000) * 100
+            total_return = portfolio_value - initial_capital
+            total_return_percent = (total_return / initial_capital) * 100
             
             # Calculate win rate
             profitable_trades = len([t for t in trades if t.get("profit", 0) > 0])
@@ -279,7 +291,10 @@ class BacktestService:
                 "win_rate": round(win_rate, 1),
                 "total_return": round(total_return, 2),
                 "total_return_percent": round(total_return_percent, 2),
+                "initial_capital": initial_capital,
+                "final_capital": round(portfolio_value, 2),
                 "final_value": round(portfolio_value, 2),
+                "cumulative_capital": cumulative_capital,
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -289,6 +304,9 @@ class BacktestService:
                 "trades": [],
                 "total_return": 0,
                 "final_value": 10000,
+                "initial_capital": 10000,
+                "final_capital": 10000,
+                "cumulative_capital": [10000],
                 "error": str(e)
             }
     
@@ -325,8 +343,8 @@ class BacktestService:
         """Get historical recommendations for backtesting"""
         try:
             query = """
-                SELECT symbol, timestamp, action, confidence, target_price, 
-                       price_at_recommendation, sentiment_score
+                SELECT symbol, timestamp, action, final_confidence as confidence, 
+                       current_stock_price as price_at_recommendation, sentiment_score
                 FROM recommendations 
                 WHERE timestamp >= %s AND symbol = %s
                 ORDER BY timestamp ASC
@@ -422,7 +440,7 @@ class BacktestService:
             
             if action == "BUY" and symbol not in positions:
                 # Open new position
-                shares = (portfolio_value * 0.1) / price  # 10% position size
+                shares = (portfolio_value * 0.1) / float(price)  # 10% position size
                 positions[symbol] = {
                     "shares": shares,
                     "entry_price": price,
@@ -440,7 +458,7 @@ class BacktestService:
             elif action == "SELL" and symbol in positions:
                 # Close position
                 position = positions[symbol]
-                profit = (price - position["entry_price"]) * position["shares"]
+                profit = (float(price) - float(position["entry_price"])) * position["shares"]
                 new_portfolio_value = portfolio_value + profit
                 
                 trade_result = {
@@ -450,7 +468,7 @@ class BacktestService:
                     "shares": position["shares"],
                     "entry_price": position["entry_price"],
                     "profit": profit,
-                    "profit_percent": (price - position["entry_price"]) / position["entry_price"] * 100,
+                    "profit_percent": (float(price) - float(position["entry_price"])) / float(position["entry_price"]) * 100,
                     "timestamp": timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
                     "portfolio_value": new_portfolio_value
                 }

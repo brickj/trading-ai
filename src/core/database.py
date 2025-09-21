@@ -161,14 +161,22 @@ def save_backtest_result(result_dict):
             stock_symbol, period_days, timestamp, initial_capital, final_capital, total_return, win_rate, total_trades, trades
         ) VALUES (%s, %s, NOW(), %s, %s, %s, %s, %s, %s)
     """
+    # Ensure we have valid values for NOT NULL columns
+    initial_capital = convert_numpy_values(result_dict.get("initial_capital", 10000))
+    final_capital = convert_numpy_values(result_dict.get("final_capital", initial_capital))
+    total_return = convert_numpy_values(result_dict.get("total_return", 0))
+    win_rate = convert_numpy_values(result_dict.get("win_rate", 0))
+    trade_count = convert_numpy_values(result_dict.get("trade_count", 0))
+    
+    
     params = (
         result_dict.get("symbol"),
-        result_dict.get("period_days", 730),
-        convert_numpy_values(result_dict.get("initial_capital")),
-        convert_numpy_values(result_dict.get("final_capital")),
-        convert_numpy_values(result_dict.get("total_return")),
-        convert_numpy_values(result_dict.get("win_rate")),
-        convert_numpy_values(result_dict.get("total_trades")),
+        result_dict.get("days_back", 30),  # Use days_back instead of period_days
+        initial_capital,
+        final_capital,
+        total_return,
+        win_rate,
+        trade_count,
         json.dumps(convert_numpy_in_dict(result_dict.get("trades", []))),
     )
     execute_query(query, params, fetch_all=False)

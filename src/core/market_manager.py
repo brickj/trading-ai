@@ -3,7 +3,7 @@ Market Manager - Centralized management of foreign exchanges and markets
 """
 from datetime import datetime
 from typing import Dict, List
-from src.core.db_utils import execute_query
+from src.core.database import get_db_connection
 from src.core.logger import log_error
 
 class MarketManager:
@@ -18,7 +18,10 @@ class MarketManager:
                 WHERE active = TRUE 
                 ORDER BY code
             """
-            markets = execute_query(query) or []
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(query)
+                    markets = cur.fetchall() or []
             
             country_code_map = {
                 'LSE': 'UK',

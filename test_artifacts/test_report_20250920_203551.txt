@@ -1,0 +1,93 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-09-20T20:35:51.708897
+Base URL: http://localhost:5001
+Total Pages Tested: 11
+Pages Passed: 9
+Pages Failed: 2
+Success Rate: 81.8%
+Average Load Time: 7711.58ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: PASS
+  Load Time: 558.43ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/homepage_20250920_203401.png
+
+Stocks Page (/stocks):
+  Status: PASS
+  Load Time: 2595.14ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/stocks_page_20250920_203406.png
+
+Crypto Page (/crypto):
+  Status: PASS
+  Load Time: 2595.10ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/crypto_page_20250920_203411.png
+
+Opportunities Page (/opportunities):
+  Status: PASS
+  Load Time: 2693.36ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/opportunities_page_20250920_203417.png
+
+System Status Page (/system_status):
+  Status: PASS
+  Load Time: 2907.66ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/system_status_page_20250920_203422.png
+
+Logs Page (/logs):
+  Status: PASS
+  Load Time: 2592.81ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/logs_page_20250920_203427.png
+
+Portfolio Page (/portfolio_page):
+  Status: PASS
+  Load Time: 2607.10ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/portfolio_page_20250920_203432.png
+
+Backtest Page (/backtest):
+  Status: FAIL
+  Load Time: 559.97ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#symbol (empty)']
+  Screenshot: test_artifacts/backtest_page_20250920_203435.png
+
+Weekly Plan Page (/weekly_plan):
+  Status: PASS
+  Load Time: 17615.32ms
+  Load Success: True
+  Is Populated: True
+  Missing Elements: ['#weekSelector (empty)', '#filterEarnings (empty)', '#filterFed (empty)', '#filterEconomic (empty)', '#filterOptions (empty)', '#filterHolidays (empty)']
+  Screenshot: test_artifacts/weekly_plan_page_20250920_203455.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2574.88ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250920_203459.png
+
+Market Movers Page (/market_movers):
+  Status: FAIL
+  Load Time: 47527.59ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['.container', '.card', '#marketMoversContainer', 'Market movers container missing', 'Market movers title missing', 'No data cards found', 'No price elements found', 'No symbol elements found']
+  Screenshot: test_artifacts/market_movers_page_20250920_203549.png

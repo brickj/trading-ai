@@ -248,7 +248,7 @@ class ReportService:
             query = """
                 SELECT 
                     COUNT(*) as total_recommendations,
-                    AVG(confidence) as avg_confidence,
+                    AVG(final_confidence) as avg_confidence,
                     COUNT(CASE WHEN action = 'BUY' THEN 1 END) as buy_actions,
                     COUNT(CASE WHEN action = 'SELL' THEN 1 END) as sell_actions,
                     AVG(sentiment_score) as avg_sentiment
@@ -287,7 +287,7 @@ class ReportService:
                 SELECT 
                     DATE(timestamp) as trade_date,
                     COUNT(*) as daily_recommendations,
-                    AVG(confidence) as daily_avg_confidence
+                    AVG(final_confidence) as daily_avg_confidence
                 FROM recommendations 
                 WHERE timestamp BETWEEN %s AND %s
             """
@@ -328,7 +328,7 @@ class ReportService:
                     recommendation_type,
                     action,
                     COUNT(*) as count,
-                    AVG(confidence) as avg_confidence
+                    AVG(final_confidence) as avg_confidence
                 FROM recommendations 
                 WHERE timestamp BETWEEN %s AND %s
             """
@@ -426,7 +426,7 @@ class ReportService:
                 SELECT 
                     action,
                     COUNT(*) as count,
-                    AVG(confidence) as avg_confidence,
+                    AVG(final_confidence) as avg_confidence,
                     AVG(sentiment_score) as avg_sentiment
                 FROM recommendations 
                 WHERE timestamp >= %s
@@ -461,12 +461,12 @@ class ReportService:
             query = """
                 SELECT 
                     CASE 
-                        WHEN confidence >= 0.8 THEN 'high'
-                        WHEN confidence >= 0.6 THEN 'medium'
+                        WHEN final_confidence >= 0.8 THEN 'high'
+                        WHEN final_confidence >= 0.6 THEN 'medium'
                         ELSE 'low'
                     END as confidence_level,
                     COUNT(*) as count,
-                    AVG(confidence) as avg_confidence
+                    AVG(final_confidence) as avg_confidence
                 FROM recommendations 
                 WHERE timestamp >= %s
             """

@@ -263,10 +263,10 @@ def get_real_scalping_data(start_date: datetime, end_date: datetime) -> Dict[str
                 cur.execute(
                     """
                     SELECT COUNT(*) as total,
-                           AVG(confidence) as avg_confidence,
-                           AVG(price_change) as avg_price_change
+                           AVG(sentiment_score) as avg_confidence,
+                           AVG(price_change_pct) as avg_price_change
                     FROM scalping_signals
-                    WHERE timestamp BETWEEN %s AND %s
+                    WHERE created_at BETWEEN %s AND %s
                     """,
                     (start_date, end_date),
                 )

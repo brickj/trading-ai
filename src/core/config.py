@@ -212,7 +212,7 @@ class Config(_TEMPLATE_CONFIG):
 
     # Optional API integrations that are referenced throughout the codebase
     NEWSAPI_API_KEY = ""
-    MARKETAUX_API_KEY = ""
+    MARKETAUX_API_KEY = "73SZkBsAfDTN8a71jGr3o01Os2S6umjQeLC61ZL6"
     POLYGON_API_KEY = ""
 
 

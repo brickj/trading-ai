@@ -376,7 +376,7 @@ def run_scheduled_jobs():
     
     scheduler = BackgroundScheduler()
     job_map = {
-        # 'preload_news_opportunities': preload_news_opportunities,  # Module removed
+        'preload_news_opportunities': lambda: __import__('src.data.preload_news_opportunities', fromlist=['preload_news_opportunities']).preload_news_opportunities(),
         # 'preload_watchlist_opportunities': preload_watchlist_opportunities,  # Module removed
         'preload_stock_data': preload_stock_data,
         'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis(),

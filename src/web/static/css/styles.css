@@ -1,30 +1,100 @@
 /* Trading AI Dashboard - Main Styles */
 
 :root {
-    --primary-color: #00c853;
+    --primary-color: #00ff88;
     --secondary-color: #6c757d;
-    --success-color: #00e676;
-    --danger-color: #ff3d00;
-    --warning-color: #ffd54f;
-    --info-color: #26c6da;
-    --light-color: #1b1f23;
-    --dark-color: #0a0f0d;
-    --bs-body-bg: #080b0a;
-    --bs-body-color: #e0f2f1;
-    --bs-card-bg: #101614;
-    --bs-border-color: #1d2a24;
-    --results-bg: #0f1a17;
-    --table-header-bg: #122820;
-    --table-row-bg: rgba(9, 28, 20, 0.7);
-    --table-row-hover-bg: rgba(12, 36, 25, 0.85);
-    --table-text-strong: #76ffb2;
-    --muted-green: #4caf50;
+    --success-color: #00ff88;
+    --danger-color: #ff4444;
+    --warning-color: #ffaa00;
+    --info-color: #00aaff;
+    --light-color: #1a1a1a;
+    --dark-color: #0d0d0d;
+    --bs-body-bg: #0d0d0d;
+    --bs-body-color: #ffffff;
+    --bs-card-bg: #1a1a1a;
+    --bs-border-color: #333333;
+    --results-bg: #1a1a1a;
+    --table-header-bg: #222222;
+    --table-row-bg: rgba(26, 26, 26, 0.8);
+    --table-row-hover-bg: rgba(40, 40, 40, 0.9);
+    --table-text-strong: #00ff88;
+    --muted-green: #00cc66;
+    --finance-data-color: #00ff88;
+    --label-text-color: #ffffff;
+    --instruction-text-color: #ffffff;
 }
 
 body {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
     transition: all 0.3s ease;
+}
+
+/* Finance data styling - Green color for all financial numbers */
+.finance-data,
+.price,
+.value,
+.amount,
+.percentage,
+.volume,
+.market-cap,
+.price-change,
+.return,
+.profit,
+.loss,
+.balance,
+.capital,
+.portfolio-value,
+.stock-price,
+.crypto-price,
+.change-percent,
+.change-amount {
+    color: var(--finance-data-color) !important;
+    font-weight: 600;
+}
+
+/* Label and instruction text - White color */
+.label,
+.instruction,
+.description,
+.text-muted,
+.form-label,
+.card-title,
+.navbar-text,
+.section-title,
+.help-text,
+.placeholder-text {
+    color: var(--label-text-color) !important;
+}
+
+/* Table headers and labels */
+.table thead th,
+.table th,
+th {
+    color: var(--label-text-color) !important;
+    font-weight: 600;
+}
+
+/* Table data cells with financial data */
+.table tbody td,
+.table td,
+td {
+    color: var(--finance-data-color) !important;
+}
+
+/* Ensure all text in cards is properly colored */
+.card-body,
+.card-text,
+.card-title {
+    color: var(--label-text-color) !important;
+}
+
+/* Specific overrides for financial data in cards */
+.card-body .finance-data,
+.card-body .price,
+.card-body .value,
+.card-body .amount {
+    color: var(--finance-data-color) !important;
 }
 
 a,
@@ -121,8 +191,8 @@ a:hover,
 }
 
 .navbar-text.navbar-section.primary {
-    border-left-color: #28a745;
-    color: #28a745 !important;
+    border-left-color: #007bff;
+    color: #007bff !important;
 }
 
 .navbar-text.navbar-section.analysis {
