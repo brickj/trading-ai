@@ -504,6 +504,7 @@ function hideLoading(id) {
 // Chart instances
 let performanceChart = null;
 let winLossChart = null;
+let actionChart = null;
 
 // SINGLE chart creation function
 function createChart(data) {
@@ -704,6 +705,63 @@ function createWinLossChart(data) {
         canvas.style.border = '2px solid red';
         canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
     }
+}
+
+// Action breakdown chart creation function
+function createActionChart(actionBreakdown) {
+    console.log('=== CREATE ACTION CHART CALLED ===');
+    console.log('Action breakdown data:', actionBreakdown);
+    
+    if (!actionBreakdown || !Array.isArray(actionBreakdown)) {
+        console.warn('No action breakdown data available');
+        return;
+    }
+    
+    // Destroy existing chart
+    if (actionChart) {
+        actionChart.destroy();
+        actionChart = null;
+    }
+    
+    const canvas = document.getElementById('actionChart');
+    if (!canvas) {
+        console.error('Action chart canvas not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Action chart context not found');
+        return;
+    }
+    
+    const labels = actionBreakdown.map(item => item.action);
+    const data = actionBreakdown.map(item => item.count);
+    const colors = ['#28a745', '#dc3545', '#6c757d', '#ffc107', '#17a2b8'];
+    
+    actionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    console.log('Action chart created successfully');
 }
 
 // Helper function to get sentiment class for styling
@@ -1112,7 +1170,7 @@ function displayHistoricalStatistics(data) {
     document.getElementById('profitableTrades').textContent = data.profitable_count;
     
     // Create action breakdown chart
-    createChart(data);
+    createActionChart(data.action_breakdown);
     
     // Display top performing symbols
     displayTopSymbolsTable(data.top_performing_symbols);
@@ -1174,68 +1232,6 @@ function displayTopSymbolsTable(symbols) {
 
 
 
-function displayBacktestResults(data) {
-    console.log('Displaying backtest results:', data);
-    
-    // Ensure data has required properties
-    if (!data) {
-        console.error('No data provided to displayBacktestResults');
-        return;
-    }
-    
-    // Helper to check if a value is a valid number
-    function validNum(val) {
-        return typeof val === 'number' && !isNaN(val);
-    }
-    // Update summary cards
-    document.getElementById('initialCapital').textContent = validNum(Number(data.initial_capital)) ? formatCurrency(Number(data.initial_capital)) : 'N/A';
-    document.getElementById('finalCapital').textContent = validNum(Number(data.final_capital)) ? formatCurrency(Number(data.final_capital)) : 'N/A';
-    
-    const returnElement = document.getElementById('totalReturn');
-    const totalReturn = Number(data.total_return);
-    returnElement.textContent = validNum(totalReturn) ? totalReturn + '%' : 'N/A';
-    returnElement.className = validNum(totalReturn) && totalReturn >= 0 ? 'text-success' : 'text-danger';
-    
-    document.getElementById('winRate').textContent = validNum(Number(data.win_rate)) ? data.win_rate + '%' : 'N/A';
-    
-    // Update strategy statistics
-    document.getElementById('totalTrades').textContent = validNum(Number(data.total_trades)) ? data.total_trades : 'N/A';
-    
-    // Ensure trades is an array
-    const trades = Array.isArray(data.trades) ? data.trades : [];
-    console.log('Trades array:', trades);
-    
-    const winningTrades = trades.filter(t => t.profit > 0).length;
-    const losingTrades = trades.filter(t => t.profit <= 0).length;
-    
-    document.getElementById('winningTrades').textContent = validNum(winningTrades) ? winningTrades : 'N/A';
-    document.getElementById('losingTrades').textContent = validNum(losingTrades) ? losingTrades : 'N/A';
-    
-    if (trades.length > 0) {
-        const avgTrade = trades.reduce((sum, t) => sum + (t.profit || 0), 0) / trades.length;
-        const bestTrade = Math.max(...trades.map(t => t.profit || 0));
-        const worstTrade = Math.min(...trades.map(t => t.profit || 0));
-        
-        document.getElementById('avgTrade').textContent = validNum(avgTrade) ? formatCurrency(avgTrade) : 'N/A';
-        document.getElementById('bestTrade').textContent = validNum(bestTrade) ? formatCurrency(bestTrade) : 'N/A';
-        document.getElementById('worstTrade').textContent = validNum(worstTrade) ? formatCurrency(worstTrade) : 'N/A';
-    } else {
-        document.getElementById('avgTrade').textContent = 'N/A';
-        document.getElementById('bestTrade').textContent = 'N/A';
-        document.getElementById('worstTrade').textContent = 'N/A';
-    }
-    
-    // Display trades table
-    displayTradesTable(trades);
-    
-    // Create performance chart
-    console.log('=== CALLING CREATE PERFORMANCE CHART ===');
-    createChart(data);
-    
-    // Use the new showSection function with visual indicators
-    showSection('resultsSection', '#4caf50');
-    hideLoading('backtestLoading'); // Always hide spinner after showing results
-}
 
 function displayTradesTable(trades) {
     const tbody = document.getElementById('tradesTableBody');
