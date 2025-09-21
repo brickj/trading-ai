@@ -527,6 +527,63 @@ function formatCurrency(value) {
     }).format(value);
 }
 
+// Helper to calculate sensible Y axis bounds for portfolio charts
+function calculateYAxisBounds(values) {
+    if (!Array.isArray(values) || values.length === 0) {
+        return {};
+    }
+
+    const numericValues = values
+        .map(value => (typeof value === 'number' ? value : parseFloat(value)))
+        .filter(value => Number.isFinite(value));
+
+    if (numericValues.length === 0) {
+        return {};
+    }
+
+    let minValue = Math.min(...numericValues);
+    let maxValue = Math.max(...numericValues);
+
+    if (minValue === maxValue) {
+        const padding = Math.max(1, Math.abs(minValue) * 0.05);
+        return {
+            min: minValue - padding,
+            max: maxValue + padding
+        };
+    }
+
+    return {
+        min: Math.floor(minValue * 0.99),
+        max: Math.ceil(maxValue * 1.01)
+    };
+}
+
+function buildYAxisScaleOptions(values) {
+    const bounds = calculateYAxisBounds(values);
+    const scaleOptions = {
+        beginAtZero: false,
+        ticks: {
+            callback: function(value) {
+                return formatCurrency(value);
+            }
+        },
+        grid: {
+            color: 'rgba(0,0,0,0.1)',
+            drawBorder: true
+        }
+    };
+
+    if (Number.isFinite(bounds.min)) {
+        scaleOptions.min = bounds.min;
+    }
+
+    if (Number.isFinite(bounds.max)) {
+        scaleOptions.max = bounds.max;
+    }
+
+    return scaleOptions;
+}
+
 // Load saved results on page load
 async function loadSavedResults() {
     const defaultSymbol = 'AAPL';
@@ -1011,6 +1068,7 @@ function createHistoricalPerformanceChart(data) {
         const capitalData = data.cumulative_capital;
         
         try {
+            const yScaleOptions = buildYAxisScaleOptions(capitalData);
             performanceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1031,28 +1089,7 @@ function createHistoricalPerformanceChart(data) {
                     responsive: true,
                     maintainAspectRatio: false,
                                             scales: {
-                            y: {
-                                beginAtZero: false,
-                                min: function(context) {
-                                    const values = context.chart.data.datasets[0].data;
-                                    const min = Math.min(...values);
-                                    return Math.floor(min * 0.99); // Start slightly below min
-                                },
-                                max: function(context) {
-                                    const values = context.chart.data.datasets[0].data;
-                                    const max = Math.max(...values);
-                                    return Math.ceil(max * 1.01); // End slightly above max
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return formatCurrency(value);
-                                    }
-                                },
-                                grid: {
-                                    color: 'rgba(0,0,0,0.1)',
-                                    drawBorder: true
-                                }
-                            },
+                            y: yScaleOptions,
                             x: {
                                 grid: {
                                     color: 'rgba(0,0,0,0.1)'
@@ -1128,6 +1165,7 @@ function createHistoricalPerformanceChart(data) {
         
         // Create portfolio performance chart from generated data
         try {
+            const yScaleOptions = buildYAxisScaleOptions(cumulativeCapital);
             performanceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1148,28 +1186,7 @@ function createHistoricalPerformanceChart(data) {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: {
-                            beginAtZero: false,
-                            min: function(context) {
-                                const values = context.chart.data.datasets[0].data;
-                                const min = Math.min(...values);
-                                return Math.floor(min * 0.99);
-                            },
-                            max: function(context) {
-                                const values = context.chart.data.datasets[0].data;
-                                const max = Math.max(...values);
-                                return Math.ceil(max * 1.01);
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return formatCurrency(value);
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(0,0,0,0.1)',
-                                drawBorder: true
-                            }
-                        },
+                        y: yScaleOptions,
                         x: {
                             grid: {
                                 color: 'rgba(0,0,0,0.1)'
@@ -1243,6 +1260,7 @@ function createHistoricalPerformanceChart(data) {
             const fallbackData = [10000, 10100, 10200, 10300, 10400, 10500];
             const fallbackLabels = ['Start', 'Trade 1', 'Trade 2', 'Trade 3', 'Trade 4', 'Trade 5'];
             
+            const yScaleOptions = buildYAxisScaleOptions(fallbackData);
             performanceChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1257,18 +1275,11 @@ function createHistoricalPerformanceChart(data) {
                         tension: 0.1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return formatCurrency(value);
-                                }
-                            }
-                        }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: yScaleOptions
                     },
                     plugins: {
                         tooltip: {
@@ -1285,9 +1296,9 @@ function createHistoricalPerformanceChart(data) {
                 }
             });
             console.log('Fallback chart created successfully');
-            
+
             // Add success indicator
-            const canvas = document.getElementById('performanceChart');
+            const canvas = document.getElementById('mainPerformanceChart');
             if (canvas) {
                 canvas.style.border = '2px solid blue';
                 canvas.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
