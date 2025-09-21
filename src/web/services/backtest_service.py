@@ -111,13 +111,18 @@ class BacktestService:
             
             if strategy_type:
                 if strategy_type == "stocks":
-                    query += " AND recommendation_type LIKE 'stock%'"
+                    query += " AND (recommendation_type LIKE %s OR recommendation_type LIKE %s)"
+                    params.append('Stock%')
+                    params.append('%Stock%')
                 elif strategy_type == "options":
-                    query += " AND recommendation_type LIKE 'option%'"
+                    query += " AND (recommendation_type LIKE %s OR recommendation_type LIKE %s)"
+                    params.append('%CALL%')
+                    params.append('%PUT%')
                 elif strategy_type == "crypto":
-                    query += " AND recommendation_type LIKE 'crypto%'"
+                    query += " AND recommendation_type LIKE %s"
+                    params.append('crypto%')
             
-            query += " ORDER BY timestamp DESC"
+            query += " ORDER BY timestamp ASC"
             
             recommendations = execute_db_query(query, params, fetch_all=True)
             
@@ -246,7 +251,7 @@ class BacktestService:
         Process historical recommendations into backtest results with trade simulation
         
         Args:
-            recommendations: List of recommendation dictionaries
+            recommendations: List of recommendation dictionaries (should be in chronological order)
             
         Returns:
             Processed backtest results
@@ -263,31 +268,46 @@ class BacktestService:
                     "message": "No recommendations to process"
                 }
             
-            trades = []
-            portfolio_value = 10000  # Starting value
-            initial_capital = 10000
-            cumulative_capital = [initial_capital]  # Track portfolio value over time
-            positions = {}  # Track open positions
+            # Sort recommendations by timestamp to ensure chronological order
+            sorted_recommendations = sorted(recommendations, key=lambda x: x.get('timestamp', ''))
             
-            for rec in recommendations:
-                trade_result = self._simulate_trade(rec, positions, portfolio_value)
+            trades = []
+            portfolio_value = 10000.0  # Starting value
+            initial_capital = 10000.0
+            cumulative_capital = [initial_capital]  # Track portfolio value over time
+            positions = {}  # Track open positions by symbol
+            trade_id = 1
+            
+            for rec in sorted_recommendations:
+                trade_result = self._simulate_trade_improved(rec, positions, portfolio_value, trade_id)
                 if trade_result:
                     trades.append(trade_result)
                     portfolio_value = trade_result.get("portfolio_value", portfolio_value)
                     cumulative_capital.append(portfolio_value)
+                    trade_id += 1
             
             # Calculate performance metrics
             total_return = portfolio_value - initial_capital
             total_return_percent = (total_return / initial_capital) * 100
             
-            # Calculate win rate
-            profitable_trades = len([t for t in trades if t.get("profit", 0) > 0])
-            win_rate = (profitable_trades / len(trades) * 100) if trades else 0
+            # Calculate win rate from closed trades only
+            closed_trades = [t for t in trades if t.get("action") == "SELL"]
+            profitable_trades = len([t for t in closed_trades if t.get("profit", 0) > 0])
+            losing_trades = len([t for t in closed_trades if t.get("profit", 0) < 0])
+            win_rate = (profitable_trades / len(closed_trades) * 100) if closed_trades else 0
+            
+            # Calculate additional metrics
+            profits = [t.get("profit", 0) for t in closed_trades]
+            avg_trade = sum(profits) / len(profits) if profits else 0
+            best_trade = max(profits) if profits else 0
+            worst_trade = min(profits) if profits else 0
             
             return {
                 "trades": trades,
                 "total_trades": len(trades),
                 "profitable_trades": profitable_trades,
+                "winning_trades": profitable_trades,
+                "losing_trades": losing_trades,
                 "win_rate": round(win_rate, 1),
                 "total_return": round(total_return, 2),
                 "total_return_percent": round(total_return_percent, 2),
@@ -295,6 +315,9 @@ class BacktestService:
                 "final_capital": round(portfolio_value, 2),
                 "final_value": round(portfolio_value, 2),
                 "cumulative_capital": cumulative_capital,
+                "avg_trade": round(avg_trade, 2),
+                "best_trade": round(best_trade, 2),
+                "worst_trade": round(worst_trade, 2),
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -430,51 +453,113 @@ class BacktestService:
                 "win_rate": 0
             }
     
-    def _simulate_trade(self, recommendation: Dict, positions: Dict, portfolio_value: float) -> Optional[Dict]:
-        """Simulate a single trade based on recommendation"""
+    def _simulate_trade_improved(self, recommendation: Dict, positions: Dict, portfolio_value: float, trade_id: int) -> Optional[Dict]:
+        """Simulate a single trade based on recommendation with improved logic"""
         try:
             symbol = recommendation.get("symbol")
             action = recommendation.get("action")
-            price = recommendation.get("price_at_recommendation", 100)
+            price = float(recommendation.get("price_at_recommendation", 100))
             timestamp = recommendation.get("timestamp")
+            confidence = float(recommendation.get("confidence", 0.5))
             
-            if action == "BUY" and symbol not in positions:
-                # Open new position
-                shares = (portfolio_value * 0.1) / float(price)  # 10% position size
-                positions[symbol] = {
+            # Convert timestamp to string for consistency
+            timestamp_str = timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp)
+            
+            if action == "BUY":
+                # Calculate position size based on confidence (higher confidence = larger position)
+                position_size_pct = min(0.2, max(0.05, confidence))  # 5-20% of portfolio
+                position_value = portfolio_value * position_size_pct
+                shares = position_value / price
+                
+                # Track the position
+                if symbol not in positions:
+                    positions[symbol] = []
+                
+                positions[symbol].append({
                     "shares": shares,
                     "entry_price": price,
-                    "entry_date": timestamp
-                }
+                    "entry_date": timestamp_str,
+                    "trade_id": trade_id
+                })
+                
                 return {
+                    "trade_id": trade_id,
                     "symbol": symbol,
                     "action": "BUY",
                     "price": price,
                     "shares": shares,
-                    "timestamp": timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
+                    "position_value": position_value,
+                    "confidence": confidence,
+                    "timestamp": timestamp_str,
                     "portfolio_value": portfolio_value
                 }
                 
-            elif action == "SELL" and symbol in positions:
-                # Close position
-                position = positions[symbol]
-                profit = (float(price) - float(position["entry_price"])) * position["shares"]
+            elif action == "SELL" and symbol in positions and positions[symbol]:
+                # Close the most recent position (FIFO - First In, First Out)
+                position = positions[symbol].pop(0)  # Remove oldest position
+                profit = (price - position["entry_price"]) * position["shares"]
                 new_portfolio_value = portfolio_value + profit
                 
                 trade_result = {
+                    "trade_id": trade_id,
                     "symbol": symbol,
                     "action": "SELL",
                     "price": price,
                     "shares": position["shares"],
                     "entry_price": position["entry_price"],
                     "profit": profit,
-                    "profit_percent": (float(price) - float(position["entry_price"])) / float(position["entry_price"]) * 100,
-                    "timestamp": timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp),
+                    "profit_percent": (price - position["entry_price"]) / position["entry_price"] * 100,
+                    "confidence": confidence,
+                    "timestamp": timestamp_str,
                     "portfolio_value": new_portfolio_value
                 }
                 
-                del positions[symbol]
+                # If no more positions for this symbol, remove the symbol from positions
+                if not positions[symbol]:
+                    del positions[symbol]
+                
                 return trade_result
+            
+            elif action == "HOLD":
+                # Check if this is an options recommendation
+                recommendation_type = recommendation.get("recommendation_type", "")
+                if "CALL" in recommendation_type or "PUT" in recommendation_type:
+                    # This is an options recommendation, treat it as a trade
+                    option_type = "CALL" if "CALL" in recommendation_type else "PUT"
+                    option_direction = "BUY" if "BUY" in recommendation_type else "SELL"
+                    
+                    # Calculate position size for options (smaller than stocks)
+                    position_size_pct = min(0.1, max(0.02, confidence))  # 2-10% of portfolio
+                    position_value = portfolio_value * position_size_pct
+                    contracts = int(position_value / 100)  # Assume $100 per contract
+                    
+                    return {
+                        "trade_id": trade_id,
+                        "symbol": symbol,
+                        "action": f"{option_direction} {option_type}",
+                        "price": price,
+                        "shares": contracts,
+                        "position_value": position_value,
+                        "confidence": confidence,
+                        "timestamp": timestamp_str,
+                        "portfolio_value": portfolio_value,
+                        "option_type": option_type,
+                        "option_direction": option_direction,
+                        "note": f"Options trade: {option_direction} {option_type}"
+                    }
+                else:
+                    # Regular HOLD recommendation
+                    return {
+                        "trade_id": trade_id,
+                        "symbol": symbol,
+                        "action": "HOLD",
+                        "price": price,
+                        "shares": 0,
+                        "confidence": confidence,
+                        "timestamp": timestamp_str,
+                        "portfolio_value": portfolio_value,
+                        "note": "Hold recommendation - no trade executed"
+                    }
             
             return None
             

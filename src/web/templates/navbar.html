@@ -47,8 +47,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/portfolio_page">
-                        <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-warning text-dark">Premium</span>
+                    <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;" style="color: #6c757d !important; cursor: not-allowed;">
+                        <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-secondary">Disabled</span>
                     </a>
                 </li>
                 
@@ -105,3 +105,9 @@
         </div>
     </div>
 </nav>
+
+<script>
+function showDisabledMessage(featureName) {
+    alert(`${featureName} feature has been disabled.`);
+}
+</script>

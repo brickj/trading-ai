@@ -83,11 +83,12 @@ class HistoricalDataUpdater:
     def _get_watchlist_symbols(self) -> List[str]:
         """Get list of symbols from watchlist"""
         try:
+            from psycopg2.extras import RealDictCursor
             with get_db_connection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT DISTINCT ticker FROM watchlist WHERE active = TRUE")
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    cur.execute("SELECT DISTINCT symbol FROM watchlists WHERE type = 'stock'")
                     results = cur.fetchall()
-                    return [row[0] for row in results] if results else []
+                    return [row['symbol'] for row in results] if results else []
         except Exception as e:
             logger.error(f"Error getting watchlist symbols: {e}")
             return []
@@ -140,8 +141,9 @@ class HistoricalDataUpdater:
     def _needs_update(self, symbol: str) -> bool:
         """Check if historical data needs updating"""
         try:
+            from psycopg2.extras import RealDictCursor
             with get_db_connection() as conn:
-                with conn.cursor() as cur:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     # Check if we have recent data
                     cutoff_date = datetime.now() - timedelta(days=self.update_interval_days)
                     cur.execute("""
@@ -151,11 +153,11 @@ class HistoricalDataUpdater:
                     """, (symbol,))
                     result = cur.fetchone()
                     
-                    if not result or result[0] is None:
+                    if not result or result['latest_date'] is None:
                         return True  # No data exists
                     
-                    latest_date = result[0]
-                    data_points = result[1]
+                    latest_date = result['latest_date']
+                    data_points = result['data_points']
                     
                     # Need update if data is old or insufficient
                     return (latest_date < cutoff_date or data_points < 400)  # At least 400 days of data
@@ -265,11 +267,11 @@ class HistoricalDataUpdater:
                         """, (
                             symbol,
                             date.date(),
-                            row["Open"],
-                            row["High"],
-                            row["Low"],
-                            row["Close"],
-                            row["Volume"]
+                            float(row["Open"].item()),
+                            float(row["High"].item()),
+                            float(row["Low"].item()),
+                            float(row["Close"].item()),
+                            int(row["Volume"].item())
                         ))
                         data_points += 1
                     

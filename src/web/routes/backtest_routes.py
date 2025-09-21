@@ -79,8 +79,9 @@ def backtest_historical_recommendations():
     symbol = data.get("symbol", "").strip().upper()
     days_back = int(data.get("days_back", 30))
     initial_capital = float(data.get("initial_capital", 10000))
+    strategy_type = data.get("strategy_type", "").strip().lower()
 
-    recommendations_data = backtest_service.get_backtest_recommendations(symbol, days_back)
+    recommendations_data = backtest_service.get_backtest_recommendations(symbol, days_back, strategy_type)
     recommendations = recommendations_data.get("recommendations", [])
 
     if not recommendations:

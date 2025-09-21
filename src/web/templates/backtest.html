@@ -333,15 +333,13 @@
                                         <thead class="table-dark">
                                             <tr>
                                                 <th>Date</th>
+                                                <th>Type</th>
                                                 <th>Action</th>
-                                                <th>Entry Price</th>
-                                                <th>Strike Price</th>
-                                                <th>Option Price</th>
-                                                <th>Position Size</th>
-                                                <th>Cost</th>
-                                                <th>Exit Price</th>
+                                                <th>Price</th>
+                                                <th>Quantity</th>
+                                                <th>Value</th>
                                                 <th>Profit/Loss</th>
-                                                <th>Sentiment</th>
+                                                <th>Confidence</th>
                                             </tr>
                                         </thead>
                                         <tbody id="tradesTableBody">
@@ -506,6 +504,112 @@ function hideLoading(id) {
 // Performance chart instance
 let performanceChart = null;
 
+// Simple chart creation function
+function createSimpleChart(data) {
+    console.log('=== CREATE SIMPLE CHART CALLED ===');
+    console.log('Data received:', data);
+    
+    // Destroy existing chart
+    if (performanceChart) {
+        performanceChart.destroy();
+        performanceChart = null;
+    }
+    
+    // Get canvas
+    const canvas = document.getElementById('mainPerformanceChart');
+    if (!canvas) {
+        console.error('Canvas not found');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Canvas context not found');
+        return;
+    }
+    
+    // Prepare data
+    let chartData = [];
+    let labels = [];
+    
+    if (data.cumulative_capital && data.cumulative_capital.length > 0) {
+        chartData = data.cumulative_capital;
+        labels = data.cumulative_capital.map((_, index) => index === 0 ? 'Start' : `Trade ${index}`);
+    } else if (data.trades && data.trades.length > 0) {
+        // Generate from trades
+        let cumulative = [data.initial_capital || 10000];
+        labels = ['Start'];
+        
+        data.trades.forEach((trade, index) => {
+            const profit = parseFloat(trade.profit || 0);
+            cumulative.push(cumulative[cumulative.length - 1] + profit);
+            labels.push(`Trade ${index + 1}`);
+        });
+        
+        chartData = cumulative;
+    } else {
+        // Fallback data
+        chartData = [10000, 10100, 10200, 10300, 10400];
+        labels = ['Start', 'Trade 1', 'Trade 2', 'Trade 3', 'Trade 4'];
+    }
+    
+    console.log('Chart data:', chartData);
+    console.log('Chart labels:', labels);
+    
+    // Create chart
+    try {
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Portfolio Value',
+                    data: chartData,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Portfolio Value: $' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        console.log('Chart created successfully');
+        
+        // Visual indicator
+        canvas.style.border = '2px solid green';
+        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+        
+    } catch (error) {
+        console.error('Error creating chart:', error);
+        canvas.style.border = '2px solid red';
+        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    }
+}
+
 // Helper function to get sentiment class for styling
 function getSentimentClass(sentiment) {
     const value = parseFloat(sentiment || 0);
@@ -582,6 +686,13 @@ function buildYAxisScaleOptions(values) {
     }
 
     return scaleOptions;
+}
+
+// Helper function to show alerts
+function showAlert(message, type) {
+    console.log(`Alert [${type}]: ${message}`);
+    // Simple alert for now - could be enhanced with Bootstrap alerts
+    alert(message);
 }
 
 // Load saved results on page load
@@ -826,42 +937,7 @@ function displayHistoricalBacktestResults(data) {
     
     // Create performance chart with cumulative capital data
     console.log('=== CALLING CREATE HISTORICAL PERFORMANCE CHART ===');
-    console.log('Data being passed to chart type:', typeof data);
-    console.log('Data keys for chart:', Object.keys(data));
-    console.log('cumulative_capital available:', data.cumulative_capital ? 'Yes' : 'No');
-    console.log('cumulative_capital type:', typeof data.cumulative_capital);
-    console.log('cumulative_capital length:', data.cumulative_capital ? data.cumulative_capital.length : 'N/A');
-    console.log('trades available:', data.trades ? 'Yes' : 'No');
-    console.log('trades length:', data.trades ? data.trades.length : 'N/A');
-    
-    // Ensure we have the required data structure
-    console.log('=== CHECKING DATA STRUCTURE FOR CHART ===');
-    console.log('Has cumulative_capital:', !!data.cumulative_capital);
-    console.log('Has trades:', !!data.trades);
-    console.log('Trades length:', data.trades ? data.trades.length : 'N/A');
-    
-    if (!data.cumulative_capital && data.trades && data.trades.length > 0) {
-        console.log('=== GENERATING CUMULATIVE CAPITAL FROM TRADES ===');
-        // Generate cumulative capital from trades if not provided
-        let cumulativeCapital = [parseFloat(data.initial_capital || 10000)];
-        console.log('Starting capital:', cumulativeCapital[0]);
-        
-        data.trades.forEach((trade, index) => {
-            const profit = parseFloat(trade.profit || 0);
-            const previousCapital = cumulativeCapital[cumulativeCapital.length - 1];
-            cumulativeCapital.push(previousCapital + profit);
-            if (index < 3) {
-                console.log(`Trade ${index}: profit=${profit}, new capital=${cumulativeCapital[cumulativeCapital.length - 1]}`);
-            }
-        });
-        data.cumulative_capital = cumulativeCapital;
-        console.log('Generated cumulative_capital length:', data.cumulative_capital.length);
-        console.log('Final cumulative_capital:', data.cumulative_capital.slice(-5));
-    } else if (!data.cumulative_capital) {
-        console.warn('=== WARNING: No cumulative_capital and no trades to generate from ===');
-    }
-    
-    createHistoricalPerformanceChart(data);
+    createSimpleChart(data);
     
     // Use the new showSection function with visual indicators
     console.log('=== SHOWING SECTIONS ===');
@@ -1484,17 +1560,41 @@ function displayTradesTable(trades) {
         const row = document.createElement('tr');
         const profitClass = (trade.profit || 0) >= 0 ? 'text-success' : 'text-danger';
         
+        // Format timestamp to readable date
+        const tradeDate = trade.timestamp ? new Date(trade.timestamp).toLocaleDateString() : 'N/A';
+        
+        // Determine badge color based on action
+        let badgeClass = 'bg-secondary';
+        if (trade.action === 'BUY') badgeClass = 'bg-success';
+        else if (trade.action === 'SELL') badgeClass = 'bg-danger';
+        else if (trade.action === 'HOLD') badgeClass = 'bg-warning';
+        else if (trade.action.includes('CALL')) badgeClass = 'bg-info';
+        else if (trade.action.includes('PUT')) badgeClass = 'bg-warning';
+        
+        // Determine trade type and display format
+        let tradeType = 'Stock';
+        let quantity = (trade.shares || 0).toFixed(2);
+        let quantityLabel = 'Shares';
+        
+        if (trade.option_type) {
+            tradeType = trade.option_type;
+            quantity = (trade.shares || 0).toFixed(0);
+            quantityLabel = 'Contracts';
+        } else if (trade.action && (trade.action.includes('CALL') || trade.action.includes('PUT'))) {
+            tradeType = trade.action.includes('CALL') ? 'CALL' : 'PUT';
+            quantity = (trade.shares || 0).toFixed(0);
+            quantityLabel = 'Contracts';
+        }
+        
         row.innerHTML = `
-            <td>${trade.date || 'N/A'}</td>
-            <td><span class="badge ${trade.action === 'CALL' ? 'bg-success' : 'bg-danger'}">${trade.action || 'N/A'}</span></td>
-            <td>${formatCurrency(trade.entry_price || 0)}</td>
-            <td>${formatCurrency(trade.strike_price || 0)}</td>
-            <td>${formatCurrency(trade.option_price || 0)}</td>
-            <td>${trade.position_size || 0}</td>
-            <td>${formatCurrency(trade.cost || 0)}</td>
-            <td>${formatCurrency(trade.exit_price || 0)}</td>
+            <td>${tradeDate}</td>
+            <td><span class="badge bg-info">${tradeType}</span></td>
+            <td><span class="badge ${badgeClass}">${trade.action || 'N/A'}</span></td>
+            <td>${formatCurrency(trade.price || 0)}</td>
+            <td>${quantity} ${quantityLabel}</td>
+            <td>${formatCurrency((trade.shares || 0) * (trade.price || 0))}</td>
             <td class="${profitClass}">${formatCurrency(trade.profit || 0)}</td>
-            <td class="${getSentimentClass(trade.sentiment || 0)}">${(trade.sentiment || 0).toFixed(3)}</td>
+            <td>${(trade.confidence || 0).toFixed(3)}</td>
         `;
         tbody.appendChild(row);
     });

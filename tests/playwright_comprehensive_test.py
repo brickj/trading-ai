@@ -58,7 +58,8 @@ class ComprehensivePageTest:
                     "#stockAnalysisSection"  # Analysis section
                 ],
                 "wait_for_data": True,
-                "data_timeout": 30000  # 30 seconds for data to load
+                "data_timeout": 30000,  # 30 seconds for data to load
+                "verify_function": "verify_stocks_page"
             },
             {
                 "name": "Crypto Page",
@@ -264,9 +265,11 @@ class ComprehensivePageTest:
             }
     
     async def verify_default_page_population(self, page_config):
-        """Default page population verification"""
+        """Default page population verification with comprehensive data validation"""
         # Check for expected elements
         missing_elements = []
+        data_validation_errors = []
+        
         for element in page_config["expected_elements"]:
             try:
                 # Check if element exists (handle multiple elements)
@@ -281,6 +284,11 @@ class ComprehensivePageTest:
                     element_text = await self.page.locator(element).first.text_content()
                     if not element_text or element_text.strip() == "":
                         missing_elements.append(f"{element} (empty)")
+                    else:
+                        # Validate data content based on element type
+                        validation_error = await self.validate_element_data(element, element_text)
+                        if validation_error:
+                            data_validation_errors.append(f"{element}: {validation_error}")
                 
             except Exception as e:
                 missing_elements.append(f"{element} (error: {e})")
@@ -291,21 +299,93 @@ class ComprehensivePageTest:
         # Check for error messages
         error_messages = await self.page.locator(".alert-danger, .error, .error-message").count()
         
+        # Check for console errors
+        console_errors = await self.get_console_errors()
+        
         # Determine population status - allow some loading indicators for data-dependent pages
         if page_config.get("wait_for_data", False):
-            # For data-dependent pages, allow some loading indicators
-            is_populated = len(missing_elements) == 0 and error_messages == 0
+            # For data-dependent pages, allow some loading indicators but require valid data
+            is_populated = (len(missing_elements) == 0 and 
+                          error_messages == 0 and 
+                          len(data_validation_errors) == 0 and
+                          len(console_errors) == 0)
         else:
             # For static pages, require no loading indicators
-            is_populated = len(missing_elements) == 0 and loading_indicators == 0 and error_messages == 0
+            is_populated = (len(missing_elements) == 0 and 
+                          loading_indicators == 0 and 
+                          error_messages == 0 and
+                          len(data_validation_errors) == 0 and
+                          len(console_errors) == 0)
         
         return {
             "is_populated": is_populated,
             "missing_elements": missing_elements,
+            "data_validation_errors": data_validation_errors,
             "loading_indicators": loading_indicators,
             "error_messages": error_messages,
+            "console_errors": console_errors,
             "page_content_length": len(await self.page.content())
         }
+    
+    async def validate_element_data(self, element_selector, element_text):
+        """Validate that element contains meaningful data"""
+        try:
+            # Check for common placeholder text or empty states
+            placeholder_texts = [
+                "No data available", "Loading...", "No results found", 
+                "No data", "Empty", "N/A", "0", "0.00", "0%"
+            ]
+            
+            # Check for table elements that should have data rows
+            if "table" in element_selector.lower() or "tbody" in element_selector.lower():
+                # Count actual data rows (not header rows)
+                row_count = await self.page.locator(f"{element_selector} tr").count()
+                if row_count <= 1:  # Only header row
+                    return "Table has no data rows"
+                
+                # Check for placeholder rows
+                placeholder_rows = await self.page.locator(f"{element_selector} tr").filter(
+                    has_text="No data available"
+                ).count()
+                if placeholder_rows > 0:
+                    return "Table contains placeholder 'No data available' rows"
+            
+            # Check for chart elements
+            if "chart" in element_selector.lower() or "canvas" in element_selector.lower():
+                # Check if canvas has been drawn on
+                canvas = self.page.locator(element_selector)
+                if await canvas.count() > 0:
+                    # Check if canvas has content (not just empty)
+                    canvas_data = await canvas.evaluate("canvas => canvas.toDataURL()")
+                    if "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" in canvas_data:
+                        return "Chart canvas is empty (transparent image)"
+            
+            # Check for card elements that should have meaningful content
+            if "card" in element_selector.lower():
+                # Check if card contains only placeholder text
+                if any(placeholder in element_text for placeholder in placeholder_texts):
+                    return f"Card contains placeholder text: {element_text.strip()}"
+            
+            # Check for list elements
+            if "list" in element_selector.lower() or "List" in element_selector:
+                # Count list items
+                item_count = await self.page.locator(f"{element_selector} li, {element_selector} .list-item").count()
+                if item_count == 0:
+                    return "List has no items"
+            
+            return None  # No validation errors found
+            
+        except Exception as e:
+            return f"Validation error: {e}"
+    
+    async def get_console_errors(self):
+        """Get console errors from the page"""
+        try:
+            # This would need to be implemented with page.on("console") event listener
+            # For now, return empty list
+            return []
+        except Exception:
+            return []
         
     async def take_snapshot(self, name):
         """Take a snapshot of the current page"""
@@ -632,14 +712,15 @@ class ComprehensivePageTest:
             return result
     
     async def verify_backtest_page(self, page_config):
-        """Verify that backtest page is properly configured"""
+        """Verify that backtest page is properly configured and can display data"""
         result = {
             "is_populated": False,
             "missing_elements": [],
             "loading_indicators": 0,
             "error_messages": 0,
             "page_content_length": 0,
-            "backtest_config": {}
+            "backtest_config": {},
+            "chart_test_results": {}
         }
         
         try:
@@ -670,12 +751,14 @@ class ComprehensivePageTest:
                         const daysBackSelect = document.getElementById('daysBack');
                         const backtestForm = document.getElementById('backtestForm');
                         const resultsSection = document.getElementById('resultsSection');
+                        const performanceChart = document.getElementById('mainPerformanceChart');
                         
                         return {
                             hasSymbolInput: !!symbolInput,
                             hasDaysBackSelect: !!daysBackSelect,
                             hasBacktestForm: !!backtestForm,
                             hasResultsSection: !!resultsSection,
+                            hasPerformanceChart: !!performanceChart,
                             symbolPlaceholder: symbolInput?.placeholder || '',
                             daysBackOptions: daysBackSelect?.options?.length || 0,
                             formAction: backtestForm?.action || '',
@@ -698,6 +781,8 @@ class ComprehensivePageTest:
                     result["missing_elements"].append("Backtest form missing")
                 if not backtest_config.get("hasResultsSection"):
                     result["missing_elements"].append("Results section missing")
+                if not backtest_config.get("hasPerformanceChart"):
+                    result["missing_elements"].append("Performance chart canvas missing")
                 
                 # Check if form has proper configuration
                 if not backtest_config.get("symbolPlaceholder"):
@@ -705,10 +790,15 @@ class ComprehensivePageTest:
                 if backtest_config.get("daysBackOptions", 0) < 2:
                     result["missing_elements"].append("Insufficient days back options")
                 
-                # Backtest page is considered populated if form is properly configured
-                # (no actual data needed since it's user-driven)
+                # Test backtest functionality by running a test backtest
                 if len(result["missing_elements"]) == 0:
-                    result["is_populated"] = True
+                    chart_test_results = await self.test_backtest_functionality()
+                    result["chart_test_results"] = chart_test_results
+                    
+                    # Page is populated if form is configured AND chart test passes
+                    result["is_populated"] = chart_test_results.get("chart_created", False)
+                else:
+                    result["is_populated"] = False
                 
             except Exception as e:
                 logger.error(f"Error checking backtest config: {e}")
@@ -738,6 +828,166 @@ class ComprehensivePageTest:
             result["missing_elements"].append(f"Verification error: {e}")
             return result
     
+    async def test_backtest_functionality(self):
+        """Test that backtest form submission works and creates a chart"""
+        try:
+            # Fill in the form with test data
+            await self.page.fill("#symbol", "AAPL")
+            await self.page.select_option("#daysBack", "30")
+            await self.page.select_option("#strategyType", "all")
+            
+            # Submit the form
+            await self.page.click("button[type='submit']")
+            
+            # Wait for the results section to appear
+            await self.page.wait_for_selector("#resultsSection", state="visible", timeout=30000)
+            
+            # Wait for the chart to be created (check for canvas content)
+            chart_created = False
+            chart_has_content = False
+            
+            try:
+                # Wait for the performance chart to be created
+                await self.page.wait_for_selector("#mainPerformanceChart", state="visible", timeout=10000)
+                
+                # Check if chart has been drawn on
+                chart_data = await self.page.evaluate("""() => {
+                    const canvas = document.getElementById('mainPerformanceChart');
+                    if (!canvas) return { exists: false, hasContent: false };
+                    
+                    // Check if canvas has been drawn on (not just transparent)
+                    const ctx = canvas.getContext('2d');
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    
+                    // Check if there are any non-transparent pixels
+                    let hasContent = false;
+                    for (let i = 3; i < data.length; i += 4) {
+                        if (data[i] > 0) { // Alpha channel > 0
+                            hasContent = true;
+                            break;
+                        }
+                    }
+                    
+                    return {
+                        exists: true,
+                        hasContent: hasContent,
+                        width: canvas.width,
+                        height: canvas.height
+                    };
+                }""")
+                
+                chart_created = chart_data.get("exists", False)
+                chart_has_content = chart_data.get("hasContent", False)
+                
+            except Exception as e:
+                logger.error(f"Error checking chart content: {e}")
+            
+            # Check for any console errors during backtest
+            console_errors = await self.page.evaluate("""() => {
+                // This would need to be implemented with proper console monitoring
+                return [];
+            }""")
+            
+            return {
+                "chart_created": chart_created,
+                "chart_has_content": chart_has_content,
+                "console_errors": console_errors,
+                "form_submitted": True
+            }
+            
+        except Exception as e:
+            logger.error(f"Error testing backtest functionality: {e}")
+            return {
+                "chart_created": False,
+                "chart_has_content": False,
+                "console_errors": [str(e)],
+                "form_submitted": False
+            }
+    
+    async def verify_stocks_page(self, page_config):
+        """Verify that stocks page displays real stock data"""
+        result = {
+            "is_populated": False,
+            "missing_elements": [],
+            "data_validation_errors": [],
+            "loading_indicators": 0,
+            "error_messages": 0,
+            "page_content_length": 0,
+            "stocks_data": {}
+        }
+        
+        try:
+            # First, do the default verification
+            default_result = await self.verify_default_page_population(page_config)
+            result.update(default_result)
+            
+            # Check for stocks-specific data
+            try:
+                stocks_data = await self.page.evaluate("""async () => {
+                    try {
+                        // Check stocks table data
+                        const stocksTable = document.getElementById('stocksTableBody');
+                        const stockRows = stocksTable?.querySelectorAll('tr') || [];
+                        
+                        // Check winners list
+                        const winnersList = document.getElementById('winnersList');
+                        const winnerItems = winnersList?.querySelectorAll('li, .list-item') || [];
+                        
+                        // Check losers list
+                        const losersList = document.getElementById('losersList');
+                        const loserItems = losersList?.querySelectorAll('li, .list-item') || [];
+                        
+                        // Check if data contains real stock symbols
+                        const stockSymbols = Array.from(stockRows).map(row => {
+                            const symbolCell = row.querySelector('td:first-child');
+                            return symbolCell?.textContent?.trim();
+                        }).filter(symbol => symbol && symbol.length > 0);
+                        
+                        return {
+                            hasStocksTable: !!stocksTable,
+                            stockRowsCount: stockRows.length,
+                            hasWinnersList: !!winnersList,
+                            winnerItemsCount: winnerItems.length,
+                            hasLosersList: !!losersList,
+                            loserItemsCount: loserItems.length,
+                            stockSymbols: stockSymbols,
+                            hasRealData: stockSymbols.length > 0,
+                            tableHasPlaceholders: stocksTable?.textContent?.includes('No data available') || false
+                        };
+                    } catch (e) {
+                        return { error: e.message };
+                    }
+                }""")
+                
+                result["stocks_data"] = stocks_data
+                logger.info(f"Stocks data: {stocks_data}")
+                
+                # Validate data quality
+                if not stocks_data.get("hasStocksTable"):
+                    result["data_validation_errors"].append("Stocks table missing")
+                if stocks_data.get("stockRowsCount", 0) == 0:
+                    result["data_validation_errors"].append("Stocks table has no data rows")
+                if stocks_data.get("tableHasPlaceholders"):
+                    result["data_validation_errors"].append("Stocks table contains placeholder data")
+                if not stocks_data.get("hasRealData"):
+                    result["data_validation_errors"].append("No real stock symbols found")
+                
+                # Page is populated if it has real stock data
+                result["is_populated"] = (len(result["data_validation_errors"]) == 0 and 
+                                       stocks_data.get("hasRealData", False))
+                
+            except Exception as e:
+                logger.error(f"Error checking stocks data: {e}")
+                result["data_validation_errors"].append(f"Error checking stocks data: {e}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error in verify_stocks_page: {e}")
+            result["is_populated"] = False
+            result["missing_elements"].append(f"Verification error: {e}")
+            return result
     
     async def take_screenshot(self, page_name):
         """Take screenshot of the current page"""

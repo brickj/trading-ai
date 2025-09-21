@@ -19,6 +19,8 @@ class WatchlistManager:
     def __init__(self):
         """Initialize the watchlist manager"""
         self.db_config = Config.DATABASE_CONFIG
+        self.create_table_if_not_exists()
+        self.populate_default_watchlist()
 
     def create_table_if_not_exists(self):
         """Create watchlists table if it doesn't exist"""
@@ -52,11 +54,9 @@ class WatchlistManager:
                 if conn is None:
                     return False
                 with conn.cursor() as cursor:
-                    # Default stocks from config
-                    default_stocks = (
-                        Config.DEFAULT_CRYPTO_SYMBOLS
-                    )  # Using crypto symbols as stocks for now
-                    default_crypto = Config.DEFAULT_CRYPTO_SYMBOLS
+                    # Default stocks and crypto
+                    default_stocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "NFLX", "DIS", "JPM"]
+                    default_crypto = ["BTC", "ETH", "SOL", "ADA", "DOT"]
 
                     # Insert stocks
                     for symbol in default_stocks:
