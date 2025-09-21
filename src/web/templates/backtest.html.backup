@@ -501,13 +501,12 @@ function hideLoading(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
 }
-// Chart instances
+// Performance chart instance
 let performanceChart = null;
-let winLossChart = null;
 
-// SINGLE chart creation function
-function createChart(data) {
-    console.log('=== CREATE CHART CALLED ===');
+// Simple chart creation function
+function createSimpleChart(data) {
+    console.log('=== CREATE SIMPLE CHART CALLED ===');
     console.log('Data received:', data);
     
     // Destroy existing chart
@@ -566,13 +565,11 @@ function createChart(data) {
                 datasets: [{
                     label: 'Portfolio Value',
                     data: chartData,
-                    borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
-                    backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.1,
-                    pointRadius: 2,
-                    pointHoverRadius: 5
+                    tension: 0.1
                 }]
             },
             options: {
@@ -583,7 +580,7 @@ function createChart(data) {
                         beginAtZero: false,
                         ticks: {
                             callback: function(value) {
-                                return formatCurrency(value);
+                                return '$' + value.toLocaleString();
                             }
                         }
                     }
@@ -592,12 +589,9 @@ function createChart(data) {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                return 'Portfolio Value: $' + context.parsed.y.toLocaleString();
                             }
                         }
-                    },
-                    legend: {
-                        display: false
                     }
                 }
             }
@@ -611,96 +605,6 @@ function createChart(data) {
         
     } catch (error) {
         console.error('Error creating chart:', error);
-        canvas.style.border = '2px solid red';
-        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-    }
-}
-
-// Win/Loss chart creation function
-function createWinLossChart(data) {
-    console.log('=== CREATE WIN/LOSS CHART CALLED ===');
-    console.log('Data received:', data);
-    console.log('Win/Loss data:', {
-        winning_trades: data.winning_trades,
-        losing_trades: data.losing_trades,
-        total_trades: data.total_trades,
-        win_rate: data.win_rate
-    });
-    
-    // Destroy existing chart
-    if (winLossChart) {
-        winLossChart.destroy();
-        winLossChart = null;
-    }
-    
-    // Get the win/loss chart canvas
-    const canvas = document.getElementById('winLossChart');
-    if (!canvas) {
-        console.error('Win/Loss chart canvas not found!');
-        return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('Could not get 2D context from win/loss canvas!');
-        return;
-    }
-    
-    console.log('Win/Loss canvas and context obtained successfully');
-    
-    // Prepare data for win/loss distribution
-    const winningTrades = data.winning_trades || 0;
-    const losingTrades = data.losing_trades || 0;
-    
-    if (winningTrades === 0 && losingTrades === 0) {
-        console.warn('No trade data available for win/loss chart');
-        return;
-    }
-    
-    try {
-        winLossChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Winning Trades', 'Losing Trades'],
-                datasets: [{
-                    data: [winningTrades, losingTrades],
-                    backgroundColor: ['#28a745', '#dc3545'],
-                    borderColor: '#fff',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const total = winningTrades + losingTrades;
-                                const percentage = ((context.parsed / total) * 100).toFixed(1);
-                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        console.log('Win/Loss distribution chart created successfully');
-        
-        // Add success indicator
-        canvas.style.border = '2px solid green';
-        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
-    } catch (error) {
-        console.error('Error creating win/loss distribution chart:', error);
-        
-        // Add error indicator
         canvas.style.border = '2px solid red';
         canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
     }
@@ -1032,8 +936,8 @@ function displayHistoricalBacktestResults(data) {
     displayTradesTable(data.trades || []);
     
     // Create performance chart with cumulative capital data
-    console.log('=== CALLING CREATE PERFORMANCE CHART ===');
-    createChart(data);
+    console.log('=== CALLING CREATE HISTORICAL PERFORMANCE CHART ===');
+    createSimpleChart(data);
     
     // Use the new showSection function with visual indicators
     console.log('=== SHOWING SECTIONS ===');
@@ -1112,7 +1016,7 @@ function displayHistoricalStatistics(data) {
     document.getElementById('profitableTrades').textContent = data.profitable_count;
     
     // Create action breakdown chart
-    createChart(data);
+    createActionChart(data.action_breakdown);
     
     // Display top performing symbols
     displayTopSymbolsTable(data.top_performing_symbols);
@@ -1171,8 +1075,362 @@ function displayTopSymbolsTable(symbols) {
     });
 }
 
+function createActionChart(actionBreakdown) {
+    if (window.actionChart) {
+        window.actionChart.destroy();
+    }
+    
+    const ctx = document.getElementById('actionChart').getContext('2d');
+    const labels = actionBreakdown.map(item => item.action);
+    const data = actionBreakdown.map(item => item.count);
+    const colors = ['#28a745', '#dc3545', '#6c757d', '#ffc107', '#17a2b8'];
+    
+    window.actionChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
 
+        
+        try {
+            const yScaleOptions = buildYAxisScaleOptions(capitalData);
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                                            datasets: [{
+                            label: 'Portfolio Value',
+                            data: capitalData,
+                            borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                            backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.1,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                                            scales: {
+                            y: yScaleOptions,
+                            x: {
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            }
+                        },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Portfolio performance chart created successfully');
+            
+            // Add a visible indicator that the chart was created
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid green';
+                canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+                
+                // Add a summary text above the chart
+                const chartContainer = canvas.parentElement;
+                if (chartContainer) {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'chart-summary';
+                    summaryDiv.style.cssText = 'margin-bottom: 10px; padding: 5px; background: #f8f9fa; border-radius: 4px; font-size: 12px;';
+                    
+                    const startValue = capitalData[0];
+                    const endValue = capitalData[capitalData.length - 1];
+                    const change = endValue - startValue;
+                    const changePercent = ((change / startValue) * 100).toFixed(2);
+                    
+                    summaryDiv.innerHTML = `
+                        <strong>Portfolio Performance:</strong> 
+                        Started: ${formatCurrency(startValue)} → 
+                        Ended: ${formatCurrency(endValue)} 
+                        (${change >= 0 ? '+' : ''}${changePercent}%)
+                    `;
+                    
+                    chartContainer.insertBefore(summaryDiv, canvas);
+                }
+            }
+        } catch (error) {
+            console.error('Error creating portfolio performance chart:', error);
+            
+            // Add error indicator
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid red';
+                canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            }
+        }
+    } else if (data.trades && Array.isArray(data.trades) && data.trades.length > 0) {
+        console.log('Creating trades-based performance chart as fallback');
+        // Generate cumulative capital from trades if not provided
+        let cumulativeCapital = [parseFloat(data.initial_capital || 10000)];
+        const tradeLabels = ['Start'];
+        
+        data.trades.forEach((trade, index) => {
+            const profit = parseFloat(trade.profit || 0);
+            const previousCapital = cumulativeCapital[cumulativeCapital.length - 1];
+            cumulativeCapital.push(previousCapital + profit);
+            tradeLabels.push(`Trade ${index + 1}`);
+        });
+        
+        // Create portfolio performance chart from generated data
+        try {
+            const yScaleOptions = buildYAxisScaleOptions(cumulativeCapital);
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: tradeLabels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: cumulativeCapital,
+                        borderColor: (data.total_return || 0) >= 0 ? '#28a745' : '#dc3545',
+                        backgroundColor: (data.total_return || 0) >= 0 ? 'rgba(40, 167, 69, 0.2)' : 'rgba(220, 53, 69, 0.2)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.1,
+                        pointRadius: 2,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: yScaleOptions,
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Trades-based performance chart created successfully');
+        } catch (error) {
+            console.error('Error creating trades-based performance chart:', error);
+        }
+    } else if (data.symbol_performance && data.symbol_performance.length > 0) {
+        console.log('Creating symbol performance chart as fallback');
+        // Fall back to symbol performance chart
+        const labels = data.symbol_performance.map(item => item.symbol);
+        const successRates = data.symbol_performance.map(item => item.success_rate);
+        
+        try {
+            performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Success Rate (%)',
+                        data: successRates,
+                        backgroundColor: successRates.map(rate => rate >= 50 ? '#28a745' : '#dc3545'),
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Symbol performance chart created successfully');
+        } catch (error) {
+            console.error('Error creating symbol performance chart:', error);
+        }
+    } else {
+        console.warn('No chart data available - neither cumulative_capital nor symbol_performance nor trades found');
+        console.log('Available data keys:', Object.keys(data));
+        
+        // Create a simple fallback chart with basic data
+        console.log('Creating fallback chart with basic data');
+        try {
+            const fallbackData = [10000, 10100, 10200, 10300, 10400, 10500];
+            const fallbackLabels = ['Start', 'Trade 1', 'Trade 2', 'Trade 3', 'Trade 4', 'Trade 5'];
+            
+            const yScaleOptions = buildYAxisScaleOptions(fallbackData);
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fallbackLabels,
+                    datasets: [{
+                        label: 'Portfolio Value (Sample)',
+                        data: fallbackData,
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.1
+                }]
+            },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: yScaleOptions
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+            console.log('Fallback chart created successfully');
 
+            // Add success indicator
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid blue';
+                canvas.style.backgroundColor = 'rgba(0, 0, 255, 0.1)';
+            }
+        } catch (error) {
+            console.error('Error creating fallback chart:', error);
+            
+            // Add error indicator
+            const canvas = document.getElementById('mainPerformanceChart');
+            if (canvas) {
+                canvas.style.border = '2px solid red';
+                canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+            }
+        }
+    }
+}
+
+    
+    // Get the win/loss chart canvas
+    const canvas = document.getElementById('winLossChart');
+    if (!canvas) {
+        console.error('Win/Loss chart canvas not found!');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get 2D context from win/loss canvas!');
+        return;
+    }
+    
+    console.log('Win/Loss canvas and context obtained successfully');
+    
+    // Prepare data for win/loss distribution
+    const winningTrades = data.winning_trades || 0;
+    const losingTrades = data.losing_trades || 0;
+    
+    if (winningTrades === 0 && losingTrades === 0) {
+        console.warn('No trade data available for win/loss chart');
+        return;
+    }
+    
+    try {
+        const chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Winning Trades', 'Losing Trades'],
+                datasets: [{
+                    data: [winningTrades, losingTrades],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = winningTrades + losingTrades;
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('Win/Loss distribution chart created successfully');
+        
+        // Add success indicator
+        canvas.style.border = '2px solid green';
+        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+    } catch (error) {
+        console.error('Error creating win/loss distribution chart:', error);
+        
+        // Add error indicator
+        canvas.style.border = '2px solid red';
+        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    }
+}
 
 function displayBacktestResults(data) {
     console.log('Displaying backtest results:', data);
@@ -1230,7 +1488,7 @@ function displayBacktestResults(data) {
     
     // Create performance chart
     console.log('=== CALLING CREATE PERFORMANCE CHART ===');
-    createChart(data);
+    createPerformanceChart(data);
     
     // Use the new showSection function with visual indicators
     showSection('resultsSection', '#4caf50');
@@ -1299,6 +1557,157 @@ function displayTradesTable(trades) {
     });
 }
 
+function createPerformanceChart(data) {
+    console.log('=== CREATE PERFORMANCE CHART CALLED ===');
+    console.log('Data received:', data);
+    // Get the canvas element
+    const canvas = document.getElementById('mainPerformanceChart');
+    console.log('Canvas element found:', !!canvas);
+    console.log('Canvas element:', canvas);
+    
+    if (!canvas) {
+        console.error('❌ Performance chart canvas not found');
+        console.log('Available canvas elements:');
+        document.querySelectorAll('canvas').forEach(c => {
+            console.log('  - ' + c.id + ' (' + c.tagName + ')');
+        });
+        return;
+    }
+    
+    console.log('✓ Canvas element found successfully');
+
+    // Destroy existing chart instance if it exists
+    if (performanceChart) {
+        try {
+            performanceChart.destroy();
+            performanceChart = null;
+        } catch (e) {
+            console.error('Error destroying previous chart:', e);
+        }
+    }
+    
+    // Ensure trades is an array and limit the number of data points
+    const maxDataPoints = 100; // Limit to prevent performance issues
+    const trades = Array.isArray(data.trades) ? data.trades.slice(-maxDataPoints) : [];
+    
+    if (trades.length === 0) {
+        console.warn('No trades data available for chart');
+        return;
+    }
+    
+    // Calculate cumulative returns with limited data points
+    let cumulativeCapital = parseFloat(data.initial_capital || 10000);
+    const capitalHistory = [cumulativeCapital];
+    const labels = ['Start'];
+    
+    // Calculate step to sample data if we have too many points
+    const step = Math.max(1, Math.floor(trades.length / maxDataPoints));
+    
+    trades.forEach((trade, index) => {
+        if (index % step === 0 || index === trades.length - 1) {
+            cumulativeCapital += parseFloat(trade.profit || 0);
+            capitalHistory.push(cumulativeCapital);
+            labels.push(`Trade ${index + 1}`);
+        } else {
+            // Still add to cumulative total but don't add to the chart data
+            cumulativeCapital += parseFloat(trade.profit || 0);
+        }
+    });
+    
+    const ctx = canvas.getContext('2d');
+    const totalReturn = parseFloat(data.total_return || 0);
+    
+    console.log('Creating Chart.js instance with data:', {
+        labels: labels.length,
+        capitalHistory: capitalHistory.length,
+        totalReturn: totalReturn
+    });
+    
+            try {
+            // Validate data before creating chart
+            if (capitalHistory.length === 0 || labels.length === 0) {
+                console.error('Invalid chart data: capitalHistory or labels is empty');
+                return;
+            }
+            
+            console.log('Creating chart with:', {
+                labelsCount: labels.length,
+                dataCount: capitalHistory.length,
+                firstValue: capitalHistory[0],
+                lastValue: capitalHistory[capitalHistory.length - 1]
+            });
+            
+            performanceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: capitalHistory,
+                        borderColor: totalReturn >= 0 ? '#28a745' : '#dc3545',
+                        backgroundColor: totalReturn >= 0 ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: {
+                    duration: 0 // Disable animations for better performance
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 0
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Portfolio Value: ' + formatCurrency(context.parsed.y);
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        console.log('✓ Performance chart created successfully');
+        // Add success indicator
+        canvas.style.border = '2px solid green';
+        canvas.style.backgroundColor = 'rgba(0, 255, 0, 0.1)';
+    } catch (error) {
+        console.error('❌ Error creating performance chart:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        // Add error indicator
+        canvas.style.border = '2px solid red';
+        canvas.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    }
+}
 
 // Add cleanup on page unload
 window.addEventListener('beforeunload', function() {
@@ -1307,15 +1716,7 @@ window.addEventListener('beforeunload', function() {
             performanceChart.destroy();
             performanceChart = null;
         } catch (e) {
-            console.error('Error cleaning up performance chart before unload:', e);
-        }
-    }
-    if (winLossChart) {
-        try {
-            winLossChart.destroy();
-            winLossChart = null;
-        } catch (e) {
-            console.error('Error cleaning up win/loss chart before unload:', e);
+            console.error('Error cleaning up chart before unload:', e);
         }
     }
 });
