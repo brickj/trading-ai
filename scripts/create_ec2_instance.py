@@ -1,4 +1,4 @@
-"""Utilities for provisioning a high-performance EC2 instance for the trading AI project."""
+"""Utilities for provisioning an EC2 instance for the trading AI project."""
 
 from __future__ import annotations
 
@@ -11,8 +11,30 @@ import boto3
 from botocore.exceptions import ClientError
 
 
-# Replace this with the absolute path to the PEM key that should be created/used.
+# Configure the authentication and instance sizing options here.
+# The user should replace the placeholder values with their own settings before running.
+
+# Absolute path to the PEM key file that already exists locally.
 PEM_KEY_PATH = "/path/to/your-key.pem"
+
+# Name of the EC2 key pair associated with the PEM file above.
+KEY_PAIR_NAME = "trading-ai-key"
+
+# Toggle between the AWS Free Tier instance and the powerful p4d.24xlarge.
+# Set PROFILE_SELECTION to "free-tier" or "high-performance" as needed.
+PROFILE_SELECTION = "free-tier"
+
+INSTANCE_TYPE_BY_PROFILE = {
+    "free-tier": "t2.micro",  # Eligible for the AWS Free Tier.
+    "high-performance": "p4d.24xlarge",  # Extremely powerful GPU instance.
+}
+
+# Validate the selected profile early to avoid silent fallbacks.
+if PROFILE_SELECTION not in INSTANCE_TYPE_BY_PROFILE:
+    raise ValueError("PROFILE_SELECTION must be 'free-tier' or 'high-performance'.")
+
+# Allocation ID of an already-created Elastic IP address to attach to the instance.
+ELASTIC_IP_ALLOCATION_ID = "eipalloc-xxxxxxxx"
 
 
 @dataclass
@@ -20,11 +42,13 @@ class EC2Config:
     """Configuration values for the EC2 instance launch."""
 
     region_name: str = "us-east-1"
-    key_pair_name: str = "trading-ai-key"
+    key_pair_name: str = KEY_PAIR_NAME
     vpc_id: str | None = None  # If None, the default VPC is used.
     subnet_id: str | None = None  # Optional specific subnet.
     security_group_name: str = "trading-ai-sg"
-    instance_type: str = "p4d.24xlarge"  # Extremely powerful GPU instance.
+    instance_type: str = INSTANCE_TYPE_BY_PROFILE.get(
+        PROFILE_SELECTION, INSTANCE_TYPE_BY_PROFILE["free-tier"]
+    )
     volume_size_gb: int = 200
     iam_instance_profile: str | None = None
 
@@ -37,23 +61,24 @@ class EC2Provisioner:
         self.ec2 = boto3.client("ec2", region_name=config.region_name)
 
     def ensure_key_pair(self) -> str:
-        """Ensure that a key pair exists and is saved to the PEM path."""
+        """Validate that the key pair exists locally and in AWS."""
 
-        if os.path.exists(PEM_KEY_PATH):
-            return self.config.key_pair_name
+        if not os.path.exists(PEM_KEY_PATH):
+            raise FileNotFoundError(
+                f"PEM key not found at {PEM_KEY_PATH}. Update PEM_KEY_PATH with the correct file."
+            )
 
         try:
-            key_pair = self.ec2.create_key_pair(KeyName=self.config.key_pair_name)
+            self.ec2.describe_key_pairs(KeyNames=[self.config.key_pair_name])
         except ClientError as exc:
-            raise RuntimeError(f"Unable to create key pair: {exc}") from exc
-
-        private_key_material = key_pair["KeyMaterial"]
-        os.makedirs(os.path.dirname(PEM_KEY_PATH) or ".", exist_ok=True)
-        with open(PEM_KEY_PATH, "w", encoding="utf-8") as pem_file:
-            pem_file.write(private_key_material)
+            if exc.response["Error"].get("Code") == "InvalidKeyPair.NotFound":
+                raise RuntimeError(
+                    "The specified key pair does not exist in AWS. "
+                    "Create it in the console or update KEY_PAIR_NAME."
+                ) from exc
+            raise
 
         os.chmod(PEM_KEY_PATH, stat.S_IRUSR | stat.S_IWUSR)
-        print(f"Created key pair '{self.config.key_pair_name}' at {PEM_KEY_PATH}")
         return self.config.key_pair_name
 
     def ensure_security_group(self) -> str:
@@ -84,23 +109,14 @@ class EC2Provisioner:
             GroupId=group_id,
             IpPermissions=[
                 {
-                    "IpProtocol": "tcp",
-                    "FromPort": 22,
-                    "ToPort": 22,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "SSH access"}],
-                },
-                {
-                    "IpProtocol": "tcp",
-                    "FromPort": 80,
-                    "ToPort": 80,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "HTTP access"}],
-                },
-                {
-                    "IpProtocol": "tcp",
-                    "FromPort": 443,
-                    "ToPort": 443,
-                    "IpRanges": [{"CidrIp": "0.0.0.0/0", "Description": "HTTPS access"}],
-                },
+                    "IpProtocol": "-1",
+                    "IpRanges": [
+                        {
+                            "CidrIp": "0.0.0.0/0",
+                            "Description": "Open inbound access (adjust to specific IPs later)",
+                        }
+                    ],
+                }
             ],
         )
         print(f"Created security group '{self.config.security_group_name}' with id {group_id}")
@@ -170,7 +186,24 @@ class EC2Provisioner:
         describe = self.ec2.describe_instances(InstanceIds=[instance_id])
         public_dns = describe["Reservations"][0]["Instances"][0].get("PublicDnsName", "")
         public_ip = describe["Reservations"][0]["Instances"][0].get("PublicIpAddress", "")
-        print(f"Instance ready. Public DNS: {public_dns} | Public IP: {public_ip}")
+        if ELASTIC_IP_ALLOCATION_ID:
+            try:
+                self.ec2.associate_address(
+                    InstanceId=instance_id, AllocationId=ELASTIC_IP_ALLOCATION_ID
+                )
+                describe = self.ec2.describe_instances(InstanceIds=[instance_id])
+                public_dns = describe["Reservations"][0]["Instances"][0].get("PublicDnsName", "")
+                public_ip = describe["Reservations"][0]["Instances"][0].get("PublicIpAddress", "")
+                print(
+                    f"Associated Elastic IP {ELASTIC_IP_ALLOCATION_ID} with instance."
+                    f" Public DNS: {public_dns} | Public IP: {public_ip}"
+                )
+            except ClientError as exc:
+                raise RuntimeError(
+                    f"Failed to associate Elastic IP {ELASTIC_IP_ALLOCATION_ID}: {exc}"
+                ) from exc
+        else:
+            print(f"Instance ready. Public DNS: {public_dns} | Public IP: {public_ip}")
 
 
 def main() -> None:
