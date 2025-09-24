@@ -225,7 +225,10 @@ function loadWeeklyEvents() {
     
     const weekStart = formatDate(currentWeekStart);
     
-    fetch(`/api/weekly_events?start_date=${weekStart}`)
+    const daysBack = 30;
+    const daysAhead = 30;
+
+    fetch(`/api/weekly_events?start_date=${weekStart}&days_back=${daysBack}&days_ahead=${daysAhead}`)
         .then(response => response.json())
         .then(response => {
             console.log('API Response:', response); // Debug log

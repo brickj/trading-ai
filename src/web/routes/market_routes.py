@@ -1,5 +1,6 @@
 """Routes for market overviews, calendars, and weekly plans."""
 from datetime import datetime, timedelta
+from typing import Optional
 
 from flask import Blueprint, jsonify, request
 
@@ -13,6 +14,34 @@ market_bp = Blueprint("market", __name__)
 
 trading_logger = page_logger.logger
 log_exception = page_logger.exception
+
+
+EVENT_TYPE_TO_GROUP = {
+    "earnings": "earnings",
+    "federal_reserve": "federal_reserve",
+    "economic": "economic",
+    "economic_data": "economic",
+    "economic_event": "economic",
+    "economic_events": "economic",
+    "options_expiration": "options_expiration",
+    "market_holiday": "market_holidays",
+    "market_holidays": "market_holidays",
+}
+
+
+def _safe_int(value: Optional[str], default: int, *, param_name: str) -> int:
+    """Parse integers from query params without surfacing ValueError."""
+
+    if value is None:
+        return default
+
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        trading_logger.error_logger.warning(
+            "[WARN] Invalid integer for %s in weekly_events API: %s", param_name, value
+        )
+        return default
 
 
 @market_bp.route("/api/foreign_markets/overview")
@@ -36,10 +65,43 @@ def weekly_events_api():
     """Return weekly market events grouped by type."""
     try:
         trading_logger.api_logger.info("[DEBUG] Entered weekly_events API endpoint")
-        weeks_back = int(request.args.get("weeks_back", 1))
-        weeks_ahead = int(request.args.get("weeks_ahead", 1))
-        start_date = datetime.now().date() - timedelta(weeks=weeks_back)
-        end_date = datetime.now().date() + timedelta(weeks=weeks_ahead)
+
+        # Determine the reference date for the query window. If the UI supplies
+        # a specific start date we use that week as our anchor, otherwise we
+        # default to "today" so the page shows recent data when first loaded.
+        start_date_param = request.args.get("start_date")
+        if start_date_param:
+            try:
+                reference_date = datetime.strptime(start_date_param, "%Y-%m-%d").date()
+            except ValueError:
+                trading_logger.error_logger.warning(
+                    "[WARN] Invalid start_date supplied to weekly_events API: %s",
+                    start_date_param,
+                )
+                reference_date = datetime.now().date()
+        else:
+            reference_date = datetime.now().date()
+
+        # Allow callers to customise the lookback/lookahead window while
+        # defaulting to a full month in each direction as requested.
+        days_back = request.args.get("days_back")
+        days_ahead = request.args.get("days_ahead")
+        weeks_back = request.args.get("weeks_back")
+        weeks_ahead = request.args.get("weeks_ahead")
+
+        if weeks_back is not None or weeks_ahead is not None:
+            # Preserve backwards compatibility if any callers still rely on the
+            # old weeks-based parameters.  Fall back to four weeks (~one month)
+            # when one of the values is missing or invalid.
+            weeks_back_value = _safe_int(weeks_back, 4, param_name="weeks_back")
+            weeks_ahead_value = _safe_int(weeks_ahead, 4, param_name="weeks_ahead")
+            start_date = reference_date - timedelta(weeks=weeks_back_value)
+            end_date = reference_date + timedelta(weeks=weeks_ahead_value)
+        else:
+            days_back_value = _safe_int(days_back, 30, param_name="days_back")
+            days_ahead_value = _safe_int(days_ahead, 30, param_name="days_ahead")
+            start_date = reference_date - timedelta(days=days_back_value)
+            end_date = reference_date + timedelta(days=days_ahead_value)
 
         grouped_events = {
             "earnings": [],
@@ -71,9 +133,13 @@ def weekly_events_api():
                             "symbol": event["symbol"],
                             "timing": event["timing"] or "all_day",
                         }
-                        key = event["event_type"]
-                        if key in grouped_events:
-                            grouped_events[key].append(event_data)
+                        event_type = event["event_type"]
+                        group_key = EVENT_TYPE_TO_GROUP.get(event_type, event_type)
+
+                        if group_key not in grouped_events:
+                            grouped_events[group_key] = []
+
+                        grouped_events[group_key].append(event_data)
         except Exception as db_error:
             trading_logger.error_logger.error(
                 f"[ERROR] Database query failed: {str(db_error)}"
