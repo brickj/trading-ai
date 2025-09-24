@@ -38,8 +38,8 @@ class Config:
     # CoinGecko API removed due to rate limiting issues
     COINGECKO_ENABLED = False
 
-    # Reddit API (free, no key required for basic usage)
-    REDDIT_ENABLED = True
+    # Reddit API (disabled by default to avoid OAuth errors)
+    REDDIT_ENABLED = False
     REDDIT_CLIENT_ID = "your_reddit_client_id_here"
     REDDIT_SECRET_KEY = "your_reddit_secret_key_here"
 

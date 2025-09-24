@@ -358,11 +358,11 @@ def run_scheduled_jobs():
         """Populate weekly market plan data using WeeklyPlanPopulator"""
         print("[SCHEDULER] Starting weekly plan population...")
         try:
-            # populator = WeeklyPlanPopulator()  # Module removed
-            # results = populator.populate_advance_data()  # Module removed
-            # total_events = sum(results.values())  # Module removed
-            print(f"[SCHEDULER] Weekly plan population completed successfully: 0 events")
-            print(f"[SCHEDULER] Event breakdown: {{}}")
+            from src.data.weekly_plan_populator import populate_weekly_plan_events
+            results = populate_weekly_plan_events()
+            total_events = results.get("total_inserted", 0)
+            print(f"[SCHEDULER] Weekly plan population completed successfully: {total_events} events")
+            print(f"[SCHEDULER] Event breakdown: {results}")
         except Exception as e:
             print(f"[SCHEDULER ERROR] Weekly plan population failed: {e}")
             traceback.print_exc()

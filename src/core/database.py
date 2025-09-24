@@ -199,3 +199,33 @@ def ensure_job_schedules_table():
                 )
             """)
             conn.commit()
+
+def ensure_weekly_plan_events_table():
+    """
+    Ensure the weekly_plan_events table exists for market events.
+    """
+    with get_db_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS weekly_plan_events (
+                    id SERIAL PRIMARY KEY,
+                    event_date DATE NOT NULL,
+                    event_type VARCHAR(50) NOT NULL,
+                    event_name TEXT NOT NULL,
+                    impact VARCHAR(20) NOT NULL CHECK (impact IN ('high', 'medium', 'low')),
+                    symbol VARCHAR(20),
+                    timing VARCHAR(50),
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            # Create index for efficient date queries
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_weekly_plan_events_date 
+                ON weekly_plan_events (event_date)
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_weekly_plan_events_type 
+                ON weekly_plan_events (event_type)
+            """)
+            conn.commit()

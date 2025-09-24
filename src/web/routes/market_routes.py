@@ -36,10 +36,30 @@ def weekly_events_api():
     """Return weekly market events grouped by type."""
     try:
         trading_logger.api_logger.info("[DEBUG] Entered weekly_events API endpoint")
-        weeks_back = int(request.args.get("weeks_back", 1))
-        weeks_ahead = int(request.args.get("weeks_ahead", 1))
-        start_date = datetime.now().date() - timedelta(weeks=weeks_back)
-        end_date = datetime.now().date() + timedelta(weeks=weeks_ahead)
+        
+        # Check if start_date parameter is provided (from frontend)
+        start_date_param = request.args.get("start_date")
+        trading_logger.api_logger.info(f"[DEBUG] start_date_param: {start_date_param}")
+        
+        if start_date_param:
+            # Use the provided start_date and calculate 1 month around it
+            try:
+                start_date = datetime.strptime(start_date_param, "%Y-%m-%d").date()
+                end_date = start_date + timedelta(days=30)  # 1 month ahead
+                start_date = start_date - timedelta(days=30)  # 1 month back
+                trading_logger.api_logger.info(f"[DEBUG] Using start_date param: {start_date} to {end_date}")
+            except ValueError as e:
+                # Fallback to default behavior if date parsing fails
+                trading_logger.api_logger.warning(f"[DEBUG] Date parsing failed: {e}, using default range")
+                start_date = datetime.now().date() - timedelta(days=30)
+                end_date = datetime.now().date() + timedelta(days=30)
+        else:
+            # Use weeks_back and weeks_ahead parameters (legacy behavior)
+            weeks_back = int(request.args.get("weeks_back", 4))  # Default to 4 weeks (1 month)
+            weeks_ahead = int(request.args.get("weeks_ahead", 4))  # Default to 4 weeks (1 month)
+            start_date = datetime.now().date() - timedelta(weeks=weeks_back)
+            end_date = datetime.now().date() + timedelta(weeks=weeks_ahead)
+            trading_logger.api_logger.info(f"[DEBUG] Using weeks params: {start_date} to {end_date}")
 
         grouped_events = {
             "earnings": [],
@@ -52,6 +72,18 @@ def weekly_events_api():
         try:
             with system_service.get_database_connection() as conn:
                 with conn.cursor() as cur:
+                    # Check what data exists in the table
+                    cur.execute("SELECT COUNT(*) FROM weekly_plan_events")
+                    total_events = cur.fetchone()['count']
+                    trading_logger.api_logger.info(f"[DEBUG] Total events in table: {total_events}")
+                    
+                    # Check date range of existing data
+                    cur.execute("SELECT MIN(event_date), MAX(event_date) FROM weekly_plan_events")
+                    result = cur.fetchone()
+                    min_date, max_date = result['min'], result['max']
+                    trading_logger.api_logger.info(f"[DEBUG] Data range in table: {min_date} to {max_date}")
+                    trading_logger.api_logger.info(f"[DEBUG] Querying range: {start_date} to {end_date}")
+                    
                     cur.execute(
                         """
                         SELECT event_date, event_type, event_name, impact, symbol, timing
@@ -62,6 +94,8 @@ def weekly_events_api():
                         (start_date, end_date),
                     )
                     events = cur.fetchall()
+                    trading_logger.api_logger.info(f"[DEBUG] Found {len(events)} events in query range")
+                    
                     for event in events:
                         event_data = {
                             "date": event["event_date"].strftime("%Y-%m-%d"),
@@ -74,6 +108,11 @@ def weekly_events_api():
                         key = event["event_type"]
                         if key in grouped_events:
                             grouped_events[key].append(event_data)
+                    
+                    # Log summary of grouped events
+                    for event_type, event_list in grouped_events.items():
+                        if event_list:
+                            trading_logger.api_logger.info(f"[DEBUG] {event_type}: {len(event_list)} events")
         except Exception as db_error:
             trading_logger.error_logger.error(
                 f"[ERROR] Database query failed: {str(db_error)}"
@@ -93,12 +132,16 @@ def weekly_events_api():
 
 @market_bp.route("/api/weekly_plan/populate", methods=["POST"])
 def populate_weekly_plan():
-    """Placeholder endpoint for populating weekly plan data."""
+    """Populate weekly plan data with sample events."""
     try:
         trading_logger.api_logger.info("[DEBUG] Populating weekly plan data")
+        
+        from src.data.weekly_plan_populator import populate_weekly_plan_events
+        results = populate_weekly_plan_events()
+        
         return create_api_response(
-            data={"status": "module_not_available"},
-            message="Weekly plan module not available",
+            data=results,
+            message=f"Weekly plan populated successfully with {results.get('total_inserted', 0)} events",
         )
     except Exception as exc:
         trading_logger.error_logger.error(

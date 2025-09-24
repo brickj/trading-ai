@@ -1009,8 +1009,20 @@ class DataFetcher:
         import requests
         import time
 
+        # Check if Reddit is enabled and credentials are configured
+        if not getattr(Config, 'REDDIT_ENABLED', True):
+            print(f"🔕 Reddit API disabled for {symbol}")
+            return []
+            
         client_id = Config.REDDIT_CLIENT_ID
         client_secret = Config.REDDIT_SECRET_KEY
+        
+        # Check if credentials are properly configured
+        if (not client_id or client_id == "your_reddit_client_id_here" or
+            not client_secret or client_secret == "your_reddit_secret_key_here"):
+            print(f"🔕 Reddit API not configured for {symbol}")
+            return []
+            
         user_agent = "trading-ai-news-bot/0.1 by YourUsername"
         token_url = "https://www.reddit.com/api/v1/access_token"
         search_url = "https://oauth.reddit.com/r/stocks/search"

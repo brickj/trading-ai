@@ -178,7 +178,7 @@
 
 {% block scripts %}
 <script>
-let currentWeekStart = null;
+let currentWeekStart = new Date();
 let allEvents = {};
 
 // Initialize the page
@@ -451,28 +451,37 @@ function renderCalendarWithFilters(filters) {
     
     let calendarHTML = '';
     
-    for (let i = 0; i < 5; i++) {
-        const date = new Date(currentWeekStart);
-        date.setDate(date.getDate() + i);
-        const dateStr = formatDate(date);
-        const dayName = days[i];
+    // Show 4 weeks (month view)
+    for (let week = 0; week < 4; week++) {
+        const weekStart = new Date(currentWeekStart);
+        weekStart.setDate(weekStart.getDate() + (week * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 4);
         
-        const dayEvents = getFilteredEventsForDate(dateStr, filters);
-        const isToday = dateStr === formatDate(new Date());
+        calendarHTML += `<div class="col-12 mb-3"><h5 class="text-center text-muted">Week ${week + 1}: ${formatDate(weekStart)} - ${formatDate(weekEnd)}</h5></div>`;
         
-        calendarHTML += `
-            <div class="col weekly-day-column">
-                <div class="card weekly-calendar-card ${isToday ? 'border-primary' : ''}">
-                    <div class="card-header text-center ${isToday ? 'bg-primary text-white' : ''}">
-                        <h6 class="mb-0">${dayName}</h6>
-                        <small>${date.getMonth() + 1}/${date.getDate()}</small>
-                    </div>
-                    <div class="card-body">
-                        ${renderDayEvents(dayEvents, false)}
+        for (let i = 0; i < 5; i++) {
+            const date = new Date(weekStart);
+            date.setDate(date.getDate() + i);
+            const dateStr = formatDate(date);
+            const dayName = days[i];
+            const dayEvents = getFilteredEventsForDate(dateStr, filters);
+            const isToday = dateStr === formatDate(new Date());
+            
+            calendarHTML += `
+                <div class="col weekly-day-column">
+                    <div class="card weekly-calendar-card ${isToday ? 'border-primary' : ''}">
+                        <div class="card-header text-center ${isToday ? 'bg-primary text-white' : ''}">
+                            <h6 class="mb-0">${dayName}</h6>
+                            <small>${date.getMonth() + 1}/${date.getDate()}</small>
+                        </div>
+                        <div class="card-body">
+                            ${renderDayEvents(dayEvents, false)}
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
     
     calendar.innerHTML = calendarHTML;
