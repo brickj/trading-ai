@@ -19,16 +19,19 @@
         <!-- Sentiment Chart Container - Required for tests -->
         <div id="sentimentChartContainer" class="row mb-4">
             <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <button id="refreshBtn" class="btn btn-warning">
+                <div class="unified-card">
+                    <div class="unified-card-header">
+                        <h5><i class="fas fa-chart-line"></i> Crypto Analysis Controls</h5>
+                    </div>
+                    <div class="unified-card-body">
+                        <button id="refreshBtn" class="btn unified-btn unified-btn-primary">
                             <i class="fas fa-sync-alt"></i> Refresh Analysis
                         </button>
                         <span class="ms-3 text-muted" id="lastUpdated"></span>
                         
                         <div id="loadingSpinner" class="loading mt-3">
                             <div class="text-center">
-                                <div class="spinner-border text-warning" role="status">
+                                <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
                                 <p class="mt-2">Analyzing cryptocurrencies...</p>
@@ -45,12 +48,12 @@
     <!-- Crypto Opportunities Container - Required for tests -->
     <div id="cryptoContainer" class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-warning">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-chart-line"></i> Crypto Trading Opportunities</h5>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-info" id="crypto-threshold-info">
+                <div class="unified-card-body">
+                    <div class="unified-alert alert-info" id="crypto-threshold-info">
                         <strong>Note:</strong> Showing all cryptocurrencies from your watchlist with their current sentiment analysis and trading signals.
                     </div>
                     <div id="cryptoCardsRow" class="row">
@@ -71,11 +74,11 @@
     <!-- Crypto Overview Section - Required for tests -->
     <div class="row mt-4" id="cryptoOverview">
         <div class="col-12">
-            <div class="card border-warning">
-                <div class="card-header bg-warning">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-info-circle"></i> Crypto Market Overview</h5>
                 </div>
-                <div class="card-body">
+                <div class="unified-card-body">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
@@ -97,7 +100,7 @@
                         </div>
                         <div class="col-md-3">
                             <div class="text-center">
-                                <h4 class="text-warning" id="cryptoVolatility">-</h4>
+                                <h4 class="text-accent" id="cryptoVolatility">-</h4>
                                 <small>Volatility</small>
                             </div>
                         </div>
@@ -109,22 +112,22 @@
 
     <div class="row mt-4">
         <div class="col-md-6">
-            <div class="card border-warning">
-                <div class="card-header bg-warning">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-chart-pie"></i> Sentiment Distribution</h5>
                 </div>
-                <div class="card-body">
+                <div class="unified-card-body">
                     <canvas id="sentimentDistributionChart" width="400" height="200"></canvas>
                 </div>
             </div>
         </div>
         
         <div class="col-md-6">
-            <div class="card border-warning">
-                <div class="card-header bg-warning">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-signal"></i> Signal Distribution</h5>
                 </div>
-                <div class="card-body">
+                <div class="unified-card-body">
                     <canvas id="signalChart" width="400" height="200"></canvas>
                 </div>
             </div>
@@ -133,11 +136,11 @@
 
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card border-warning">
-                <div class="card-header bg-warning">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-info-circle"></i> Crypto Market Summary</h5>
                 </div>
-                <div class="card-body" id="summaryStats">
+                <div class="unified-card-body" id="summaryStats">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="text-center">
@@ -171,12 +174,12 @@
 
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card border-info">
-                <div class="card-header bg-info text-white">
+            <div class="unified-card">
+                <div class="unified-card-header">
                     <h5><i class="fas fa-exclamation-triangle"></i> Crypto Trading Notes</h5>
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-warning">
+                <div class="unified-card-body">
+                    <div class="unified-alert alert-warning">
                         <h6><i class="fas fa-info-circle"></i> Important Notes:</h6>
                         <ul class="mb-0">
                             <li>Cryptocurrency markets are highly volatile and operate 24/7</li>

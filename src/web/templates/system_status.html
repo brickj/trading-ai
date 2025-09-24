@@ -69,9 +69,9 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="card border-warning mb-3">
+                                <div class="stats-card mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-warning" id="cacheHitRate">N/A</h4>
+                                        <h4 class="text-accent" id="cacheHitRate">N/A</h4>
                                         <small>Cache Hit Rate</small>
                                     </div>
                                 </div>
@@ -122,9 +122,9 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="card border-warning mb-3">
+                                <div class="stats-card mb-3">
                                     <div class="card-body text-center">
-                                        <h4 class="text-warning" id="cacheSize">N/A</h4>
+                                        <h4 class="text-accent" id="cacheSize">N/A</h4>
                                         <small>Cache Size</small>
                                     </div>
                                 </div>
@@ -176,11 +176,11 @@
                         </div>
                         
                         <div class="col-md-3">
-                            <div class="card border-warning">
-                                <div class="card-header bg-warning text-white text-center">
+                            <div class="unified-card">
+                                <div class="unified-card-header">
                                     <h6><i class="fas fa-robot"></i> AI Analysis</h6>
                                 </div>
-                                <div class="card-body">
+                                <div class="unified-card-body">
                                     <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
                                     <p><strong>Function:</strong> Sentiment analysis and recommendations</p>
                                     <p><strong>Providers:</strong> Ollama, DeepSeek, OpenAI</p>
@@ -483,7 +483,7 @@ function updateSystemMetrics(data) {
     if (system.memory_percent !== undefined) {
         memoryElement.textContent = system.memory_percent.toFixed(1) + '%';
         memoryElement.className = system.memory_percent > 80 ? 'text-danger' : 
-                                 system.memory_percent > 60 ? 'text-warning' : 'text-success';
+                                 system.memory_percent > 60 ? 'text-accent' : 'text-success';
     } else {
         memoryElement.textContent = 'N/A';
     }
@@ -786,7 +786,7 @@ async function loadWatchlistConfig() {
                 cryptoHtml += `
                     <div class="col-6 mb-2">
                         <div class="d-flex align-items-center">
-                            <span class="badge bg-warning me-2">${crypto.symbol}</span>
+                            <span class="unified-badge warning me-2">${crypto.symbol}</span>
                             <small class="text-muted">${crypto.notes || ''}</small>
                             <button class="btn btn-outline-danger btn-sm ms-auto" onclick="removeWatchlistSymbol('${crypto.symbol}', 'crypto')">
                                 <i class="fas fa-times"></i>

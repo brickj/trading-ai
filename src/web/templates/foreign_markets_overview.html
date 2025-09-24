@@ -44,9 +44,9 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-warning">
+            <div class="stats-card">
                 <div class="card-body text-center">
-                    <i class="fas fa-percent fa-2x text-warning mb-2"></i>
+                    <i class="fas fa-percent fa-2x text-accent mb-2"></i>
                     <h3 id="foreignCoverage" class="mb-1">-</h3>
                     <p class="text-muted mb-0">Foreign Coverage</p>
                 </div>
@@ -57,14 +57,17 @@
     <!-- Controls -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
-                    <button id="refreshBtn" class="btn btn-success">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-cog"></i> Market Controls</h5>
+                </div>
+                <div class="unified-card-body">
+                    <button id="refreshBtn" class="btn unified-btn unified-btn-success">
                         <i class="fas fa-sync-alt"></i> Refresh Data
                     </button>
                     
                     <div class="ms-3 d-inline-block">
-                        <select id="regionFilter" class="form-select form-select-sm" style="width:auto; display:inline-block;">
+                        <select id="regionFilter" class="form-select unified-form-control form-select-sm" style="width:auto; display:inline-block;">
                             <option value="all" selected>All Regions</option>
                             <option value="Europe">Europe</option>
                             <option value="Asia">Asia</option>
@@ -73,7 +76,7 @@
                     </div>
                     
                     <div class="ms-3 d-inline-block">
-                        <select id="statusFilter" class="form-select form-select-sm" style="width:auto; display:inline-block;">
+                        <select id="statusFilter" class="form-select unified-form-control form-select-sm" style="width:auto; display:inline-block;">
                             <option value="all" selected>All Status</option>
                             <option value="Open">Open</option>
                             <option value="Closed">Closed</option>
@@ -159,65 +162,6 @@
     </div>
 </div>
 
-<style>
-.market-card {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    cursor: pointer;
-    height: 100%;
-}
-
-.market-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.market-status {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.market-performance {
-    font-size: 1.1rem;
-    font-weight: 700;
-}
-
-.market-symbols {
-    font-size: 0.85rem;
-    opacity: 0.8;
-}
-
-.country-flag {
-    font-size: 1.5rem;
-    margin-right: 0.5rem;
-}
-
-.market-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-}
-
-.loading {
-    display: none;
-}
-
-.symbol-pill {
-    display: inline-block;
-    background-color: #f8f9fa;
-    color: #495057;
-    padding: 0.2rem 0.5rem;
-    margin: 0.1rem;
-    border-radius: 0.25rem;
-    font-size: 0.8rem;
-    font-weight: 500;
-}
-
-.trading-hours {
-    font-size: 0.8rem;
-    color: #6c757d;
-}
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
