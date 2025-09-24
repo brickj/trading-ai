@@ -13,7 +13,7 @@ from ..utils import handle_api_error
 
 # Import core modules
 from ...core.logger import trading_logger, log_exception
-from ...core.telegram_alerts import telegram_alerter
+from ..services import system_service
 
 # Create blueprint
 telegram_bp = Blueprint('telegram', __name__)
@@ -24,7 +24,7 @@ def test_telegram():
     """Test Telegram bot connectivity"""
     try:
         # Test telegram connection
-        connection_result = telegram_alerter.test_connection()
+        connection_result = system_service.get_telegram_alerter().test_connection()
         
         # Construct response with working field at top level as expected by test
         response_data = {
@@ -60,7 +60,7 @@ def toggle_telegram_alerts():
         enabled = data.get("enabled", True)
         
         # Toggle telegram alerts
-        telegram_alerter.set_enabled(enabled)
+        system_service.get_telegram_alerter().set_enabled(enabled)
         
         return create_api_response(
             data={
@@ -81,7 +81,7 @@ def send_test_telegram():
         message = data.get("message", "Test message from Trading AI") if data else "Test message from Trading AI"
         
         # Send test message
-        success = telegram_alerter.send_message(message)
+        success = system_service.get_telegram_alerter().send_message(message)
         
         return create_api_response(
             data={
@@ -98,7 +98,7 @@ def send_test_telegram():
 def get_telegram_chat_ids():
     """Get current Telegram chat IDs"""
     try:
-        chat_ids = telegram_alerter.get_chat_ids()
+        chat_ids = system_service.get_telegram_alerter().get_chat_ids()
         
         return create_api_response(
             data={
@@ -125,7 +125,7 @@ def add_telegram_chat_id():
         chat_id = data["chat_id"]
         
         # Add chat ID
-        success = telegram_alerter.add_chat_id(chat_id)
+        success = system_service.get_telegram_alerter().add_chat_id(chat_id)
         
         if success:
             return create_api_response(
@@ -158,7 +158,7 @@ def remove_telegram_chat_id():
         chat_id = data["chat_id"]
         
         # Remove chat ID
-        success = telegram_alerter.remove_chat_id(chat_id)
+        success = system_service.get_telegram_alerter().remove_chat_id(chat_id)
         
         if success:
             return create_api_response(
@@ -191,14 +191,14 @@ def send_raw_telegram_message():
         message = data["message"]
         
         # Send raw message
-        success = telegram_alerter.send_message(message)
+        success = system_service.get_telegram_alerter().send_message(message)
         
         return create_api_response(
             data={
                 "message": message,
                 "sent": success,
                 "timestamp": datetime.now().isoformat(),
-                "recipients": len(telegram_alerter.get_chat_ids())
+                "recipients": len(system_service.get_telegram_alerter().get_chat_ids())
             }
         )
     except Exception as e:

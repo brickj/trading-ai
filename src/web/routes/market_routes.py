@@ -6,8 +6,7 @@ from flask import Blueprint, jsonify, request
 from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
 from ..dependencies import market_manager
-from ...core.database import get_db_connection
-from ...core.config import Config
+from ..services import system_service
 
 
 market_bp = Blueprint("market", __name__)
@@ -51,7 +50,7 @@ def weekly_events_api():
         }
 
         try:
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
@@ -154,7 +153,7 @@ def market_calendar_api(date_str):
 
         real_events = []
         try:
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         """
@@ -205,7 +204,7 @@ def earnings_calendar_api():
         max_symbols = int(request.args.get("limit", 50))
 
         try:
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
                         """

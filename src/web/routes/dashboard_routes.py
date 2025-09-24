@@ -7,8 +7,7 @@ from flask import Blueprint, jsonify
 from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
 from ..dependencies import recommendation_manager
-from ...core.database import get_db_connection
-from ...data.preload_stock_data import preload_stock_data
+from ..services import system_service
 
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -201,7 +200,7 @@ def get_dashboard_data():
 def get_market_movers():
     """Return cached market movers from the database."""
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) as count FROM market_movers")
                 count_result = cur.fetchone()
@@ -277,8 +276,8 @@ def get_market_movers():
 def refresh_market_movers():
     """Trigger the preload job to refresh market movers."""
     try:
-        preload_stock_data()
-        with get_db_connection() as conn:
+        result = system_service.preload_stock_data()
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) as count FROM market_movers")
                 count_result = cur.fetchone()
@@ -307,7 +306,7 @@ def load_preloaded_data_from_db():
     """Populate in-memory cache with latest market mover data."""
     global preloaded_data, preload_timestamp
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """

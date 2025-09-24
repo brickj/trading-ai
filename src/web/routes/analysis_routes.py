@@ -15,18 +15,20 @@ from ..helpers import (
     get_preloaded_opportunities,
 )
 from ..utils import api_error_handler
+from ..utils.decorators import rate_limit
 
 # Import core modules
 from ...core.logger import trading_logger, log_info, log_error, log_exception, log_timing, log_user_actions
 
 # Import services
-from ..services import analysis_service
+from ..services import analysis_service, system_service
 
 # Create blueprint
 analysis_bp = Blueprint('analysis', __name__)
 
 
 @analysis_bp.route("/api/analyze_stock", methods=["POST"])
+@rate_limit(max_requests=10, window_seconds=60)  # 10 requests per minute
 @api_error_handler("analyze_stock")
 @log_user_actions(trading_logger)
 @log_timing(trading_logger)
@@ -171,6 +173,7 @@ def crypto_analysis():
 
 
 @analysis_bp.route("/api/enhanced_analysis", methods=["POST"])
+@rate_limit(max_requests=5, window_seconds=60)  # 5 requests per minute (more resource intensive)
 @api_error_handler("enhanced_analysis")
 @log_user_actions(trading_logger)
 @log_timing(trading_logger)
@@ -190,13 +193,10 @@ def enhanced_analysis():
             status_code=400
         )
 
-    from ...trading.enhanced_trading_strategy import EnhancedTradingStrategy
-    from ...data.data_fetcher import DataFetcher
-    from ...core.sentiment_analyzer import SentimentAnalyzer
-
-    enhanced_strategy = EnhancedTradingStrategy()
-    data_fetcher = DataFetcher()
-    sentiment_analyzer = SentimentAnalyzer()
+    # Services now available via system_service
+    enhanced_strategy = system_service.get_enhanced_trading_strategy()
+    data_fetcher = system_service.get_data_fetcher()
+    sentiment_analyzer = system_service.get_sentiment_analyzer()
 
     price_data = data_fetcher.get_stock_price(symbol)
     if not price_data or "current_price" not in price_data:
@@ -254,6 +254,7 @@ def enhanced_analysis():
 
 
 @analysis_bp.route("/api/comprehensive_analysis", methods=["POST"])
+@rate_limit(max_requests=3, window_seconds=60)  # 3 requests per minute (most resource intensive)
 @api_error_handler("comprehensive_analysis")
 def comprehensive_analysis():
     """Enhanced analysis with both stock and options recommendations"""
@@ -264,13 +265,10 @@ def comprehensive_analysis():
     if not symbol:
         return create_api_response(error="Symbol is required", status_code=400)
 
-    from ...trading.trading_strategy import TradingStrategy
-    from ...data.data_fetcher import DataFetcher
-    from ...core.sentiment_analyzer import SentimentAnalyzer
-
-    trading_strategy = TradingStrategy()
-    data_fetcher = DataFetcher()
-    sentiment_analyzer = SentimentAnalyzer()
+    # Services now available via system_service
+    trading_strategy = system_service.get_trading_strategy()
+    data_fetcher = system_service.get_data_fetcher()
+    sentiment_analyzer = system_service.get_sentiment_analyzer()
 
     price_data = data_fetcher.get_stock_price(symbol)
     if not price_data or "current_price" not in price_data:

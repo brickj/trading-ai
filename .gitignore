@@ -68,3 +68,6 @@ secrets.yml
 # Test artifacts
 .pytest_cache/
 test-artifacts/
+
+# AWS/EC2 Scripts (contain sensitive credentials)
+scripts/

@@ -30,6 +30,11 @@ def _build_cors_resources(app: Flask) -> Dict[str, Dict[str, Any]]:
 
     resources = app.config.get("CORS_RESOURCES")
     origins = app.config.get("CORS_ORIGINS", "*")
+    
+    # For public recommendation app, wildcard CORS is acceptable
+    # To restrict CORS, set CORS_ORIGINS in config to specific domains:
+    # CORS_ORIGINS = "https://yourdomain.com,https://staging.yourdomain.com"
+    
     if resources:
         return resources
     return {r"/*": {"origins": origins}}

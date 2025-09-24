@@ -12,6 +12,8 @@ apscheduler
 psutil
 beautifulsoup4
 lxml
+paramiko
+boto3
 bandit
 ruff
 vulture

@@ -14,6 +14,7 @@ from ..helpers import (
     execute_db_query,
 )
 from ..utils import api_error_handler
+from ..utils.decorators import rate_limit
 
 # Import core modules
 from ...core.logger import trading_logger, log_exception

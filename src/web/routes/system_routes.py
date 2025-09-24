@@ -13,10 +13,10 @@ from ..helpers import create_api_response
 from ..utils import api_error_handler, handle_api_error
 from ..dependencies import market_manager
 
-# Import core modules
-from ...core.database import get_db_connection
-from ...core.config import Config
+# Import services instead of core modules
+from ..services import system_service
 from ..utils.page_logger import page_logger
+from ...core.config import Config
 
 # Create blueprint
 system_bp = Blueprint('system', __name__)
@@ -56,8 +56,8 @@ def system_status():
         # Get cache stats
         cache_stats = {"status": "unavailable"}
         try:
-            from ...core.cache import get_cache_stats
-            cache_stats = get_cache_stats()
+            # Cache stats now available via system_service
+            cache_stats = system_service.get_cache_stats()
         except Exception as e:
             log_exception("Error getting cache stats", e)
             cache_stats = {"status": "error", "error": str(e)}
@@ -65,26 +65,26 @@ def system_status():
         # Get application config
         config_info = {
             "telegram_enabled": False,  # Will be updated if telegram module available
-            "cache_enabled": getattr(Config, "ENABLE_CACHE", False),
+            "cache_enabled": Config.ENABLE_DATABASE_CACHE,
             "debug_mode": False,
             "version": "1.0.0",
         }
 
         # Try to get telegram status safely
         try:
-            from ...core.telegram_alerter import telegram_alerter
-            config_info["telegram_enabled"] = telegram_alerter.is_enabled()
+            # Telegram alerter now available via system_service
+            config_info["telegram_enabled"] = system_service.get_telegram_alerter().is_enabled()
         except Exception:
             pass
 
         # Get historical data job status
         historical_data_status = {"status": "unavailable"}
         try:
-            from ...data.historical_data_updater import HistoricalDataUpdater
-            updater = HistoricalDataUpdater()
+            # Historical data updater now available via system_service
+            updater = system_service.get_historical_data_updater()
             
             # Check if we have recent historical data
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                     cur.execute("""
                         SELECT 
@@ -132,7 +132,7 @@ def system_status():
         job_schedules = {"status": "unavailable"}
         try:
             print("[DEBUG] Attempting to get job schedules...")
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                     print("[DEBUG] Executing job schedules query...")
                     cur.execute("""
@@ -232,8 +232,8 @@ def get_news_services_status():
     """Get status of all news services by actually testing them"""
     try:
         # Import DataFetcher to test real services
-        from ...data.data_fetcher import DataFetcher
-        data_fetcher = DataFetcher()
+        # Data fetcher now available via system_service
+        data_fetcher = system_service.get_data_fetcher()
         
         services_status = {}
         test_symbol = "AAPL"  # Use AAPL as test symbol
@@ -316,9 +316,9 @@ def get_news_services_status():
 def get_logs():
     """Get application logs from database"""
     try:
-        from ...core.database import get_db_connection
+        # Database connection now available via system_service
         
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 # Get total count
                 cur.execute("SELECT COUNT(*) as total FROM logs")
@@ -382,7 +382,7 @@ def toggle_news_service():
             )
 
         # Import configuration to check current status
-        from ...core.config import Config
+        # Config now available via system_service
         
         # Check current configuration status
         current_status = "unknown"
@@ -443,8 +443,8 @@ def test_news_service():
             )
 
         # Import DataFetcher to test real services
-        from ...data.data_fetcher import DataFetcher
-        data_fetcher = DataFetcher()
+        # Data fetcher now available via system_service
+        data_fetcher = system_service.get_data_fetcher()
         
         test_result = {
             "service_name": service_name,
@@ -534,10 +534,10 @@ def test_news_service():
 def get_news_services_config():
     """Get news services configuration status by checking actual config and testing APIs"""
     try:
-        from ...core.config import Config
-        from ...data.data_fetcher import DataFetcher
+        # Config now available via system_service
+        # Data fetcher now available via system_service
         
-        data_fetcher = DataFetcher()
+        data_fetcher = system_service.get_data_fetcher()
         test_symbol = "AAPL"
         
         config_status = {}
@@ -720,7 +720,7 @@ def performance_status():
 def get_database_status():
     """Get database connection status"""
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT 1")
                 result = cur.fetchone()
@@ -744,8 +744,8 @@ def get_services_status():
     
     # Check data fetcher service
     try:
-        from ...data.data_fetcher import DataFetcher
-        data_fetcher = DataFetcher()
+        # Data fetcher now available via system_service
+        data_fetcher = system_service.get_data_fetcher()
         # Test with a simple API call
         test_price = data_fetcher.get_stock_price("AAPL")
         services_status["data_fetcher"] = {
@@ -762,8 +762,8 @@ def get_services_status():
     
     # Check sentiment analyzer service
     try:
-        from ...core.sentiment_analyzer import SentimentAnalyzer
-        sentiment_analyzer = SentimentAnalyzer()
+        # Sentiment analyzer now available via system_service
+        sentiment_analyzer = system_service.get_sentiment_analyzer()
         # Test with a simple sentiment analysis
         test_sentiment = sentiment_analyzer.analyze_sentiment("This is a test message for sentiment analysis.")
         services_status["sentiment_analyzer"] = {
@@ -780,8 +780,8 @@ def get_services_status():
     
     # Check trading strategy service
     try:
-        from ...trading.trading_strategy import TradingStrategy
-        trading_strategy = TradingStrategy()
+        # Trading strategy now available via system_service
+        trading_strategy = system_service.get_trading_strategy()
         # Check if the service can be instantiated
         services_status["trading_strategy"] = {
             "status": "active",
@@ -797,8 +797,8 @@ def get_services_status():
     
     # Check cache service
     try:
-        from ...core.cache import get_cache_stats
-        cache_stats = get_cache_stats()
+        # Cache stats now available via system_service
+        cache_stats = system_service.get_cache_stats()
         services_status["cache"] = {
             "status": "active",
             "last_check": datetime.now().isoformat(),

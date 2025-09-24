@@ -5,7 +5,7 @@ Page routes for HTML template rendering
 from flask import Blueprint, render_template, request
 from datetime import datetime
 
-from ...core.database import get_db_connection
+from ..services import system_service
 
 # Create blueprint
 page_bp = Blueprint('pages', __name__)
@@ -15,12 +15,12 @@ page_bp = Blueprint('pages', __name__)
 def index():
     """Main dashboard page"""
     try:
-        from ...core.config import Config
+        # Config now available via system_service
         return render_template(
             "index.html",
             current_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             page_title="Trading AI Dashboard",
-            historical_lookback_days=Config.HISTORICAL_LOOKBACK_DAYS
+            historical_lookback_days=system_service.get_config_data()["historical_lookback_days"]
         )
     except Exception as e:
         return f"Error loading dashboard: {str(e)}", 500
@@ -34,7 +34,7 @@ def stocks_page():
         initial_data = {"gainers": [], "losers": []}
         
         try:
-            with get_db_connection() as conn:
+            with system_service.get_database_connection() as conn:
                 with conn.cursor() as cur:
                     # Get market movers with enhanced analysis data from recommendations
                     cur.execute(

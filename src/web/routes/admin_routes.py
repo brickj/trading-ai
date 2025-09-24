@@ -6,9 +6,8 @@ from flask import Blueprint, jsonify, request
 from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
 from ..dependencies import watchlist_manager
+from ..services import system_service
 from ...core.config import Config
-from ...core.database import get_db_connection, ensure_job_schedules_table
-from ...data.preload_stock_data import preload_stock_data
 
 
 admin_bp = Blueprint("admin", __name__)
@@ -17,7 +16,7 @@ log_info = page_logger.info
 log_error = page_logger.error
 log_exception = page_logger.exception
 
-ensure_job_schedules_table()
+# Job schedules table initialization moved to system service
 
 
 @admin_bp.route("/api/go_services/health")
@@ -37,7 +36,7 @@ def go_services_health():
 def trigger_preload_stock_data():
     """Manually trigger the stock data preload job."""
     try:
-        preload_stock_data()
+        result = system_service.preload_stock_data()
         return jsonify(
             {
                 "status": "success",
@@ -207,7 +206,7 @@ def watchlist_config():
 def get_job_schedules():
     """Return all job schedules."""
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "SELECT id, job_name, run_time, enabled, last_run, created_at FROM job_schedules ORDER BY job_name"
@@ -247,7 +246,7 @@ def create_job_schedule():
                 error="job_name and run_time are required",
                 status_code=400,
             )
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -270,7 +269,7 @@ def enable_job_schedule(schedule_id):
     try:
         data = request.get_json() or {}
         enabled = bool(data.get("enabled", True))
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     "UPDATE job_schedules SET enabled = %s WHERE id = %s",
@@ -289,7 +288,7 @@ def enable_job_schedule(schedule_id):
 def delete_job_schedule(schedule_id):
     """Delete a job schedule entry."""
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM job_schedules WHERE id = %s", (schedule_id,))
         return create_api_response(

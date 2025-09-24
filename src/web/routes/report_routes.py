@@ -7,7 +7,7 @@ from flask import Blueprint, request
 
 from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
-from ...core.database import get_db_connection
+from ..services import system_service
 
 
 report_bp = Blueprint("reporting", __name__)
@@ -196,7 +196,7 @@ def generate_real_report_data(start_date: datetime, end_date: datetime, report_t
 
 def get_real_recommendations_data(start_date: datetime, end_date: datetime) -> Dict[str, Any]:
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -258,7 +258,7 @@ def get_real_recommendations_data(start_date: datetime, end_date: datetime) -> D
 
 def get_real_scalping_data(start_date: datetime, end_date: datetime) -> Dict[str, Any]:
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -282,7 +282,7 @@ def get_real_scalping_data(start_date: datetime, end_date: datetime) -> Dict[str
 
 def get_real_market_movers_data(start_date: datetime, end_date: datetime) -> Dict[str, Any]:
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -306,7 +306,7 @@ def get_real_market_movers_data(start_date: datetime, end_date: datetime) -> Dic
 
 def get_real_backtest_data(start_date: datetime, end_date: datetime) -> Dict[str, Any]:
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -332,7 +332,7 @@ def get_real_backtest_data(start_date: datetime, end_date: datetime) -> Dict[str
 
 def get_real_system_metrics(start_date: datetime, end_date: datetime) -> Dict[str, Any]:
     try:
-        with get_db_connection() as conn:
+        with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """

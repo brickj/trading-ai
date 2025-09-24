@@ -8,13 +8,7 @@ from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
 from ..dependencies import watchlist_manager
 from ..extensions import socketio
-from ...core.cache import cache_result, get_cached_result
-from ...core.logger import log_exception
-from ...core.batch_processor import (
-    batch_processor_instance,
-    create_watchlist_tasks,
-)
-from ...data.news_monitor import NewsMonitor
+from ..services import system_service
 
 
 opportunities_bp = Blueprint("opportunities", __name__)
@@ -24,7 +18,7 @@ log_error = page_logger.error
 log_info = page_logger.info
 log_exc = page_logger.exception
 
-news_monitor = NewsMonitor()
+news_monitor = system_service.get_news_monitor()
 
 
 @opportunities_bp.route("/api/news_opportunities")
