@@ -102,7 +102,6 @@ def weekly_events_api():
             days_ahead_value = _safe_int(days_ahead, 30, param_name="days_ahead")
             start_date = reference_date - timedelta(days=days_back_value)
             end_date = reference_date + timedelta(days=days_ahead_value)
->>>>>>> origin/codex/update-weekly-plan-page-data-display
 
         grouped_events = {
             "earnings": [],
