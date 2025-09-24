@@ -199,6 +199,23 @@ function formatDate(date) {
     return tzAdjusted.toISOString().split('T')[0];
 }
 
+function getCurrentWeekBounds() {
+    const start = new Date(currentWeekStart);
+    const end = new Date(currentWeekStart);
+    end.setDate(end.getDate() + 6);
+    return { start, end };
+}
+
+function parseDateString(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+}
+
+function isDateWithinRange(dateStr, startDate, endDate) {
+    const date = parseDateString(dateStr);
+    return date >= startDate && date <= endDate;
+}
+
 function changeWeek(direction) {
     const newDate = new Date(currentWeekStart);
     newDate.setDate(newDate.getDate() + (direction * 7));
@@ -225,7 +242,10 @@ function loadWeeklyEvents() {
     
     const weekStart = formatDate(currentWeekStart);
     
-    fetch(`/api/weekly_events?start_date=${weekStart}`)
+    const daysBack = 0;
+    const daysAhead = 6;
+
+    fetch(`/api/weekly_events?start_date=${weekStart}&days_back=${daysBack}&days_ahead=${daysAhead}`)
         .then(response => response.json())
         .then(response => {
             console.log('API Response:', response); // Debug log
@@ -349,12 +369,22 @@ function updateSummary() {
         economic: 0,
         options: 0
     };
-    
-    if (allEvents.earnings) counts.earnings = allEvents.earnings.length;
-    if (allEvents.federal_reserve) counts.fed = allEvents.federal_reserve.length;
-    if (allEvents.economic) counts.economic = allEvents.economic.length;
-    if (allEvents.options_expiration) counts.options = allEvents.options_expiration.length;
-    
+
+    const { start, end } = getCurrentWeekBounds();
+
+    if (allEvents.earnings) {
+        counts.earnings = allEvents.earnings.filter(event => isDateWithinRange(event.date, start, end)).length;
+    }
+    if (allEvents.federal_reserve) {
+        counts.fed = allEvents.federal_reserve.filter(event => isDateWithinRange(event.date, start, end)).length;
+    }
+    if (allEvents.economic) {
+        counts.economic = allEvents.economic.filter(event => isDateWithinRange(event.date, start, end)).length;
+    }
+    if (allEvents.options_expiration) {
+        counts.options = allEvents.options_expiration.filter(event => isDateWithinRange(event.date, start, end)).length;
+    }
+
     document.getElementById('earningsCount').textContent = counts.earnings;
     document.getElementById('fedCount').textContent = counts.fed;
     document.getElementById('economicCount').textContent = counts.economic;
@@ -373,18 +403,20 @@ function renderEventsTable() {
             });
         }
     });
-    
+
+    const { start, end } = getCurrentWeekBounds();
+    const weeklyEvents = allEventsList.filter(event => isDateWithinRange(event.date, start, end));
+
     // Sort by date
-    allEventsList.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
+    weeklyEvents.sort((a, b) => parseDateString(a.date) - parseDateString(b.date));
+
     let html = '';
-    allEventsList.forEach(event => {
+    weeklyEvents.forEach(event => {
         // Parse date as local time to avoid timezone offset issues
-        const [year, month, day] = event.date.split('-').map(Number);
-        const date = new Date(year, month - 1, day); // month is 0-indexed
+        const date = parseDateString(event.date);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        
+
         html += `
             <tr class="event-row" data-type="${event.event_type}" data-impact="${event.impact}">
                 <td>${formattedDate}</td>
