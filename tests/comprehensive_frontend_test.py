@@ -320,11 +320,11 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             
             if "signal_data" in news_opp:
                 signal_data = news_opp["signal_data"]
-                self.assertIn("stock_recommendation", signal_data, "Signal data should have stock_recommendation")
-                if "stock_recommendation" in signal_data:
-                    stock_rec = signal_data["stock_recommendation"]
-                    self.assertIn("action", stock_rec, "Stock recommendation should have action")
-                    self.assertIn("confidence", stock_rec, "Stock recommendation should have confidence")
+                # Check for new signal data structure (action, confidence, reasoning, signal_strength)
+                self.assertIn("action", signal_data, "Signal data should have action")
+                self.assertIn("confidence", signal_data, "Signal data should have confidence")
+                self.assertIn("reasoning", signal_data, "Signal data should have reasoning")
+                self.assertIn("signal_strength", signal_data, "Signal data should have signal_strength")
             
             print(f"✓ News opportunities API returned {len(data['data']['opportunities'])} opportunities")
         else:

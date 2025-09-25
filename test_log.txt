@@ -376,3 +376,157 @@ Call log:
 2025-09-20 21:46:48,887 - INFO - Test report saved: test_artifacts/test_report_20250920_214648.json
 2025-09-20 21:46:48,888 - INFO - Text report saved: test_artifacts/test_report_20250920_214648.txt
 2025-09-20 21:46:49,199 - INFO - Browser teardown complete
+2025-09-25 02:20:23,692 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-09-25 02:20:23,692 - INFO - Base URL: http://localhost:5001
+2025-09-25 02:20:23,692 - INFO - Artifacts directory: test_artifacts
+2025-09-25 02:20:24,803 - INFO - Browser setup complete with video recording enabled
+2025-09-25 02:20:24,804 - INFO - Testing page: Homepage (/)
+2025-09-25 02:20:25,635 - INFO - Page load time: 557.02ms
+2025-09-25 02:20:25,916 - INFO - Screenshot saved: test_artifacts/homepage_20250925_022025.png
+2025-09-25 02:20:27,918 - ERROR - ❌ Homepage: FAILED - []
+2025-09-25 02:20:27,918 - INFO - Testing page: Stocks Page (/stocks)
+2025-09-25 02:20:28,558 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-09-25 02:20:28,572 - INFO - Found element: #stocksTableBody
+2025-09-25 02:20:28,577 - INFO - Found element: #winnersList
+2025-09-25 02:20:28,580 - INFO - Found element: #losersList
+2025-09-25 02:20:28,582 - INFO - Found element: #stockAnalysisSection
+2025-09-25 02:20:30,585 - INFO - Page load time: 2587.06ms
+2025-09-25 02:20:30,618 - INFO - Stocks data: {'hasStocksTable': True, 'stockRowsCount': 6, 'hasWinnersList': True, 'winnerItemsCount': 0, 'hasLosersList': True, 'loserItemsCount': 0, 'stockSymbols': ['Winner', 'Winner', 'Winner', 'Loser', 'Loser', 'Loser'], 'hasRealData': True, 'tableHasPlaceholders': False}
+2025-09-25 02:20:30,896 - INFO - Screenshot saved: test_artifacts/stocks_page_20250925_022030.png
+2025-09-25 02:20:32,899 - ERROR - ❌ Stocks Page: FAILED - []
+2025-09-25 02:20:32,900 - INFO - Testing page: Crypto Page (/crypto)
+2025-09-25 02:20:33,490 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-09-25 02:20:33,498 - INFO - Found element: #cryptoAnalysisContainer
+2025-09-25 02:20:33,503 - INFO - Found element: #cryptoCardsRow
+2025-09-25 02:20:33,505 - INFO - Found element: #sentimentChartContainer
+2025-09-25 02:20:35,508 - INFO - Page load time: 2581.10ms
+2025-09-25 02:20:35,737 - INFO - Screenshot saved: test_artifacts/crypto_page_20250925_022035.png
+2025-09-25 02:20:37,739 - ERROR - ❌ Crypto Page: FAILED - []
+2025-09-25 02:20:37,739 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-09-25 02:20:38,369 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-09-25 02:21:08,373 - WARNING - Element #opportunitiesSection not found: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#opportunitiesSection") to be visible
+
+2025-09-25 02:21:08,383 - INFO - Found element: #opportunitiesContainer
+2025-09-25 02:21:38,387 - WARNING - Element #findButton not found: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator("#findButton") to be visible
+
+2025-09-25 02:21:38,393 - INFO - Found element: #newsBtn
+2025-09-25 02:21:38,397 - INFO - Found element: #watchlistBtn
+2025-09-25 02:21:38,399 - INFO - Found element: #refreshBtn
+2025-09-25 02:21:38,401 - INFO - Found element: #lastUpdated
+2025-09-25 02:21:38,402 - INFO - Found element: .opportunity-card
+2025-09-25 02:21:40,405 - INFO - Page load time: 62643.05ms
+2025-09-25 02:21:40,443 - WARNING - Default page population check failed, but continuing with opportunities check
+2025-09-25 02:21:40,479 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-09-24T22:56:20.725150', 'cached': True, 'count': 2, 'opportunities': [{'articles': [{'category': 'news', 'datetime': 'Tue, 23 Sep 2025 14:21:41 +0000', 'headline': 'Atletico owners negotiating with US firm Apollo over majority stake sale - reports', 'source': 'Yahoo Finance', 'summary': "Atletico Madrid's owners are in advanced negotiations to sell a majority stake of the Spanish football club's shares to US private equity firm Apollo Global Management, according to various reports citing sources close to the deal.Listed on the New York Stock Exchange and managing more than $800 billion in assets, Apollo is reported to be considering executing the deal through a $5 billion sports investment fund.", 'url': 'https://finance.yahoo.com/news/atletico-owners-negotiating-us-firm-142141222.html?.tsrc=rss'}, {'category': 'analysis', 'datetime': '2025-09-24T22:55:50.632006', 'headline': 'ARES Market Analysis', 'source': 'Alpha Vantage', 'summary': 'Latest market analysis and insights for ARES stock.', 'url': 'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=ARES&apikey=your_alpha_vantage_api_key_here'}], 'news_count': 2, 'price_data': {'change': 0, 'change_percent': '0%', 'current_price': 168.13999938964844, 'source': 'yfinance_fallback', 'symbol': 'ARES', 'timestamp': '2025-09-24T22:56:15.366022', 'volume': 0}, 'sentiment_data': {'confidence': 0.81, 'sentiment_score': -0.53, 'summary': 'The sentiment of the news is negative due to the mention of a potential sale of majority stake, which may indicate financial difficulties or instability for Atletico.'}, 'signal_data': {'action': 'SELL', 'confidence': 0.81, 'reasoning': 'Negative sentiment (-0.53) with high confidence (0.81)', 'signal_strength': 0.42930000000000007}, 'symbol': 'ARES', 'timestamp': '2025-09-24T22:56:17.027109', 'trade_signal': {'action': 'SELL', 'confidence': 0.81, 'current_price': 168.13999938964844, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '📊 Moderate conviction - wait for technical confirmation', '🎯 Stick to planned exit levels', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Look for volume spike or technical confirmation', 'method': 'Limit order at mid-price or better', 'timing': 'Wait for 5-15 minute confirmation of price direction', 'volume_check': 'Check option chain liquidity before entry'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 15% gain or better', 'stop_loss': 'Hard stop at 12% loss', 'time_stop': 'Exit before 15-60 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '15-60 minutes', 'option_price': 1.68, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 35, 'potential_gain': 8.83, 'potential_loss': 7.06, 'risk_amount': 58.85, 'risk_percent': 2.9, 'risk_reward_ratio': 1.25, 'stop_price': 1.48, 'target_price': 1.93, 'total_cost': 58.85}}, 'position_size': 1, 'reasoning': 'Negative sentiment (-0.53) with high confidence (0.81)', 'sentiment_score': -0.53, 'signal_strength': 0.42930000000000007, 'stop_loss_percent': 12, 'strategy_type': 'Day Trade', 'strike_price': 167.3, 'symbol': 'ARES', 'target_gain_percent': 15}, 'trigger': 'news_driven', 'type': 'stock'}, {'articles': [{'category': 'news', 'datetime': 'Wed, 17 Sep 2025 22:15:01 +0000', 'headline': "Here's Why APA (APA) Fell More Than Broader Market", 'source': 'Yahoo Finance', 'summary': 'In the closing of the recent trading day, APA (APA) stood at $24.16, denoting a -1.45% move from the preceding trading day.', 'url': 'https://finance.yahoo.com/news/heres-why-apa-apa-fell-221501146.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Thu, 18 Sep 2025 18:40:45 +0000', 'headline': 'Here is Why APA Corporation (APA) Jumped This Week', 'source': 'Yahoo Finance', 'summary': 'The share price of APA Corporation (NASDAQ:APA) surged by 13.16% between September 9 and September 16, 2025, putting it among the Energy Stocks that Gained the Most This Week. APA Corporation (NASDAQ:APA) is an independent energy company that explores for, develops, and produces natural gas, crude oil, and natural gas liquids. APA Corporation (NASDAQ:APA) received […]', 'url': 'https://finance.yahoo.com/news/why-apa-corporation-apa-jumped-184045796.html?.tsrc=rss'}, {'category': 'news', 'datetime': 'Tue, 23 Sep 2025 22:15:04 +0000', 'headline': "APA (APA) Increases Despite Market Slip: Here's What You Need to Know", 'source': 'Yahoo Finance', 'summary': 'APA (APA) closed the most recent trading day at $23.99, moving +1.61% from the previous trading session.', 'url': 'https://finance.yahoo.com/news/apa-apa-increases-despite-market-221504641.html?.tsrc=rss'}], 'news_count': 5, 'price_data': {'change': 0, 'change_percent': '0%', 'current_price': 24.420000076293945, 'source': 'yfinance_fallback', 'symbol': 'APA', 'timestamp': '2025-09-24T22:56:19.634370', 'volume': 0}, 'sentiment_data': {'confidence': 0.81, 'sentiment_score': 0.33, 'summary': 'The overall sentiment of the news articles about APA Corporation is slightly positive, with a score of 0.33 indicating a neutral to mildly positive tone. The confidence level is high at 0.81, suggesting that the analysis is reliable and accurate.'}, 'signal_data': {'action': 'BUY', 'confidence': 0.81, 'reasoning': 'Positive sentiment (0.33) with high confidence (0.81)', 'signal_strength': 0.26730000000000004}, 'symbol': 'APA', 'timestamp': '2025-09-24T22:56:20.706615', 'trade_signal': {'action': 'BUY', 'confidence': 0.81, 'current_price': 24.420000076293945, 'day_trading_notes': ['Strategy: {strategy_type} based on sentiment analysis', 'Conviction Level: {self._get_conviction_level(sentiment_score)}', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '⚠️ Lower conviction - consider paper trading first', '🛡️ Use smaller position sizes', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Require additional technical or news catalyst', 'method': 'Limit order with patience for better fill', 'timing': 'Wait for technical confirmation and volume', 'volume_check': 'Only trade highly liquid options'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 15% gain or better', 'stop_loss': 'Hard stop at 10% loss', 'time_stop': 'Exit before 2-4 hours regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '2-4 hours', 'option_price': 0.24, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 163, 'potential_gain': 5.97, 'potential_loss': 3.98, 'risk_amount': 39.8, 'risk_percent': 2, 'risk_reward_ratio': 1.5, 'stop_price': 0.22, 'target_price': 0.28, 'total_cost': 39.8}}, 'position_size': 1, 'reasoning': 'Positive sentiment (0.33) with high confidence (0.81)', 'sentiment_score': 0.33, 'signal_strength': 0.26730000000000004, 'stop_loss_percent': 10, 'strategy_type': 'Intraday Swing', 'strike_price': 24.3, 'symbol': 'APA', 'target_gain_percent': 15}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'status': 'success', 'success': True, 'timestamp': '2025-09-25T02:21:40.475578'}, 'opportunities_count': 2}
+2025-09-25 02:21:40,483 - INFO - Found 2 opportunity cards
+2025-09-25 02:21:40,486 - WARNING - Card 1 HTML: <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>ARES</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-info">News-Driven</span>
+                    <span class="badge bg-danger">SELL</span>
+                </h6>
+            </div>
+            <div>
+                <button class...
+2025-09-25 02:21:40,489 - WARNING - Card 2 HTML: <div class="card mb-3 opportunity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">
+                    <strong>APA</strong>
+                    <span class="badge bg-primary">Stock</span>
+                    <span class="badge bg-info">News-Driven</span>
+                    <span class="badge bg-secondary">HOLD</span>
+                </h6>
+            </div>
+            <div>
+                <button cla...
+2025-09-25 02:21:40,776 - INFO - Snapshot saved to test_artifacts/opportunities_errors_20250925_022140.png
+2025-09-25 02:21:40,776 - INFO - Snapshot saved to test_artifacts/opportunities_errors_20250925_022140.png
+2025-09-25 02:21:41,044 - INFO - Screenshot saved: test_artifacts/opportunities_page_20250925_022140.png
+2025-09-25 02:21:43,046 - ERROR - ❌ Opportunities Page: FAILED - ['#opportunitiesSection', '#findButton']
+2025-09-25 02:21:43,046 - INFO - Testing page: System Status Page (/system_status)
+2025-09-25 02:21:44,081 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-09-25 02:21:44,090 - INFO - Found element: .container
+2025-09-25 02:21:44,094 - INFO - Found element: .card
+2025-09-25 02:21:44,095 - INFO - Found element: h1
+2025-09-25 02:21:46,096 - INFO - Page load time: 3034.27ms
+2025-09-25 02:21:46,484 - INFO - Screenshot saved: test_artifacts/system_status_page_20250925_022146.png
+2025-09-25 02:21:48,487 - ERROR - ❌ System Status Page: FAILED - []
+2025-09-25 02:21:48,487 - INFO - Testing page: Logs Page (/logs)
+2025-09-25 02:21:49,064 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-09-25 02:21:49,074 - INFO - Found element: #logContainer
+2025-09-25 02:21:49,079 - INFO - Found element: #logStats
+2025-09-25 02:21:49,081 - INFO - Found element: .container
+2025-09-25 02:21:51,084 - INFO - Page load time: 2578.22ms
+2025-09-25 02:21:51,248 - INFO - Screenshot saved: test_artifacts/logs_page_20250925_022151.png
+2025-09-25 02:21:53,250 - INFO - ✅ Logs Page: PASSED (populated in 2578.22ms)
+2025-09-25 02:21:53,250 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-09-25 02:21:53,846 - INFO - Waiting for data to load on Portfolio Page (timeout: 10000ms)
+2025-09-25 02:21:53,862 - INFO - Found element: #portfolioContainer
+2025-09-25 02:21:53,868 - INFO - Found element: #portfolioSection
+2025-09-25 02:21:53,870 - INFO - Found element: #addPositionForm
+2025-09-25 02:21:53,872 - INFO - Found element: #positionsTable
+2025-09-25 02:21:53,875 - INFO - Found element: #tradesTable
+2025-09-25 02:21:53,877 - INFO - Found element: #currentCapital
+2025-09-25 02:21:53,879 - INFO - Found element: #totalValue
+2025-09-25 02:21:53,881 - INFO - Found element: #unrealizedPnl
+2025-09-25 02:21:53,885 - INFO - Found element: #openPositions
+2025-09-25 02:21:55,889 - INFO - Page load time: 2608.69ms
+2025-09-25 02:21:55,932 - INFO - Portfolio data: {'currentCapital': '$125,000.00', 'totalValue': '$125,000.00', 'unrealizedPnl': '$25,000.00', 'openPositions': '8', 'hasPositions': True, 'hasTrades': True, 'positionsCount': 2, 'tradesCount': 4}
+2025-09-25 02:21:56,174 - INFO - Snapshot saved to test_artifacts/portfolio_verified_20250925_022155.png
+2025-09-25 02:21:56,174 - INFO - Portfolio snapshot saved to test_artifacts/portfolio_verified_20250925_022155.png
+2025-09-25 02:21:56,405 - INFO - Screenshot saved: test_artifacts/portfolio_page_20250925_022156.png
+2025-09-25 02:21:58,408 - INFO - ✅ Portfolio Page: PASSED (populated in 2608.69ms)
+2025-09-25 02:21:58,408 - INFO - Testing page: Backtest Page (/backtest)
+2025-09-25 02:21:59,042 - INFO - Page load time: 592.72ms
+2025-09-25 02:21:59,076 - INFO - Backtest config: {'hasSymbolInput': True, 'hasDaysBackSelect': True, 'hasBacktestForm': True, 'hasResultsSection': True, 'hasPerformanceChart': True, 'symbolPlaceholder': 'e.g., AAPL, TSLA, MSFT', 'daysBackOptions': 6, 'formAction': 'http://localhost:5001/backtest', 'resultsVisible': True}
+2025-09-25 02:21:59,388 - INFO - Snapshot saved to test_artifacts/backtest_errors_20250925_022159.png
+2025-09-25 02:21:59,388 - INFO - Backtest snapshot saved to test_artifacts/backtest_errors_20250925_022159.png
+2025-09-25 02:21:59,700 - INFO - Screenshot saved: test_artifacts/backtest_page_20250925_022159.png
+2025-09-25 02:22:01,704 - ERROR - ❌ Backtest Page: FAILED - ['#symbol (empty)']
+2025-09-25 02:22:01,704 - INFO - Testing page: Weekly Plan Page (/weekly_plan)
+2025-09-25 02:22:02,303 - INFO - Waiting for data to load on Weekly Plan Page (timeout: 15000ms)
+2025-09-25 02:22:02,319 - INFO - Found element: h1
+2025-09-25 02:22:02,325 - INFO - Found element: #weekSelector
+2025-09-25 02:22:02,327 - INFO - Found element: #weeklyCalendar
+2025-09-25 02:22:02,328 - INFO - Found element: #eventSummary
+2025-09-25 02:22:17,332 - WARNING - Element #loadingIndicator not found: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("#loadingIndicator") to be visible
+    35 × locator resolved to hidden <div id="loadingIndicator" class="text-center py-4">…</div>
+
+2025-09-25 02:22:17,340 - INFO - Found element: #filterEarnings
+2025-09-25 02:22:17,344 - INFO - Found element: #filterFed
+2025-09-25 02:22:17,348 - INFO - Found element: #filterEconomic
+2025-09-25 02:22:17,351 - INFO - Found element: #filterOptions
+2025-09-25 02:22:17,353 - INFO - Found element: #filterHolidays
+2025-09-25 02:22:17,354 - INFO - Found element: .card
+2025-09-25 02:22:19,357 - INFO - Page load time: 17617.35ms
+2025-09-25 02:22:19,401 - INFO - ✅ Weekly Plan page verification passed:
+2025-09-25 02:22:19,401 - INFO -    - Calendar container: ✅
+2025-09-25 02:22:19,401 - INFO -    - Week selector: ✅
+2025-09-25 02:22:19,401 - INFO -    - Event filters: 6
+2025-09-25 02:22:19,401 - INFO -    - Summary cards: 4
+2025-09-25 02:22:19,401 - INFO -    - Navigation buttons: ✅
+2025-09-25 02:22:19,582 - INFO - Screenshot saved: test_artifacts/weekly_plan_page_20250925_022219.png
+2025-09-25 02:22:21,584 - INFO - ✅ Weekly Plan Page: PASSED (populated in 17617.35ms)
+2025-09-25 02:22:21,584 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-09-25 02:22:22,161 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-09-25 02:22:22,169 - INFO - Found element: .container
+2025-09-25 02:22:22,173 - INFO - Found element: h1
+2025-09-25 02:22:42,177 - WARNING - Element .card not found: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator(".card") to be visible
+
+2025-09-25 02:22:44,179 - INFO - Page load time: 22576.58ms
+2025-09-25 02:22:44,597 - INFO - Screenshot saved: test_artifacts/recommendations_page_20250925_022244.png
+2025-09-25 02:22:46,598 - ERROR - ❌ Recommendations Page: FAILED - ['.card']
+2025-09-25 02:22:46,599 - INFO - Test report saved: test_artifacts/test_report_20250925_022246.json
+2025-09-25 02:22:46,599 - INFO - Text report saved: test_artifacts/test_report_20250925_022246.txt
+2025-09-25 02:22:47,883 - INFO - Browser teardown complete
