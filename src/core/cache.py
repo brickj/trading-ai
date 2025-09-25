@@ -48,15 +48,20 @@ class Cache:
         return hashlib.sha256(key_data.encode()).hexdigest()
     
     def _serialize_datetime(self, obj):
-        """Serialize datetime objects for JSON"""
+        """Serialize datetime objects and other non-JSON types for JSON"""
         if isinstance(obj, datetime):
             return obj.isoformat()
+        elif hasattr(obj, '__class__') and obj.__class__.__name__ == 'Decimal':
+            # Handle PostgreSQL Decimal objects
+            return float(obj)
         elif hasattr(obj, '__dict__'):
             # Handle objects with datetime attributes
             result = {}
             for key, value in obj.__dict__.items():
                 if isinstance(value, datetime):
                     result[key] = value.isoformat()
+                elif hasattr(value, '__class__') and value.__class__.__name__ == 'Decimal':
+                    result[key] = float(value)
                 else:
                     result[key] = value
             return result
