@@ -32,6 +32,16 @@ def create_app(host: str | None = None, port: int | None = None) -> Flask:
         f"Starting Trading AI UI on {host}:{port} (debug={app.debug})",
         "system",
     )
+    
+    # Start the job scheduler
+    try:
+        from start_app import run_scheduled_jobs
+        page_logger.info("Starting job scheduler...", "system")
+        run_scheduled_jobs()
+        page_logger.info("Job scheduler started successfully", "system")
+    except Exception as e:
+        page_logger.error(f"Failed to start job scheduler: {e}", "system")
+    
     socketio.run(
         app,
         host=host,
