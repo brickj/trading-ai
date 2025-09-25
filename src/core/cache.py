@@ -241,16 +241,16 @@ class Cache:
                     result = cursor.fetchone()
                     if result:
                         return {
-                            "total_entries": result[0],
-                            "active_entries": result[1],
-                            "expired_entries": result[2],
-                            "avg_access_count": float(result[3] or 0),
-                            "max_access_count": result[4] or 0,
+                            "total_entries": result['total_entries'],
+                            "active_entries": result['active_entries'],
+                            "expired_entries": result['expired_entries'],
+                            "avg_access_count": float(result['avg_access_count'] or 0),
+                            "max_access_count": result['max_access_count'] or 0,
                             "oldest_entry": (
-                                result[5].isoformat() if result[5] else None
+                                result['oldest_entry'].isoformat() if result['oldest_entry'] else None
                             ),
                             "newest_entry": (
-                                result[6].isoformat() if result[6] else None
+                                result['newest_entry'].isoformat() if result['newest_entry'] else None
                             ),
                         }
                     return {}

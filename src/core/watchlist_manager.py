@@ -44,7 +44,7 @@ class WatchlistManager:
                     log_info("Watchlists table created/verified successfully")
                     return True
         except Exception as e:
-            log_error(f"Error creating watchlists table: {e}")
+            log_error(f"Error creating watchlists table: {str(e)}")
             return False
 
     def populate_default_watchlist(self):
@@ -56,8 +56,9 @@ class WatchlistManager:
                     return False
                 with conn.cursor() as cursor:
                     # Check if watchlist already has data
-                    cursor.execute("SELECT COUNT(*) FROM watchlists")
-                    count = cursor.fetchone()[0]
+                    cursor.execute("SELECT COUNT(*) as count FROM watchlists")
+                    result = cursor.fetchone()
+                    count = result['count'] if result else 0
                     
                     if count > 0:
                         log_info("Watchlist already has data, skipping default population")
@@ -67,7 +68,7 @@ class WatchlistManager:
                     log_info("Watchlist is empty, but no default symbols configured")
                     return True
         except Exception as e:
-            log_error(f"Error checking watchlist status: {e}")
+            log_error(f"Error checking watchlist status: {type(e).__name__}: {str(e)}")
             return False
 
     def get_stocks(self):
@@ -83,7 +84,7 @@ class WatchlistManager:
                     stocks = [row["symbol"] for row in cursor.fetchall()]
                     return stocks
         except Exception as e:
-            log_error(f"Error getting stocks: {e}")
+            log_error(f"Error getting stocks: {str(e)}")
             return []
 
     def get_cryptos(self):
@@ -99,7 +100,7 @@ class WatchlistManager:
                     cryptos = [row["symbol"] for row in cursor.fetchall()]
                     return cryptos
         except Exception as e:
-            log_error(f"Error getting cryptos: {e}")
+            log_error(f"Error getting cryptos: {str(e)}")
             return []
 
     def add_stock(self, symbol: str):
@@ -117,7 +118,7 @@ class WatchlistManager:
                     log_info(f"Added stock {symbol} to watchlist")
                     return True
         except Exception as e:
-            log_error(f"Error adding stock {symbol}: {e}")
+            log_error(f"Error adding stock {symbol}: {str(e)}")
             return False
 
     def add_crypto(self, symbol: str):
@@ -135,7 +136,7 @@ class WatchlistManager:
                     log_info(f"Added crypto {symbol} to watchlist")
                     return True
         except Exception as e:
-            log_error(f"Error adding crypto {symbol}: {e}")
+            log_error(f"Error adding crypto {symbol}: {str(e)}")
             return False
 
     def remove_stock(self, symbol: str):
@@ -153,7 +154,7 @@ class WatchlistManager:
                     log_info(f"Removed stock {symbol} from watchlist")
                     return True
         except Exception as e:
-            log_error(f"Error removing stock {symbol}: {e}")
+            log_error(f"Error removing stock {symbol}: {str(e)}")
             return False
 
     def remove_crypto(self, symbol: str):
@@ -171,7 +172,7 @@ class WatchlistManager:
                     log_info(f"Removed crypto {symbol} from watchlist")
                     return True
         except Exception as e:
-            log_error(f"Error removing crypto {symbol}: {e}")
+            log_error(f"Error removing crypto {symbol}: {str(e)}")
             return False
 
     def get_watchlist_summary(self) -> Dict[str, Any]:
@@ -197,7 +198,7 @@ class WatchlistManager:
                     symbols = cursor.fetchall()
                     return symbols
         except Exception as e:
-            log_error(f"Error getting all symbols: {e}")
+            log_error(f"Error getting all symbols: {str(e)}")
             return []
 
     def symbol_exists(self, symbol: str, symbol_type: str = None):
@@ -209,18 +210,19 @@ class WatchlistManager:
                 with conn.cursor() as cursor:
                     if symbol_type:
                         cursor.execute(
-                            "SELECT COUNT(*) FROM watchlists WHERE symbol = %s AND type = %s",
+                            "SELECT COUNT(*) as count FROM watchlists WHERE symbol = %s AND type = %s",
                             (symbol.upper(), symbol_type),
                         )
                     else:
                         cursor.execute(
-                            "SELECT COUNT(*) FROM watchlists WHERE symbol = %s",
+                            "SELECT COUNT(*) as count FROM watchlists WHERE symbol = %s",
                             (symbol.upper(),),
                         )
-                    count = cursor.fetchone()[0]
+                    result = cursor.fetchone()
+                    count = result['count'] if result else 0
                     return count > 0
         except Exception as e:
-            log_error(f"Error checking symbol {symbol}: {e}")
+            log_error(f"Error checking symbol {symbol}: {str(e)}")
             return False
 
 

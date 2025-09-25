@@ -175,9 +175,9 @@ class BaseRepository:
             if result:
                 return {
                     "table": table,
-                    "row_count": result[0] or 0,
-                    "latest_timestamp": result[1].isoformat() if result[1] else None,
-                    "earliest_timestamp": result[2].isoformat() if result[2] else None,
+                    "row_count": result['row_count'] or 0,
+                    "latest_timestamp": result['latest_timestamp'].isoformat() if result['latest_timestamp'] else None,
+                    "earliest_timestamp": result['earliest_timestamp'].isoformat() if result['earliest_timestamp'] else None,
                     "checked_at": datetime.now().isoformat()
                 }
             else:
