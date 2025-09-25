@@ -1,3 +1,13 @@
+/* Darker background for scalping signals page */
+body {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+.container, .container-fluid {
+    background: transparent !important;
+}
+
 .opportunity-card {
     transition: transform 0.2s;
     border-left: 4px solid #007bff;
