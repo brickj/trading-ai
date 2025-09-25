@@ -113,39 +113,56 @@ class MarketDataRepository(BaseRepository):
             Dictionary with gainers and losers
         """
         query = """
-            SELECT gainers, losers, timestamp, source
+            SELECT symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data
             FROM market_movers
             ORDER BY timestamp DESC
-            LIMIT 1
+            LIMIT 50
         """
         
-        result = self.execute_query(query, fetch_one=True, use_cache=True,
-                                  cache_key="latest_market_movers")
+        results = self.execute_query(query, fetch_all=True, use_cache=True,
+                                   cache_key="latest_market_movers")
         
-        if result:
-            try:
-                gainers = json.loads(result['gainers']) if result['gainers'] else []
-                losers = json.loads(result['losers']) if result['losers'] else []
-                
-                return {
-                    'gainers': gainers[:limit],
-                    'losers': losers[:limit],
-                    'timestamp': result['timestamp'].isoformat() if result['timestamp'] else None,
-                    'source': result['source']
+        if results:
+            gainers = []
+            losers = []
+            
+            for row in results:
+                stock_data = {
+                    'symbol': row['symbol'],
+                    'price': float(row['price']) if row['price'] else 0,
+                    'change_amount': float(row['change_amount']) if row['change_amount'] else 0,
+                    'change_percent': float(row['change_percent']) if row['change_percent'] else 0,
+                    'volume': int(row['volume']) if row['volume'] else 0,
+                    'timestamp': row['timestamp'].isoformat() if row['timestamp'] else None,
+                    'analysis_data': row['analysis_data'] or {}
                 }
-            except json.JSONDecodeError:
-                pass
+                
+                if row['type'] == 'GAINER':
+                    gainers.append(stock_data)
+                elif row['type'] == 'LOSER':
+                    losers.append(stock_data)
+            
+            # Sort and limit
+            gainers.sort(key=lambda x: x['change_percent'], reverse=True)
+            losers.sort(key=lambda x: x['change_percent'])
+            
+            return {
+                'gainers': gainers[:limit],
+                'losers': losers[:limit],
+                'timestamp': results[0]['timestamp'].isoformat() if results and results[0]['timestamp'] else None,
+                'source': 'market_movers_table'
+            }
         
         return {'gainers': [], 'losers': [], 'timestamp': None, 'source': None}
     
-    def save_market_movers(self, gainers: List[str], losers: List[str], 
+    def save_market_movers(self, gainers: List[Dict], losers: List[Dict], 
                           source: str = 'api') -> bool:
         """
         Save market movers data
         
         Args:
-            gainers: List of gaining symbols
-            losers: List of losing symbols
+            gainers: List of gaining stock data dictionaries
+            losers: List of losing stock data dictionaries
             source: Data source
             
         Returns:
@@ -159,19 +176,49 @@ class MarketDataRepository(BaseRepository):
                 [cutoff_time], fetch_all=False
             )
             
-            # Insert new data
-            query = """
-                INSERT INTO market_movers (gainers, losers, timestamp, source)
-                VALUES (%s, %s, %s, %s)
-            """
+            # Insert gainers
+            for gainer in gainers:
+                if gainer and gainer.get('symbol'):
+                    query = """
+                        INSERT INTO market_movers (symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    self.execute_query(
+                        query,
+                        [
+                            gainer.get('symbol', ''),
+                            'GAINER',
+                            gainer.get('price', 0),
+                            gainer.get('change_amount', 0),
+                            gainer.get('change_percent', 0),
+                            gainer.get('volume', 0),
+                            datetime.now(),
+                            json.dumps(gainer.get('analysis_data', {}))
+                        ],
+                        fetch_all=False
+                    )
             
-            gainers_json = json.dumps(gainers)
-            losers_json = json.dumps(losers)
-            
-            self.execute_query(
-                query, [gainers_json, losers_json, datetime.now(), source],
-                fetch_all=False
-            )
+            # Insert losers
+            for loser in losers:
+                if loser and loser.get('symbol'):
+                    query = """
+                        INSERT INTO market_movers (symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    """
+                    self.execute_query(
+                        query,
+                        [
+                            loser.get('symbol', ''),
+                            'LOSER',
+                            loser.get('price', 0),
+                            loser.get('change_amount', 0),
+                            loser.get('change_percent', 0),
+                            loser.get('volume', 0),
+                            datetime.now(),
+                            json.dumps(loser.get('analysis_data', {}))
+                        ],
+                        fetch_all=False
+                    )
             
             # Clear cache
             if hasattr(self, '_query_cache') and "latest_market_movers" in self._query_cache:
@@ -179,7 +226,8 @@ class MarketDataRepository(BaseRepository):
             
             return True
             
-        except Exception:
+        except Exception as e:
+            log_error(f"Error saving market movers: {e}")
             return False
     
     def get_symbol_price_history(self, symbol: str, days_back: int = 30) -> List[Dict]:

@@ -392,19 +392,42 @@ class DataService:
         """Get market movers data"""
         try:
             query = """
-                SELECT gainers, losers, timestamp, source
+                SELECT symbol, type, price, change_amount, change_percent, volume, timestamp, analysis_data
                 FROM market_movers 
                 ORDER BY timestamp DESC 
-                LIMIT 1
+                LIMIT 50
             """
-            result = execute_db_query(query, fetch_one=True)
+            results = execute_db_query(query, fetch_all=True)
             
-            if result:
+            if results:
+                gainers = []
+                losers = []
+                
+                for row in results:
+                    stock_data = {
+                        'symbol': row['symbol'],
+                        'price': float(row['price']) if row['price'] else 0,
+                        'change_amount': float(row['change_amount']) if row['change_amount'] else 0,
+                        'change_percent': float(row['change_percent']) if row['change_percent'] else 0,
+                        'volume': int(row['volume']) if row['volume'] else 0,
+                        'timestamp': row['timestamp'].isoformat() if row['timestamp'] else None,
+                        'analysis_data': row['analysis_data'] or {}
+                    }
+                    
+                    if row['type'] == 'GAINER':
+                        gainers.append(stock_data)
+                    elif row['type'] == 'LOSER':
+                        losers.append(stock_data)
+                
+                # Sort and limit
+                gainers.sort(key=lambda x: x['change_percent'], reverse=True)
+                losers.sort(key=lambda x: x['change_percent'])
+                
                 return {
-                    "gainers": json.loads(result["gainers"]) if result["gainers"] else [],
-                    "losers": json.loads(result["losers"]) if result["losers"] else [],
-                    "timestamp": result["timestamp"].isoformat() if result["timestamp"] else None,
-                    "source": result["source"]
+                    "gainers": gainers[:10],
+                    "losers": losers[:10],
+                    "timestamp": results[0]['timestamp'].isoformat() if results and results[0]['timestamp'] else None,
+                    "source": "market_movers_table"
                 }
             else:
                 return {
