@@ -1,3 +1,142 @@
+/* Universal Page Styling */
+body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+    color: #ffffff !important;
+}
+
+.container, .container-fluid {
+    background: transparent !important;
+}
+
+/* Card Styling */
+.card, div.card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+    border: 1px solid #333333 !important;
+    color: #ffffff !important;
+    border-radius: 1.2rem !important;
+    box-shadow: 0 4px 16px rgba(0,255,136,0.15) !important;
+}
+
+.card-header, div.card-header {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    color: #000000 !important;
+    border-bottom: 1px solid #333333 !important;
+    border-radius: 1.2rem 1.2rem 0 0 !important;
+}
+
+.card-body, div.card-body {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+/* Button Styling */
+.btn {
+    border-radius: 0.5rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+.btn-success {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    border: none !important;
+    color: #000000 !important;
+}
+
+.btn-outline-primary {
+    border: 2px solid #4f8cff !important;
+    color: #4f8cff !important;
+    background: transparent !important;
+}
+
+.btn-outline-primary:hover {
+    background: #4f8cff !important;
+    color: #ffffff !important;
+}
+
+/* Badge Styling */
+.badge {
+    border-radius: 1rem !important;
+    padding: 0.3rem 0.9rem !important;
+    font-weight: 600 !important;
+}
+
+.bg-primary {
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%) !important;
+    color: #ffffff !important;
+}
+
+.bg-success {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    color: #000000 !important;
+}
+
+.bg-warning {
+    background: linear-gradient(90deg, #ffb347 0%, #ffcc80 100%) !important;
+    color: #333333 !important;
+}
+
+.bg-danger {
+    background: linear-gradient(90deg, #ff4444 0%, #ff6666 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Text Colors */
+.text-primary { color: #4f8cff !important; }
+.text-success { color: #00ff88 !important; }
+.text-warning { color: #ffb347 !important; }
+.text-danger { color: #ff4444 !important; }
+.text-muted { color: #888888 !important; }
+
+/* Table Styling */
+.table {
+    color: #ffffff !important;
+    background: transparent !important;
+}
+
+.table th {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    color: #000000 !important;
+    border: none !important;
+}
+
+.table td {
+    border-color: #333333 !important;
+    background: transparent !important;
+}
+
+/* Alert Styling */
+.alert {
+    border-radius: 1rem !important;
+    border: none !important;
+}
+
+.alert-info {
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%) !important;
+    color: #ffffff !important;
+}
+
+.alert-success {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    color: #000000 !important;
+}
+
+.alert-warning {
+    background: linear-gradient(90deg, #ffb347 0%, #ffcc80 100%) !important;
+    color: #333333 !important;
+}
+
+.alert-danger {
+    background: linear-gradient(90deg, #ff4444 0%, #ff6666 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Original Scalping Signals Styles */
 .opportunity-card {
     transition: transform 0.2s;
     border-left: 4px solid #007bff;
