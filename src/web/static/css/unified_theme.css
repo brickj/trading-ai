@@ -13,6 +13,29 @@
     --warning-color: #ffaa00;
     --info-color: #38c6d9;
     
+    /* Extended Color Palette - Based on Screenshot */
+    --blue-color: #007bff;
+    --blue-light: #4dabf7;
+    --blue-dark: #0056b3;
+    --purple-color: #6f42c1;
+    --orange-color: #fd7e14;
+    --teal-color: #20c997;
+    --pink-color: #e83e8c;
+    --indigo-color: #6610f2;
+    --cyan-color: #17a2b8;
+    --yellow-color: #ffc107;
+    --red-color: #dc3545;
+    --green-color: #28a745;
+    
+    /* Screenshot-specific colors */
+    --screenshot-blue: #007bff;
+    --screenshot-light-blue: #4dabf7;
+    --screenshot-dark-blue: #0056b3;
+    --screenshot-orange: #fd7e14;
+    --screenshot-green: #28a745;
+    --screenshot-yellow: #ffc107;
+    --screenshot-red: #dc3545;
+    
     /* Background Colors */
     --bg-primary: #050505;
     --bg-secondary: #0a0a0a;
@@ -50,12 +73,12 @@
     --radius-xl: 2rem;
 }
 
-/* Global Body Styling */
+/* Global Body Styling - Match Screenshot */
 body {
     background: radial-gradient(circle at top, rgba(0, 255, 136, 0.08), transparent 35%),
                radial-gradient(circle at bottom, rgba(56, 198, 217, 0.05), transparent 45%),
-               var(--bg-primary);
-    color: var(--text-primary);
+               #050505;
+    color: #ffffff;
     min-height: 100vh;
     transition: background 0.4s ease, color 0.4s ease;
 }
@@ -981,26 +1004,335 @@ p.lead {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: 4px;
-    color: var(--bg-color);
+    color: #fff;
 }
 
 .unified-badge.warning {
-    background-color: #ffc107;
+    background-color: var(--orange-color);
     color: #000;
 }
 
 .unified-badge.success {
-    background-color: #28a745;
+    background-color: var(--green-color);
 }
 
 .unified-badge.danger {
-    background-color: #dc3545;
+    background-color: var(--red-color);
 }
 
 .unified-badge.info {
-    background-color: #17a2b8;
+    background-color: var(--cyan-color);
 }
 
 .unified-badge.secondary {
-    background-color: #6c757d;
+    background-color: var(--secondary-color);
+}
+
+.unified-badge.primary {
+    background-color: var(--blue-color);
+}
+
+.unified-badge.earnings {
+    background-color: var(--screenshot-blue);
+    color: #fff;
+}
+
+.unified-badge.economic {
+    background-color: var(--screenshot-light-blue);
+    color: #fff;
+}
+
+.unified-badge.federal {
+    background-color: var(--screenshot-dark-blue);
+    color: #fff;
+}
+
+.unified-badge.options {
+    background-color: var(--screenshot-orange);
+    color: #000;
+}
+
+.unified-badge.holiday {
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+/* Colorful Button Variants - Based on Screenshot */
+.unified-btn.unified-btn-blue {
+    background-color: var(--screenshot-blue);
+    border: 1px solid var(--screenshot-blue);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-blue:hover {
+    background-color: var(--screenshot-dark-blue);
+    border-color: var(--screenshot-dark-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.unified-btn.unified-btn-green {
+    background-color: var(--screenshot-green);
+    border: 1px solid var(--screenshot-green);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-green:hover {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.unified-btn.unified-btn-purple {
+    background: linear-gradient(135deg, var(--purple-color) 0%, #5a2d91 100%);
+    border: 1px solid var(--purple-color);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-purple:hover {
+    background: linear-gradient(135deg, #5a2d91 0%, var(--purple-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+}
+
+.unified-btn.unified-btn-orange {
+    background: linear-gradient(135deg, var(--orange-color) 0%, #e8590c 100%);
+    border: 1px solid var(--orange-color);
+    color: #000;
+}
+
+.unified-btn.unified-btn-orange:hover {
+    background: linear-gradient(135deg, #e8590c 0%, var(--orange-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+}
+
+.unified-btn.unified-btn-teal {
+    background: linear-gradient(135deg, var(--teal-color) 0%, #1a9b7a 100%);
+    border: 1px solid var(--teal-color);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-teal:hover {
+    background: linear-gradient(135deg, #1a9b7a 0%, var(--teal-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+}
+
+/* Impact Level Indicators */
+.impact-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.impact-bar {
+    width: 4px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.impact-bar.low {
+    background-color: var(--screenshot-yellow);
+    height: 8px;
+}
+
+.impact-bar.medium {
+    background-color: var(--screenshot-orange);
+    height: 10px;
+}
+
+.impact-bar.high {
+    background-color: var(--screenshot-red);
+    height: 12px;
+}
+
+/* Colorful Stats Cards - Based on Screenshot */
+.stats-card.blue {
+    background-color: var(--screenshot-blue);
+    color: #fff;
+}
+
+.stats-card.green {
+    background-color: var(--screenshot-green);
+    color: #fff;
+}
+
+.stats-card.orange {
+    background-color: var(--screenshot-orange);
+    color: #000;
+}
+
+.stats-card.purple {
+    background-color: var(--purple-color);
+    color: #fff;
+}
+
+.stats-card.teal {
+    background-color: var(--teal-color);
+    color: #fff;
+}
+
+.stats-card.cyan {
+    background-color: var(--cyan-color);
+    color: #fff;
+}
+
+/* Unified Card System */
+.unified-card {
+    border-radius: var(--radius-lg);
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(0, 255, 136, 0.08), transparent 35%, rgba(56, 198, 217, 0.08));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.unified-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    background: var(--bg-card-hover) !important;
+}
+
+.unified-card:hover::before {
+    opacity: 1;
+}
+
+/* Force text colors */
+h1, h2, h3, h4, h5, h6,
+p, span, div, label {
+    color: #ffffff !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Days of the week should have darker green like screenshot */
+.weekly-calendar-card .card-header {
+    background: #28a745 !important;
+    color: #000000 !important;
+}
+
+.weekly-calendar-card .card-header h6 {
+    color: #000000 !important;
+}
+
+.weekly-calendar-card .card-header small {
+    color: #000000 !important;
+}
+
+/* Summary cards colors to match screenshot exactly */
+.card.bg-primary {
+    background: var(--screenshot-blue) !important;
+    color: #ffffff !important;
+}
+
+.card.bg-danger {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-success {
+    background: var(--screenshot-green) !important;
+    color: #ffffff !important;
+}
+
+.card.bg-warning {
+    background: var(--screenshot-orange) !important;
+    color: #ffffff !important;
+}
+
+/* Badge colors to match screenshot exactly - Force override Bootstrap */
+.badge.bg-primary,
+span.badge.bg-primary {
+    background-color: var(--screenshot-blue) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-danger,
+span.badge.bg-danger {
+    background-color: var(--screenshot-red) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-success,
+span.badge.bg-success {
+    background-color: var(--screenshot-green) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-warning,
+span.badge.bg-warning {
+    background-color: var(--screenshot-yellow) !important;
+    color: #000000 !important;
+}
+
+/* Impact badges should be yellow/orange with black text */
+.badge.bg-info {
+    background-color: var(--screenshot-yellow) !important;
+    color: #000000 !important;
+}
+
+.badge.bg-secondary,
+span.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+/* Override all cards to match screenshot exactly */
+.card {
+    background: linear-gradient(135deg, #101010 0%, #1c1c1c 100%) !important;
+    border: 1px solid #2d2d2d !important;
+    color: #ffffff !important;
+    border-radius: 1.1rem;
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.08);
+}
+
+.card-header {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%) !important;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.15) !important;
+    color: #ffffff !important;
+}
+
+.card-body {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+/* Summary cards should keep their colors - Force override */
+.card.bg-primary {
+    background: #007bff !important;
+    color: #ffffff !important;
+}
+
+.card.bg-danger {
+    background: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-success {
+    background: #28a745 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-warning {
+    background: #ffc107 !important;
+    color: #000000 !important;
 }
