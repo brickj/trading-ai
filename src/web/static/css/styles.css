@@ -79,6 +79,14 @@ p.lead {
     padding: 1.1rem 1.4rem;
 }
 
+/* FORCE weekly calendar card headers to use week selection color */
+.weekly-calendar-container .weekly-calendar-card .card-header {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%) !important;
+    color: #ffffff !important;
+    padding: 0.5rem !important;
+    font-size: 0.8rem !important;
+}
+
 .card-header h5,
 .card-header h6 {
     margin: 0;
@@ -745,6 +753,9 @@ table {
 .weekly-calendar-card .card-header {
     padding: 0.5rem;
     font-size: 0.8rem;
+    background: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%) !important;
+    color: #ffffff !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .weekly-calendar-card .card-header h6 {

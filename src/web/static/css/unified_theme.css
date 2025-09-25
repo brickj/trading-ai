@@ -1224,18 +1224,24 @@ p, span, div, label {
     color: #6c757d !important;
 }
 
-/* Days of the week should have darker green like screenshot */
+/* Days of the week should have same gradient as week selection header */
 .weekly-calendar-card .card-header {
-    background: #28a745 !important;
-    color: #000000 !important;
+    background: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Override even when bg-primary is applied */
+.weekly-calendar-card .card-header.bg-primary {
+    background: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%) !important;
+    color: #ffffff !important;
 }
 
 .weekly-calendar-card .card-header h6 {
-    color: #000000 !important;
+    color: #ffffff !important;
 }
 
 .weekly-calendar-card .card-header small {
-    color: #000000 !important;
+    color: #ffffff !important;
 }
 
 /* Summary cards colors to match screenshot exactly */
