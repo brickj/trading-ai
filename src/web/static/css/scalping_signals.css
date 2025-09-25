@@ -1,3 +1,13 @@
+/* Darker background for scalping signals page */
+body {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+.container, .container-fluid {
+    background: transparent !important;
+}
+
 .opportunity-card {
     transition: transform 0.2s;
     border-left: 4px solid #007bff;
@@ -58,9 +68,8 @@
     margin-top: auto;
 }
 .group-summary-card {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    border: 1px solid #333333;
-    color: #ffffff;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
 }
 .modern-container {
     max-width: 1100px;
@@ -70,14 +79,14 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%);
-    color: #000000;
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+    color: #fff;
     border-radius: 2rem;
     padding: 0.75rem 2rem;
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0,255,136,0.15);
+    box-shadow: 0 2px 8px rgba(80,140,255,0.08);
 }
 .modern-summary-pill i {
     margin-right: 0.7rem;
@@ -98,9 +107,9 @@
 }
 .modern-card {
     border-radius: 1.2rem;
-    box-shadow: 0 4px 16px rgba(0,255,136,0.15);
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
-    border: 1px solid #333333 !important;
+    box-shadow: 0 4px 16px rgba(80,140,255,0.10);
+    background: linear-gradient(135deg, #fafdff 0%, #e9f3ff 100%);
+    border: none;
     transition: box-shadow 0.2s, transform 0.2s;
     min-height: 340px;
     height: 100%;
@@ -108,14 +117,13 @@
     flex-direction: column;
     opacity: 0;
     animation: fadeInCard 0.7s forwards;
-    color: #ffffff !important;
 }
 @keyframes fadeInCard {
     from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 .modern-card:hover {
-    box-shadow: 0 8px 32px rgba(0,255,136,0.25);
+    box-shadow: 0 8px 32px rgba(80,140,255,0.18);
     transform: translateY(-4px) scale(1.02);
 }
 .modern-card-header {
@@ -146,8 +154,6 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: transparent !important;
-    color: #ffffff !important;
 }
 .modern-card-row {
     display: flex;
@@ -156,18 +162,17 @@
 }
 .modern-card-row .label {
     font-size: 0.93rem;
-    color: #ffffff !important;
-    font-weight: 500;
+    color: #7a8ca3;
 }
 .modern-card-row .value {
     font-weight: 600;
     font-size: 1.05rem;
 }
-.modern-card-row .value.positive { color: #00ff88; }
-.modern-card-row .value.negative { color: #ff4444; }
-.modern-card-row .value.neutral { color: #ffffff !important; }
-.modern-card-row .value.crypto { color: #00ff88; }
-.modern-card-row .value.stock { color: #00ff88; }
+.modern-card-row .value.positive { color: #28a745; }
+.modern-card-row .value.negative { color: #dc3545; }
+.modern-card-row .value.neutral { color: #6c757d; }
+.modern-card-row .value.crypto { color: #ff9800; }
+.modern-card-row .value.stock { color: #4f8cff; }
 .modern-card-row .sentiment {
     display: flex;
     align-items: center;
@@ -177,17 +182,17 @@
 }
 .modern-card-row .recommendation {
     font-weight: 600;
-    color: #00ff88;
+    color: #4f8cff;
 }
 .modern-card-row .recommendation.short {
-    color: #ff4444;
+    color: #dc3545;
 }
 .modern-card-row .recommendation.momentum {
-    color: #ffaa00;
+    color: #ffc107;
 }
 .modern-card-footer {
-    background: linear-gradient(90deg, #2a2a2a 0%, #1a1a1a 100%);
-    border-top: 1px solid #333333;
+    background: linear-gradient(90deg, #fafdff 0%, #e9f3ff 100%);
+    border-top: 1px solid #e3eaf3;
     border-radius: 0 0 1.2rem 1.2rem;
     padding: 0.7rem 1.2rem;
     display: flex;
@@ -197,7 +202,7 @@
 .modern-card-footer button {
     border: none;
     background: none;
-    color: #00ff88;
+    color: #4f8cff;
     font-size: 1.2rem;
     border-radius: 50%;
     width: 2.2rem;
@@ -208,8 +213,8 @@
     transition: background 0.15s, color 0.15s;
 }
 .modern-card-footer button:hover {
-    background: #333333;
-    color: #ffffff;
+    background: #e0eaf6;
+    color: #1a5fd7;
 }
 
 /* Grid layout improvements */
@@ -239,37 +244,4 @@
     .modern-card {
         min-height: 320px;
     }
-}
-
-/* Force dark theme for all modern card elements */
-.modern-card,
-.modern-card *,
-.modern-card .card-body,
-.modern-card .card-text,
-.modern-card .card-title,
-.modern-card .modern-card-body,
-.modern-card .modern-card-row,
-.modern-card .modern-card-row .label,
-.modern-card .modern-card-row .value {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
-    color: #ffffff !important;
-}
-
-/* Override for financial data to be green */
-.modern-card .modern-card-row .value.positive,
-.modern-card .modern-card-row .value.crypto,
-.modern-card .modern-card-row .value.stock,
-.modern-card .modern-card-row .recommendation {
-    color: #00ff88 !important;
-}
-
-/* Override for negative values to be red */
-.modern-card .modern-card-row .value.negative,
-.modern-card .modern-card-row .recommendation.short {
-    color: #ff4444 !important;
-}
-
-/* Override for warning values to be orange */
-.modern-card .modern-card-row .recommendation.momentum {
-    color: #ffaa00 !important;
 }
