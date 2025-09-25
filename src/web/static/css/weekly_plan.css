@@ -16,6 +16,23 @@
     --weekly-badge-holiday: linear-gradient(135deg, rgba(142, 142, 164, 0.9), rgba(96, 96, 112, 0.7));
 }
 
+.weekly-plan-page .card-header {
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-accent);
+    color: var(--text-primary);
+    box-shadow: 0 12px 28px rgba(0, 255, 136, 0.12);
+}
+
+.weekly-plan-page .card-header h5,
+.weekly-plan-page .card-header h6 {
+    color: inherit;
+}
+
+.weekly-plan-page .card-header i {
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.25));
+}
+
 .weekly-plan-wrapper {
     display: flex;
     flex-direction: column;
