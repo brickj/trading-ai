@@ -22,6 +22,10 @@ from pathlib import Path
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from pathlib import Path
 import sys

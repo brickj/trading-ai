@@ -71,3 +71,4 @@ test-artifacts/
 
 # AWS/EC2 Scripts (contain sensitive credentials)
 scripts/
+AWS/
