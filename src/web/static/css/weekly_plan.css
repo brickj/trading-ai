@@ -1,0 +1,661 @@
+:root {
+    --weekly-hero-gradient: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(56, 198, 217, 0.08) 40%, rgba(0, 0, 0, 0.45) 100%);
+    --weekly-card-gradient: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%);
+    --weekly-card-border: rgba(0, 255, 136, 0.16);
+    --weekly-card-shadow: 0 18px 45px rgba(0, 255, 136, 0.08);
+    --weekly-today-border: rgba(0, 255, 136, 0.6);
+    --weekly-muted-text: rgba(255, 255, 255, 0.6);
+    --weekly-divider: rgba(255, 255, 255, 0.08);
+    --weekly-chip-bg: rgba(255, 255, 255, 0.06);
+    --weekly-chip-active: rgba(0, 255, 136, 0.18);
+    --weekly-chip-border: rgba(0, 255, 136, 0.35);
+    --weekly-badge-earnings: linear-gradient(135deg, rgba(0, 136, 255, 0.8), rgba(0, 68, 255, 0.6));
+    --weekly-badge-fed: linear-gradient(135deg, rgba(255, 68, 68, 0.9), rgba(150, 25, 25, 0.75));
+    --weekly-badge-economic: linear-gradient(135deg, rgba(0, 200, 120, 0.9), rgba(0, 122, 85, 0.75));
+    --weekly-badge-options: linear-gradient(135deg, rgba(255, 184, 51, 0.95), rgba(200, 120, 0, 0.75));
+    --weekly-badge-holiday: linear-gradient(135deg, rgba(142, 142, 164, 0.9), rgba(96, 96, 112, 0.7));
+}
+
+.weekly-plan-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.weekly-plan-hero {
+    background: var(--weekly-hero-gradient);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    border-radius: 1.75rem;
+    padding: 2.5rem 3rem;
+    box-shadow: 0 35px 60px rgba(0, 255, 136, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.weekly-plan-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(0, 255, 136, 0.25), transparent 60%),
+                radial-gradient(circle at 80% 30%, rgba(56, 198, 217, 0.15), transparent 55%),
+                radial-gradient(circle at 40% 80%, rgba(0, 255, 136, 0.12), transparent 65%);
+    opacity: 0.75;
+    pointer-events: none;
+}
+
+.weekly-plan-hero .hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.weekly-plan-hero h1 {
+    font-size: 2.5rem;
+    letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.weekly-plan-hero h1 i {
+    font-size: 2.75rem;
+    color: var(--primary-color);
+    filter: drop-shadow(0 0 12px rgba(0, 255, 136, 0.35));
+}
+
+.weekly-plan-hero .hero-subtitle {
+    font-size: 1.1rem;
+    max-width: 650px;
+    color: var(--weekly-muted-text);
+}
+
+.hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.hero-meta .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 136, 0.18);
+    border-radius: 999px;
+    padding: 0.55rem 1.25rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.hero-meta .meta-item i {
+    color: var(--primary-color);
+}
+
+.weekly-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem;
+}
+
+.weekly-card {
+    background: var(--weekly-card-gradient);
+    border-radius: 1.5rem;
+    padding: 1.75rem;
+    border: 1px solid var(--weekly-card-border);
+    box-shadow: var(--weekly-card-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+.weekly-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.12), transparent 55%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.weekly-card:hover::before {
+    opacity: 1;
+}
+
+.weekly-card h5 {
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.week-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.week-selector .selector-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.week-selector .selector-display .label {
+    color: var(--weekly-muted-text);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.week-selector .selector-display .value {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.selector-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.selector-controls button {
+    padding: 0.65rem 1.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+.selector-controls button:hover {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--border-hover);
+    color: var(--primary-color);
+}
+
+.selector-controls input[type="date"] {
+    appearance: none;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    padding: 0.65rem 1rem;
+    border-radius: 0.85rem;
+    font-weight: 600;
+}
+
+.selector-controls input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+}
+
+.filter-chip {
+    position: relative;
+}
+
+.filter-chip input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.filter-chip label {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    background: var(--weekly-chip-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 0.6rem 1.15rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--weekly-muted-text);
+    transition: all 0.25s ease;
+}
+
+.filter-chip label i {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.filter-chip input:checked + label {
+    color: var(--text-primary);
+    border-color: var(--weekly-chip-border);
+    background: var(--weekly-chip-active);
+    box-shadow: 0 8px 22px rgba(0, 255, 136, 0.08);
+}
+
+.weekly-calendar-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.weekly-calendar-section h4 {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.weekly-calendar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.week-module {
+    background: var(--weekly-card-gradient);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1.75rem;
+    box-shadow: var(--weekly-card-shadow);
+}
+
+.week-module-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1.25rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.week-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.week-label .title {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--weekly-muted-text);
+}
+
+.week-label .range {
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.week-total {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(0, 255, 136, 0.08);
+    border: 1px solid rgba(0, 255, 136, 0.35);
+    border-radius: 1.2rem;
+    padding: 0.75rem 1.4rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.week-total span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--weekly-muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.weekly-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.week-metric {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-height: 110px;
+}
+
+.week-metric .metric-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--weekly-muted-text);
+}
+
+.week-metric .metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.week-metric .metric-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    color: var(--primary-color);
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.1rem;
+    margin-top: 1.5rem;
+}
+
+.day-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 180px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.day-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.day-card:hover::before {
+    opacity: 1;
+}
+
+.day-card.is-today {
+    border-color: var(--weekly-today-border);
+    box-shadow: 0 12px 28px rgba(0, 255, 136, 0.18);
+}
+
+.day-card.has-events {
+    border-color: rgba(0, 255, 136, 0.12);
+}
+
+.day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 2;
+}
+
+.day-header .day-name {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.day-header .day-date {
+    font-size: 0.85rem;
+    color: var(--weekly-muted-text);
+}
+
+.day-events {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    z-index: 2;
+}
+
+.event-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.75rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.event-pill i {
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.event-pill.earnings {
+    background: var(--weekly-badge-earnings);
+}
+
+.event-pill.fed {
+    background: var(--weekly-badge-fed);
+}
+
+.event-pill.economic {
+    background: var(--weekly-badge-economic);
+}
+
+.event-pill.options {
+    background: var(--weekly-badge-options);
+    color: #000;
+}
+
+.event-pill.holiday {
+    background: var(--weekly-badge-holiday);
+}
+
+.no-events {
+    font-size: 0.85rem;
+    color: var(--weekly-muted-text);
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+
+.summary-card {
+    background: var(--weekly-card-gradient);
+    border-radius: 1.4rem;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 22px 45px rgba(0, 255, 136, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.summary-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(0, 255, 136, 0.28), transparent 55%);
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.summary-card .summary-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background: rgba(0, 255, 136, 0.12);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    color: var(--primary-color);
+    font-size: 1.4rem;
+}
+
+.summary-card h3 {
+    font-size: 2.25rem;
+    font-weight: 700;
+}
+
+.summary-card p {
+    color: var(--weekly-muted-text);
+    margin: 0;
+}
+
+.detailed-events-card {
+    background: var(--weekly-card-gradient);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--weekly-card-shadow);
+    padding: 1.5rem;
+}
+
+.detailed-events-card h5 {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.detailed-events-card h5 i {
+    color: var(--primary-color);
+}
+
+.table.unified-table {
+    color: var(--text-primary);
+    margin-bottom: 0;
+}
+
+.table.unified-table thead {
+    background: rgba(0, 255, 136, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.table.unified-table thead th {
+    border: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    color: var(--weekly-muted-text);
+}
+
+.table.unified-table tbody tr {
+    border-color: rgba(255, 255, 255, 0.05);
+    transition: background 0.25s ease;
+}
+
+.table.unified-table tbody tr:hover {
+    background: rgba(0, 255, 136, 0.05);
+}
+
+.type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 999px;
+    padding: 0.3rem 0.85rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.type-pill.earnings { background: var(--weekly-badge-earnings); }
+.type-pill.fed { background: var(--weekly-badge-fed); }
+.type-pill.economic { background: var(--weekly-badge-economic); }
+.type-pill.options { background: var(--weekly-badge-options); color: #000; }
+.type-pill.holiday { background: var(--weekly-badge-holiday); }
+
+.impact-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.impact-pill.high {
+    background: rgba(255, 82, 82, 0.18);
+    color: #ffb3b3;
+    border: 1px solid rgba(255, 82, 82, 0.35);
+}
+
+.impact-pill.medium {
+    background: rgba(255, 184, 51, 0.18);
+    color: #ffd699;
+    border: 1px solid rgba(255, 184, 51, 0.35);
+}
+
+.impact-pill.low {
+    background: rgba(56, 198, 217, 0.15);
+    color: #a8e9f0;
+    border: 1px solid rgba(56, 198, 217, 0.4);
+}
+
+#loadingIndicator {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#loadingIndicator p {
+    color: var(--weekly-muted-text);
+}
+
+@media (max-width: 1199px) {
+    .weekly-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .weekly-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991px) {
+    .week-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767px) {
+    .weekly-plan-hero {
+        padding: 2rem;
+    }
+
+    .week-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .weekly-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .selector-controls {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
