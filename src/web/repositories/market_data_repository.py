@@ -199,23 +199,24 @@ class MarketDataRepository(BaseRepository):
     
     def get_watchlist_symbols(self, watchlist_type: str = 'stocks') -> List[str]:
         """
-        Get symbols from watchlist (placeholder for future implementation)
+        Get symbols from watchlist database
         
         Args:
             watchlist_type: Type of watchlist (stocks, crypto)
             
         Returns:
-            List of symbols
+            List of symbols from database
         """
-        # This would integrate with actual watchlist table
-        # For now, return sample data
-        if watchlist_type == 'crypto':
-            return ['BTC', 'ETH', 'SOL', 'SOLUSD', 'USDT']
-        else:
-            return [
-                'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA',
-                'JPM', 'V', 'UNH', 'HD', 'PG', 'MA', 'DIS', 'PYPL'
-            ]
+        try:
+            from ..dependencies import watchlist_manager
+            
+            if watchlist_type == 'crypto':
+                return watchlist_manager.get_cryptos()
+            else:
+                return watchlist_manager.get_stocks()
+        except Exception as e:
+            self.logger.error(f"Error getting watchlist symbols: {e}")
+            return []
     
     def get_news_data(self, symbol: str = None, hours_back: int = 24) -> List[Dict]:
         """

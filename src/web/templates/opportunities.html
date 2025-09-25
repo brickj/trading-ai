@@ -4,47 +4,39 @@
 
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/unified_theme.css') }}">
-<!-- Opportunities Section - Required for tests -->
-<div id="opportunitiesSection">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">
-                <i class="fas fa-bell"></i> Trading Opportunities
-            </h1>
-            <p class="lead">Real-time opportunities based on news analysis and watchlist monitoring</p>
-        </div>
-    </div>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scalping_signals.css') }}">
 
-    <!-- Find Button - Required for tests -->
-    <div id="findButton" class="row mb-4">
-        <div class="col-12">
-            <div class="unified-card">
-                <div class="unified-card-header">
-                    <h5><i class="fas fa-search"></i> Opportunity Scanner</h5>
-                </div>
-                <div class="unified-card-body">
-                    <div class="btn-group" role="group">
-                        <button id="newsBtn" class="btn unified-btn unified-btn-blue active">
-                            <i class="fas fa-newspaper"></i> News-Driven
-                        </button>
-                        <button id="watchlistBtn" class="btn unified-btn unified-btn-outline">
-                            <i class="fas fa-list"></i> Watchlist Scan
-                        </button>
-                    </div>
-                    
-                    <button id="refreshBtn" class="btn unified-btn unified-btn-green ms-3">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                    
-                    <span class="ms-3 text-muted" id="lastUpdated"></span>
-                    
-                    <div id="loadingSpinner" class="loading mt-3">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Scanning for opportunities...</p>
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4"><i class="fas fa-bell"></i> Trading Opportunities</h1>
+        <p class="lead">Real-time opportunities based on news analysis and watchlist monitoring</p>
+    </div>
+</div>
+
+<!-- Controls -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <div class="btn-toolbar flex-wrap filter-buttons" role="toolbar">
+                        <div class="btn-group me-2 mb-2" role="group">
+                            <button id="newsBtn" class="btn btn-outline-primary filter-btn active" data-mode="news">
+                                <i class="fas fa-newspaper"></i> News-Driven
+                            </button>
                         </div>
+                        <div class="btn-group me-2 mb-2" role="group">
+                            <button id="watchlistBtn" class="btn btn-outline-success filter-btn" data-mode="watchlist">
+                                <i class="fas fa-list"></i> Watchlist Scan
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted me-3" id="lastUpdated">Click refresh to load data</span>
+                        <button id="refreshBtn" class="btn btn-primary btn-sm">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                 </div>
             </div>
@@ -52,14 +44,29 @@
     </div>
 </div>
 
+<!-- Loading Spinner -->
+<div class="row" id="loadingSpinner" style="display: none;">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Scanning for opportunities...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Opportunities Container -->
 <div class="row">
     <div class="col-12">
-        <div class="unified-card">
-            <div class="unified-card-header">
+        <div class="card">
+            <div class="card-header">
                 <h5><i class="fas fa-chart-line"></i> <span id="opportunitiesTitle">News-Driven Opportunities</span></h5>
                 <small class="text-muted">Opportunities with actionable trading signals</small>
             </div>
-            <div class="unified-card-body">
+            <div class="card-body">
                 <div id="opportunitiesContainer">
                     <div class="text-center text-muted py-4">
                         Click "Refresh" to scan for opportunities
@@ -70,22 +77,23 @@
     </div>
 </div>
 
+<!-- Strategy Information -->
 <div class="row mt-4">
     <div class="col-md-4">
-        <div class="unified-card">
-            <div class="unified-card-header">
+        <div class="card">
+            <div class="card-header">
                 <h6><i class="fas fa-newspaper"></i> News-Driven Strategy</h6>
             </div>
-            <div class="unified-card-body">
+            <div class="card-body">
                 <p><strong>How it works:</strong></p>
                 <ul class="small">
                     <li>Gets trending stocks from Marketaux API</li>
-                    <li>Fetches news from multiple sources (Alpha Vantage, Reddit, Finnhub, Yahoo Finance)</li>
+                    <li>Fetches news from multiple sources</li>
                     <li>Analyzes sentiment using Ollama AI</li>
                     <li>Generates trading signals for trending assets</li>
                     <li>Higher confidence threshold (60%)</li>
                 </ul>
-                <div class="unified-alert alert-info">
+                <div class="alert alert-info">
                     <small><strong>Best for:</strong> Capturing momentum from trending stocks in the news</small>
                 </div>
             </div>
@@ -93,11 +101,11 @@
     </div>
     
     <div class="col-md-4">
-        <div class="unified-card">
-            <div class="unified-card-header">
+        <div class="card">
+            <div class="card-header">
                 <h6><i class="fas fa-list"></i> Watchlist Strategy</h6>
             </div>
-            <div class="unified-card-body">
+            <div class="card-body">
                 <p><strong>How it works:</strong></p>
                 <ul class="small">
                     <li>Monitors predefined watchlist symbols</li>
@@ -106,7 +114,7 @@
                     <li>Regular scanning regardless of news volume</li>
                     <li>Standard confidence threshold (50%)</li>
                 </ul>
-                <div class="unified-alert alert-warning">
+                <div class="alert alert-warning">
                     <small><strong>Best for:</strong> Systematic analysis of favorite stocks</small>
                 </div>
             </div>
@@ -114,11 +122,11 @@
     </div>
     
     <div class="col-md-4">
-        <div class="unified-card">
-            <div class="unified-card-header">
+        <div class="card">
+            <div class="card-header">
                 <h6><i class="fas fa-cog"></i> Configuration</h6>
             </div>
-            <div class="unified-card-body">
+            <div class="card-body">
                 <p><strong>Current Settings:</strong></p>
                 <div id="watchlistConfig">
                     <div class="text-center text-muted py-2">
@@ -128,7 +136,7 @@
                         Loading watchlist configuration...
                     </div>
                 </div>
-                <div class="unified-alert alert-success">
+                <div class="alert alert-success">
                     <small><strong>Edit:</strong> Manage watchlists in <a href="/system_status" class="alert-link">System Status</a> page</small>
                 </div>
             </div>
@@ -136,16 +144,34 @@
     </div>
 </div>
 
-<!-- DEBUG PANEL -->
-<div id="debugPanel" class="unified-card mt-4">
-    <div class="unified-card-header">
-        <h5><i class="fas fa-bug"></i> Debug Panel</h5>
-    </div>
-    <div class="unified-card-body">
-        <div><strong>Last API Request:</strong> <span id="debugApiRequest">(none)</span></div>
-        <div><strong>Last API Response:</strong></div>
-        <pre id="debugApiResponse" style="background:#111; color:#b2ffb2; padding:8px; border-radius:4px; max-height:200px; overflow:auto;"></pre>
-        <div><strong>Last Error:</strong> <span id="debugApiError" style="color:#ff6666;">(none)</span></div>
+<!-- Debug Panel -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bug"></i> Debug Panel</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Last API Request:</strong><br>
+                        <span id="debugApiRequest" class="text-muted">(none)</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Last Error:</strong><br>
+                        <span id="debugApiError" class="text-danger">(none)</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Status:</strong><br>
+                        <span id="debugStatus" class="text-success">Ready</span>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <strong>Last API Response:</strong>
+                    <pre id="debugApiResponse" class="bg-dark text-light p-2 rounded" style="max-height:200px; overflow:auto; font-size:0.8rem;">(none)</pre>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

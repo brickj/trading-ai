@@ -1,7 +1,7 @@
 /* Opportunities Analysis JavaScript */
 
 // Global variables
-let currentMode = 'watchlist'; // Changed default to watchlist
+let currentMode = 'news'; // Default to news mode
 let opportunitiesData = [];
 let isRefreshing = false;
 
@@ -16,21 +16,19 @@ document.addEventListener('DOMContentLoaded', function() {
         loadOpportunities(true); // Force refresh for current mode
     });
     
-    // Set initial UI state for watchlist mode
-    document.querySelectorAll('.btn-group .btn').forEach(btn => {
-        btn.classList.remove('btn-primary', 'active');
-        btn.classList.add('btn-outline-primary');
+    // Set initial UI state for news mode (default)
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
     
-    // Set watchlist button as active
-    const watchlistBtn = document.getElementById('watchlistBtn');
-    watchlistBtn.classList.remove('btn-outline-primary');
-    watchlistBtn.classList.add('btn-primary', 'active');
+    // Set news button as active
+    const newsBtn = document.getElementById('newsBtn');
+    newsBtn.classList.add('active');
     
     // Set initial title
-    document.getElementById('opportunitiesTitle').textContent = 'Watchlist Opportunities';
+    document.getElementById('opportunitiesTitle').textContent = 'News-Driven Opportunities';
     
-    // Load initial data (from cache) - will load watchlist data
+    // Load initial data (from cache) - will load news data
     loadOpportunities(false);
     
     // Load watchlist configuration
@@ -42,15 +40,13 @@ function switchMode(mode) {
     currentMode = mode;
     
     // Update button states
-    document.querySelectorAll('.btn-group .btn').forEach(btn => {
-        btn.classList.remove('btn-primary', 'active');
-        btn.classList.add('btn-outline-primary');
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
     
     const activeBtn = mode === 'news' ? 'newsBtn' : 'watchlistBtn';
     const btn = document.getElementById(activeBtn);
-    btn.classList.remove('btn-outline-primary');
-    btn.classList.add('btn-primary', 'active');
+    btn.classList.add('active');
     
     // Update title
     const titles = {

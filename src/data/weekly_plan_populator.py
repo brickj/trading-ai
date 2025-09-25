@@ -60,7 +60,9 @@ class WeeklyPlanPopulator:
         current_date = start_date
         
         # Sample data
-        earnings_companies = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "JPM", "V", "UNH"]
+        # Get earnings companies from watchlist database
+        from ..core.watchlist_manager import watchlist_manager
+        earnings_companies = watchlist_manager.get_stocks()
         economic_events = [
             "Non-Farm Payrolls", "CPI Inflation Data", "GDP Growth Rate", "Retail Sales",
             "Consumer Confidence", "Manufacturing PMI", "Unemployment Claims", "Housing Starts"

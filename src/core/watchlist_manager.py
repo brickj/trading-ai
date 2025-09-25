@@ -52,44 +52,22 @@ class WatchlistManager:
         try:
             with get_db_connection() as conn:
                 if conn is None:
+                    log_warning("Database connection unavailable, cannot populate default watchlist")
                     return False
                 with conn.cursor() as cursor:
-                    # Default stocks and crypto
-                    default_stocks = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA", "NFLX", "DIS", "JPM"]
-                    default_crypto = ["BTC", "ETH", "SOL", "ADA", "DOT"]
-
-                    # Insert stocks
-                    for symbol in default_stocks:
-                        try:
-                            cursor.execute(
-                                """
-                                INSERT INTO watchlists (symbol, type)
-                                VALUES (%s, 'stock')
-                                ON CONFLICT (symbol, type) DO NOTHING
-                            """,
-                                (symbol,),
-                            )
-                        except Exception as e:
-                            log_warning(f"Could not insert stock {symbol}: {e}")
-
-                    # Insert crypto
-                    for symbol in default_crypto:
-                        try:
-                            cursor.execute(
-                                """
-                                INSERT INTO watchlists (symbol, type)
-                                VALUES (%s, 'crypto')
-                                ON CONFLICT (symbol, type) DO NOTHING
-                            """,
-                                (symbol,),
-                            )
-                        except Exception as e:
-                            log_warning(f"Could not insert crypto {symbol}: {e}")
-                    conn.commit()
-                    log_info("Default watchlist symbols populated successfully")
+                    # Check if watchlist already has data
+                    cursor.execute("SELECT COUNT(*) FROM watchlists")
+                    count = cursor.fetchone()[0]
+                    
+                    if count > 0:
+                        log_info("Watchlist already has data, skipping default population")
+                        return True
+                    
+                    # Only populate if watchlist is empty
+                    log_info("Watchlist is empty, but no default symbols configured")
                     return True
         except Exception as e:
-            log_error(f"Error populating default watchlist: {e}")
+            log_error(f"Error checking watchlist status: {e}")
             return False
 
     def get_stocks(self):

@@ -9,6 +9,8 @@ from ..utils.page_logger import page_logger
 from ..dependencies import watchlist_manager
 from ..extensions import socketio
 from ..services import system_service
+from src.core.logger import log_exception
+from src.core.batch_processor import batch_processor_instance, create_watchlist_tasks
 
 
 opportunities_bp = Blueprint("opportunities", __name__)
@@ -36,48 +38,61 @@ def news_opportunities():
 
         refresh = request.args.get("refresh", default=0, type=int)
         if not refresh:
-            from src.data.preload_news_opportunities import (
-                get_latest_preloaded_news_opportunities,
-            )
+            try:
+                from src.data.preload_news_opportunities import (
+                    get_latest_preloaded_news_opportunities,
+                )
 
-            preloaded = get_latest_preloaded_news_opportunities()
-            if preloaded and preloaded.get("opportunities") is not None:
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Returning preloaded news opportunities (count={len(preloaded['opportunities'])})"
+                preloaded = get_latest_preloaded_news_opportunities()
+                if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
+                    trading_logger.api_logger.info(
+                        f"[DEBUG] Returning preloaded news opportunities (count={len(preloaded['opportunities'])})"
+                    )
+                    return create_api_response(
+                        data={
+                            "opportunities": preloaded["opportunities"],
+                            "count": len(preloaded["opportunities"]),
+                            "cached": True,
+                            "cache_timestamp": preloaded["timestamp"],
+                        }
+                    )
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] No preloaded news opportunities found in DB! Error: {preloaded.get('error', 'None')}"
                 )
-                return create_api_response(
-                    data={
-                        "opportunities": preloaded["opportunities"],
-                        "count": len(preloaded["opportunities"]),
-                        "cached": True,
-                        "cache_timestamp": preloaded["timestamp"],
-                    }
+            except Exception as db_error:
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Database unavailable for preloaded data, falling back to live analysis: {str(db_error)}"
                 )
-            trading_logger.api_logger.warning(
-                "[DEBUG] No preloaded news opportunities found in DB!"
-            )
 
         trading_logger.api_logger.info(
             "[DEBUG] Running fresh news opportunities analysis and updating cache..."
         )
         if refresh:
-            from src.data.preload_news_opportunities import preload_news_opportunities
+            try:
+                from src.data.preload_news_opportunities import preload_news_opportunities
 
-            preload_news_opportunities()
-            from src.data.preload_news_opportunities import (
-                get_latest_preloaded_news_opportunities,
-            )
+                preload_news_opportunities()
+                from src.data.preload_news_opportunities import (
+                    get_latest_preloaded_news_opportunities,
+                )
 
-            preloaded = get_latest_preloaded_news_opportunities()
-            if preloaded and preloaded.get("opportunities") is not None:
-                return create_api_response(
-                    data={
-                        "opportunities": preloaded["opportunities"],
-                        "count": len(preloaded["opportunities"]),
-                        "cached": True,
-                        "refreshed": True,
-                        "cache_timestamp": preloaded["timestamp"],
-                    }
+                preloaded = get_latest_preloaded_news_opportunities()
+                if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
+                    return create_api_response(
+                        data={
+                            "opportunities": preloaded["opportunities"],
+                            "count": len(preloaded["opportunities"]),
+                            "cached": True,
+                            "refreshed": True,
+                            "cache_timestamp": preloaded["timestamp"],
+                        }
+                    )
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Failed to refresh preloaded data, falling back to live analysis. Error: {preloaded.get('error', 'Unknown')}"
+                )
+            except Exception as db_error:
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Database unavailable for refresh, falling back to live analysis: {str(db_error)}"
                 )
 
         trading_logger.api_logger.info(
@@ -116,57 +131,70 @@ def watchlist_opportunities():
 
         refresh = request.args.get("refresh", default=0, type=int)
         if not refresh:
-            from src.data.preload_watchlist_opportunities import (
-                get_latest_preloaded_watchlist_opportunities,
-            )
+            try:
+                from src.data.preload_watchlist_opportunities import (
+                    get_latest_preloaded_watchlist_opportunities,
+                )
 
-            preloaded = get_latest_preloaded_watchlist_opportunities()
-            if preloaded and preloaded.get("opportunities") is not None:
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})"
+                preloaded = get_latest_preloaded_watchlist_opportunities()
+                if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
+                    trading_logger.api_logger.info(
+                        f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})"
+                    )
+                    return create_api_response(
+                        data={
+                            "opportunities": preloaded["opportunities"],
+                            "count": len(preloaded["opportunities"]),
+                            "opportunities_found": len(preloaded["opportunities"]),
+                            "total_analyzed": preloaded.get("symbols_analyzed", 0),
+                            "errors_count": preloaded.get("errors_count", 0),
+                            "cached": True,
+                            "cache_timestamp": preloaded["timestamp"],
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] No preloaded watchlist opportunities found in DB! Error: {preloaded.get('error', 'None')}"
                 )
-                return create_api_response(
-                    data={
-                        "opportunities": preloaded["opportunities"],
-                        "count": len(preloaded["opportunities"]),
-                        "opportunities_found": len(preloaded["opportunities"]),
-                        "total_analyzed": preloaded.get("symbols_analyzed", 0),
-                        "errors_count": preloaded.get("errors_count", 0),
-                        "cached": True,
-                        "cache_timestamp": preloaded["timestamp"],
-                        "timestamp": datetime.now().isoformat(),
-                    }
+            except Exception as db_error:
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Database unavailable for preloaded watchlist data, falling back to live analysis: {str(db_error)}"
                 )
-            trading_logger.api_logger.warning(
-                "[DEBUG] No preloaded watchlist opportunities found in DB!"
-            )
 
         if refresh:
-            from src.data.preload_watchlist_opportunities import (
-                preload_watchlist_opportunities,
-            )
-
-            preload_watchlist_opportunities()
-            from src.data.preload_watchlist_opportunities import (
-                get_latest_preloaded_watchlist_opportunities,
-            )
-
-            preloaded = get_latest_preloaded_watchlist_opportunities()
-            if preloaded and preloaded.get("opportunities") is not None:
-                trading_logger.api_logger.info(
-                    f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})"
+            try:
+                from src.data.preload_watchlist_opportunities import (
+                    preload_watchlist_opportunities,
                 )
-                return create_api_response(
-                    data={
-                        "opportunities": preloaded["opportunities"],
-                        "count": len(preloaded["opportunities"]),
-                        "opportunities_found": len(preloaded["opportunities"]),
-                        "total_analyzed": preloaded.get("symbols_analyzed", 0),
-                        "errors_count": preloaded.get("errors_count", 0),
-                        "cached": True,
-                        "cache_timestamp": preloaded["timestamp"],
-                        "timestamp": datetime.now().isoformat(),
-                    }
+
+                preload_watchlist_opportunities()
+                from src.data.preload_watchlist_opportunities import (
+                    get_latest_preloaded_watchlist_opportunities,
+                )
+
+                preloaded = get_latest_preloaded_watchlist_opportunities()
+                if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
+                    trading_logger.api_logger.info(
+                        f"[DEBUG] Returning preloaded watchlist opportunities (count={len(preloaded['opportunities'])})"
+                    )
+                    return create_api_response(
+                        data={
+                            "opportunities": preloaded["opportunities"],
+                            "count": len(preloaded["opportunities"]),
+                            "opportunities_found": len(preloaded["opportunities"]),
+                            "total_analyzed": preloaded.get("symbols_analyzed", 0),
+                            "errors_count": preloaded.get("errors_count", 0),
+                            "cached": True,
+                            "cache_timestamp": preloaded["timestamp"],
+                            "timestamp": datetime.now().isoformat(),
+                        }
+                    )
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Failed to refresh preloaded watchlist data, falling back to live analysis. Error: {preloaded.get('error', 'Unknown')}"
+                )
+            except Exception as db_error:
+                trading_logger.api_logger.warning(
+                    f"[DEBUG] Database unavailable for watchlist refresh, falling back to live analysis: {str(db_error)}"
                 )
 
         trading_logger.api_logger.info(

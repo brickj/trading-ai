@@ -738,15 +738,10 @@ class DataFetcher:
         except Exception as e:
             log_error(f"Failed to load S&P 500 symbols from Wikipedia: {e}")
 
-        # Fallback to hardcoded list if all else fails
-        log_error("All S&P 500 sources failed, using fallback list")
-        fallback_symbols = Config.SP500_STOCKS
-        # Validate fallback symbols too
-        valid_symbols = [
-            s for s in fallback_symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()
-        ]
-        cache.set(cache_key, valid_symbols, ttl=3600)  # Cache for 1 hour
-        return valid_symbols
+        # All S&P 500 sources failed
+        log_error("All S&P 500 sources failed, returning empty list")
+        cache.set(cache_key, [], ttl=300)  # Cache empty result for 5 minutes
+        return []
 
     def get_sp500_winners_losers(self) -> Dict[str, List[Dict]]:
         """
@@ -1315,9 +1310,8 @@ class DataFetcher:
 
         except Exception as e:
             print(f"❌ Marketaux API error: {e}")
-            # Fallback to major stocks if API fails
-            fallback_stocks = ["AAPL", "MSFT", "GOOGL", "TSLA", "NVDA"]
-            return fallback_stocks[:limit]
+            # API failed, return empty list
+            return []
 
     def get_comprehensive_news_for_symbols(
         self, symbols: List[str], limit_per_symbol: int = 5

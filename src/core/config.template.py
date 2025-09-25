@@ -69,9 +69,9 @@ class Config:
     SENTIMENT_THRESHOLD = 0.1
     CONFIDENCE_THRESHOLD = 0.3
 
-    # Default Crypto Symbols
-    DEFAULT_CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "SOLUSD"]
-    CRYPTO_SYMBOLS = ["BTCUSD", "ETHUSD", "ADAUSD", "DOTUSD", "LINKUSD"]
+    # Crypto Symbols - Load from database
+    DEFAULT_CRYPTO_SYMBOLS = []
+    CRYPTO_SYMBOLS = []
 
     # Tier Configuration - REMOVED
     # All tier functionality has been removed from the system
@@ -115,22 +115,11 @@ class Config:
     AI_PROVIDER_FALLBACKS = ["ollama", "deepseek", "openai"]
     DEEPSEEK_API_KEY = "your_deepseek_api_key_here"
 
-    # Test Configuration
-    SP500_STOCKS = [
-        "AAPL",
-        "MSFT",
-        "GOOGL",
-        "AMZN",
-        "TSLA",
-        "META",
-        "NVDA",
-        "JPM",
-        "V",
-        "UNH",
-    ]
+    # Test Configuration - Load from database
+    SP500_STOCKS = []
     BULK_ANALYSIS_CACHE_DURATION = 600
     MAX_POSITION_SIZE = 10000
-    WATCHLIST_STOCKS = ["AAPL", "MSFT"]
+    WATCHLIST_STOCKS = []
     ENABLE_ALPHA_VANTAGE_NEWS = True
     API_REQUEST_TIMEOUT = 30
     ENABLE_NEWSAPI_ORG = False

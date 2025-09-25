@@ -76,7 +76,7 @@ class SentimentAnalyzer:
     def _fallback_sentiment_analysis(self, news_articles: List[Dict], symbol: str = None) -> Dict:
         """
         Fallback sentiment analysis when AI services are unavailable.
-        Uses simple keyword-based analysis as a last resort.
+        Returns neutral sentiment when no AI provider is available.
         """
         print(f"🔄 Using fallback sentiment analysis for {symbol or 'unknown symbol'}")
         
@@ -89,50 +89,13 @@ class SentimentAnalyzer:
                 "method": "no_data"
             }
         
-        # Simple keyword-based sentiment analysis
-        positive_keywords = [
-            "positive", "good", "great", "excellent", "strong", "growth", "profit", 
-            "gain", "rise", "up", "bullish", "optimistic", "success", "beat", "outperform"
-        ]
-        negative_keywords = [
-            "negative", "bad", "poor", "weak", "decline", "loss", "fall", "down", 
-            "bearish", "pessimistic", "miss", "underperform", "crash", "drop"
-        ]
-        
-        total_sentiment = 0.0
-        article_count = 0
-        
-        for article in news_articles:
-            if not article.get('content'):
-                continue
-                
-            content = article['content'].lower()
-            positive_count = sum(1 for word in positive_keywords if word in content)
-            negative_count = sum(1 for word in negative_keywords if word in content)
-            
-            # Simple sentiment calculation
-            article_sentiment = (positive_count - negative_count) / max(len(content.split()), 1)
-            total_sentiment += article_sentiment
-            article_count += 1
-        
-        if article_count == 0:
-            return {
-                "sentiment": 0.0,
-                "confidence": 0.1,
-                "analysis": "No analyzable content found in news articles",
-                "provider": "fallback",
-                "method": "no_content"
-            }
-        
-        avg_sentiment = total_sentiment / article_count
-        confidence = min(0.5, abs(avg_sentiment) * 2)  # Lower confidence for fallback
-        
+        # Return neutral sentiment when AI services are unavailable
         return {
-            "sentiment": avg_sentiment,
-            "confidence": confidence,
-            "analysis": f"Fallback analysis based on {article_count} articles",
+            "sentiment": 0.0,
+            "confidence": 0.1,
+            "analysis": "AI sentiment analysis unavailable, using neutral sentiment",
             "provider": "fallback",
-            "method": "keyword_based"
+            "method": "neutral"
         }
 
     def _call_deepseek_api(self, messages: List[Dict], max_tokens: int = 200) -> Dict:
