@@ -1,0 +1,87 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-09-25T02:22:46.599022
+Base URL: http://localhost:5001
+Total Pages Tested: 10
+Pages Passed: 3
+Pages Failed: 7
+Success Rate: 30.0%
+Average Load Time: 11737.61ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: FAIL
+  Load Time: 557.02ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/homepage_20250925_022025.png
+
+Stocks Page (/stocks):
+  Status: FAIL
+  Load Time: 2587.06ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/stocks_page_20250925_022030.png
+
+Crypto Page (/crypto):
+  Status: FAIL
+  Load Time: 2581.10ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/crypto_page_20250925_022035.png
+
+Opportunities Page (/opportunities):
+  Status: FAIL
+  Load Time: 62643.05ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#opportunitiesSection', '#findButton']
+  Screenshot: test_artifacts/opportunities_page_20250925_022140.png
+
+System Status Page (/system_status):
+  Status: FAIL
+  Load Time: 3034.27ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/system_status_page_20250925_022146.png
+
+Logs Page (/logs):
+  Status: PASS
+  Load Time: 2578.22ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/logs_page_20250925_022151.png
+
+Portfolio Page (/portfolio_page):
+  Status: PASS
+  Load Time: 2608.69ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/portfolio_page_20250925_022156.png
+
+Backtest Page (/backtest):
+  Status: FAIL
+  Load Time: 592.72ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#symbol (empty)']
+  Screenshot: test_artifacts/backtest_page_20250925_022159.png
+
+Weekly Plan Page (/weekly_plan):
+  Status: PASS
+  Load Time: 17617.35ms
+  Load Success: True
+  Is Populated: True
+  Missing Elements: ['#weekSelector (empty)', '#filterEarnings (empty)', '#filterFed (empty)', '#filterEconomic (empty)', '#filterOptions (empty)', '#filterHolidays (empty)']
+  Screenshot: test_artifacts/weekly_plan_page_20250925_022219.png
+
+Recommendations Page (/recommendations):
+  Status: FAIL
+  Load Time: 22576.58ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['.card']
+  Screenshot: test_artifacts/recommendations_page_20250925_022244.png

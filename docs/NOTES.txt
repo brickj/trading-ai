@@ -1,0 +1,11 @@
+Steps to trouble shoot a page by first asking the LLM to create documentation.  
+Then ask for troublshooting.  This forces the LLM to look at the full code.
+Then you can use that context to ask for code fixes
+
+
+Ask LLM coder to create documentation similar to 
+Backtest Page Data Flow & Architecture Guide.md
+
+Then ask it to troubleshoot the page based on the documentation.
+
+

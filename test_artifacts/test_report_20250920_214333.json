@@ -1,0 +1,251 @@
+{
+  "test_run": {
+    "timestamp": "2025-09-20T21:43:33.514702",
+    "base_url": "http://localhost:5001",
+    "total_pages_tested": 10,
+    "pages_passed": 9,
+    "pages_failed": 1,
+    "success_rate": "90.0%",
+    "average_load_time_ms": 3737.76
+  },
+  "page_results": [
+    {
+      "page_name": "Homepage",
+      "route": "/",
+      "timestamp": "2025-09-20T21:42:35.204167",
+      "load_success": true,
+      "load_time_ms": 558.5062503814697,
+      "total_test_time_ms": 2909.440040588379,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 19164
+      },
+      "screenshot_path": "test_artifacts/homepage_20250920_214233.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Stocks Page",
+      "route": "/stocks",
+      "timestamp": "2025-09-20T21:42:40.025259",
+      "load_success": true,
+      "load_time_ms": 2590.0280475616455,
+      "total_test_time_ms": 4820.46103477478,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 40821
+      },
+      "screenshot_path": "test_artifacts/stocks_page_20250920_214237.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Crypto Page",
+      "route": "/crypto",
+      "timestamp": "2025-09-20T21:42:44.797509",
+      "load_success": true,
+      "load_time_ms": 2587.9271030426025,
+      "total_test_time_ms": 4771.384239196777,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 24555
+      },
+      "screenshot_path": "test_artifacts/crypto_page_20250920_214242.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Opportunities Page",
+      "route": "/opportunities",
+      "timestamp": "2025-09-20T21:42:51.053890",
+      "load_success": true,
+      "load_time_ms": 2692.5058364868164,
+      "total_test_time_ms": 6255.54084777832,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 327978,
+        "opportunities_count": 33,
+        "snapshot_path": "test_artifacts/opportunities_verified_20250920_214247.png",
+        "api_response": {
+          "source": "api_call",
+          "status": 200,
+          "data": {
+            "data": {
+              "cache_timestamp": "2025-09-21T01:42:47.579470",
+              "cached": true,
+              "count": 0,
+              "opportunities": []
+            },
+            "message": "",
+            "status": "success",
+            "success": true,
+            "timestamp": "2025-09-20T21:42:47.601670"
+          },
+          "opportunities_count": 0
+        },
+        "console_errors": []
+      },
+      "screenshot_path": "test_artifacts/opportunities_page_20250920_214248.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "System Status Page",
+      "route": "/system_status",
+      "timestamp": "2025-09-20T21:42:56.286316",
+      "load_success": true,
+      "load_time_ms": 2986.713171005249,
+      "total_test_time_ms": 5231.655120849609,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 75366
+      },
+      "screenshot_path": "test_artifacts/system_status_page_20250920_214254.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Logs Page",
+      "route": "/logs",
+      "timestamp": "2025-09-20T21:43:01.024848",
+      "load_success": true,
+      "load_time_ms": 2591.0041332244873,
+      "total_test_time_ms": 4737.735033035278,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 120524
+      },
+      "screenshot_path": "test_artifacts/logs_page_20250920_214258.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Portfolio Page",
+      "route": "/portfolio_page",
+      "timestamp": "2025-09-20T21:43:05.919304",
+      "load_success": true,
+      "load_time_ms": 2605.3812503814697,
+      "total_test_time_ms": 4894.154787063599,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 31793,
+        "portfolio_data": {
+          "currentCapital": "$125,000.00",
+          "totalValue": "$125,000.00",
+          "unrealizedPnl": "$25,000.00",
+          "openPositions": "8",
+          "hasPositions": true,
+          "hasTrades": true,
+          "positionsCount": 2,
+          "tradesCount": 4
+        },
+        "snapshot_path": "test_artifacts/portfolio_verified_20250920_214303.png"
+      },
+      "screenshot_path": "test_artifacts/portfolio_page_20250920_214303.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Backtest Page",
+      "route": "/backtest",
+      "timestamp": "2025-09-20T21:43:08.816700",
+      "load_success": true,
+      "load_time_ms": 555.9287071228027,
+      "total_test_time_ms": 2896.7370986938477,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          "#symbol (empty)"
+        ],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 80873,
+        "backtest_config": {
+          "hasSymbolInput": true,
+          "hasDaysBackSelect": true,
+          "hasBacktestForm": true,
+          "hasResultsSection": true,
+          "symbolPlaceholder": "e.g., AAPL, TSLA, MSFT",
+          "daysBackOptions": 6,
+          "formAction": "http://localhost:5001/backtest",
+          "resultsVisible": true
+        },
+        "snapshot_path": "test_artifacts/backtest_errors_20250920_214306.png"
+      },
+      "screenshot_path": "test_artifacts/backtest_page_20250920_214306.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Weekly Plan Page",
+      "route": "/weekly_plan",
+      "timestamp": "2025-09-20T21:43:28.752228",
+      "load_success": true,
+      "load_time_ms": 17626.23929977417,
+      "total_test_time_ms": 19934.86523628235,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [
+          "#weekSelector (empty)",
+          "#filterEarnings (empty)",
+          "#filterFed (empty)",
+          "#filterEconomic (empty)",
+          "#filterOptions (empty)",
+          "#filterHolidays (empty)"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 79548,
+        "weekly_plan_data": {
+          "hasCalendar": true,
+          "hasWeekSelector": true,
+          "hasEventSummary": true,
+          "hasWeeklyPlanTitle": true,
+          "filtersCount": 6,
+          "hasEarningsFilter": true,
+          "hasFedFilter": true,
+          "hasEconomicFilter": true,
+          "hasOptionsFilter": true,
+          "hasHolidaysFilter": true,
+          "hasPrevWeekBtn": true,
+          "hasNextWeekBtn": true,
+          "summaryCardsCount": 4,
+          "pageTitle": "Weekly Market Plan - Trading AI",
+          "hasLoadingIndicator": true
+        }
+      },
+      "screenshot_path": "test_artifacts/weekly_plan_page_20250920_214326.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Recommendations Page",
+      "route": "/recommendations",
+      "timestamp": "2025-09-20T21:43:33.514462",
+      "load_success": true,
+      "load_time_ms": 2583.41121673584,
+      "total_test_time_ms": 4762.071132659912,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 50697
+      },
+      "screenshot_path": "test_artifacts/recommendations_page_20250920_214331.png",
+      "status": "PASS"
+    }
+  ]
+}

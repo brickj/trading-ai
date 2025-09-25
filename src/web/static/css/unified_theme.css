@@ -1,0 +1,1338 @@
+/* Unified Trading AI Theme - Modern Dark Theme with Green Accents */
+
+:root {
+    /* Primary Colors */
+    --primary-color: #00ff88;
+    --primary-dark: #00cc66;
+    --primary-light: #33ff99;
+    
+    /* Secondary Colors */
+    --secondary-color: #6c757d;
+    --success-color: #00ff88;
+    --danger-color: #ff4444;
+    --warning-color: #ffaa00;
+    --info-color: #38c6d9;
+    
+    /* Extended Color Palette - Based on Screenshot */
+    --blue-color: #007bff;
+    --blue-light: #4dabf7;
+    --blue-dark: #0056b3;
+    --purple-color: #6f42c1;
+    --orange-color: #fd7e14;
+    --teal-color: #20c997;
+    --pink-color: #e83e8c;
+    --indigo-color: #6610f2;
+    --cyan-color: #17a2b8;
+    --yellow-color: #ffc107;
+    --red-color: #dc3545;
+    --green-color: #28a745;
+    
+    /* Screenshot-specific colors */
+    --screenshot-blue: #007bff;
+    --screenshot-light-blue: #4dabf7;
+    --screenshot-dark-blue: #0056b3;
+    --screenshot-orange: #fd7e14;
+    --screenshot-green: #28a745;
+    --screenshot-yellow: #ffc107;
+    --screenshot-red: #dc3545;
+    
+    /* Background Colors */
+    --bg-primary: #050505;
+    --bg-secondary: #0a0a0a;
+    --bg-card: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    --bg-card-hover: linear-gradient(135deg, #1f1f1f 0%, #2f2f2f 100%);
+    --bg-header: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%);
+    
+    /* Text Colors */
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-accent: #00ff88;
+    
+    /* Border Colors */
+    --border-primary: #333333;
+    --border-accent: rgba(0, 255, 136, 0.3);
+    --border-hover: rgba(0, 255, 136, 0.5);
+    
+    /* Shadow Colors */
+    --shadow-primary: 0 4px 16px rgba(0, 255, 136, 0.15);
+    --shadow-hover: 0 8px 32px rgba(0, 255, 136, 0.25);
+    --shadow-card: 0 10px 30px rgba(0, 255, 136, 0.08);
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Border Radius */
+    --radius-sm: 0.5rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.5rem;
+    --radius-xl: 2rem;
+}
+
+/* Global Body Styling - Match Screenshot */
+body {
+    background: radial-gradient(circle at top, rgba(0, 255, 136, 0.08), transparent 35%),
+               radial-gradient(circle at bottom, rgba(56, 198, 217, 0.05), transparent 45%),
+               #050505;
+    color: #ffffff;
+    min-height: 100vh;
+    transition: background 0.4s ease, color 0.4s ease;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+p.lead {
+    color: var(--text-secondary);
+}
+
+/* Unified Card System */
+.unified-card {
+    border-radius: var(--radius-lg);
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(0, 255, 136, 0.08), transparent 35%, rgba(56, 198, 217, 0.08));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.unified-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    background: var(--bg-card-hover) !important;
+}
+
+.unified-card:hover::before {
+    opacity: 1;
+}
+
+.unified-card-header {
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-accent);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.unified-card-header h5,
+.unified-card-header h6 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    color: var(--text-primary);
+}
+
+.unified-card-body {
+    padding: var(--spacing-xl);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+.unified-card-footer {
+    background: linear-gradient(90deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-top: 1px solid var(--border-primary);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-xl);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* Modern Card Variants */
+.modern-card {
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-primary);
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+    transition: all 0.3s ease;
+    min-height: 340px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    animation: fadeInCard 0.7s forwards;
+    color: var(--text-primary) !important;
+}
+
+@keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modern-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.modern-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-sm) var(--spacing-lg);
+}
+
+.modern-card-body {
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-sm) var(--spacing-lg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: transparent !important;
+    color: var(--text-primary) !important;
+}
+
+.modern-card-footer {
+    background: linear-gradient(90deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-top: 1px solid var(--border-primary);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+/* Modern Card Row System */
+.modern-card-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+    align-items: center;
+}
+
+.modern-card-row .label {
+    font-size: 0.93rem;
+    color: var(--text-primary) !important;
+    font-weight: 500;
+}
+
+.modern-card-row .value {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.modern-card-row .value.positive { color: var(--primary-color); }
+.modern-card-row .value.negative { color: var(--danger-color); }
+.modern-card-row .value.neutral { color: var(--text-primary) !important; }
+
+/* Badge System */
+.unified-badge {
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.unified-badge.primary {
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: #000;
+}
+
+.unified-badge.success {
+    background: linear-gradient(90deg, var(--success-color) 0%, var(--primary-dark) 100%);
+    color: #000;
+}
+
+.unified-badge.danger {
+    background: linear-gradient(90deg, var(--danger-color) 0%, #cc0000 100%);
+    color: #fff;
+}
+
+.unified-badge.warning {
+    background: linear-gradient(90deg, var(--warning-color) 0%, #ff8800 100%);
+    color: #000;
+}
+
+.unified-badge.info {
+    background: linear-gradient(90deg, var(--info-color) 0%, #2a9bb8 100%);
+    color: #000;
+}
+
+/* Button System */
+.unified-btn {
+    border-radius: var(--radius-xl);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-primary);
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-lg);
+}
+
+.unified-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.unified-btn-primary {
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    color: #000 !important;
+}
+
+.unified-btn-success {
+    background: linear-gradient(90deg, var(--success-color), var(--primary-dark));
+    color: #000 !important;
+}
+
+.unified-btn-danger {
+    background: linear-gradient(90deg, var(--danger-color), #cc0000);
+    color: #fff !important;
+}
+
+.unified-btn-outline {
+    background: rgba(0, 255, 136, 0.12);
+    color: var(--text-accent) !important;
+    border: 1px solid var(--border-accent) !important;
+}
+
+.unified-btn-outline:hover {
+    background: rgba(0, 255, 136, 0.28);
+    color: #000 !important;
+}
+
+/* Form Elements */
+.unified-form-control {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-accent);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.unified-form-control:focus {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 0.2rem rgba(0, 255, 136, 0.1);
+    outline: none;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.unified-form-control::placeholder {
+    color: var(--text-muted);
+}
+
+/* Table System */
+.unified-table {
+    color: var(--text-primary);
+    background: transparent;
+}
+
+.unified-table thead th {
+    background: rgba(0, 255, 136, 0.08);
+    color: var(--text-primary) !important;
+    border-bottom: 1px solid var(--border-accent);
+    font-weight: 600;
+    padding: var(--spacing-md);
+}
+
+.unified-table tbody tr {
+    background: rgba(26, 26, 26, 0.85);
+    transition: background 0.3s ease;
+    border-color: rgba(255, 255, 255, 0.05);
+}
+
+.unified-table tbody tr:hover {
+    background: rgba(0, 255, 136, 0.12);
+}
+
+.unified-table tbody td {
+    color: var(--text-primary) !important;
+    padding: var(--spacing-md);
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Summary Pills */
+.modern-summary-pill {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: #000000;
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-primary);
+}
+
+.modern-summary-pill i {
+    margin-right: var(--spacing-sm);
+    font-size: 1.3rem;
+}
+
+.modern-summary-pill .pill-stat {
+    margin-right: var(--spacing-xl);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.modern-summary-pill .pill-stat:last-child {
+    margin-right: 0;
+}
+
+.modern-summary-pill .pill-label {
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin-left: var(--spacing-xs);
+}
+
+/* Stats Cards */
+.stats-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.stats-card .card-body {
+    padding: var(--spacing-lg);
+    background: transparent !important;
+}
+
+.stats-card h4 {
+    color: var(--text-accent);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: var(--spacing-xs);
+}
+
+.stats-card small {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Performance Cards */
+.performance-card {
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    margin-bottom: var(--spacing-lg);
+    transition: all 0.3s ease;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+}
+
+.performance-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Alert System */
+.unified-alert {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-accent);
+    background: rgba(16, 16, 16, 0.9);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.unified-alert.alert-info {
+    border-color: rgba(56, 198, 217, 0.3);
+    background: linear-gradient(135deg, rgba(56, 198, 217, 0.12), rgba(16, 16, 16, 0.9));
+}
+
+.unified-alert.alert-success {
+    border-color: rgba(0, 255, 136, 0.35);
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.12), rgba(16, 16, 16, 0.9));
+}
+
+.unified-alert.alert-warning {
+    border-color: rgba(255, 170, 0, 0.35);
+    background: linear-gradient(135deg, rgba(255, 170, 0, 0.12), rgba(16, 16, 16, 0.9));
+}
+
+.unified-alert.alert-danger {
+    border-color: rgba(255, 68, 68, 0.35);
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.12), rgba(16, 16, 16, 0.9));
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    border-radius: var(--radius-lg);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .unified-card,
+    .modern-card {
+        min-height: 200px;
+    }
+    
+    .unified-card-body,
+    .modern-card-body {
+        padding: var(--spacing-md);
+    }
+    
+    .modern-summary-pill {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        text-align: center;
+    }
+    
+    .modern-summary-pill .pill-stat {
+        margin-right: 0;
+        margin-bottom: var(--spacing-xs);
+    }
+}
+
+/* Utility Classes */
+.text-accent { color: var(--text-accent) !important; }
+.text-positive { color: var(--primary-color) !important; }
+.text-negative { color: var(--danger-color) !important; }
+.text-neutral { color: var(--text-primary) !important; }
+
+.bg-card { background: var(--bg-card) !important; }
+.bg-primary { background: var(--primary-color) !important; }
+.bg-success { background: var(--success-color) !important; }
+.bg-danger { background: var(--danger-color) !important; }
+.bg-warning { background: var(--warning-color) !important; }
+
+.border-accent { border-color: var(--border-accent) !important; }
+.shadow-unified { box-shadow: var(--shadow-card) !important; }
+.shadow-hover { box-shadow: var(--shadow-hover) !important; }
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Force dark theme for all unified elements */
+.unified-card,
+.unified-card *,
+.unified-card .card-body,
+.unified-card .card-text,
+.unified-card .card-title,
+.modern-card,
+.modern-card *,
+.modern-card .card-body,
+.modern-card .card-text,
+.modern-card .card-title {
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Override for financial data to be green */
+.unified-card .value.positive,
+.modern-card .value.positive,
+.unified-card .text-accent,
+.modern-card .text-accent {
+    color: var(--primary-color) !important;
+}
+
+/* Override for negative values to be red */
+.unified-card .value.negative,
+.modern-card .value.negative {
+    color: var(--danger-color) !important;
+}
+
+/* Page-specific styles moved to unified theme */
+
+/* Chart containers */
+.chart-container {
+    height: 300px;
+    margin-bottom: 20px;
+}
+
+/* Performance summary */
+#performance-summary {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+/* Symbol badges */
+.symbol-badge {
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: #000;
+    margin-right: 5px;
+}
+
+/* Market cards for foreign markets */
+.market-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    height: 100%;
+}
+
+.market-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.market-status {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.market-performance {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.market-symbols {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.country-flag {
+    width: 24px;
+    height: 16px;
+    border-radius: 2px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.market-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.loading {
+    display: none;
+}
+
+.symbol-pill {
+    display: inline-block;
+    background-color: #f8f9fa;
+    color: #495057;
+    padding: 0.2rem 0.5rem;
+    margin: 0.1rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.trading-hours {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Scalping signals specific styles */
+.opportunity-card {
+    transition: transform 0.2s;
+    border-left: 4px solid #007bff;
+}
+
+.opportunity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.long-opportunity {
+    border-left-color: #28a745;
+}
+
+.short-opportunity {
+    border-left-color: #dc3545;
+}
+
+.high-momentum {
+    border-left-color: #ffc107;
+}
+
+.sentiment-bullish {
+    color: #28a745;
+}
+
+.sentiment-bearish {
+    color: #dc3545;
+}
+
+.sentiment-neutral {
+    color: #6c757d;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.loading-spinner {
+    display: none;
+}
+
+.filter-buttons {
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.refresh-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.opportunity-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.opportunity-card .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.opportunity-card .btn-group {
+    margin-top: auto;
+}
+
+.group-summary-card {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    border: 1px solid #333333;
+    color: #ffffff;
+}
+
+.modern-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.modern-summary-pill {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%);
+    color: #000000;
+    border-radius: 2rem;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,255,136,0.15);
+}
+
+.modern-summary-pill i {
+    margin-right: 0.7rem;
+    font-size: 1.3rem;
+}
+
+.modern-summary-pill .pill-stat {
+    margin-right: 2.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.modern-summary-pill .pill-stat:last-child {
+    margin-right: 0;
+}
+
+.modern-summary-pill .pill-label {
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin-left: 0.4rem;
+}
+
+.modern-card {
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 16px rgba(0,255,136,0.15);
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+    border: 1px solid #333333 !important;
+    transition: box-shadow 0.2s, transform 0.2s;
+    min-height: 340px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    animation: fadeInCard 0.7s forwards;
+    color: #ffffff !important;
+}
+
+@keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.modern-card:hover {
+    box-shadow: 0 8px 32px rgba(0,255,136,0.25);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.modern-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem 0.5rem 1.2rem;
+}
+
+.modern-badge {
+    border-radius: 1rem;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(90deg, #4f8cff 0%, #38c6d9 100%);
+    display: flex;
+    align-items: center;
+}
+
+.modern-badge.crypto {
+    background: linear-gradient(90deg, #ffb347 0%, #ffcc80 100%);
+    color: #333;
+}
+
+.modern-badge i {
+    margin-right: 0.5rem;
+}
+
+.modern-card-body {
+    padding: 0.5rem 1.2rem 0.5rem 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+.modern-card-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.modern-card-row .label {
+    font-size: 0.93rem;
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+.modern-card-row .value {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.modern-card-row .value.positive { color: #00ff88; }
+.modern-card-row .value.negative { color: #ff4444; }
+.modern-card-row .value.neutral { color: #ffffff !important; }
+.modern-card-row .value.crypto { color: #00ff88; }
+.modern-card-row .value.stock { color: #00ff88; }
+.modern-card-row .sentiment {
+    display: flex;
+    align-items: center;
+}
+
+.modern-card-row .sentiment i {
+    margin-right: 0.4rem;
+}
+
+.modern-card-row .recommendation {
+    font-weight: 600;
+    color: #00ff88;
+}
+
+.modern-card-row .recommendation.short {
+    color: #ff4444;
+}
+
+.modern-card-row .recommendation.momentum {
+    color: #ffaa00;
+}
+
+.modern-card-footer {
+    background: linear-gradient(90deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-top: 1px solid #333333;
+    border-radius: 0 0 1.2rem 1.2rem;
+    padding: 0.7rem 1.2rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.7rem;
+}
+
+.modern-card-footer button {
+    border: none;
+    background: none;
+    color: #00ff88;
+    font-size: 1.2rem;
+    border-radius: 50%;
+    width: 2.2rem;
+    height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+
+.modern-card-footer button:hover {
+    background: #333333;
+    color: #ffffff;
+}
+
+/* Grid layout improvements */
+#opportunitiesGrid .col-12,
+#opportunitiesGrid .col-md-6,
+#opportunitiesGrid .col-lg-4,
+#opportunitiesGrid .col-xl-3 {
+    margin-bottom: 1.5rem;
+}
+
+/* Ensure cards fill their container height */
+#opportunitiesGrid .col-12 > .modern-card,
+#opportunitiesGrid .col-md-6 > .modern-card,
+#opportunitiesGrid .col-lg-4 > .modern-card,
+#opportunitiesGrid .col-xl-3 > .modern-card {
+    height: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .modern-card {
+        min-height: 300px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .modern-card {
+        min-height: 320px;
+    }
+}
+
+/* Force dark theme for all modern card elements */
+.modern-card,
+.modern-card *,
+.modern-card .card-body,
+.modern-card .card-text,
+.modern-card .card-title,
+.modern-card .modern-card-body,
+.modern-card .modern-card-row,
+.modern-card .modern-card-row .label,
+.modern-card .modern-card-row .value {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+    color: #ffffff !important;
+}
+
+/* Override for financial data to be green */
+.modern-card .modern-card-row .value.positive,
+.modern-card .modern-card-row .value.crypto,
+.modern-card .modern-card-row .value.stock,
+.modern-card .modern-card-row .recommendation {
+    color: #00ff88 !important;
+}
+
+/* Override for negative values to be red */
+.modern-card .modern-card-row .value.negative,
+.modern-card .modern-card-row .recommendation.short {
+    color: #ff4444 !important;
+}
+
+/* Override for warning values to be orange */
+.modern-card .modern-card-row .recommendation.momentum {
+    color: #ffaa00 !important;
+}
+
+/* Unified Badge Styles */
+.unified-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 0.75em;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 4px;
+    color: #fff;
+}
+
+.unified-badge.warning {
+    background-color: var(--orange-color);
+    color: #000;
+}
+
+.unified-badge.success {
+    background-color: var(--green-color);
+}
+
+.unified-badge.danger {
+    background-color: var(--red-color);
+}
+
+.unified-badge.info {
+    background-color: var(--cyan-color);
+}
+
+.unified-badge.secondary {
+    background-color: var(--secondary-color);
+}
+
+.unified-badge.primary {
+    background-color: var(--blue-color);
+}
+
+.unified-badge.earnings {
+    background-color: var(--screenshot-blue);
+    color: #fff;
+}
+
+.unified-badge.economic {
+    background-color: var(--screenshot-light-blue);
+    color: #fff;
+}
+
+.unified-badge.federal {
+    background-color: var(--screenshot-dark-blue);
+    color: #fff;
+}
+
+.unified-badge.options {
+    background-color: var(--screenshot-orange);
+    color: #000;
+}
+
+.unified-badge.holiday {
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+/* Colorful Button Variants - Based on Screenshot */
+.unified-btn.unified-btn-blue {
+    background-color: var(--screenshot-blue);
+    border: 1px solid var(--screenshot-blue);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-blue:hover {
+    background-color: var(--screenshot-dark-blue);
+    border-color: var(--screenshot-dark-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.unified-btn.unified-btn-green {
+    background-color: var(--screenshot-green);
+    border: 1px solid var(--screenshot-green);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-green:hover {
+    background-color: #1e7e34;
+    border-color: #1e7e34;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.unified-btn.unified-btn-purple {
+    background: linear-gradient(135deg, var(--purple-color) 0%, #5a2d91 100%);
+    border: 1px solid var(--purple-color);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-purple:hover {
+    background: linear-gradient(135deg, #5a2d91 0%, var(--purple-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.3);
+}
+
+.unified-btn.unified-btn-orange {
+    background: linear-gradient(135deg, var(--orange-color) 0%, #e8590c 100%);
+    border: 1px solid var(--orange-color);
+    color: #000;
+}
+
+.unified-btn.unified-btn-orange:hover {
+    background: linear-gradient(135deg, #e8590c 0%, var(--orange-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+}
+
+.unified-btn.unified-btn-teal {
+    background: linear-gradient(135deg, var(--teal-color) 0%, #1a9b7a 100%);
+    border: 1px solid var(--teal-color);
+    color: #fff;
+}
+
+.unified-btn.unified-btn-teal:hover {
+    background: linear-gradient(135deg, #1a9b7a 0%, var(--teal-color) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(32, 201, 151, 0.3);
+}
+
+/* Impact Level Indicators */
+.impact-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.impact-bar {
+    width: 4px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.impact-bar.low {
+    background-color: var(--screenshot-yellow);
+    height: 8px;
+}
+
+.impact-bar.medium {
+    background-color: var(--screenshot-orange);
+    height: 10px;
+}
+
+.impact-bar.high {
+    background-color: var(--screenshot-red);
+    height: 12px;
+}
+
+/* Colorful Stats Cards - Based on Screenshot */
+.stats-card.blue {
+    background-color: var(--screenshot-blue);
+    color: #fff;
+}
+
+.stats-card.green {
+    background-color: var(--screenshot-green);
+    color: #fff;
+}
+
+.stats-card.orange {
+    background-color: var(--screenshot-orange);
+    color: #000;
+}
+
+.stats-card.purple {
+    background-color: var(--purple-color);
+    color: #fff;
+}
+
+.stats-card.teal {
+    background-color: var(--teal-color);
+    color: #fff;
+}
+
+.stats-card.cyan {
+    background-color: var(--cyan-color);
+    color: #fff;
+}
+
+/* Unified Card System */
+.unified-card {
+    border-radius: var(--radius-lg);
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-primary) !important;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(0, 255, 136, 0.08), transparent 35%, rgba(56, 198, 217, 0.08));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.unified-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    background: var(--bg-card-hover) !important;
+}
+
+.unified-card:hover::before {
+    opacity: 1;
+}
+
+/* Force text colors */
+h1, h2, h3, h4, h5, h6,
+p, span, div, label {
+    color: #ffffff !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Days of the week should have darker green like screenshot */
+.weekly-calendar-card .card-header {
+    background: #28a745 !important;
+    color: #000000 !important;
+}
+
+.weekly-calendar-card .card-header h6 {
+    color: #000000 !important;
+}
+
+.weekly-calendar-card .card-header small {
+    color: #000000 !important;
+}
+
+/* Summary cards colors to match screenshot exactly */
+.card.bg-primary {
+    background: var(--screenshot-blue) !important;
+    color: #ffffff !important;
+}
+
+.card.bg-danger {
+    background: #000000 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-success {
+    background: var(--screenshot-green) !important;
+    color: #ffffff !important;
+}
+
+.card.bg-warning {
+    background: var(--screenshot-orange) !important;
+    color: #ffffff !important;
+}
+
+/* Badge colors to match screenshot exactly - Force override Bootstrap */
+.badge.bg-primary,
+span.badge.bg-primary {
+    background-color: var(--screenshot-blue) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-danger,
+span.badge.bg-danger {
+    background-color: var(--screenshot-red) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-success,
+span.badge.bg-success {
+    background-color: var(--screenshot-green) !important;
+    color: #ffffff !important;
+}
+
+.badge.bg-warning,
+span.badge.bg-warning {
+    background-color: var(--screenshot-yellow) !important;
+    color: #000000 !important;
+}
+
+/* Impact badges should be yellow/orange with black text */
+.badge.bg-info {
+    background-color: var(--screenshot-yellow) !important;
+    color: #000000 !important;
+}
+
+.badge.bg-secondary,
+span.badge.bg-secondary {
+    background-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+/* Override all cards to match screenshot exactly */
+.card {
+    background: linear-gradient(135deg, #101010 0%, #1c1c1c 100%) !important;
+    border: 1px solid #2d2d2d !important;
+    color: #ffffff !important;
+    border-radius: 1.1rem;
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.08);
+}
+
+.card-header {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%) !important;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.15) !important;
+    color: #ffffff !important;
+}
+
+.card-body {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+/* Summary cards should keep their colors - Force override */
+.card.bg-primary {
+    background: #007bff !important;
+    color: #ffffff !important;
+}
+
+.card.bg-danger {
+    background: #dc3545 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-success {
+    background: #28a745 !important;
+    color: #ffffff !important;
+}
+
+.card.bg-warning {
+    background: #ffc107 !important;
+    color: #000000 !important;
+}

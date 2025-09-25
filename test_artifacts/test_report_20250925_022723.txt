@@ -1,0 +1,85 @@
+COMPREHENSIVE PAGE POPULATION TEST REPORT
+==================================================
+
+Test Run: 2025-09-25T02:27:23.431500
+Base URL: http://localhost:5001
+Total Pages Tested: 10
+Pages Passed: 5
+Pages Failed: 5
+Success Rate: 50.0%
+Average Load Time: 3734.93ms
+
+DETAILED RESULTS:
+------------------------------
+
+Homepage (/):
+  Status: FAIL
+  Load Time: 558.93ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/homepage_20250925_022622.png
+
+Stocks Page (/stocks):
+  Status: FAIL
+  Load Time: 2593.05ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/stocks_page_20250925_022627.png
+
+Crypto Page (/crypto):
+  Status: FAIL
+  Load Time: 2590.63ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/crypto_page_20250925_022632.png
+
+Opportunities Page (/opportunities):
+  Status: PASS
+  Load Time: 2623.92ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/opportunities_page_20250925_022637.png
+
+System Status Page (/system_status):
+  Status: FAIL
+  Load Time: 3017.09ms
+  Load Success: True
+  Is Populated: False
+  Screenshot: test_artifacts/system_status_page_20250925_022643.png
+
+Logs Page (/logs):
+  Status: PASS
+  Load Time: 2593.94ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/logs_page_20250925_022648.png
+
+Portfolio Page (/portfolio_page):
+  Status: PASS
+  Load Time: 2612.81ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/portfolio_page_20250925_022653.png
+
+Backtest Page (/backtest):
+  Status: FAIL
+  Load Time: 560.82ms
+  Load Success: True
+  Is Populated: False
+  Missing Elements: ['#symbol (empty)']
+  Screenshot: test_artifacts/backtest_page_20250925_022656.png
+
+Weekly Plan Page (/weekly_plan):
+  Status: PASS
+  Load Time: 17618.37ms
+  Load Success: True
+  Is Populated: True
+  Missing Elements: ['#weekSelector (empty)', '#filterEarnings (empty)', '#filterFed (empty)', '#filterEconomic (empty)', '#filterOptions (empty)', '#filterHolidays (empty)']
+  Screenshot: test_artifacts/weekly_plan_page_20250925_022716.png
+
+Recommendations Page (/recommendations):
+  Status: PASS
+  Load Time: 2579.72ms
+  Load Success: True
+  Is Populated: True
+  Screenshot: test_artifacts/recommendations_page_20250925_022721.png

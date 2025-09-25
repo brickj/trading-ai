@@ -1,0 +1,522 @@
+{
+  "test_run": {
+    "timestamp": "2025-09-25T02:36:58.136258",
+    "base_url": "http://localhost:5001",
+    "total_pages_tested": 10,
+    "pages_passed": 10,
+    "pages_failed": 0,
+    "success_rate": "100.0%",
+    "average_load_time_ms": 3737.13
+  },
+  "page_results": [
+    {
+      "page_name": "Homepage",
+      "route": "/",
+      "timestamp": "2025-09-25T02:35:59.197273",
+      "load_success": true,
+      "load_time_ms": 556.926965713501,
+      "total_test_time_ms": 3063.0741119384766,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#howItWorksCard: Card contains placeholder text: How It Works\n                        \n                            \n                        \n                    \n                \n                \n                     Standard Analysis Process\n                    \n                        News Collection: Fetch latest financial news from multiple sources (Finnhub, Reddit, Yahoo Finance)\n                        AI Sentiment Analysis: Use advanced AI models (Ollama, DeepSeek, or OpenAI) for sentiment analysis\n                        Sentiment Scoring: Convert news sentiment into quantitative scores (-1 to +1)\n                        Signal Generation: Transform sentiment into actionable trading signals\n                        Trading Recommendations: Generate optimized options strategies with strike prices and expiry dates\n                    \n                    \n                    \n                    \n                     Enhanced Analysis Process\n                    \n                        Multi-Strategy Generation: Create distinct trading strategies (Conservative, Moderate, Income-Focused)\n                        Historical Backtesting: Test each strategy against 730 days (2 years) of real market data from Alpha Vantage\n                        Performance Validation: Calculate win rates, average returns, and consistency scores for each strategy\n                        Advanced Confidence Scoring: Combine sentiment analysis (30%) with historical performance (70%)\n                        Strategy Ranking: Rank all strategies by confidence and select the highest-performing approach\n                    \n                    \n                    \n                         Free AI: Ollama (local) and DeepSeek are completely FREE!\n                    \n                    \n                    \n                         Enhanced Analysis: Uses sophisticated backtesting with 730 days (2 years) of historical data to validate strategies before recommendations. This provides much higher confidence in trade outcomes!"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 19388
+      },
+      "screenshot_path": "test_artifacts/homepage_20250925_023556.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Stocks Page",
+      "route": "/stocks",
+      "timestamp": "2025-09-25T02:36:04.166503",
+      "load_success": true,
+      "load_time_ms": 2585.963010787964,
+      "total_test_time_ms": 4968.907117843628,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#winnersList: List has no items",
+          "#losersList: List has no items",
+          "No real stock symbols found"
+        ],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 41058,
+        "stocks_data": {
+          "hasStocksTable": true,
+          "stockRowsCount": 6,
+          "hasWinnersList": true,
+          "winnerItemsCount": 0,
+          "hasLosersList": true,
+          "loserItemsCount": 0,
+          "stockSymbols": [
+            "Winner",
+            "Winner",
+            "Winner",
+            "Loser",
+            "Loser",
+            "Loser"
+          ],
+          "hasRealData": false,
+          "tableHasPlaceholders": false
+        },
+        "console_errors": []
+      },
+      "screenshot_path": "test_artifacts/stocks_page_20250925_023601.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Crypto Page",
+      "route": "/crypto",
+      "timestamp": "2025-09-25T02:36:09.034836",
+      "load_success": true,
+      "load_time_ms": 2591.978073120117,
+      "total_test_time_ms": 4868.013143539429,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#cryptoCardsRow: Card contains placeholder text: BTC\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $115,151.22\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.600\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         ETH\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $4,613.58\n                        \n                        \n                            Signal Strength\n                            38.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.800\n                                \n                            \n                        \n                        \n                            Confidence\n                            95.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         SOL\n                        HOLD\n                    \n                \n                \n                    \n                        \n                            Price\n                            $241.28\n                        \n                        \n                            Signal Strength\n                            36.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    -0.100\n                                \n                            \n                        \n                        \n                            Confidence\n                            90.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         SOLUSD\n                        HOLD\n                    \n                \n                \n                    \n                        \n                            Price\n                            $241.28\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    -0.200\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         USDT\n                        SELL\n                    \n                \n                \n                    \n                        \n                            Price\n                            $1.00\n                        \n                        \n                            Signal Strength\n                            16.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    -0.500\n                                \n                            \n                        \n                        \n                            Confidence\n                            40.0%\n                        \n                    \n                    \n                    \n                        \n                             Details",
+          "#sentimentChartContainer: Validation error: Locator.evaluate: TypeError: canvas.toDataURL is not a function\n    at eval (eval at evaluate (:291:30), <anonymous>:1:18)\n    at UtilityScript.evaluate (<anonymous>:298:18)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+        ],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 24998
+      },
+      "screenshot_path": "test_artifacts/crypto_page_20250925_023606.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Opportunities Page",
+      "route": "/opportunities",
+      "timestamp": "2025-09-25T02:36:14.350698",
+      "load_success": true,
+      "load_time_ms": 2647.1009254455566,
+      "total_test_time_ms": 5315.385818481445,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 29787,
+        "opportunities_count": 2,
+        "snapshot_path": "test_artifacts/opportunities_verified_20250925_023611.png",
+        "api_response": {
+          "source": "api_call",
+          "status": 200,
+          "data": {
+            "data": {
+              "cache_timestamp": "2025-09-24T22:56:20.725150",
+              "cached": true,
+              "count": 2,
+              "opportunities": [
+                {
+                  "articles": [
+                    {
+                      "category": "news",
+                      "datetime": "Tue, 23 Sep 2025 14:21:41 +0000",
+                      "headline": "Atletico owners negotiating with US firm Apollo over majority stake sale - reports",
+                      "source": "Yahoo Finance",
+                      "summary": "Atletico Madrid's owners are in advanced negotiations to sell a majority stake of the Spanish football club's shares to US private equity firm Apollo Global Management, according to various reports citing sources close to the deal.Listed on the New York Stock Exchange and managing more than $800 billion in assets, Apollo is reported to be considering executing the deal through a $5 billion sports investment fund.",
+                      "url": "https://finance.yahoo.com/news/atletico-owners-negotiating-us-firm-142141222.html?.tsrc=rss"
+                    },
+                    {
+                      "category": "analysis",
+                      "datetime": "2025-09-24T22:55:50.632006",
+                      "headline": "ARES Market Analysis",
+                      "source": "Alpha Vantage",
+                      "summary": "Latest market analysis and insights for ARES stock.",
+                      "url": "https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=ARES&apikey=your_alpha_vantage_api_key_here"
+                    }
+                  ],
+                  "news_count": 2,
+                  "price_data": {
+                    "change": 0,
+                    "change_percent": "0%",
+                    "current_price": 168.13999938964844,
+                    "source": "yfinance_fallback",
+                    "symbol": "ARES",
+                    "timestamp": "2025-09-24T22:56:15.366022",
+                    "volume": 0
+                  },
+                  "sentiment_data": {
+                    "confidence": 0.81,
+                    "sentiment_score": -0.53,
+                    "summary": "The sentiment of the news is negative due to the mention of a potential sale of majority stake, which may indicate financial difficulties or instability for Atletico."
+                  },
+                  "signal_data": {
+                    "action": "SELL",
+                    "confidence": 0.81,
+                    "reasoning": "Negative sentiment (-0.53) with high confidence (0.81)",
+                    "signal_strength": 0.42930000000000007
+                  },
+                  "symbol": "ARES",
+                  "timestamp": "2025-09-24T22:56:17.027109",
+                  "trade_signal": {
+                    "action": "SELL",
+                    "confidence": 0.81,
+                    "current_price": 168.13999938964844,
+                    "day_trading_notes": [
+                      "Strategy: {strategy_type} based on sentiment analysis",
+                      "Conviction Level: {self._get_conviction_level(sentiment_score)}",
+                      "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose",
+                      "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay",
+                      "\u23f0 Time decay accelerates rapidly on 0-2 DTE options",
+                      "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads",
+                      "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates",
+                      "\ud83d\udcca Moderate conviction - wait for technical confirmation",
+                      "\ud83c\udfaf Stick to planned exit levels",
+                      "\u2705 High confidence in sentiment analysis"
+                    ],
+                    "days_to_expiry": 2,
+                    "direction": "BEARISH",
+                    "entry_strategy": {
+                      "confirmation": "Look for volume spike or technical confirmation",
+                      "method": "Limit order at mid-price or better",
+                      "timing": "Wait for 5-15 minute confirmation of price direction",
+                      "volume_check": "Check option chain liquidity before entry"
+                    },
+                    "exit_strategy": {
+                      "market_close": "Close all positions 30 minutes before market close",
+                      "partial_exits": "Consider taking 50% profits at half target, let rest run",
+                      "profit_target": "Exit at 15% gain or better",
+                      "stop_loss": "Hard stop at 12% loss",
+                      "time_stop": "Exit before 15-60 minutes regardless of P&L if no momentum",
+                      "trailing_stop": "Consider trailing stop after 50% of target is reached"
+                    },
+                    "hold_time": "15-60 minutes",
+                    "option_price": 1.68,
+                    "option_type": "put",
+                    "position_recommendations": {
+                      "${amount}": {
+                        "contracts": 35,
+                        "potential_gain": 8.83,
+                        "potential_loss": 7.06,
+                        "risk_amount": 58.85,
+                        "risk_percent": 2.9,
+                        "risk_reward_ratio": 1.25,
+                        "stop_price": 1.48,
+                        "target_price": 1.93,
+                        "total_cost": 58.85
+                      }
+                    },
+                    "position_size": 1,
+                    "reasoning": "Negative sentiment (-0.53) with high confidence (0.81)",
+                    "sentiment_score": -0.53,
+                    "signal_strength": 0.42930000000000007,
+                    "stop_loss_percent": 12,
+                    "strategy_type": "Day Trade",
+                    "strike_price": 167.3,
+                    "symbol": "ARES",
+                    "target_gain_percent": 15
+                  },
+                  "trigger": "news_driven",
+                  "type": "stock"
+                },
+                {
+                  "articles": [
+                    {
+                      "category": "news",
+                      "datetime": "Wed, 17 Sep 2025 22:15:01 +0000",
+                      "headline": "Here's Why APA (APA) Fell More Than Broader Market",
+                      "source": "Yahoo Finance",
+                      "summary": "In the closing of the recent trading day, APA (APA) stood at $24.16, denoting a -1.45% move from the preceding trading day.",
+                      "url": "https://finance.yahoo.com/news/heres-why-apa-apa-fell-221501146.html?.tsrc=rss"
+                    },
+                    {
+                      "category": "news",
+                      "datetime": "Thu, 18 Sep 2025 18:40:45 +0000",
+                      "headline": "Here is Why APA Corporation (APA) Jumped This Week",
+                      "source": "Yahoo Finance",
+                      "summary": "The share price of APA Corporation (NASDAQ:APA) surged by 13.16% between September 9 and September 16, 2025, putting it among the Energy Stocks that Gained the Most This Week. APA Corporation (NASDAQ:APA) is an independent energy company that explores for, develops, and produces natural gas, crude oil, and natural gas liquids. APA Corporation (NASDAQ:APA) received [\u2026]",
+                      "url": "https://finance.yahoo.com/news/why-apa-corporation-apa-jumped-184045796.html?.tsrc=rss"
+                    },
+                    {
+                      "category": "news",
+                      "datetime": "Tue, 23 Sep 2025 22:15:04 +0000",
+                      "headline": "APA (APA) Increases Despite Market Slip: Here's What You Need to Know",
+                      "source": "Yahoo Finance",
+                      "summary": "APA (APA) closed the most recent trading day at $23.99, moving +1.61% from the previous trading session.",
+                      "url": "https://finance.yahoo.com/news/apa-apa-increases-despite-market-221504641.html?.tsrc=rss"
+                    }
+                  ],
+                  "news_count": 5,
+                  "price_data": {
+                    "change": 0,
+                    "change_percent": "0%",
+                    "current_price": 24.420000076293945,
+                    "source": "yfinance_fallback",
+                    "symbol": "APA",
+                    "timestamp": "2025-09-24T22:56:19.634370",
+                    "volume": 0
+                  },
+                  "sentiment_data": {
+                    "confidence": 0.81,
+                    "sentiment_score": 0.33,
+                    "summary": "The overall sentiment of the news articles about APA Corporation is slightly positive, with a score of 0.33 indicating a neutral to mildly positive tone. The confidence level is high at 0.81, suggesting that the analysis is reliable and accurate."
+                  },
+                  "signal_data": {
+                    "action": "BUY",
+                    "confidence": 0.81,
+                    "reasoning": "Positive sentiment (0.33) with high confidence (0.81)",
+                    "signal_strength": 0.26730000000000004
+                  },
+                  "symbol": "APA",
+                  "timestamp": "2025-09-24T22:56:20.706615",
+                  "trade_signal": {
+                    "action": "BUY",
+                    "confidence": 0.81,
+                    "current_price": 24.420000076293945,
+                    "day_trading_notes": [
+                      "Strategy: {strategy_type} based on sentiment analysis",
+                      "Conviction Level: {self._get_conviction_level(sentiment_score)}",
+                      "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose",
+                      "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay",
+                      "\u23f0 Time decay accelerates rapidly on 0-2 DTE options",
+                      "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads",
+                      "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates",
+                      "\u26a0\ufe0f Lower conviction - consider paper trading first",
+                      "\ud83d\udee1\ufe0f Use smaller position sizes",
+                      "\u2705 High confidence in sentiment analysis"
+                    ],
+                    "days_to_expiry": 2,
+                    "direction": "BEARISH",
+                    "entry_strategy": {
+                      "confirmation": "Require additional technical or news catalyst",
+                      "method": "Limit order with patience for better fill",
+                      "timing": "Wait for technical confirmation and volume",
+                      "volume_check": "Only trade highly liquid options"
+                    },
+                    "exit_strategy": {
+                      "market_close": "Close all positions 30 minutes before market close",
+                      "partial_exits": "Consider taking 50% profits at half target, let rest run",
+                      "profit_target": "Exit at 15% gain or better",
+                      "stop_loss": "Hard stop at 10% loss",
+                      "time_stop": "Exit before 2-4 hours regardless of P&L if no momentum",
+                      "trailing_stop": "Consider trailing stop after 50% of target is reached"
+                    },
+                    "hold_time": "2-4 hours",
+                    "option_price": 0.24,
+                    "option_type": "put",
+                    "position_recommendations": {
+                      "${amount}": {
+                        "contracts": 163,
+                        "potential_gain": 5.97,
+                        "potential_loss": 3.98,
+                        "risk_amount": 39.8,
+                        "risk_percent": 2,
+                        "risk_reward_ratio": 1.5,
+                        "stop_price": 0.22,
+                        "target_price": 0.28,
+                        "total_cost": 39.8
+                      }
+                    },
+                    "position_size": 1,
+                    "reasoning": "Positive sentiment (0.33) with high confidence (0.81)",
+                    "sentiment_score": 0.33,
+                    "signal_strength": 0.26730000000000004,
+                    "stop_loss_percent": 10,
+                    "strategy_type": "Intraday Swing",
+                    "strike_price": 24.3,
+                    "symbol": "APA",
+                    "target_gain_percent": 15
+                  },
+                  "trigger": "news_driven",
+                  "type": "stock"
+                }
+              ]
+            },
+            "message": "",
+            "status": "success",
+            "success": true,
+            "timestamp": "2025-09-25T02:36:11.790342"
+          },
+          "opportunities_count": 2
+        },
+        "console_errors": [],
+        "data_validation_errors": [
+          "#watchlistBtn: List has no items"
+        ]
+      },
+      "screenshot_path": "test_artifacts/opportunities_page_20250925_023612.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "System Status Page",
+      "route": "/system_status",
+      "timestamp": "2025-09-25T02:36:19.795089",
+      "load_success": true,
+      "load_time_ms": 3026.6449451446533,
+      "total_test_time_ms": 5444.082021713257,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          ".card: Card contains placeholder text: Refresh Status\n                    \n                    Last updated: 9/25/2025, 2:36:14 AM\n                    \n                    \n                        \n                        \n                            Auto-refresh (30s)"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 76690
+      },
+      "screenshot_path": "test_artifacts/system_status_page_20250925_023617.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Logs Page",
+      "route": "/logs",
+      "timestamp": "2025-09-25T02:36:24.560331",
+      "load_success": true,
+      "load_time_ms": 2589.3402099609375,
+      "total_test_time_ms": 4764.820098876953,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 120531
+      },
+      "screenshot_path": "test_artifacts/logs_page_20250925_023622.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Portfolio Page",
+      "route": "/portfolio_page",
+      "timestamp": "2025-09-25T02:36:29.755340",
+      "load_success": true,
+      "load_time_ms": 2615.492820739746,
+      "total_test_time_ms": 5194.754123687744,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 31920,
+        "portfolio_data": {
+          "currentCapital": "$125,000.00",
+          "totalValue": "$125,000.00",
+          "unrealizedPnl": "$25,000.00",
+          "openPositions": "8",
+          "hasPositions": true,
+          "hasTrades": true,
+          "positionsCount": 2,
+          "tradesCount": 4
+        },
+        "data_validation_errors": [],
+        "console_errors": [],
+        "snapshot_path": "test_artifacts/portfolio_verified_20250925_023627.png"
+      },
+      "screenshot_path": "test_artifacts/portfolio_page_20250925_023627.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Backtest Page",
+      "route": "/backtest",
+      "timestamp": "2025-09-25T02:36:33.253868",
+      "load_success": true,
+      "load_time_ms": 565.3111934661865,
+      "total_test_time_ms": 3498.246908187866,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 65467,
+        "backtest_config": {
+          "hasSymbolInput": true,
+          "hasDaysBackSelect": true,
+          "hasBacktestForm": true,
+          "hasResultsSection": true,
+          "hasPerformanceChart": true,
+          "symbolPlaceholder": "e.g., AAPL, TSLA, MSFT",
+          "daysBackOptions": 6,
+          "formAction": "http://localhost:5001/backtest",
+          "resultsVisible": true
+        },
+        "chart_test_results": {
+          "chart_created": true,
+          "chart_has_content": false,
+          "console_errors": [],
+          "form_submitted": true
+        },
+        "data_validation_errors": [],
+        "console_errors": [],
+        "snapshot_path": "test_artifacts/backtest_verified_20250925_023630.png"
+      },
+      "screenshot_path": "test_artifacts/backtest_page_20250925_023630.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Weekly Plan Page",
+      "route": "/weekly_plan",
+      "timestamp": "2025-09-25T02:36:53.131176",
+      "load_success": true,
+      "load_time_ms": 17613.721132278442,
+      "total_test_time_ms": 19877.041816711426,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [
+          "#filterEarnings (empty)",
+          "#filterFed (empty)",
+          "#filterEconomic (empty)",
+          "#filterOptions (empty)",
+          "#filterHolidays (empty)"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 41476,
+        "weekly_plan_data": {
+          "hasCalendar": true,
+          "hasWeekSelector": true,
+          "hasEventSummary": true,
+          "hasWeeklyPlanTitle": true,
+          "filtersCount": 6,
+          "hasEarningsFilter": true,
+          "hasFedFilter": true,
+          "hasEconomicFilter": true,
+          "hasOptionsFilter": true,
+          "hasHolidaysFilter": true,
+          "hasPrevWeekBtn": true,
+          "hasNextWeekBtn": true,
+          "summaryCardsCount": 4,
+          "pageTitle": "Weekly Market Plan - Trading AI",
+          "hasLoadingIndicator": true
+        },
+        "data_validation_errors": [],
+        "console_errors": []
+      },
+      "screenshot_path": "test_artifacts/weekly_plan_page_20250925_023650.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Recommendations Page",
+      "route": "/recommendations",
+      "timestamp": "2025-09-25T02:36:58.135913",
+      "load_success": true,
+      "load_time_ms": 2578.833818435669,
+      "total_test_time_ms": 5004.584074020386,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          ".stats-card: Card contains placeholder text: Total Recommendations\n                7,630\n                Total recommendations tracked"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 50503
+      },
+      "screenshot_path": "test_artifacts/recommendations_page_20250925_023655.png",
+      "status": "PASS"
+    }
+  ]
+}

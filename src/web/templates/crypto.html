@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Crypto Analysis - Options Trading AI{% endblock %}
+
+{% block content %}
+<!-- Crypto Analysis Container - Required for tests -->
+<div id="cryptoAnalysisContainer">
+    <!-- Crypto Analysis Section - Required for tests -->
+    <div id="cryptoAnalysisSection">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-4">
+                    <i class="fab fa-bitcoin"></i> Cryptocurrency Trading Opportunities
+                </h1>
+                <p class="lead">Real-time trading opportunities based on sentiment analysis for major cryptocurrencies</p>
+            </div>
+        </div>
+
+        <!-- Sentiment Chart Container - Required for tests -->
+        <div id="sentimentChartContainer" class="row mb-4">
+            <div class="col-12">
+                <div class="unified-card">
+                    <div class="unified-card-header">
+                        <h5><i class="fas fa-chart-line"></i> Crypto Analysis Controls</h5>
+                    </div>
+                    <div class="unified-card-body">
+                        <button id="refreshBtn" class="btn unified-btn unified-btn-blue">
+                            <i class="fas fa-sync-alt"></i> Refresh Analysis
+                        </button>
+                        <span class="ms-3 text-muted" id="lastUpdated"></span>
+                        
+                        <div id="loadingSpinner" class="loading mt-3">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Analyzing cryptocurrencies...</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Crypto Cards will be shown in main container below -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crypto Opportunities Container - Required for tests -->
+    <div id="cryptoContainer" class="row">
+        <div class="col-12">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-chart-line"></i> Crypto Trading Opportunities</h5>
+                </div>
+                <div class="unified-card-body">
+                    <div class="unified-alert alert-info" id="crypto-threshold-info">
+                        <strong>Note:</strong> Showing all cryptocurrencies from your watchlist with their current sentiment analysis and trading signals.
+                    </div>
+                    <div id="cryptoCardsRow" class="row">
+                        <!-- Crypto cards will be dynamically populated with real data -->
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Loading crypto data...
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Crypto Overview Section - Required for tests -->
+    <div class="row mt-4" id="cryptoOverview">
+        <div class="col-12">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-info-circle"></i> Crypto Market Overview</h5>
+                </div>
+                <div class="unified-card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success" id="cryptoGainers">-</h4>
+                                <small>Gainers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-danger" id="cryptoLosers">-</h4>
+                                <small>Losers</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info" id="cryptoVolume">-</h4>
+                                <small>Volume</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-accent" id="cryptoVolatility">-</h4>
+                                <small>Volatility</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-chart-pie"></i> Sentiment Distribution</h5>
+                </div>
+                <div class="unified-card-body">
+                    <canvas id="sentimentDistributionChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-signal"></i> Signal Distribution</h5>
+                </div>
+                <div class="unified-card-body">
+                    <canvas id="signalChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-info-circle"></i> Crypto Market Summary</h5>
+                </div>
+                <div class="unified-card-body" id="summaryStats">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-success" id="bullishCount">-</h4>
+                                <p>Bullish Signals</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-danger" id="bearishCount">-</h4>
+                                <p>Bearish Signals</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-secondary" id="neutralCount">-</h4>
+                                <p>Neutral Signals</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 class="text-info" id="avgSentiment">-</h4>
+                                <p>Avg Sentiment</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="unified-card">
+                <div class="unified-card-header">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Crypto Trading Notes</h5>
+                </div>
+                <div class="unified-card-body">
+                    <div class="unified-alert alert-warning">
+                        <h6><i class="fas fa-info-circle"></i> Important Notes:</h6>
+                        <ul class="mb-0">
+                            <li>Cryptocurrency markets are highly volatile and operate 24/7</li>
+                            <li>Sentiment analysis is based on general crypto news, not coin-specific news</li>
+                            <li>Options trading on crypto is limited and highly risky</li>
+                            <li>Consider using crypto futures or spot trading instead</li>
+                            <li>Always use proper risk management and position sizing</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+{% endblock %}
