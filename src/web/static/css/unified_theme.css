@@ -1226,17 +1226,13 @@ p, span, div, label {
 
 /* Days of the week should have same gradient as week selection header */
 .weekly-calendar-card .card-header {
-<<<<<<< HEAD
     background: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%) !important;
-=======
-    background: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%) !important;
     color: #ffffff !important;
 }
 
 /* Override even when bg-primary is applied */
 .weekly-calendar-card .card-header.bg-primary {
-    background: linear-gradient(135deg, rgba(34, 34, 34, 0.85) 0%, rgba(12, 12, 12, 0.92) 100%) !important;
->>>>>>> ba9aaeff56429ba0677827cb83cbaa1f5e160e66
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.18) 0%, rgba(56, 198, 217, 0.08) 100%) !important;
     color: #ffffff !important;
 }
 
