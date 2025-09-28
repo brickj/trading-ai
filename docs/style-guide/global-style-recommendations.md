@@ -44,3 +44,9 @@ Open the static samples in `docs/style-guide/samples/` to see how the production
 5. `contact.html`
 
 Each file imports the exact production CSS and only swaps the markup/content, proving that the whole app can share the same look the user requested.
+
+## 8. Keeping Merges Conflict-Free
+- **Extend, don’t fork**: When a page needs scalping visuals, import the shared `styles.css` and `scalping_signals.css` instead of copying their contents into a local file. This keeps all updates flowing through the single source of truth and avoids divergent CSS copies that Git has to reconcile later.
+- **Limit edits to tokens**: If you must adjust theme values, change the root custom properties in `styles.css` (e.g., `--accent-success`) rather than touching repeated rule blocks lower in the file. Updating variables keeps diffs tiny and drastically reduces the chance of overlapping changes.
+- **Layer page-specific tweaks**: For unique layouts, create a short override file (e.g., `reports.css`) that only adds new selectors. Load it *after* `scalping_signals.css` so you never need to edit the shared files directly.
+- **Coordinate large refactors**: When a feature requires broader changes, branch from the latest `main`, run `git merge main` frequently, and keep commits focused. The shared CSS rarely conflicts if everyone stays close to the upstream layout tokens.
