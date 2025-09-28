@@ -3,153 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading-AI Consulting · Market Report</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Trading AI Consulting · Market Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../../src/web/static/css/styles.css">
-    <link rel="stylesheet" href="../../../src/web/static/css/scalping_signals.css">
+    <link rel="stylesheet" href="../scalping-global.css">
 </head>
 <body>
-    <div class="container py-5">
-        <header class="mb-5">
-            <h1 class="mb-2"><i class="fas fa-newspaper me-2 text-warning"></i>Daily Market Intelligence</h1>
-            <p class="lead">A report layout that literally reuses the scalping opportunity cards, ensuring research deliverables look and feel like the trading console.</p>
+    <div class="container">
+        <header class="hero">
+            <span class="badge-glow"><i class="fas fa-file-lines"></i> Client Brief</span>
+            <h1>Weekly Scalping Market Intelligence</h1>
+            <p>This report uses the same neon-glass aesthetic as the live scalping dashboard so research briefs feel like an extension of the trading console.</p>
         </header>
 
-        <section class="mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-bolt"></i> Executive Highlights</h5>
+        <section class="summary-pill">
+            <div class="summary-pill__metric">
+                <i class="fas fa-bolt"></i>
+                <div>
+                    <strong>Top Momentum: NVDA</strong>
+                    <span>+6.8% session over session</span>
                 </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-chart-line"></i> Momentum</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>AI-triggered rebalance flows from macro funds amplified volume spikes our scalping stack flagged at the European open.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-globe"></i> Macro</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>Commodities desks remain net-long energy, but the opportunity cards highlight decaying momentum in metals.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-shield"></i> Risk</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>Runbook automation kept VaR utilization at 0.4% despite increased short positioning across crypto pairs.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            </div>
+            <div class="summary-pill__metric">
+                <i class="fas fa-water"></i>
+                <div>
+                    <strong>Liquidity Pocket</strong>
+                    <span>10:45 - 11:30 ET</span>
+                </div>
+            </div>
+            <div class="summary-pill__metric">
+                <i class="fas fa-shield-virus"></i>
+                <div>
+                    <strong>Risk Level</strong>
+                    <span class="text-warning">Elevated</span>
                 </div>
             </div>
         </section>
 
-        <section class="mb-5">
-            <div class="row g-3">
-                <div class="col-lg-8">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5><i class="fas fa-wave-square"></i> Narrative & Signals</h5>
-                        </div>
-                        <div class="card-body">
-                            <blockquote class="blockquote text-warning mb-4">“Liquidity pockets formed around mega-cap tech with scalping bots rotating capital every 42 minutes.”</blockquote>
-                            <p class="mb-3">The same typography and neon dividers keep analysts grounded in the trading UI. Use Bootstrap rows and `.modern-card-row` elements for inline data callouts.</p>
-                            <div class="modern-card">
-                                <div class="modern-card-body">
-                                    <div class="modern-card-row">
-                                        <span class="label">Top Opportunity</span>
-                                        <span class="value positive">NVDA 0.7% drift</span>
-                                    </div>
-                                    <div class="modern-card-row">
-                                        <span class="label">Sentiment</span>
-                                        <span class="value momentum">Bullish</span>
-                                    </div>
-                                    <div class="modern-card-row">
-                                        <span class="label">Trigger Time</span>
-                                        <span class="value">09:35 EST</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <section class="grid-two gap-4 mb-6">
+            <article class="glass-card">
+                <h4><i class="fas fa-microscope text-success"></i> Analyst Summary</h4>
+                <p>AI-triggered rebalance flows from macro funds amplified the same intraday surges our scalping stack flagged at the European open.</p>
+                <p>Momentum clusters persisted through the US session as automated trading desks mirrored activity, validating the short-cycle strategies outlined in last week's brief.</p>
+            </article>
+            <article class="glass-card">
+                <h4><i class="fas fa-signal text-success"></i> Playbook Highlights</h4>
+                <ul class="list-unstyled mb-0">
+                    <li><i class="fas fa-circle"></i>Deploy long bias on semiconductor basket while keeping hedges tight.</li>
+                    <li><i class="fas fa-circle"></i>Monitor ETH/BTC ratio; L2 flows hint at breakout in next 48 hours.</li>
+                    <li><i class="fas fa-circle"></i>LLM oversight flagged three prompts for compliance review — addressed.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="glass-card mb-6">
+            <h4><i class="fas fa-table text-success"></i> Opportunity Matrix</h4>
+            <table class="table-neon">
+                <thead>
+                    <tr>
+                        <th>Asset</th>
+                        <th>Bias</th>
+                        <th>Momentum</th>
+                        <th>Confidence</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>NVDA</td>
+                        <td><span class="neon-chip"><i class="fas fa-arrow-up"></i> Long</span></td>
+                        <td>+6.8%</td>
+                        <td class="text-success">0.92</td>
+                        <td><a href="#">Review</a></td>
+                    </tr>
+                    <tr>
+                        <td>TSLA</td>
+                        <td><span class="neon-chip warning"><i class="fas fa-fire"></i> Momentum</span></td>
+                        <td>+3.1%</td>
+                        <td>0.74</td>
+                        <td><a href="#">Flag</a></td>
+                    </tr>
+                    <tr>
+                        <td>BTC</td>
+                        <td><span class="neon-chip neutral"><i class="fas fa-arrows-left-right"></i> Neutral</span></td>
+                        <td>-1.4%</td>
+                        <td class="text-warning">0.66</td>
+                        <td><a href="#">Monitor</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="grid-two gap-4 mb-6">
+            <div class="neon-card">
+                <div class="neon-card__header">
+                    <span class="neon-chip"><i class="fas fa-city"></i> Macro Pulse</span>
+                    <span class="neon-chip neutral">Global</span>
+                </div>
+                <div class="neon-card__body">
+                    <div class="neon-card__row">
+                        <span class="label">Desk sentiment</span>
+                        <span class="value value-positive">Strong</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">Volatility</span>
+                        <span class="value value-warning">Climbing</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">Overnight gap</span>
+                        <span class="value value-info">1.3%</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">Next catalyst</span>
+                        <span class="value">FOMC minutes</span>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5><i class="fas fa-table"></i> Metrics Strip</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Total Signals</span>
-                                <span class="text-success fw-semibold">128</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Stocks</span>
-                                <span class="text-info fw-semibold">82</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span>Crypto</span>
-                                <span class="text-warning fw-semibold">46</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span>Watchlist Alerts</span>
-                                <span class="text-danger fw-semibold">5</span>
-                            </div>
-                        </div>
-                    </div>
+                <div class="neon-card__footer">
+                    <span class="text-muted">Drop in your feeds and go</span>
+                    <a href="#" class="btn-glow btn-outline"><i class="fas fa-arrow-right"></i></a>
                 </div>
+            </div>
+            <div class="market-callout">
+                <strong>Analyst Quote</strong>
+                <p class="mb-3">“Liquidity pockets formed around mega-cap tech with scalping bots rotating capital every 42 minutes. Reuse the neon card layout to keep context consistent between research and execution.”</p>
+                <p class="mb-0">— Lead Scalping Strategist</p>
             </div>
         </section>
 
-        <section>
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-clipboard-check"></i> Action Items</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-warehouse"></i> Desk Enablement</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <ul class="list-unstyled mb-0">
-                                        <li class="mb-2"><i class="fas fa-circle text-success me-2"></i>Activate revised scalping policy for Asia session.</li>
-                                        <li class="mb-2"><i class="fas fa-circle text-info me-2"></i>Sync liquidity maps with broker partners.</li>
-                                        <li><i class="fas fa-circle text-warning me-2"></i>Schedule compliance review on new crypto triggers.</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-headset"></i> Client Conversations</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>Circulate this report via the same neon UI, ensuring stakeholders move from research to action inside a familiar shell.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <footer class="footer-cta">
+            <h3>Need this delivered inside your client portal?</h3>
+            <div class="hero-actions">
+                <a href="#" class="btn-glow"><i class="fas fa-cloud-upload"></i>Push to Portal</a>
+                <a href="#" class="btn-glow btn-outline"><i class="fas fa-file-export"></i>Download PDF</a>
             </div>
-        </section>
+        </footer>
     </div>
 </body>
 </html>

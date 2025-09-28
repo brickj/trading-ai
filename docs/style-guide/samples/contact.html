@@ -3,128 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading-AI Consulting · Contact</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Trading AI Consulting · Contact</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../../../src/web/static/css/styles.css">
-    <link rel="stylesheet" href="../../../src/web/static/css/scalping_signals.css">
+    <link rel="stylesheet" href="../scalping-global.css">
 </head>
 <body>
-    <div class="container py-5">
-        <header class="mb-4 text-center">
-            <h1 class="mb-2"><i class="fas fa-headset me-2 text-info"></i>Contact the Trading-AI Team</h1>
-            <p class="lead">Intake flows share the same scalping-inspired chrome so clients know they are in the right place.</p>
+    <div class="container">
+        <header class="hero">
+            <span class="badge-glow"><i class="fas fa-headset"></i> Always On</span>
+            <h1>Contact the Scalping AI Team</h1>
+            <p>Intake flows, support tiers, and communication details stay inside the neon shell so clients know they are still in the scalping environment.</p>
         </header>
 
-        <section class="mb-4">
-            <div class="row g-3">
-                <div class="col-lg-6">
-                    <div class="card h-100">
-                        <div class="card-header">
-                            <h5><i class="fas fa-envelope-open-text"></i> Send Us a Message</h5>
-                        </div>
-                        <div class="card-body">
-                            <form>
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Name</label>
-                                    <input type="text" class="form-control" id="name" placeholder="Alex Mercer">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Work Email</label>
-                                    <input type="email" class="form-control" id="email" placeholder="alex@fund.com">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="desk" class="form-label">Desk Focus</label>
-                                    <select id="desk" class="form-select">
-                                        <option>Equities</option>
-                                        <option>Crypto</option>
-                                        <option>Options</option>
-                                        <option>Multi-Asset</option>
-                                    </select>
-                                </div>
-                                <div class="mb-4">
-                                    <label for="message" class="form-label">Message</label>
-                                    <textarea id="message" class="form-control" rows="4" placeholder="Tell us about the scalping workflow you want to evolve."></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-success w-100"><i class="fas fa-paper-plane me-2"></i>Submit</button>
-                            </form>
-                        </div>
+        <section class="grid-two gap-4 mb-6">
+            <article class="glass-card">
+                <h4><i class="fas fa-inbox text-success"></i> Kickoff Intake</h4>
+                <form class="contact-form">
+                    <div>
+                        <label for="name">Full name</label>
+                        <input type="text" id="name" placeholder="Your name">
+                    </div>
+                    <div>
+                        <label for="email">Work email</label>
+                        <input type="email" id="email" placeholder="trader@desk.com">
+                    </div>
+                    <div>
+                        <label for="interest">Primary interest</label>
+                        <select id="interest">
+                            <option>Run scalping analysis</option>
+                            <option>Automate LLM oversight</option>
+                            <option>Embed neon UI in my app</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="message">Describe your stack</label>
+                        <textarea id="message" rows="4" placeholder="Tell us about your strategy, venues, and timelines..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-glow"><i class="fas fa-paper-plane"></i>Send Intake</button>
+                </form>
+            </article>
+            <article class="neon-card">
+                <div class="neon-card__header">
+                    <span class="neon-chip"><i class="fas fa-clock"></i> Response SLA</span>
+                    <span class="neon-chip neutral">24 / 5</span>
+                </div>
+                <div class="neon-card__body">
+                    <div class="neon-card__row">
+                        <span class="label">Primary channel</span>
+                        <span class="value">Neon client portal</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">Average reply time</span>
+                        <span class="value value-positive">32 minutes</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">Escalation desk</span>
+                        <span class="value value-warning">On-call engineer</span>
+                    </div>
+                    <div class="neon-card__row">
+                        <span class="label">After-hours</span>
+                        <span class="value value-info">Pager + Telegram</span>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="modern-card h-100">
-                        <div class="modern-card-header">
-                            <span class="modern-badge"><i class="fas fa-calendar"></i> Engagement Timeline</span>
-                            <span class="text-muted small">Updated daily</span>
-                        </div>
-                        <div class="modern-card-body">
-                            <div class="modern-card-row">
-                                <span class="label">Week 1</span>
-                                <span class="value">Scalping audit</span>
-                            </div>
-                            <div class="modern-card-row">
-                                <span class="label">Week 2</span>
-                                <span class="value">UI alignment</span>
-                            </div>
-                            <div class="modern-card-row">
-                                <span class="label">Week 3</span>
-                                <span class="value">Runbook import</span>
-                            </div>
-                            <div class="modern-card-row">
-                                <span class="label">Week 4</span>
-                                <span class="value positive">Go-live</span>
-                            </div>
-                        </div>
-                        <div class="modern-card-footer">
-                            <button><i class="fas fa-clock"></i></button>
-                            <button><i class="fas fa-share"></i></button>
-                        </div>
-                    </div>
+                <div class="neon-card__footer">
+                    <span class="text-muted">All numbers live in `/scalping_signals` too</span>
+                    <a href="#" class="btn-glow btn-outline"><i class="fas fa-arrow-right"></i></a>
                 </div>
-            </div>
+            </article>
         </section>
 
-        <section>
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-map-marker-alt"></i> Other Ways to Connect</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-phone"></i> Trading Desk Hotline</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>+1 (415) 555-0124<br>24/7 coverage for active client incidents.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-map"></i> HQ</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>575 Market Street<br>San Francisco, CA</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="modern-card h-100">
-                                <div class="modern-card-header">
-                                    <span class="modern-badge"><i class="fas fa-comments"></i> Slack Connect</span>
-                                </div>
-                                <div class="modern-card-body">
-                                    <p>Join the neon-branded client channel to share charts, runbooks, and scalping signals in real time.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <section class="glass-card mb-6">
+            <h4><i class="fas fa-comments text-success"></i> Preferred Channels</h4>
+            <ul class="list-unstyled mb-0">
+                <li><i class="fas fa-circle"></i>Neon client portal (secure messaging, live dashboards)</li>
+                <li><i class="fas fa-circle"></i>Dedicated Slack or Symphony bridge</li>
+                <li><i class="fas fa-circle"></i>Signal-triggered Webex war rooms</li>
+            </ul>
         </section>
+
+        <footer class="footer-cta">
+            <h3>Need immediate scalping assistance?</h3>
+            <div class="hero-actions">
+                <a class="btn-glow" href="#"><i class="fas fa-phone"></i>Call the Desk</a>
+                <a class="btn-glow btn-outline" href="#"><i class="fas fa-message"></i>Open Live Chat</a>
+            </div>
+            <p class="footer-note">Reuses the same neon gradients, glows, and typography as the production app.</p>
+        </footer>
     </div>
 </body>
 </html>
