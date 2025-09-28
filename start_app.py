@@ -150,7 +150,12 @@ def check_dependencies():
 
     for package in required_packages:
         try:
-            __import__(package.replace('-', '_'))
+            if package == 'flask_socketio':
+                __import__('flask_socketio')
+            elif package == 'flask':
+                __import__('flask')
+            else:
+                __import__(package.replace('-', '_'))
         except ImportError:
             missing_packages.append(package)
 
@@ -206,8 +211,8 @@ def kill_existing_processes():
             # More targeted kill for Flask apps
             subprocess.run(['pkill', '-f', 'flask'], capture_output=True)
             subprocess.run(['pkill', '-f', 'socketio'], capture_output=True)
-            subprocess.run(['lsof', '-ti:5001'], capture_output=True).stdout
-            if result := subprocess.run(['lsof', '-ti:5001'], capture_output=True).stdout.strip():
+            result = subprocess.run(['lsof', '-ti:5001'], capture_output=True).stdout.strip()
+            if result:
                 subprocess.run(['kill', '-9'] + result.decode().split(), capture_output=True)
 
         print_status("Stopped existing processes")
