@@ -3,140 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading AI Consulting · Market Report</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../scalping-global.css">
+    <title>Trading-AI Consulting · Market Intelligence Report</title>
+    <link rel="stylesheet" href="../global-styles.css">
 </head>
-<body>
-    <div class="container">
-        <header class="hero">
-            <span class="badge-glow"><i class="fas fa-file-lines"></i> Client Brief</span>
-            <h1>Weekly Scalping Market Intelligence</h1>
-            <p>This report uses the same neon-glass aesthetic as the live scalping dashboard so research briefs feel like an extension of the trading console.</p>
+<body class="page page--report">
+    <main class="page__content">
+        <header class="section-header">
+            <span class="section-header__eyebrow">Weekly Readout</span>
+            <h2 class="section-header__title">AI-Powered Market Intelligence</h2>
+            <p class="section-header__subtitle">Static report styling reuses the same tokens as scalping analytics, ensuring parity between dashboards and distributed PDFs.</p>
         </header>
 
-        <section class="summary-pill">
-            <div class="summary-pill__metric">
-                <i class="fas fa-bolt"></i>
-                <div>
-                    <strong>Top Momentum: NVDA</strong>
-                    <span>+6.8% session over session</span>
-                </div>
-            </div>
-            <div class="summary-pill__metric">
-                <i class="fas fa-water"></i>
-                <div>
-                    <strong>Liquidity Pocket</strong>
-                    <span>10:45 - 11:30 ET</span>
-                </div>
-            </div>
-            <div class="summary-pill__metric">
-                <i class="fas fa-shield-virus"></i>
-                <div>
-                    <strong>Risk Level</strong>
-                    <span class="text-warning">Elevated</span>
-                </div>
-            </div>
-        </section>
-
-        <section class="grid-two gap-4 mb-6">
-            <article class="glass-card">
-                <h4><i class="fas fa-microscope text-success"></i> Analyst Summary</h4>
-                <p>AI-triggered rebalance flows from macro funds amplified the same intraday surges our scalping stack flagged at the European open.</p>
-                <p>Momentum clusters persisted through the US session as automated trading desks mirrored activity, validating the short-cycle strategies outlined in last week's brief.</p>
-            </article>
-            <article class="glass-card">
-                <h4><i class="fas fa-signal text-success"></i> Playbook Highlights</h4>
-                <ul class="list-unstyled mb-0">
-                    <li><i class="fas fa-circle"></i>Deploy long bias on semiconductor basket while keeping hedges tight.</li>
-                    <li><i class="fas fa-circle"></i>Monitor ETH/BTC ratio; L2 flows hint at breakout in next 48 hours.</li>
-                    <li><i class="fas fa-circle"></i>LLM oversight flagged three prompts for compliance review — addressed.</li>
+        <section class="layout-grid layout-grid--two">
+            <article class="card">
+                <h3 class="card__title">Macro Signals</h3>
+                <p class="card__meta">LLM summarization of macro datasets with confident highlights.</p>
+                <ul>
+                    <li><strong>Growth Pulse:</strong> US PMI surprise driving short-term momentum in industrial ETFs.</li>
+                    <li><strong>Liquidity Flow:</strong> Stablecoin rotation continues with 6% WoW inflow.</li>
+                    <li><strong>Regulatory Radar:</strong> MiCA derivative clauses flagged for high-likelihood adoption.</li>
                 </ul>
             </article>
+            <article class="card">
+                <h3 class="card__title">Desk Priorities</h3>
+                <p class="card__meta">Actionable initiatives for cross-functional teams.</p>
+                <div class="pill-group">
+                    <span class="pill">Refine Risk Bands</span>
+                    <span class="pill">Deploy News Sentiment Bot</span>
+                    <span class="pill">Backtest ESG Overlay</span>
+                </div>
+                <p style="margin-top: var(--spacing-sm); color: var(--color-text-muted);">Modeled on the quick actions component from scalping signals.</p>
+            </article>
         </section>
 
-        <section class="glass-card mb-6">
-            <h4><i class="fas fa-table text-success"></i> Opportunity Matrix</h4>
-            <table class="table-neon">
-                <thead>
-                    <tr>
-                        <th>Asset</th>
-                        <th>Bias</th>
-                        <th>Momentum</th>
-                        <th>Confidence</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>NVDA</td>
-                        <td><span class="neon-chip"><i class="fas fa-arrow-up"></i> Long</span></td>
-                        <td>+6.8%</td>
-                        <td class="text-success">0.92</td>
-                        <td><a href="#">Review</a></td>
-                    </tr>
-                    <tr>
-                        <td>TSLA</td>
-                        <td><span class="neon-chip warning"><i class="fas fa-fire"></i> Momentum</span></td>
-                        <td>+3.1%</td>
-                        <td>0.74</td>
-                        <td><a href="#">Flag</a></td>
-                    </tr>
-                    <tr>
-                        <td>BTC</td>
-                        <td><span class="neon-chip neutral"><i class="fas fa-arrows-left-right"></i> Neutral</span></td>
-                        <td>-1.4%</td>
-                        <td class="text-warning">0.66</td>
-                        <td><a href="#">Monitor</a></td>
-                    </tr>
-                </tbody>
-            </table>
+        <section style="margin-top: var(--spacing-xl);">
+            <article class="card">
+                <h3 class="card__title">Signal Drilldown</h3>
+                <p class="card__meta">Pairing narrative with tabular evidence keeps parity with app views.</p>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Theme</th>
+                            <th>Confidence</th>
+                            <th>Impact Horizon</th>
+                            <th>Recommended Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Semiconductor Demand Spike</td>
+                            <td>89%</td>
+                            <td>4 weeks</td>
+                            <td>Upsize long gamma strategies</td>
+                        </tr>
+                        <tr>
+                            <td>FX Carry Reversal</td>
+                            <td>78%</td>
+                            <td>2 weeks</td>
+                            <td>Rotate to hedged ETF sleeve</td>
+                        </tr>
+                        <tr>
+                            <td>Energy Storage Momentum</td>
+                            <td>74%</td>
+                            <td>6 weeks</td>
+                            <td>Initiate thematic basket</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </article>
         </section>
+    </main>
 
-        <section class="grid-two gap-4 mb-6">
-            <div class="neon-card">
-                <div class="neon-card__header">
-                    <span class="neon-chip"><i class="fas fa-city"></i> Macro Pulse</span>
-                    <span class="neon-chip neutral">Global</span>
-                </div>
-                <div class="neon-card__body">
-                    <div class="neon-card__row">
-                        <span class="label">Desk sentiment</span>
-                        <span class="value value-positive">Strong</span>
-                    </div>
-                    <div class="neon-card__row">
-                        <span class="label">Volatility</span>
-                        <span class="value value-warning">Climbing</span>
-                    </div>
-                    <div class="neon-card__row">
-                        <span class="label">Overnight gap</span>
-                        <span class="value value-info">1.3%</span>
-                    </div>
-                    <div class="neon-card__row">
-                        <span class="label">Next catalyst</span>
-                        <span class="value">FOMC minutes</span>
-                    </div>
-                </div>
-                <div class="neon-card__footer">
-                    <span class="text-muted">Drop in your feeds and go</span>
-                    <a href="#" class="btn-glow btn-outline"><i class="fas fa-arrow-right"></i></a>
-                </div>
-            </div>
-            <div class="market-callout">
-                <strong>Analyst Quote</strong>
-                <p class="mb-3">“Liquidity pockets formed around mega-cap tech with scalping bots rotating capital every 42 minutes. Reuse the neon card layout to keep context consistent between research and execution.”</p>
-                <p class="mb-0">— Lead Scalping Strategist</p>
-            </div>
-        </section>
-
-        <footer class="footer-cta">
-            <h3>Need this delivered inside your client portal?</h3>
-            <div class="hero-actions">
-                <a href="#" class="btn-glow"><i class="fas fa-cloud-upload"></i>Push to Portal</a>
-                <a href="#" class="btn-glow btn-outline"><i class="fas fa-file-export"></i>Download PDF</a>
-            </div>
-        </footer>
-    </div>
+    <footer class="footer">
+        <span>Report generated by Trading-AI Research Studio</span>
+        <div class="footer__links">
+            <a href="#">Download PDF</a>
+            <a href="#">Share to Slack</a>
+        </div>
+    </footer>
 </body>
 </html>

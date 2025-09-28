@@ -160,7 +160,9 @@ class HistoricalDataUpdater:
                     data_points = result['data_points']
                     
                     # Need update if data is old or insufficient
-                    return (latest_date < cutoff_date or data_points < 400)  # At least 400 days of data
+                    # Convert cutoff_date to date object to match latest_date type
+                    cutoff_date_only = cutoff_date.date()
+                    return (latest_date < cutoff_date_only or data_points < 400)  # At least 400 days of data
                     
         except Exception as e:
             logger.error(f"Error checking update need for {symbol}: {e}")

@@ -1,69 +1,45 @@
-# Scalping-Inspired Global System
+# Global Style Recommendations for Trading-AI
 
-The production `/scalping_signals` screen already ships the neon glassmorphism aesthetic the stakeholders prefer. This document extracts the reusable rules from that page and packages them into a single global layer (`scalping-global.css`) that any static prototype or Flask template can import.
+The existing scalping signals page sets a strong baseline for a cohesive, modern interface. The recommendations below translate that look and feel into a reusable global stylesheet that can be applied across marketing, analytics, and operations surfaces.
 
-## 1. Core Files to Include
+## 1. Visual Identity
+- **Color palette**: Keep the deep navy background with electric blues and teals for accents. Use warm amber and coral for warnings and risk states to provide instant semantic clarity.
+- **Lighting effects**: Apply soft radial gradients on the page background and subtle glassmorphism on cards (`rgba` fills with thin light borders). This mirrors the depth seen on the scalping page without overwhelming content.
+- **Elevation**: Use a single shadow token (`--shadow-soft`) for cards and buttons to maintain consistent depth.
 
-1. [Bootstrap 5.3](https://getbootstrap.com/) for the responsive grid.
-2. [Font Awesome 6](https://fontawesome.com/) for iconography.
-3. [`scalping-global.css`](./scalping-global.css) for the shared trading theme.
+## 2. Typography
+- **Primary font**: `Inter` for body copy to maximize readability in dense dashboards.
+- **Display font**: `Space Grotesk` for headings, matching the futurist tone of the scalping layout.
+- **Hierarchy**: Employ `clamp()` on hero headings and maintain generous letter spacing on eyebrows/badges for a polished FinTech aesthetic.
 
-Load them in the `<head>` in the order shown so Bootstrap tokens are available before the custom scalping layer.
+## 3. Layout & Spacing
+- **Section rhythm**: Define scale-aware spacing tokens (12px–96px). Apply them to page gutters, grid gaps, and card padding to ensure consistent breathing room.
+- **Grid utilities**: Create `.layout-grid--two` and `.layout-grid--three` helpers that collapse to single column below 992px, ensuring responsive parity with existing Bootstrap layouts.
+- **Page shell**: Wrap content inside `.page` and `.page__content` containers to unify padding across Flask templates and future static pages.
 
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="scalping-global.css">
-```
+## 4. Reusable Components
+- **Cards**: Introduce a `.card` pattern with hover lift, gradient sheen, and inner light border to replicate scalping analytics cards.
+- **Badges & Pills**: Provide `.badge`, `.pill`, `.tag`, and `.chip` utilities for metadata, filters, and AI model labels.
+- **Buttons**: Offer `.button` (solid) and `.button--ghost` (outline) variants with directional hover motion. These align with the dynamic CTAs on the scalping controls.
+- **Stats**: Standardize `.stat-grid` and `.stat` modules for KPI clusters. Semantic modifiers (`.stat--success`, `.stat--warning`, etc.) map to the palette tokens.
+- **Tables & Timelines**: Include stylings for tabular analytics and linear process visuals that extend the data-heavy voice of the product.
 
-## 2. Palette & Atmosphere
+## 5. Micro-interactions
+- **Hover feedback**: Reinforce interactivity with light translate/opacity transitions (`180ms` cubic-bezier) so controls feel responsive.
+- **Dynamic glows**: Add gradient overlays on hover to emphasize actionable cards (inspired by the scalping opportunity grid).
+- **Focus states**: Pair the color palette with accessible outlines to retain keyboard usability (to be added alongside JavaScript work).
 
-`scalping-global.css` defines a dark trading desk backdrop with neon accents lifted directly from the real scalping page:
+## 6. Implementation Notes
+- Serve the stylesheet globally through `base.html` after QA on existing Bootstrap overrides.
+- Replace ad-hoc inline styles with utility classes to declutter templates.
+- Consolidate duplicated color definitions currently scattered across page-specific CSS files.
 
-- `--accent-green #00ff88` for primary actions and positive deltas.
-- `--accent-teal #38c6d9` for informational states.
-- `--accent-orange #ffaa00` for momentum or caution flags.
-- `--accent-red #ff4444` for risk states.
+## 7. Sample Pages
+Five sample static pages (see `docs/style-guide/samples/`) demonstrate the recommended stylesheet in contexts spanning marketing, analytics, reporting, and engagement. They show how to reuse the same design language across:
+1. A marketing/hero landing page.
+2. An analytics dashboard summary.
+3. A market intelligence report.
+4. A leadership team page.
+5. A call-to-action/contact surface.
 
-All cards use layered gradients, soft glows, and rounded geometry identical to the live screen so the experience feels like an extension of `/scalping_signals` no matter the content.
-
-## 3. Key Components
-
-| Component | Classes | Notes |
-| --- | --- | --- |
-| Neon cards | `.neon-card`, `.neon-card__header`, `.neon-card__row` | Recreates the tall opportunity tiles with hover lift, header badges, and stat rows. |
-| Glass panels | `.glass-card` | Mirrors the scalping filters/stat cards with gradient chrome and border glows. |
-| Summary pills | `.summary-pill`, `.summary-pill__metric` | For hero metrics or trading desk KPIs; matches the scalping summary pill styling. |
-| Chips & tags | `.neon-chip`, `.neon-chip.warning`, `.neon-chip.neutral` | Use for strategy status, asset class badges, etc. |
-| Buttons | `.btn-glow`, `.btn-glow.btn-outline` | Same neon gradients and drop shadows as the “Run Analysis” CTA. |
-| Tables | `.table-neon` | Styled to look like the opportunity matrix rows on the live screen. |
-| Timeline | `.timeline`, `.timeline__item` | Pulls the vertical alignment and markers from the operations timeline demo. |
-| Forms | `.contact-form` inputs | Pre-styled for intake flows with glowing focus states. |
-
-## 4. Layout Helpers
-
-- `.container` — Max width and padding tuned to the production layout.
-- `.card-grid` — Responsive CSS grid for 2–3 column card decks without custom media queries.
-- `.metric-grid` — 4-up stat tiles on desktop, stacked on mobile.
-- `.grid-two` — Split sections that collapse on smaller breakpoints.
-- Utility classes (`.flex`, `.flex-between`, `.gap-*`, `.text-success`) mirror the real scalping utility palette for quick compositions.
-
-## 5. Usage Patterns
-
-1. Wrap pages in `<div class="container">` to inherit the correct padding and max width.
-2. Use `.hero` plus `.badge-glow` and `.hero-actions` for above-the-fold headlines that match the scalping lead.
-3. Showcase KPIs inside `.summary-pill` or `.metric-grid` so numbers feel like trading telemetry.
-4. Present detailed breakdowns with `.neon-card` rows or `.table-neon` tables.
-5. Close pages with `.footer-cta` to reuse the neon call-to-action chrome from the scalping dashboard.
-
-## 6. Sample Implementations
-
-The following static HTML files demonstrate how the shared stylesheet adapts across common AI consulting flows while staying faithful to the scalping interface:
-
-1. [`samples/landing.html`](./samples/landing.html) — Marketing splash page with hero, service grid, and KPI pill.
-2. [`samples/dashboard.html`](./samples/dashboard.html) — Operations dashboard using neon cards, metrics, and task timeline.
-3. [`samples/market-report.html`](./samples/market-report.html) — Research brief featuring callouts, comparison tables, and analyst insights.
-4. [`samples/team.html`](./samples/team.html) — Team roster with neon talent cards and practice areas.
-5. [`samples/contact.html`](./samples/contact.html) — Intake form and support info styled like the scalping intake modal.
-
-Open them in a browser and you will see the same glow, gradients, and typography the user requested — only the content changes.
+These artifacts can be opened directly in a browser to validate visual cohesion before integrating into the Flask templates.
