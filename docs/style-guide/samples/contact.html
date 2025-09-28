@@ -4,71 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trading-AI Consulting · Contact</title>
-    <link rel="stylesheet" href="../styles/variant-nocturne.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../../../src/web/static/css/styles.css">
+    <link rel="stylesheet" href="../../../src/web/static/css/scalping_signals.css">
 </head>
-<body class="page page--contact">
-    <main class="page__content">
-        <header class="section-header">
-            <span class="section-header__eyebrow">Book a Scalping Strategy Session</span>
-            <h2 class="section-header__title">Let’s Calibrate Your Next Edge</h2>
-            <p class="section-header__subtitle">The contact surface keeps the scalping energy — luminous cards, neon outlines, and inputs that feel just like the trading console.</p>
+<body>
+    <div class="container py-5">
+        <header class="mb-4 text-center">
+            <h1 class="mb-2"><i class="fas fa-headset me-2 text-info"></i>Contact the Trading-AI Team</h1>
+            <p class="lead">Intake flows share the same scalping-inspired chrome so clients know they are in the right place.</p>
         </header>
 
-        <section class="contact-layout">
-            <article class="card form-card">
-                <h3 class="card__title">Tell Us About Your Desk</h3>
-                <p class="card__meta">We respond within one trading day with a tailored roadmap.</p>
-                <form>
-                    <div>
-                        <label for="name">Full Name</label>
-                        <input id="name" type="text" placeholder="e.g., Jordan Blake">
+        <section class="mb-4">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5><i class="fas fa-envelope-open-text"></i> Send Us a Message</h5>
+                        </div>
+                        <div class="card-body">
+                            <form>
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="name" placeholder="Alex Mercer">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Work Email</label>
+                                    <input type="email" class="form-control" id="email" placeholder="alex@fund.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="desk" class="form-label">Desk Focus</label>
+                                    <select id="desk" class="form-select">
+                                        <option>Equities</option>
+                                        <option>Crypto</option>
+                                        <option>Options</option>
+                                        <option>Multi-Asset</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="message" class="form-label">Message</label>
+                                    <textarea id="message" class="form-control" rows="4" placeholder="Tell us about the scalping workflow you want to evolve."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100"><i class="fas fa-paper-plane me-2"></i>Submit</button>
+                            </form>
+                        </div>
                     </div>
-                    <div>
-                        <label for="email">Work Email</label>
-                        <input id="email" type="email" placeholder="you@fund.com">
-                    </div>
-                    <div>
-                        <label for="desk">Primary Focus</label>
-                        <select id="desk">
-                            <option>Equities</option>
-                            <option>Crypto</option>
-                            <option>Futures</option>
-                            <option>FX</option>
-                            <option>Cross-Asset</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="message">What’s the mandate?</label>
-                        <textarea id="message" placeholder="Share latency targets, signal gaps, or tooling pain points."></textarea>
-                    </div>
-                    <button class="button" type="submit">Schedule Discovery Call</button>
-                </form>
-            </article>
-
-            <aside class="marker-grid">
-                <div class="marker">
-                    <div class="marker__label">Signal Clinics</div>
-                    <div class="marker__meta">Weekly 60-minute deep dives with scalping strategists.</div>
                 </div>
-                <div class="marker">
-                    <div class="marker__label">Infrastructure Assessments</div>
-                    <div class="marker__meta">Trace latency, resiliency, and coverage using our production playbooks.</div>
+                <div class="col-lg-6">
+                    <div class="modern-card h-100">
+                        <div class="modern-card-header">
+                            <span class="modern-badge"><i class="fas fa-calendar"></i> Engagement Timeline</span>
+                            <span class="text-muted small">Updated daily</span>
+                        </div>
+                        <div class="modern-card-body">
+                            <div class="modern-card-row">
+                                <span class="label">Week 1</span>
+                                <span class="value">Scalping audit</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Week 2</span>
+                                <span class="value">UI alignment</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Week 3</span>
+                                <span class="value">Runbook import</span>
+                            </div>
+                            <div class="modern-card-row">
+                                <span class="label">Week 4</span>
+                                <span class="value positive">Go-live</span>
+                            </div>
+                        </div>
+                        <div class="modern-card-footer">
+                            <button><i class="fas fa-clock"></i></button>
+                            <button><i class="fas fa-share"></i></button>
+                        </div>
+                    </div>
                 </div>
-                <div class="marker">
-                    <div class="marker__label">Launch Support</div>
-                    <div class="marker__meta">Bring the scalping UI and alerting experience to your trading operations.</div>
-                </div>
-            </aside>
+            </div>
         </section>
-    </main>
 
-    <footer class="footer">
-        <span>NY · LDN · SG · Remote</span>
-        <div class="footer__links">
-            <a href="#">Telegram</a>
-            <a href="#">Signal Status</a>
-            <a href="#">Security Center</a>
-        </div>
-    </footer>
+        <section>
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-map-marker-alt"></i> Other Ways to Connect</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="modern-card h-100">
+                                <div class="modern-card-header">
+                                    <span class="modern-badge"><i class="fas fa-phone"></i> Trading Desk Hotline</span>
+                                </div>
+                                <div class="modern-card-body">
+                                    <p>+1 (415) 555-0124<br>24/7 coverage for active client incidents.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="modern-card h-100">
+                                <div class="modern-card-header">
+                                    <span class="modern-badge"><i class="fas fa-map"></i> HQ</span>
+                                </div>
+                                <div class="modern-card-body">
+                                    <p>575 Market Street<br>San Francisco, CA</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="modern-card h-100">
+                                <div class="modern-card-header">
+                                    <span class="modern-badge"><i class="fas fa-comments"></i> Slack Connect</span>
+                                </div>
+                                <div class="modern-card-body">
+                                    <p>Join the neon-branded client channel to share charts, runbooks, and scalping signals in real time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
 </body>
 </html>

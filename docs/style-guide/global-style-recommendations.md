@@ -1,51 +1,46 @@
-# Scalping-Inspired Global Style Recommendations
+# Scalping Signals Global Styling Blueprint
 
-The production scalping signals experience sets the visual language we want everywhere else: deep navy atmospherics, neon glows, glass cards, and confident typography. This document captures how to translate that interface into a reusable toolkit plus five style variants you can apply across pages without losing the core identity.
+The production `/scalping_signals` screen already nails the aesthetic the team wants across the app. Rather than inventing new tokens, the guidance below explains how to re-use that implementation everywhere else.
 
-## 1. Core Visual Identity
-- **Color system**: Start from the scalping palette — near-black backgrounds, emerald/teal primaries, electric blue secondaries, and warm amber/pink risk cues. Every variant keeps those anchors while bending accent ratios for different moods.
-- **Lighting**: Layer radial gradients behind the page shell and use translucent card fills with thin inner borders. The glow stacking in `src/web/static/css/scalping_signals.css` is mirrored through reusable variables.
-- **Elevation**: Limit depth to one or two shadow intensities. Motion comes from hover lift + glow rather than heavy drop shadows, keeping parity with the live scalping grid.
+## 1. Source of Truth
+- **Primary stylesheet**: [`src/web/static/css/styles.css`](../../src/web/static/css/styles.css) defines the near-black backdrop, neon gradients, card chrome, and typography defaults for the whole Flask app.
+- **Scalping enhancements**: [`src/web/static/css/scalping_signals.css`](../../src/web/static/css/scalping_signals.css) layers on the modern card grid, summary pills, and momentum treatments seen on the live scalping page.
+- **Framework dependencies**: Bootstrap 5.3 and Font Awesome 6 icons (already used by `base.html`) are required so that grid classes, buttons, and icons render correctly.
 
-## 2. Typography
-- **Body**: `Inter` for legibility in data-dense layouts.
-- **Headlines**: `Space Grotesk` to retain the futurist tone of the scalping header modules.
-- **Eyebrows & badges**: Uppercase, high letter spacing, and subtle neon color pulls communicate precision tooling.
+When building any new surface, load those two CSS files after Bootstrap and you will inherit the exact palette, glows, and glass cards captured in the screenshot above.
 
-## 3. Layout & Spacing
-- **Containers**: Wrap pages with `.page` and `.page__content` to enforce the same paddings used on the scalping view.
-- **Grid helpers**: `.layout-grid--two`, `.layout-grid--three`, `.metric-grid`, and `.stat-grid` collapse gracefully on small breakpoints without breaking the rigid card rhythm.
-- **Spacing scale**: Clamp-driven spacing tokens (0.25rem–4.5rem) ensure wide monitors feel expansive while laptops stay tight.
+## 2. Color & Lighting
+- **Background**: `styles.css` paints a radial-gradient wash over `#050505`, matching the dark trading desk atmosphere.
+- **Accent colors**: Keep the scalping primaries — `#00ff88` for positive / action states, `#38c6d9` for informational tones, `#ffaa00` for momentum alerts, and `#ff4444` for risk states.
+- **Glow treatment**: Cards and buttons use linear gradient overlays and subtle drop shadows (`var(--card-shadow)`) so hover states feel luminous without heavy blur filters.
 
-## 4. Component System
-- **Cards**: `.card` surfaces blend glassmorphism, border glows, and hover sheen identical to scalping opportunity cards.
-- **Stats**: `.stat-grid`, `.metric-grid`, and modifiers like `.stat--success` reuse semantic color language from the production screen.
-- **Interactive pills**: `.chip`, `.tag`, `.pill`, and `.badge` echo scalping filters and metadata chips.
-- **Timelines & tables**: Neon connectors, compact typography, and zebra hover states mirror scalping history panels.
-- **Forms**: Inputs lean on dark chrome backgrounds with aqua focus rings so even contact workflows feel like traders’ tooling.
+## 3. Typography & Iconography
+- **Font stack**: Inherit the Inter-based stack from `styles.css`; headline weights jump to 600 for confident dashboards.
+- **Iconography**: Font Awesome icons provide the same semantic cues (chart line, bolt, sync) that orient users on the scalping screen. Pair icons with the neon accent colors noted above.
 
-## 5. Motion & Accessibility
-- **Transitions**: 220ms ease lifts on hover provide responsiveness without jitter.
-- **Focus**: Accent-colored outlines appear on inputs/buttons to maintain keyboard usability alongside glow effects.
-- **Performance**: Gradients and blurs are pure CSS (no images) to keep bundle weight small when ported into Flask templates.
+## 4. Layout System
+- **Containers**: Wrap content in a `.container` with generous `py-5` or `mt-4` spacing, mirroring the vertical rhythm of the scalping template.
+- **Cards**: Use `.card` for broader sections and `.modern-card` (from `scalping_signals.css`) when you need the tall opportunity panels with glass headers and gradient footers.
+- **Data pills**: `.modern-summary-pill`, `.badge`, `.chip`, and `.tag` classes are ready-made for metric strips, status pills, and filter controls.
+- **Grids**: Lean on Bootstrap’s `.row` / `.col-*` utilities, supplemented by `.g-3` gaps to achieve the tight, card-dense layout already shipping in production.
 
-## 6. File Structure
-The reusable styling lives in `docs/style-guide/styles/`:
-- `scalping-core.css` – shared tokens, layout primitives, and component rules extracted from the scalping page aesthetic.
-- `variant-aurora.css` – bright green/teal mix for hero-driven marketing.
-- `variant-circuit.css` – electric blue/violet blend tuned for dashboards.
-- `variant-pulse.css` – teal/amber treatment suited for reports.
-- `variant-nebula.css` – violet/neon mix for team and culture narratives.
-- `variant-nocturne.css` – emerald/blue balance for contact and intake flows.
+## 5. Interactions & States
+- **Hover**: Buttons and cards lift ~4px and intensify glows on hover. Do not add additional transitions — reuse the `transition` rules embedded in the shared CSS.
+- **Filters & toggles**: `.btn-outline-*` controls inherit the scalping outlines; combine with `.filter-btn` modifiers when porting filtering toolbars.
+- **Focus**: The default focus outlines in `styles.css` meet accessibility targets while staying on-brand; avoid overriding them.
 
-Each variant `@import`s the core file, overrides color variables, and tweaks a few context-specific patterns so you can mix-and-match while staying unmistakably “scalping”.
+## 6. Implementation Checklist
+1. Include Bootstrap + Font Awesome via CDN (see `src/web/templates/base.html`).
+2. Link `styles.css`, then `scalping_signals.css` to pull in the neon trading theme.
+3. Structure markup using the same component patterns (`.card`, `.modern-card`, `.modern-card-header`, summary pills) that appear on `/scalping_signals`.
+4. Populate your content — the styling will automatically match the live scalping interface.
 
 ## 7. Sample Pages
-Five static examples under `docs/style-guide/samples/` demonstrate the variants:
-1. `landing.html` → Aurora palette.
-2. `dashboard.html` → Circuit palette.
-3. `market-report.html` → Pulse palette.
-4. `team.html` → Nebula palette.
-5. `contact.html` → Nocturne palette.
+Open the static samples in `docs/style-guide/samples/` to see how the production scalping aesthetic stretches across common experiences:
+1. `landing.html`
+2. `dashboard.html`
+3. `market-report.html`
+4. `team.html`
+5. `contact.html`
 
-Open them in a browser to confirm the experience mirrors the real scalping UI while offering enough variation for different storytelling moments. Drop any template into Flask, reference the desired variant stylesheet, and you have a production-ready surface aligned with the original request.
+Each file imports the exact production CSS and only swaps the markup/content, proving that the whole app can share the same look the user requested.
