@@ -1,0 +1,42 @@
+@import url('./scalping-core.css');
+
+:root {
+    --accent-primary: #8f6bff;
+    --accent-secondary: #33d9ff;
+    --accent-tertiary: #ff72e1;
+    --accent-gradient: linear-gradient(135deg, #8f6bff 0%, #33d9ff 50%, #ff72e1 100%);
+    --accent-primary-soft: rgba(143, 107, 255, 0.18);
+    --color-border: rgba(143, 107, 255, 0.28);
+    --color-border-strong: rgba(143, 107, 255, 0.44);
+    --color-surface: rgba(16, 14, 32, 0.82);
+    --color-surface-alt: rgba(20, 18, 40, 0.8);
+    --bg-gradient: radial-gradient(circle at 12% 8%, rgba(143, 107, 255, 0.24), transparent 52%),
+        radial-gradient(circle at 90% 6%, rgba(255, 114, 225, 0.2), transparent 55%),
+        linear-gradient(210deg, #030314 0%, #05051b 100%);
+    --bg-spotlight: radial-gradient(circle at 50% 120%, rgba(51, 217, 255, 0.22), rgba(3, 3, 20, 0) 58%);
+}
+
+.page--team .avatar-card {
+    background: linear-gradient(160deg, rgba(20, 18, 40, 0.85), rgba(12, 10, 28, 0.9));
+    border-color: rgba(143, 107, 255, 0.35);
+}
+
+.page--team .avatar-card img {
+    border-color: rgba(255, 114, 225, 0.55);
+}
+
+.page--team .badge {
+    background: rgba(143, 107, 255, 0.18);
+    color: #e5ddff;
+}
+
+.page--team .tag {
+    background: rgba(143, 107, 255, 0.18);
+    border-color: rgba(143, 107, 255, 0.32);
+}
+
+.page--team .timeline__item {
+    background: rgba(20, 18, 40, 0.82);
+    border-radius: 16px;
+    padding: var(--spacing-sm) var(--spacing-md);
+}

@@ -1,0 +1,41 @@
+@import url('./scalping-core.css');
+
+:root {
+    --accent-primary: #37c7ff;
+    --accent-secondary: #7a5cff;
+    --accent-tertiary: #b051ff;
+    --accent-gradient: linear-gradient(120deg, #37c7ff 0%, #7a5cff 55%, #b051ff 100%);
+    --accent-primary-soft: rgba(55, 199, 255, 0.15);
+    --color-border: rgba(110, 192, 255, 0.32);
+    --color-border-strong: rgba(110, 192, 255, 0.48);
+    --color-surface: rgba(9, 18, 36, 0.88);
+    --color-surface-alt: rgba(12, 24, 46, 0.82);
+    --bg-gradient: radial-gradient(circle at 0% 12%, rgba(63, 205, 255, 0.35), transparent 48%),
+        radial-gradient(circle at 100% 0%, rgba(119, 90, 255, 0.28), transparent 52%),
+        linear-gradient(180deg, #02040c 0%, #030714 100%);
+    --bg-spotlight: radial-gradient(circle at 70% 120%, rgba(119, 90, 255, 0.25), rgba(3, 7, 20, 0) 64%);
+}
+
+.page--dashboard .stat::before {
+    background: linear-gradient(140deg, rgba(55, 199, 255, 0.4), rgba(119, 90, 255, 0.16));
+}
+
+.page--dashboard .table thead {
+    background: rgba(55, 199, 255, 0.08);
+}
+
+.page--dashboard .pill {
+    background: rgba(122, 92, 255, 0.22);
+    color: #a7c2ff;
+}
+
+.page--dashboard .timeline__item {
+    background: rgba(8, 15, 32, 0.78);
+    border-radius: 18px;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.page--dashboard .timeline__item::before {
+    left: calc(-1 * var(--spacing-lg) + 4px);
+    background: linear-gradient(180deg, rgba(178, 116, 255, 0.95), rgba(55, 199, 255, 0.45));
+}

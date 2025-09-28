@@ -1,0 +1,41 @@
+@import url('./scalping-core.css');
+
+:root {
+    --accent-primary: #33ffc9;
+    --accent-secondary: #ffc661;
+    --accent-tertiary: #ff73b8;
+    --accent-gradient: linear-gradient(135deg, #33ffc9 0%, #ffc661 55%, #ff73b8 100%);
+    --accent-primary-soft: rgba(51, 255, 201, 0.16);
+    --color-border: rgba(255, 198, 97, 0.32);
+    --color-border-strong: rgba(255, 198, 97, 0.48);
+    --color-surface: rgba(13, 20, 32, 0.86);
+    --color-surface-alt: rgba(18, 26, 39, 0.8);
+    --bg-gradient: radial-gradient(circle at 8% 6%, rgba(255, 198, 97, 0.18), transparent 52%),
+        radial-gradient(circle at 90% 12%, rgba(255, 115, 184, 0.18), transparent 55%),
+        linear-gradient(200deg, #02040a 0%, #040813 100%);
+    --bg-spotlight: radial-gradient(circle at 55% 115%, rgba(51, 255, 201, 0.22), rgba(2, 4, 10, 0) 60%);
+}
+
+.page--market-report .metric {
+    background: rgba(10, 18, 30, 0.86);
+    border-color: rgba(255, 198, 97, 0.25);
+}
+
+.page--market-report .metric__trend {
+    background: rgba(255, 198, 97, 0.16);
+    border-radius: 999px;
+    padding: var(--spacing-2xs) var(--spacing-xs);
+}
+
+.page--market-report .metric__trend.negative {
+    background: rgba(255, 115, 184, 0.2);
+}
+
+.page--market-report blockquote {
+    border-left-color: rgba(255, 198, 97, 0.85);
+    background: rgba(12, 20, 32, 0.82);
+}
+
+.page--market-report .listing__row {
+    border-color: rgba(255, 198, 97, 0.24);
+}
