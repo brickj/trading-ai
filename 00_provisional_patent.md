@@ -23,17 +23,17 @@ Large language models (LLMs) have shown promise in financial analysis and tradin
 5. **Parsing Ambiguity**: Unstructured outputs lead to misinterpretation and incorrect trading signals
 
 #### Prior Art Analysis
-**Existing RAG Systems**: Generic retrieval systems (e.g., LangChain, LlamaIndex) retrieve documents without financial domain specialization or hierarchical weighting schemes. These systems treat all retrieved content equally, leading to signal dilution.
+**Existing RAG Systems**: Generic retrieval systems (e.g., LangChain, LlamaIndex) retrieve documents without financial domain specialization or hierarchical weighting schemes. These systems treat all retrieved content equally, leading to signal dilution. Reference: "LangChain: Building Applications with LLMs" (2023).
 
-**Financial AI Systems**: Current financial AI solutions (e.g., FinGPT, BloombergGPT) focus on model training but lack real-time fact-checking pipelines or hallucination prevention mechanisms.
+**Financial AI Systems**: Current financial AI solutions (e.g., FinGPT, BloombergGPT) focus on model training but lack real-time fact-checking pipelines or hallucination prevention mechanisms. Reference: "FinGPT: Open-Source Financial Large Language Models" (2023), "BloombergGPT: A Large Language Model for Finance" (2023).
 
-**Multi-Model Systems**: Ensemble methods exist in general AI (e.g., model averaging, voting) but lack financial-specific disagreement detection or market-adaptive calibration.
+**Multi-Model Systems**: Ensemble methods exist in general AI (e.g., model averaging, voting) but lack financial-specific disagreement detection or market-adaptive calibration. Reference: "Ensemble Methods in Machine Learning" (2000).
 
-**Sentiment Analysis**: Traditional sentiment analysis (e.g., VADER, TextBlob) uses static thresholds and fails to adapt to market volatility or sector-specific conditions.
+**Sentiment Analysis**: Traditional sentiment analysis (e.g., VADER, TextBlob) uses static thresholds and fails to adapt to market volatility or sector-specific conditions. Reference: "VADER: A Parsimonious Rule-Based Model for Sentiment Analysis" (2014).
 
-**Fact-Checking Systems**: General fact-checking systems (e.g., ClaimBuster, Factmata) exist but lack financial-specific validation against trading APIs or real-time market data.
+**Fact-Checking Systems**: General fact-checking systems (e.g., ClaimBuster, Factmata) exist but lack financial-specific validation against trading APIs or real-time market data. Reference: "ClaimBuster: The First Automated Fact-Checking System" (2017).
 
-**Key Gap**: No existing system combines hierarchical financial RAG with real-time fact-checking, market-adaptive sentiment calibration, and multi-model ensemble disagreement detection in an integrated trading decision pipeline.
+**Key Gap**: No existing system combines hierarchical financial RAG with real-time fact-checking, market-adaptive sentiment calibration, and multi-model ensemble disagreement detection in an integrated trading decision pipeline. The present invention addresses this gap through a novel combination of existing technologies.
 
 ### Problems Solved
 - Prevents trading decisions based on hallucinated financial figures
@@ -69,6 +69,21 @@ The present invention's novelty lies in the **unique combination** of five integ
 - Eliminates parsing errors through structured output validation
 - Provides confidence measures for risk management
 - Enables automated trading decision execution
+
+### Validation Metrics & Enablement Evidence
+**Performance Targets** (to be validated through prototype implementation):
+- **Hallucination Reduction**: Target >95% reduction in fabricated financial data through real-time API validation
+- **Sentiment Accuracy**: Target 15% improvement during high-volatility periods (VIX >30) compared to static threshold systems
+- **Parsing Error Elimination**: Target 100% elimination of parsing errors through structured JSON schema enforcement
+- **Disagreement Detection**: Target 90% accuracy in detecting high-disagreement scenarios requiring human review
+- **Market Adaptation**: Target 20% improvement in recommendation accuracy across different market regimes (bull/bear/sideways)
+
+**Validation Methodology**:
+1. **Historical Backtesting**: Test system against 2+ years of historical market data
+2. **A/B Testing**: Compare augmented vs. baseline LLM performance on live trading decisions
+3. **Cross-Validation**: Validate across multiple market sectors and volatility regimes
+4. **Human Expert Review**: Validate high-disagreement cases against human trader decisions
+5. **API Validation**: Measure fact-checking accuracy against authoritative financial data sources
 
 ---
 
@@ -337,44 +352,50 @@ graph LR
 
 ### Claim 1 (Independent - Combination Method)
 A computer-implemented method for preventing LLM hallucination in financial trading decisions through an integrated pipeline, comprising:
-(a) retrieving financial news through a hierarchical RAG system that applies specific weights of 3.0 for ticker-specific news, 1.5 for sector news, and 1.0 for general market news;
+(a) retrieving financial news through a hierarchical RAG system that applies weighted prioritization with ticker-specific news receiving higher weights than sector news, and sector news receiving higher weights than general market news;
 (b) validating LLM outputs against authoritative financial APIs through a real-time fact-checking pipeline that performs named entity recognition for ticker validation, real-time price/volume verification, earnings date validation, and news attribution verification;
 (c) adjusting sentiment confidence thresholds based on VIX volatility levels, sector performance correlation, historical accuracy weighting, and market regime detection;
-(d) running multiple LLM models simultaneously and detecting disagreement above 0.3 variance threshold, triggering human review for high disagreement and applying fallback rules for medium disagreement above 0.15 variance;
+(d) running multiple LLM models simultaneously and detecting disagreement above a configurable variance threshold, triggering human review for high disagreement and applying fallback rules for medium disagreement above a lower configurable variance threshold;
 (e) enforcing a structured JSON schema for trading decision outputs that includes sentiment score, confidence level, catalysts, risks, technical signals, fundamental metrics, recommendation, position size, stop loss, and take profit parameters; and
 (f) generating trading recommendations with risk management parameters based on the integrated pipeline output.
 
 ### Claim 2 (Dependent on Claim 1)
-The method of claim 1, wherein the hierarchical RAG system retrieves news from financial news APIs, market data APIs, and SEC filings, and applies weighted context injection to prioritize ticker-specific information.
+The method of claim 1, wherein the hierarchical RAG system applies specific weights of 3.0 for ticker-specific news, 1.5 for sector news, and 1.0 for general market news.
 
 ### Claim 3 (Dependent on Claim 1)
-The method of claim 1, wherein the fact-checking pipeline cross-references LLM outputs against Yahoo Finance, Alpha Vantage, and SEC filing databases to validate financial metrics and prevent hallucination.
+The method of claim 1, wherein the hierarchical RAG system retrieves news from financial news APIs, market data APIs, and SEC filings, and applies weighted context injection to prioritize ticker-specific information.
 
 ### Claim 4 (Dependent on Claim 1)
-The method of claim 1, wherein the market-adaptive calibration calculates adaptive thresholds using the formula: adaptive_threshold = base_threshold × volatility_factor × sector_factor × accuracy_factor × regime_factor.
+The method of claim 1, wherein the fact-checking pipeline cross-references LLM outputs against Yahoo Finance, Alpha Vantage, and SEC filing databases to validate financial metrics and prevent hallucination.
 
 ### Claim 5 (Dependent on Claim 1)
-The method of claim 1, wherein the multi-model ensemble runs Ollama local model, OpenAI GPT, and DeepSeek model simultaneously, computes median sentiment with confidence intervals, and triggers human review for variance above 0.3.
+The method of claim 1, wherein the market-adaptive calibration calculates adaptive thresholds using the formula: adaptive_threshold = base_threshold × volatility_factor × sector_factor × accuracy_factor × regime_factor.
 
 ### Claim 6 (Dependent on Claim 1)
+The method of claim 1, wherein the multi-model ensemble runs Ollama local model, OpenAI GPT, and DeepSeek model simultaneously, computes median sentiment with confidence intervals, and triggers human review for variance above 0.3.
+
+### Claim 7 (Dependent on Claim 1)
+The method of claim 1, wherein the configurable variance thresholds are set between 0.2 and 0.4 for high disagreement detection and between 0.1 and 0.2 for medium disagreement detection.
+
+### Claim 8 (Dependent on Claim 1)
 The method of claim 1, wherein the structured JSON schema enforces validation of all output parameters and provides actionable trading parameters with risk management controls.
 
-### Claim 7 (Independent - System)
+### Claim 9 (Independent - System)
 A system for preventing LLM hallucination in financial trading decisions, comprising:
-(a) a hierarchical financial RAG retrieval engine that applies specific weights of 3.0/1.5/1.0 for ticker/sector/general news;
-(b) a real-time fact-checking pipeline with API validation against Yahoo Finance, Alpha Vantage, and SEC filings;
+(a) a hierarchical financial RAG retrieval engine that applies weighted prioritization with ticker-specific news receiving higher weights than sector news, and sector news receiving higher weights than general market news;
+(b) a real-time fact-checking pipeline with API validation against authoritative financial APIs;
 (c) a market-adaptive sentiment calibration engine that adjusts thresholds based on VIX volatility, sector performance, and historical accuracy;
-(d) a multi-model LLM ensemble with disagreement detection that triggers human review for variance above 0.3;
+(d) a multi-model LLM ensemble with disagreement detection that triggers human review for high disagreement and applies fallback rules for medium disagreement;
 (e) a structured output schema validator that enforces JSON format with trading parameters; and
 (f) a trading decision engine that generates actionable recommendations with risk management parameters.
 
-### Claim 8 (Independent - Computer-Readable Medium)
+### Claim 10 (Independent - Computer-Readable Medium)
 A computer-readable medium storing instructions that, when executed by a processor, cause the processor to perform the method of claim 1.
 
-### Claim 9 (Dependent on Claim 1)
+### Claim 11 (Dependent on Claim 1)
 The method of claim 1, wherein the hierarchical RAG system uses vector embeddings stored in a lightweight vector index (faiss or chromadb) and retrieves top-k relevant snippets for each symbol.
 
-### Claim 10 (Dependent on Claim 1)
+### Claim 12 (Dependent on Claim 1)
 The method of claim 1, wherein the fact-checking pipeline flags hallucination when ticker mentions are not found in context, price data is inconsistent, earnings dates mismatch, or news attribution is incorrect.
 
 ---
@@ -473,7 +494,13 @@ The invention may be implemented with various modifications to demonstrate its g
 ### Utility Patent Preparation (6-12 Months)
 1. **Hire Patent Attorney**: For claims refinement and non-obviousness arguments
 2. **Refine Claims**: Based on prior art search results and examiner feedback
+   - **Broader Language**: Use "configurable thresholds" instead of hard-coded values
+   - **Range Claims**: Include ranges for variance thresholds (0.2-0.4, 0.1-0.2)
+   - **Alternative Embodiments**: Cover different weighting schemes and API combinations
 3. **Add Technical Validation**: Include performance metrics and validation data
+   - **Prototype Results**: Document actual performance improvements
+   - **Validation Studies**: Include backtesting and A/B testing results
+   - **Expert Validation**: Human trader review of high-disagreement cases
 4. **Consider International Filing**: PCT application for global protection
 
 ### Defensive Strategy
