@@ -1081,8 +1081,9 @@ class DataFetcher:
 
     def get_alpha_vantage_news(self, symbol: str, limit: int = 5) -> list:
         """Get Alpha Vantage news for a symbol with retry logic"""
-        max_retries = 3
-        retry_delay = 2
+        max_retries = getattr(Config, 'NEWS_RETRY_ATTEMPTS', 3)
+        retry_delay = getattr(Config, 'NEWS_RETRY_DELAY', 2)
+        timeout = getattr(Config, 'REQUEST_TIMEOUT', 30)
         
         for attempt in range(max_retries):
             try:
