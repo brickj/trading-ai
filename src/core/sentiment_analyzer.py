@@ -1,10 +1,16 @@
+import json
+import subprocess
+import shutil
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
 import openai
 import requests
-from typing import List, Dict
-import json
-from .config import Config
 import numpy as np
 import re  # Added for regex fallback
+
+from .config import Config
 
 # Import API tracker for monitoring API usage
 # from src.utils.api_tracker import api_tracker  # Module removed
@@ -20,6 +26,11 @@ class SentimentAnalyzer:
         except AttributeError:
             self.openai_client = None
             self.use_new_openai_api = False
+        self._repo_root = Path(__file__).resolve().parents[2]
+        self.historical_sentiment_path = getattr(
+            Config, "HISTORICAL_SENTIMENT_PATH", None
+        )
+        self._go_missing_logged = False
         # DeepSeek setup
         self.deepseek_api_key = getattr(Config, "DEEPSEEK_API_KEY", None)
         self.deepseek_base_url = "https://api.deepseek.com/v1"
@@ -145,6 +156,215 @@ class SentimentAnalyzer:
                 temperature=0.1,
             )
         return response
+
+    def _summarize_text(
+        self, text: str, max_sentences: int = 2, max_chars: int = 220
+    ) -> str:
+        """Return a short, human-readable summary for article bodies."""
+
+        if not text:
+            return "No summary provided."
+
+        # Collapse repeated whitespace to avoid wasting tokens.
+        cleaned = " ".join(str(text).split())
+        if not cleaned:
+            return "No summary provided."
+
+        # Capture the leading sentences so the LLM sees the main takeaway first.
+        sentences = re.split(r"(?<=[.!?])\s+", cleaned)
+        summary = " ".join(sentences[:max_sentences]).strip()
+        if not summary:
+            summary = cleaned
+
+        if len(summary) > max_chars:
+            truncated = summary[:max_chars].rstrip(",;:- ")
+            if " " in truncated:
+                truncated = truncated.rsplit(" ", 1)[0]
+            summary = f"{truncated}…"
+
+        return summary
+
+    def _build_weighted_prompt(
+        self, combined_news: List[Dict]
+    ) -> Tuple[str, float, int]:
+        """Format weighted news entries into a concise prompt."""
+
+        prompt_lines: List[str] = []
+        total_weight = 0.0
+
+        for idx, article in enumerate(combined_news, start=1):
+            weight = float(article.get("weight", 1.0))
+            headline = (article.get("headline") or "Untitled article").strip()
+            raw_summary = (
+                article.get("summary")
+                or article.get("description")
+                or article.get("selftext")
+                or ""
+            )
+            summary = self._summarize_text(raw_summary)
+            source = article.get("source")
+            source_tag = f" ({source})" if source else ""
+
+            prompt_lines.append(
+                f"{idx}. Weight {weight:.1f}{source_tag} — {headline}\n   Summary: {summary}"
+            )
+            total_weight += weight
+
+        news_text = "\n".join(prompt_lines)
+        return news_text, total_weight, len(prompt_lines)
+
+    def _normalize_timestamp(self, value) -> Optional[str]:
+        """Return an ISO-8601 timestamp string when possible."""
+
+        if value in (None, ""):
+            return None
+
+        try:
+            if isinstance(value, (int, float)):
+                # Accept timestamps provided in seconds or milliseconds.
+                normalized = float(value)
+                if normalized > 1e12:
+                    normalized /= 1000.0
+                dt_value = datetime.fromtimestamp(normalized, tz=timezone.utc)
+                return dt_value.isoformat()
+            if isinstance(value, str):
+                text = value.strip()
+                if not text:
+                    return None
+                # Accept already-normalized timestamps.
+                try:
+                    dt_value = datetime.fromisoformat(text.replace("Z", "+00:00"))
+                except ValueError:
+                    return text
+                return dt_value.isoformat()
+        except Exception:
+            return None
+        return None
+
+    def _safe_float(self, value, default: float = 0.0) -> float:
+        """Coerce values to float without raising."""
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    def _load_historical_sentiment(self, symbol: Optional[str]) -> List[Dict]:
+        """Load historical sentiment rows for the given symbol if configured."""
+
+        if not symbol or not self.historical_sentiment_path:
+            return []
+
+        try:
+            path = Path(self.historical_sentiment_path)
+        except TypeError:
+            return []
+
+        if not path.exists():
+            return []
+
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # pragma: no cover - defensive logging only
+            print(f"⚠️ Unable to read historical sentiment data: {exc}")
+            return []
+
+        if not isinstance(payload, dict):
+            return []
+
+        symbol_key_variants = {
+            symbol,
+            symbol.upper(),
+            symbol.lower(),
+        }
+        entries: List[Dict] = []
+        for key in symbol_key_variants:
+            if key in payload and isinstance(payload[key], list):
+                entries = payload[key]
+                break
+
+        normalized_entries: List[Dict] = []
+        for row in entries:
+            if not isinstance(row, dict):
+                continue
+            normalized_entries.append(
+                {
+                    "sentiment": self._safe_float(
+                        row.get("sentiment", row.get("sentiment_score")), 0.0
+                    ),
+                    "realized_return": self._safe_float(
+                        row.get("realized_return", row.get("return")), 0.0
+                    ),
+                    "confidence": self._safe_float(row.get("confidence"), 0.5),
+                    "volume": self._safe_float(row.get("volume"), 0.0),
+                    "source": row.get("source", ""),
+                    "timestamp": self._normalize_timestamp(
+                        row.get("timestamp")
+                        or row.get("date")
+                        or row.get("datetime")
+                    ),
+                }
+            )
+
+        return normalized_entries
+
+    def _optimize_with_go(
+        self, articles: List[Dict], historical_rows: Optional[List[Dict]] = None
+    ) -> Optional[Dict]:
+        """Invoke the Go helper to refine weights using historical outcomes."""
+
+        go_binary = shutil.which("go")
+        if not go_binary:
+            if not self._go_missing_logged:
+                print(
+                    "⚠️ Go runtime is not available on the system. Skipping optimizer step."
+                )
+                self._go_missing_logged = True
+            return None
+
+        payload = {
+            "articles": articles,
+            "history": historical_rows or [],
+        }
+
+        try:
+            completed = subprocess.run(
+                [go_binary, "run", "./go/cmd/sentiment_optimizer"],
+                input=json.dumps(payload).encode("utf-8"),
+                capture_output=True,
+                check=True,
+                cwd=self._repo_root,
+                timeout=8,
+            )
+        except subprocess.TimeoutExpired:
+            print("⚠️ Go optimizer timed out; continuing without adjustments.")
+            return None
+        except subprocess.CalledProcessError as exc:
+            stderr = exc.stderr.decode("utf-8", errors="ignore") if exc.stderr else ""
+            print(
+                f"⚠️ Go optimizer failed with exit code {exc.returncode}: {stderr.strip()}"
+            )
+            return None
+        except FileNotFoundError:
+            if not self._go_missing_logged:
+                print("⚠️ Go toolchain not found. Skipping optimizer step.")
+                self._go_missing_logged = True
+            return None
+
+        raw_output = completed.stdout.decode("utf-8", errors="ignore").strip()
+        if not raw_output:
+            return None
+
+        try:
+            result = json.loads(raw_output)
+        except json.JSONDecodeError:
+            print(f"⚠️ Unable to parse Go optimizer output: {raw_output[:200]}...")
+            return None
+
+        if not isinstance(result, dict):
+            return None
+
+        return result
 
     def analyze_price_based_sentiment(self, price_data: Dict, symbol: str) -> Dict:
         """
@@ -315,7 +535,11 @@ class SentimentAnalyzer:
             raise Exception(f"Price analysis failed for {symbol}: {str(e)}")
 
     def analyze_news_sentiment(
-        self, news_articles: List[Dict], ai_provider: str = None, symbol: str = None
+        self,
+        news_articles: List[Dict],
+        ai_provider: str = None,
+        symbol: str = None,
+        historical_sentiment: Optional[List[Dict]] = None,
     ) -> Dict:
         """
         Analyze sentiment of news articles using AI (Ollama, DeepSeek or OpenAI)
@@ -324,6 +548,8 @@ class SentimentAnalyzer:
             news_articles: List of news articles to analyze
             ai_provider: 'ollama', 'deepseek' or 'openai' - if None, uses preferred provider
             symbol: Stock symbol for context and weighting stock-specific news
+            historical_sentiment: Optional historical sentiment performance records used to
+                nudge weighting and post-processing using the Go optimizer helper
         """
         if not news_articles:
             raise Exception("No news articles provided for analysis")
@@ -351,6 +577,20 @@ class SentimentAnalyzer:
                 summary = article.get(
                     "summary", article.get("description", article.get("selftext", ""))
                 )
+                source_field = article.get("source")
+                if isinstance(source_field, dict):
+                    source_name = source_field.get("name")
+                else:
+                    source_name = source_field
+                source_name = source_name or article.get("site") or article.get("publisher")
+                published_raw = (
+                    article.get("published_at")
+                    or article.get("publishedAt")
+                    or article.get("datetime")
+                    or article.get("created_at")
+                    or article.get("time_published")
+                )
+                published_at = self._normalize_timestamp(published_raw)
             else:
                 # If article is not a dict, skip it
                 print(f"Warning: Skipping non-dict article: {type(article)}")
@@ -368,6 +608,8 @@ class SentimentAnalyzer:
                             "headline": headline,
                             "summary": summary,
                             "weight": 3.0,  # Higher weight for stock-specific news
+                            "source": source_name,
+                            "published_at": published_at,
                         }
                     )
                 else:
@@ -376,6 +618,8 @@ class SentimentAnalyzer:
                             "headline": headline,
                             "summary": summary,
                             "weight": 1.0,  # Lower weight for general news
+                            "source": source_name,
+                            "published_at": published_at,
                         }
                     )
 
@@ -385,29 +629,42 @@ class SentimentAnalyzer:
         if not combined_news:
             raise Exception("No valid news content found in articles")
 
-        # Build weighted news text
-        news_text = ""
-        total_weight = 0
+        historical_rows = (
+            historical_sentiment
+            if historical_sentiment is not None
+            else self._load_historical_sentiment(symbol)
+        )
 
-        for article in combined_news:
-            weight = article["weight"]
-            total_weight += weight
+        go_optimizer_result = self._optimize_with_go(combined_news, historical_rows)
+        if go_optimizer_result:
+            weights = go_optimizer_result.get("weights")
+            if isinstance(weights, list) and len(weights) == len(combined_news):
+                for article, new_weight in zip(combined_news, weights):
+                    article["weight"] = self._safe_float(
+                        new_weight, article.get("weight", 1.0)
+                    )
 
-            # Repeat stock-specific news more to give it higher weight
-            repeat_count = int(weight)
-            for _ in range(repeat_count):
-                news_text += f"Headline: {article['headline']}\n"
+        # Build weighted news text and keep the summaries concise for token efficiency
+        news_text, total_weight, prompt_articles = self._build_weighted_prompt(
+            combined_news
+        )
+        raw_prompt_length = len(news_text)
 
         # Limit text length to prevent Ollama timeouts (reduced for faster processing)
-        max_text_length = 800
-        if len(news_text) > max_text_length:
+        max_text_length = 1600
+        if raw_prompt_length > max_text_length:
             print(
-                f"⚠️  Truncating news text from {len(news_text)} to {max_text_length} characters to prevent timeout"
+                f"⚠️  Truncating news text from {raw_prompt_length} to {max_text_length} characters to prevent timeout"
             )
-            news_text = (
-                news_text[:max_text_length]
-                + "\n\n[Content truncated due to length limits]"
-            )
+            truncated_text = news_text[:max_text_length]
+            last_break = truncated_text.rfind("\n")
+            if last_break > max_text_length * 0.6:
+                news_text = (
+                    truncated_text[:last_break]
+                    + "\n[Content truncated due to length limits]"
+                )
+            else:
+                news_text = truncated_text + "…"
 
         # Determine if this is crypto analysis
         is_crypto = symbol and any(
@@ -460,8 +717,11 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
             print(f"   Stock-specific news: {len(stock_specific_news)} articles")
             print(f"   General news: {len(general_news)} articles")
             print(f"   Total weight: {total_weight}")
-            print(f"   News text length: {len(news_text)} characters")
-            if len(news_text) < 100:
+            print(
+                f"   News text length: {raw_prompt_length} characters (post-truncation {len(news_text)})"
+            )
+            print(f"   Articles included in prompt: {prompt_articles}")
+            if raw_prompt_length < 100:
                 print(f"   ⚠️  WARNING: Very short news text: '{news_text}'")
             try:
                 response = self._call_ollama_api(messages)
@@ -710,12 +970,50 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
             if combined_news
             else 0,
             "is_crypto": is_crypto,
+            "prompt_articles": prompt_articles,
+            "prompt_characters": len(news_text),
+            "prompt_characters_raw": raw_prompt_length,
         }
+
+        analysis_metadata["historical_records_used"] = len(historical_rows or [])
+        if go_optimizer_result:
+            analysis_metadata["go_optimizer"] = {
+                "baseline_shift": go_optimizer_result.get("baseline_shift"),
+                "confidence_adjustment": go_optimizer_result.get(
+                    "confidence_adjustment"
+                ),
+                "notes": go_optimizer_result.get("notes"),
+                "diagnostics": go_optimizer_result.get("diagnostics"),
+            }
+
+        summary_text = result.get("summary", "Analysis completed")
+
+        if go_optimizer_result:
+            baseline_shift = go_optimizer_result.get("baseline_shift")
+            if isinstance(baseline_shift, (int, float)):
+                sentiment_score = max(
+                    -1.0, min(1.0, sentiment_score + float(baseline_shift))
+                )
+
+            confidence_adjustment = go_optimizer_result.get("confidence_adjustment")
+            if isinstance(confidence_adjustment, (int, float)):
+                confidence = max(
+                    0.0, min(1.0, confidence + float(confidence_adjustment))
+                )
+
+            notes = go_optimizer_result.get("notes")
+            if isinstance(notes, list) and notes:
+                historical_note = "; ".join(str(note) for note in notes[:2] if note)
+                if historical_note:
+                    summary_text = summary_text.rstrip()
+                    if summary_text and not summary_text.endswith(('.', '!', '?')):
+                        summary_text += "."
+                    summary_text += f" Historical context: {historical_note}."
 
         return {
             "sentiment_score": sentiment_score,
             "confidence": confidence,
-            "summary": result.get("summary", "Analysis completed"),
+            "summary": summary_text,
             "provider": provider_used,
             "analysis_metadata": analysis_metadata,
         }
