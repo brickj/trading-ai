@@ -57,8 +57,17 @@ class DataFetcher:
                 response = self.session.get(url, timeout=Config.REQUEST_TIMEOUT)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            log_error("API request failed")
+        except requests.exceptions.ConnectionError as e:
+            if "Broken pipe" in str(e) or "errno 32" in str(e):
+                log_error(f"Network connection broken pipe error: {e}")
+            else:
+                log_error(f"Connection error: {e}")
+            return None
+        except requests.exceptions.Timeout as e:
+            log_error(f"Request timeout: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            log_error(f"API request failed: {e}")
             return None
 
     def _get_alpha_vantage_symbol(self, symbol: str) -> str:
@@ -1071,57 +1080,67 @@ class DataFetcher:
             return []
 
     def get_alpha_vantage_news(self, symbol: str, limit: int = 5) -> list:
-        """Get Alpha Vantage news for a symbol"""
-        try:
-            # Use Alpha Vantage News Sentiment API
-            url = "https://www.alphavantage.co/query"
-            params = {
-                "function": "NEWS_SENTIMENT",
-                "tickers": symbol,
-                "apikey": Config.ALPHA_VANTAGE_API_KEY,
-                "limit": limit,
-            }
+        """Get Alpha Vantage news for a symbol with retry logic"""
+        max_retries = 3
+        retry_delay = 2
+        
+        for attempt in range(max_retries):
+            try:
+                # Use Alpha Vantage News Sentiment API
+                url = "https://www.alphavantage.co/query"
+                params = {
+                    "function": "NEWS_SENTIMENT",
+                    "tickers": symbol,
+                    "apikey": Config.ALPHA_VANTAGE_API_KEY,
+                    "limit": limit,
+                }
 
-            data = self._make_request(url, params)
-            print(f"[DEBUG][AlphaVantage] Raw response for {symbol}: {data}")
-            if data and "feed" in data:
-                news_articles = []
-                for article in data["feed"][:limit]:
-                    news_articles.append(
-                        {
-                            "headline": article.get("title", ""),
-                            "summary": article.get("summary", ""),
-                            "url": article.get("url", ""),
-                            "datetime": article.get("time_published", ""),
-                            "source": article.get("source", "Alpha Vantage"),
-                            "category": "news",
-                        }
+                data = self._make_request(url, params)
+                print(f"[DEBUG][AlphaVantage] Raw response for {symbol}: {data}")
+                if data and "feed" in data:
+                    news_articles = []
+                    for article in data["feed"][:limit]:
+                        news_articles.append(
+                            {
+                                "headline": article.get("title", ""),
+                                "summary": article.get("summary", ""),
+                                "url": article.get("url", ""),
+                                "datetime": article.get("time_published", ""),
+                                "source": article.get("source", "Alpha Vantage"),
+                                "category": "news",
+                            }
+                        )
+                    print(
+                        f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}"
                     )
-                print(
-                    f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}"
-                )
 
-                # Track API usage
-                # api_tracker.record_request("alpha_vantage")  # Module removed
+                    # Track API usage
+                    # api_tracker.record_request("alpha_vantage")  # Module removed
 
-                return news_articles
-            else:
-                print(f"[DEBUG][AlphaVantage] No feed found in response for {symbol}")
-                # Fallback: return sample news if API fails
-                return [
-                    {
-                        "headline": f"{symbol} Market Analysis",
-                        "summary": f"Latest market analysis and insights for {symbol} stock.",
-                        "url": f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={Config.ALPHA_VANTAGE_API_KEY}",
-                        "datetime": datetime.now().isoformat(),
-                        "source": "Alpha Vantage",
-                        "category": "analysis",
-                    }
-                ]
-
-        except Exception as e:
-            log_error(f"get_alpha_vantage_news error for {symbol}: {e}")
-            return []
+                    return news_articles
+                else:
+                    print(f"[DEBUG][AlphaVantage] No feed found in response for {symbol}")
+                    # Fallback: return sample news if API fails
+                    return [
+                        {
+                            "headline": f"{symbol} Market Analysis",
+                            "summary": f"Latest market analysis and insights for {symbol} stock.",
+                            "url": f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={Config.ALPHA_VANTAGE_API_KEY}",
+                            "datetime": datetime.now().isoformat(),
+                            "source": "Alpha Vantage",
+                            "category": "analysis",
+                        }
+                    ]
+                    
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    log_error(f"get_alpha_vantage_news error for {symbol} (attempt {attempt + 1}): {e}")
+                    print(f"Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    log_error(f"get_alpha_vantage_news error for {symbol} (final attempt): {e}")
+                    return []
 
     def get_yahoo_finance_news(self, symbol: str, limit: int = 5) -> list:
         """
@@ -1234,7 +1253,10 @@ class DataFetcher:
             return []
 
         except Exception as e:
-            log_error(f"Unexpected error in get_yahoo_finance_news for {symbol}: {e}")
+            if "Broken pipe" in str(e) or "errno 32" in str(e):
+                log_error(f"Network broken pipe error in get_yahoo_finance_news for {symbol}: {e}")
+            else:
+                log_error(f"Unexpected error in get_yahoo_finance_news for {symbol}: {e}")
             return self._get_fallback_news(symbol)
 
     def _get_fallback_news(self, symbol: str) -> list:
