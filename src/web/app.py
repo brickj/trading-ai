@@ -33,14 +33,19 @@ def create_app(host: str | None = None, port: int | None = None) -> Flask:
         "system",
     )
     
-    # Start the job scheduler
-    try:
-        from start_app import run_scheduled_jobs
-        page_logger.info("Starting job scheduler...", "system")
-        run_scheduled_jobs()
-        page_logger.info("Job scheduler started successfully", "system")
-    except Exception as e:
-        page_logger.error(f"Failed to start job scheduler: {e}", "system")
+    # Start the job scheduler in a background thread
+    import threading
+    def start_scheduler():
+        try:
+            from start_app import run_scheduled_jobs
+            page_logger.info("Starting job scheduler...", "system")
+            run_scheduled_jobs()
+            page_logger.info("Job scheduler started successfully", "system")
+        except Exception as e:
+            page_logger.error(f"Failed to start job scheduler: {e}", "system")
+    
+    scheduler_thread = threading.Thread(target=start_scheduler, daemon=True)
+    scheduler_thread.start()
     
     socketio.run(
         app,
