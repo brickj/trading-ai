@@ -24,8 +24,9 @@ AWS credentials and default region must be configured in your environment.
 
 from __future__ import annotations
 
-import argparse
+import os
 import pathlib
+import subprocess
 import sys
 import time
 import urllib.error
@@ -37,7 +38,14 @@ import boto3
 from botocore.exceptions import ClientError
 
 
+AWS_KEY_PATH = "/Users/rick/Desktop/stuff/keys/aws_key4.pem"
+DEFAULT_KEY_NAME = "aws_key4"  # Default key name matching the PEM file
 DEFAULT_SECURITY_GROUP_NAME = "apache-5001-sg"
+DEFAULT_REGION = "us-east-1"  # Default AWS region
+
+# AWS credentials from environment variables
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 SSM_AMI_PARAMETER = (
     "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
 )
@@ -50,10 +58,17 @@ yum install -y httpd
 # Configure Apache to listen on port 5001 instead of 80.
 sed -i 's/^Listen 80/Listen 5001/' /etc/httpd/conf/httpd.conf
 
-INSTANCE_TYPE=$(curl -s http://169.254.169.254/latest/meta-data/instance-type)
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-PUBLIC_HOST=$(curl -s http://169.254.169.254/latest/meta-data/public-hostname || echo "$PUBLIC_IP")
+# Get actual values from metadata service with proper error handling
+INSTANCE_TYPE=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/instance-type 2>/dev/null || echo "t4g.micro")
+PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "")
+PUBLIC_HOST=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-hostname 2>/dev/null || echo "$PUBLIC_IP")
 
+# If we still don't have a public host, use the IP we know from the script output
+if [ -z "$PUBLIC_HOST" ] || [ "$PUBLIC_HOST" = "" ]; then
+    PUBLIC_HOST="YOUR_INSTANCE_IP"
+fi
+
+# Create the final HTML page
 cat <<EOF_HTML >/var/www/html/index.html
 <!DOCTYPE html>
 <html lang="en">
@@ -91,35 +106,94 @@ class SecurityGroupResult:
     created: bool
 
 
-def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--key-name",
-        required=True,
-        help="Name of an existing EC2 key pair to attach to the instance.",
+def main(argv: Optional[list[str]] = None) -> int:
+    # All configuration hardcoded like the EC2 GitHub update script
+    key_name = DEFAULT_KEY_NAME
+    region = DEFAULT_REGION
+    security_group_name = DEFAULT_SECURITY_GROUP_NAME
+    skip_key_check = True  # Always skip since we have the PEM file
+    create_key = False  # Don't create new keys
+
+    session = boto3.Session(
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name=region
     )
-    parser.add_argument(
-        "--create-key",
-        action="store_true",
-        help="Create the key pair if it does not already exist and store the private key locally.",
+    ec2_client = session.client("ec2")
+    ec2_resource = session.resource("ec2")
+    ssm_client = session.client("ssm")
+
+    public_ip = discover_public_ip()
+    ssh_cidr = f"{public_ip}/32"
+    print(f"Detected public IP: {public_ip} (SSH access will be restricted to this address)")
+
+    ensure_key_pair(
+        ec2_client,
+        key_name=key_name,
+        create_if_missing=create_key,
+        skip_check=skip_key_check,
+        key_path=None,
     )
-    parser.add_argument(
-        "--key-path",
-        type=pathlib.Path,
-        default=None,
-        help="File path where a newly created private key should be written (defaults to ./<key-name>.pem).",
+
+    sg_result = ensure_security_group(
+        ec2_client,
+        group_name=security_group_name,
+        ip_cidr=ssh_cidr,
     )
-    parser.add_argument(
-        "--security-group-name",
-        default=DEFAULT_SECURITY_GROUP_NAME,
-        help="Name of the security group to use or create.",
+    status = "created" if sg_result.created else "using existing"
+    print(f"Security group {sg_result.name} ({sg_result.group_id}) ready ({status}).")
+
+    ami_id = fetch_latest_ami_id(ssm_client)
+    print(f"Using AMI {ami_id} (Amazon Linux 2023 arm64).")
+
+    instance = launch_instance(
+        ec2_resource,
+        ami_id=ami_id,
+        key_name=key_name,
+        security_group_id=sg_result.group_id,
+        public_ip="YOUR_INSTANCE_IP",  # Placeholder, will be updated after launch
     )
-    parser.add_argument(
-        "--region",
-        default=None,
-        help="AWS region to target (defaults to AWS_REGION/ AWS_DEFAULT_REGION environment or the boto3 config).",
-    )
-    return parser.parse_args(argv)
+    print(f"Launched instance {instance.id}; waiting for it to become ready...")
+
+    instance = wait_for_instance(instance)
+    dns = instance.public_dns_name or instance.public_ip_address
+    url = f"http://{dns}:5001/"
+    
+    # Wait for user data script to complete and update the HTML page
+    print("Waiting for user data script to complete...")
+    time.sleep(30)  # Wait for user data script to finish
+    
+    print("Updating HTML page with actual public IP...")
+    update_script = f"""
+    # Wait for the HTML file to exist and then update it
+    for i in {{1..10}}; do
+        if [ -f /var/www/html/index.html ]; then
+            sudo sed -i 's/YOUR_INSTANCE_IP/{dns}/g' /var/www/html/index.html
+            sudo sed -i 's/<code><\\/code>/<code>t4g.micro<\\/code>/g' /var/www/html/index.html
+            echo "HTML page updated successfully"
+            break
+        fi
+        echo "Waiting for HTML file... attempt $i/10"
+        sleep 5
+    done
+    """
+    subprocess.run([
+        "ssh", "-i", AWS_KEY_PATH,
+        "-o", "StrictHostKeyChecking=no",
+        "-o", "UserKnownHostsFile=/dev/null",
+        f"ec2-user@{dns}",
+        update_script
+    ], check=False)
+    print("Instance is ready!")
+    print(f"  Instance ID: { instance.id}")
+    print(f"  Instance type: {instance.instance_type}")
+    print(f"  Public IPv4: {instance.public_ip_address}")
+    print(f"  Public DNS: {dns}")
+    print(f"  Apache URL: {url}")
+
+    print("\nYou can connect via SSH using:\n")
+    print(f"  ssh -i {AWS_KEY_PATH} ec2-user@{dns}")
+    return 0
 
 
 def discover_public_ip() -> str:
@@ -204,8 +278,12 @@ def ensure_security_group(
     return SecurityGroupResult(group_id=group_id, name=group_name, created=created)
 
 
-def ensure_key_pair(ec2_client, *, key_name: str, create_if_missing: bool, key_path: Optional[pathlib.Path]) -> None:
+def ensure_key_pair(ec2_client, *, key_name: str, create_if_missing: bool, skip_check: bool, key_path: Optional[pathlib.Path]) -> None:
     """Ensure the key pair exists; optionally create and store locally."""
+
+    if skip_check:
+        print(f"Skipping AWS key pair validation - assuming '{key_name}' exists")
+        return
 
     try:
         ec2_client.describe_key_pairs(KeyNames=[key_name])
@@ -214,7 +292,7 @@ def ensure_key_pair(ec2_client, *, key_name: str, create_if_missing: bool, key_p
         error_code = exc.response["Error"].get("Code")
         if error_code != "InvalidKeyPair.NotFound" or not create_if_missing:
             raise RuntimeError(
-                f"Key pair '{key_name}' does not exist. Use --create-key to create it or provide a different key."
+                f"Key pair '{key_name}' does not exist. Use --create-key to create it or --skip-key-check to bypass check."
             ) from exc
 
     response = ec2_client.create_key_pair(KeyName=key_name)
@@ -230,7 +308,10 @@ def fetch_latest_ami_id(ssm_client) -> str:
     return parameter["Parameter"]["Value"]
 
 
-def launch_instance(ec2_resource, *, ami_id: str, key_name: str, security_group_id: str):
+def launch_instance(ec2_resource, *, ami_id: str, key_name: str, security_group_id: str, public_ip: str):
+    # Create user data with the actual public IP
+    user_data = USER_DATA_TEMPLATE.replace("YOUR_INSTANCE_IP", public_ip)
+    
     instances = ec2_resource.create_instances(
         ImageId=ami_id,
         InstanceType="t4g.micro",
@@ -238,12 +319,12 @@ def launch_instance(ec2_resource, *, ami_id: str, key_name: str, security_group_
         MaxCount=1,
         KeyName=key_name,
         SecurityGroupIds=[security_group_id],
-        UserData=USER_DATA_TEMPLATE,
+        UserData=user_data,
         TagSpecifications=[
             {
                 "ResourceType": "instance",
                 "Tags": [
-                    {"Key": "Name", "Value": "TradingAI-Apache-5001"},
+                    {"Key": "Name", "Value": "FreeTier-Apache-5001"},
                     {"Key": "Purpose", "Value": "Apache demo"},
                 ],
             }
@@ -263,58 +344,6 @@ def wait_for_instance(instance):
     return instance
 
 
-def main(argv: Optional[list[str]] = None) -> int:
-    args = parse_args(argv)
-    region = args.region
-
-    session = boto3.Session(region_name=region)
-    ec2_client = session.client("ec2")
-    ec2_resource = session.resource("ec2")
-    ssm_client = session.client("ssm")
-
-    public_ip = discover_public_ip()
-    ssh_cidr = f"{public_ip}/32"
-    print(f"Detected public IP: {public_ip} (SSH access will be restricted to this address)")
-
-    ensure_key_pair(
-        ec2_client,
-        key_name=args.key_name,
-        create_if_missing=args.create_key,
-        key_path=args.key_path,
-    )
-
-    sg_result = ensure_security_group(
-        ec2_client,
-        group_name=args.security_group_name,
-        ip_cidr=ssh_cidr,
-    )
-    status = "created" if sg_result.created else "using existing"
-    print(f"Security group {sg_result.name} ({sg_result.group_id}) ready ({status}).")
-
-    ami_id = fetch_latest_ami_id(ssm_client)
-    print(f"Using AMI {ami_id} (Amazon Linux 2023 arm64).")
-
-    instance = launch_instance(
-        ec2_resource,
-        ami_id=ami_id,
-        key_name=args.key_name,
-        security_group_id=sg_result.group_id,
-    )
-    print(f"Launched instance {instance.id}; waiting for it to become ready...")
-
-    instance = wait_for_instance(instance)
-    dns = instance.public_dns_name or instance.public_ip_address
-    url = f"http://{dns}:5001/"
-    print("Instance is ready!")
-    print(f"  Instance ID: {instance.id}")
-    print(f"  Instance type: {instance.instance_type}")
-    print(f"  Public IPv4: {instance.public_ip_address}")
-    print(f"  Public DNS: {dns}")
-    print(f"  Apache URL: {url}")
-
-    print("\nYou can connect via SSH using:\n")
-    print(f"  ssh -i <path-to-private-key> ec2-user@{dns}")
-    return 0
 
 
 if __name__ == "__main__":

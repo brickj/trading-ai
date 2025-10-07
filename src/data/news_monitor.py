@@ -211,7 +211,7 @@ class NewsMonitor:
                 signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
 
                 # Generate trade recommendations
-                if signal_data["action"] != "HOLD":
+                if signal_data["stock_recommendation"]["action"] != "HOLD":
                     trade_signal = self.trading_strategy.generate_trade_signal(
                         symbol, price_data["current_price"], sentiment_data, signal_data
                     )
