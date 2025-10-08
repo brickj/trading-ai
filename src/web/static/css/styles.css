@@ -1122,6 +1122,18 @@ table {
     overflow-y: auto;
 }
 
+#stocksTableContainer {
+    background: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#stocksTableContainer table {
+    margin-bottom: 0;
+}
+
 /* Button loading states */
 .btn-loading {
     position: relative;
