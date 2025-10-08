@@ -8,6 +8,7 @@ from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
 from ..dependencies import recommendation_manager
 from ..services import system_service
+from ...core.redis_cache import redis_cache
 
 
 dashboard_bp = Blueprint("dashboard", __name__)
@@ -68,7 +69,15 @@ def get_system_metrics():
 
 @dashboard_bp.route("/api/dashboard/data")
 def get_dashboard_data():
-    """Get dashboard data for homepage with real data."""
+    """Get dashboard data for homepage with real data and Redis caching."""
+    cache_key = "dashboard_data_api"
+    
+    # Try Redis cache first (faster)
+    if redis_cache.health_check():
+        cached_data = redis_cache.get(cache_key)
+        if cached_data:
+            return create_api_response(data=cached_data)
+    
     try:
         system_metrics = get_system_metrics()
 
@@ -160,37 +169,41 @@ def get_dashboard_data():
 
         last_analysis = recent_analyses[0] if recent_analyses else None
 
-        return create_api_response(
-            data={
-                "system_metrics": system_metrics,
-                "recent_analyses": recent_analyses,
-                "market_overview": market_overview,
-                "last_analysis": last_analysis,
-                "feature_cards": [
-                    {
-                        "title": "Real-Time Analysis",
-                        "description": "Get instant sentiment analysis and trading recommendations",
-                        "icon": "fas fa-chart-line",
-                        "status": "active",
-                        "last_updated": datetime.now().isoformat(),
-                    },
-                    {
-                        "title": "Enhanced Strategies",
-                        "description": "Advanced backtesting with historical data",
-                        "icon": "fas fa-rocket",
-                        "status": "active",
-                        "last_updated": datetime.now().isoformat(),
-                    },
-                    {
-                        "title": "AI-Powered",
-                        "description": "Multiple AI models for comprehensive analysis",
-                        "icon": "fas fa-robot",
-                        "status": "active",
-                        "last_updated": datetime.now().isoformat(),
-                    },
-                ],
-            }
-        )
+        dashboard_data = {
+            "system_metrics": system_metrics,
+            "recent_analyses": recent_analyses,
+            "market_overview": market_overview,
+            "last_analysis": last_analysis,
+            "feature_cards": [
+                {
+                    "title": "Real-Time Analysis",
+                    "description": "Get instant sentiment analysis and trading recommendations",
+                    "icon": "fas fa-chart-line",
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat(),
+                },
+                {
+                    "title": "Enhanced Strategies",
+                    "description": "Advanced backtesting with historical data",
+                    "icon": "fas fa-rocket",
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat(),
+                },
+                {
+                    "title": "AI-Powered",
+                    "description": "Multiple AI models for comprehensive analysis",
+                    "icon": "fas fa-robot",
+                    "status": "active",
+                    "last_updated": datetime.now().isoformat(),
+                },
+            ],
+        }
+        
+        # Cache in Redis for future requests
+        if redis_cache.health_check():
+            redis_cache.set(cache_key, dashboard_data, ttl=300)  # 5 minutes
+        
+        return create_api_response(data=dashboard_data)
     except Exception as exc:
         log_exception("Dashboard data endpoint", exc)
         return create_api_response(error=str(exc), status_code=500)

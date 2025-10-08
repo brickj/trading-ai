@@ -22,6 +22,7 @@ from ...core.logger import trading_logger, log_info, log_error, log_exception, l
 
 # Import services
 from ..services import analysis_service, system_service
+from ...core.redis_cache import redis_cache
 
 # Create blueprint
 analysis_bp = Blueprint('analysis', __name__)
@@ -257,13 +258,20 @@ def enhanced_analysis():
 @rate_limit(max_requests=3, window_seconds=60)  # 3 requests per minute (most resource intensive)
 @api_error_handler("comprehensive_analysis")
 def comprehensive_analysis():
-    """Enhanced analysis with both stock and options recommendations"""
+    """Enhanced analysis with both stock and options recommendations with Redis caching"""
     data = request.get_json()
     symbol = data.get("symbol", "").upper()
     ai_provider = data.get("ai_provider", "ollama")
 
     if not symbol:
         return create_api_response(error="Symbol is required", status_code=400)
+    
+    # Check Redis cache first
+    cache_key = f"comprehensive_analysis_{symbol}_{ai_provider}"
+    if redis_cache.health_check():
+        cached_result = redis_cache.get(cache_key)
+        if cached_result:
+            return create_api_response(data=cached_result)
 
     # Services now available via system_service
     trading_strategy = system_service.get_trading_strategy()
@@ -288,22 +296,26 @@ def comprehensive_analysis():
         symbol, price_data, sentiment_data, signal_data
     )
 
-    return create_api_response(
-        data={
+    result_data = {
+        "symbol": symbol,
+        "comprehensive_analysis": {
             "symbol": symbol,
-            "comprehensive_analysis": {
-                "symbol": symbol,
-                "price_data": price_data,
-                "sentiment_data": sentiment_data,
-                "signal_data": signal_data,
-                "recommendation": recommendation,
-                "news_data": {"article_count": len(news_data)},
-                "analysis_type": "standard"
-            },
-            "ai_provider_used": ai_provider,
-            "timestamp": datetime.now().isoformat()
-        }
-    )
+            "price_data": price_data,
+            "sentiment_data": sentiment_data,
+            "signal_data": signal_data,
+            "recommendation": recommendation,
+            "news_data": {"article_count": len(news_data)},
+            "analysis_type": "standard"
+        },
+        "ai_provider_used": ai_provider,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    # Cache result in Redis
+    if redis_cache.health_check():
+        redis_cache.set(cache_key, result_data, ttl=1800)  # 30 minutes
+    
+    return create_api_response(data=result_data)
 
 
 # analyze_single_stock function moved to services/analysis_service.py

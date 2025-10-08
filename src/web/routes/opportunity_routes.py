@@ -11,6 +11,7 @@ from ..extensions import socketio
 from ..services import system_service
 from src.core.logger import log_exception
 from src.core.batch_processor import batch_processor_instance, create_watchlist_tasks
+from src.core.redis_cache import redis_cache
 
 
 opportunities_bp = Blueprint("opportunities", __name__)
@@ -25,7 +26,15 @@ news_monitor = system_service.get_news_monitor()
 
 @opportunities_bp.route("/api/news_opportunities")
 def news_opportunities():
-    """Get news-driven trading opportunities from preloaded data (fast)."""
+    """Get news-driven trading opportunities from preloaded data (fast) with Redis caching."""
+    cache_key = "news_opportunities"
+    
+    # Try Redis cache first (faster)
+    if redis_cache.health_check():
+        cached_data = redis_cache.get(cache_key)
+        if cached_data:
+            return create_api_response(data=cached_data)
+    
     trading_logger.api_logger.info(
         "[DEBUG] Entered news_opportunities endpoint (preloaded mode)"
     )
@@ -100,14 +109,19 @@ def news_opportunities():
         )
         trending_symbols = news_monitor.scan_trending_news()
         opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
-        return create_api_response(
-            data={
-                "opportunities": opportunities,
-                "count": len(opportunities),
-                "cached": False,
-                "cache_timestamp": datetime.now().isoformat(),
-            }
-        )
+        
+        result_data = {
+            "opportunities": opportunities,
+            "count": len(opportunities),
+            "cached": False,
+            "cache_timestamp": datetime.now().isoformat(),
+        }
+        
+        # Cache in Redis for future requests
+        if redis_cache.health_check():
+            redis_cache.set(cache_key, result_data, ttl=1800)  # 30 minutes
+        
+        return create_api_response(data=result_data)
     except Exception as exc:
         trading_logger.error_logger.error(
             f"[ERROR] Error in news_opportunities endpoint: {str(exc)}"

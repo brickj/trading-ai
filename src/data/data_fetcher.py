@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from src.core.config import Config
 from src.core.logger import log_error, log_debug
 from src.core.cache import cache
+from src.core.redis_cache import redis_cache
 
 # Import API tracker for monitoring API usage
 # from src.utils.api_tracker import api_tracker  # Module removed
@@ -82,15 +83,27 @@ class DataFetcher:
 
     def get_stock_price(self, symbol: str) -> Dict[str, Any]:
         """
-        Get current stock price from Alpha Vantage
+        Get current stock price from Alpha Vantage with Redis caching
         Args:
             symbol: Stock symbol
         Returns:
             Stock price data
         """
         cache_key = f"stock_price_{symbol}"
+        
+        # Try Redis cache first (faster)
+        if redis_cache.health_check():
+            cached_data = redis_cache.get(cache_key)
+            if cached_data:
+                log_debug(f"Redis cache hit for stock price: {symbol}")
+                return cached_data
+        
+        # Fallback to PostgreSQL cache
         cached_data = cache.get(cache_key)
         if cached_data:
+            # Store in Redis for future requests
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, cached_data, ttl=300)  # 5 minutes
             return cached_data
 
         # Map foreign stock symbols to Alpha Vantage supported symbols
@@ -153,7 +166,11 @@ class DataFetcher:
                 "source": "alpha_vantage",
                 "mapped_symbol": alpha_vantage_symbol if alpha_vantage_symbol != symbol else None,
             }
-            cache.set(cache_key, result, ttl=300)  # Cache for 5 minutes
+            
+            # Cache in both Redis (primary) and PostgreSQL (fallback)
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, result, ttl=300)  # 5 minutes
+            cache.set(cache_key, result, ttl=300)  # PostgreSQL fallback
             return result
 
         # Fallback: Try Yahoo Finance (yfinance) last price if Alpha Vantage failed
@@ -207,7 +224,24 @@ class DataFetcher:
             return None
 
     def get_company_news(self, symbol: str, days_back: int = 7) -> list:
-        """Fetch company news from multiple sources for better coverage"""
+        """Fetch company news from multiple sources for better coverage with Redis caching"""
+        cache_key = f"company_news_{symbol}_{days_back}"
+        
+        # Try Redis cache first (faster)
+        if redis_cache.health_check():
+            cached_news = redis_cache.get(cache_key)
+            if cached_news:
+                log_debug(f"Redis cache hit for company news: {symbol}")
+                return cached_news
+        
+        # Fallback to PostgreSQL cache
+        cached_news = cache.get(cache_key)
+        if cached_news:
+            # Store in Redis for future requests
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, cached_news, ttl=1800)  # 30 minutes
+            return cached_news
+        
         try:
             all_news = []
 
@@ -372,7 +406,15 @@ class DataFetcher:
             print(
                 f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}"
             )
-            return unique_news[:20]  # Limit to 20 most recent articles
+            
+            result = unique_news[:20]  # Limit to 20 most recent articles
+            
+            # Cache in both Redis (primary) and PostgreSQL (fallback)
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, result, ttl=1800)  # 30 minutes
+            cache.set(cache_key, result, ttl=1800)  # PostgreSQL fallback
+            
+            return result
 
         except Exception as e:
             log_error(f"get_company_news error for {symbol}: {e}")
@@ -1011,7 +1053,6 @@ class DataFetcher:
     def get_reddit_news(self, symbol: str, limit: int = 5) -> list:
         """Get Reddit news for a symbol using Reddit API (OAuth2)"""
         import requests
-        import time
 
         # Check if Reddit is enabled and credentials are configured
         if not getattr(Config, 'REDDIT_ENABLED', True):

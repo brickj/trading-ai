@@ -122,7 +122,6 @@ function startAnalysis(symbol, analysisType) {
 function handleAnalysisResponse(data, analysisType) {
     if (data.success || data.status === 'success') {
         showResults(data, analysisType);
-        showAlert('Analysis completed successfully!', 'success');
     } else {
         showAlert('Analysis failed: ' + (data.message || 'Unknown error'), 'danger');
     }

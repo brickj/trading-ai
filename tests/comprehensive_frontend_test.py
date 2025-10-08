@@ -320,11 +320,23 @@ class ComprehensiveFrontendTest(unittest.TestCase):
             
             if "signal_data" in news_opp:
                 signal_data = news_opp["signal_data"]
-                # Check for new signal data structure (action, confidence, reasoning, signal_strength)
-                self.assertIn("action", signal_data, "Signal data should have action")
-                self.assertIn("confidence", signal_data, "Signal data should have confidence")
-                self.assertIn("reasoning", signal_data, "Signal data should have reasoning")
-                self.assertIn("signal_strength", signal_data, "Signal data should have signal_strength")
+                # Check for new signal data structure (options_recommendation and stock_recommendation)
+                self.assertIn("options_recommendation", signal_data, "Signal data should have options_recommendation")
+                self.assertIn("stock_recommendation", signal_data, "Signal data should have stock_recommendation")
+                
+                # Check options recommendation structure
+                options_rec = signal_data["options_recommendation"]
+                self.assertIn("action", options_rec, "Options recommendation should have action")
+                self.assertIn("confidence", options_rec, "Options recommendation should have confidence")
+                self.assertIn("reasoning", options_rec, "Options recommendation should have reasoning")
+                self.assertIn("signal_strength", options_rec, "Options recommendation should have signal_strength")
+                
+                # Check stock recommendation structure
+                stock_rec = signal_data["stock_recommendation"]
+                self.assertIn("action", stock_rec, "Stock recommendation should have action")
+                self.assertIn("confidence", stock_rec, "Stock recommendation should have confidence")
+                self.assertIn("reasoning", stock_rec, "Stock recommendation should have reasoning")
+                self.assertIn("signal_strength", stock_rec, "Stock recommendation should have signal_strength")
             
             print(f"✓ News opportunities API returned {len(data['data']['opportunities'])} opportunities")
         else:

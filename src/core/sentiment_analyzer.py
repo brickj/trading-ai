@@ -11,6 +11,7 @@ import numpy as np
 import re  # Added for regex fallback
 
 from .config import Config
+from .redis_cache import redis_cache
 
 # Import API tracker for monitoring API usage
 # from src.utils.api_tracker import api_tracker  # Module removed
@@ -542,7 +543,7 @@ class SentimentAnalyzer:
         historical_sentiment: Optional[List[Dict]] = None,
     ) -> Dict:
         """
-        Analyze sentiment of news articles using AI (Ollama, DeepSeek or OpenAI)
+        Analyze sentiment of news articles using AI (Ollama, DeepSeek or OpenAI) with Redis caching
         Returns sentiment score between -1 (very negative) and 1 (very positive)
         Args:
             news_articles: List of news articles to analyze
@@ -551,8 +552,26 @@ class SentimentAnalyzer:
             historical_sentiment: Optional historical sentiment performance records used to
                 nudge weighting and post-processing using the Go optimizer helper
         """
+        # Generate cache key based on news content and parameters
+        if symbol and news_articles:
+            cache_key = f"sentiment_{symbol}_{hash(str(news_articles))}_{ai_provider or 'default'}"
+            
+            # Try Redis cache first (faster)
+            if redis_cache.health_check():
+                cached_result = redis_cache.get(cache_key)
+                if cached_result:
+                    return cached_result
+        
         if not news_articles:
-            raise Exception("No news articles provided for analysis")
+            # Return default sentiment when no news is available
+            return {
+                "sentiment_score": 0.0,
+                "confidence": 0.5,
+                "summary": f"No recent news available for {symbol}. Analysis based on technical indicators only.",
+                "sentiment_label": "neutral",
+                "news_count": 0,
+                "analysis_timestamp": datetime.now().isoformat()
+            }
         # Use provided ai_provider or fall back to preferred provider
         if ai_provider:
             selected_provider = ai_provider.lower()
@@ -1010,13 +1029,19 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                         summary_text += "."
                     summary_text += f" Historical context: {historical_note}."
 
-        return {
+        result = {
             "sentiment_score": sentiment_score,
             "confidence": confidence,
             "summary": summary_text,
             "provider": provider_used,
             "analysis_metadata": analysis_metadata,
         }
+        
+        # Cache result in Redis if we have a cache key
+        if symbol and news_articles and redis_cache.health_check():
+            redis_cache.set(cache_key, result, ttl=3600)  # 1 hour
+        
+        return result
 
     def _is_stock_specific_news(self, headline: str, summary: str, symbol: str) -> bool:
         """

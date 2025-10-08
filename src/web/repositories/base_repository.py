@@ -9,6 +9,7 @@ from contextlib import contextmanager
 
 from ...core.database import get_db_connection
 from ...core.logger import trading_logger, log_exception
+from ...core.redis_cache import redis_cache
 
 
 class BaseRepository:
@@ -47,10 +48,19 @@ class BaseRepository:
         """
         start_time = time.time()
         
-        # Check cache if enabled
+        # Check Redis cache first if enabled
         if use_cache and cache_key:
+            if redis_cache.health_check():
+                cached_result = redis_cache.get(cache_key)
+                if cached_result is not None:
+                    return cached_result
+            
+            # Fallback to local cache
             cached_result = self._get_cached_result(cache_key)
             if cached_result is not None:
+                # Store in Redis for future requests
+                if redis_cache.health_check():
+                    redis_cache.set(cache_key, cached_result, ttl=self._cache_timeout)
                 return cached_result
         
         try:
@@ -72,6 +82,9 @@ class BaseRepository:
                     
                     # Cache result if requested
                     if use_cache and cache_key and result is not None:
+                        # Cache in Redis (primary) and local cache (fallback)
+                        if redis_cache.health_check():
+                            redis_cache.set(cache_key, result, ttl=self._cache_timeout)
                         self._cache_result(cache_key, result)
                     
                     # Log slow queries

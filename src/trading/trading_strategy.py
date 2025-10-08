@@ -242,8 +242,8 @@ class TradingStrategy:
     ) -> List[str]:
         """Generate specific notes for day trading execution"""
         notes = [
-            "Strategy: {strategy_type} based on sentiment analysis",
-            "Conviction Level: {self._get_conviction_level(sentiment_score)}",
+            f"Strategy: {strategy_type} based on sentiment analysis",
+            f"Conviction Level: {self._get_conviction_level(sentiment_score)}",
             "⚠️ Day trading options carries high risk - never risk more than you can afford to lose",
             "📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay",
             "⏰ Time decay accelerates rapidly on 0-2 DTE options",
