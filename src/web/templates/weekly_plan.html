@@ -9,9 +9,6 @@
         <div class="col-12">
             <h1><i class="fas fa-calendar-week text-primary"></i> Weekly Market Plan</h1>
             <p class="lead text-muted">Plan your trading week with key market events and announcements</p>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> <strong>Date Range:</strong> Displaying events from 1 month prior to 1 month ahead
-            </div>
         </div>
     </div>
 
@@ -250,8 +247,8 @@ function loadWeeklyEvents() {
     
     const weekStart = formatDate(currentWeekStart);
     
-    const daysBack = 30;
-    const daysAhead = 30;
+    const daysBack = 0;
+    const daysAhead = 6;
 
     fetch(`/api/weekly_events?start_date=${weekStart}&days_back=${daysBack}&days_ahead=${daysAhead}`)
         .then(response => response.json())
@@ -300,7 +297,7 @@ function getAllEventsForDate(dateStr) {
     const events = [];
     
     // Collect events from all categories (weekdays only)
-    ['earnings', 'economic_data', 'federal_reserve', 'options_expiration', 'market_holidays'].forEach(category => {
+    ['earnings', 'economic', 'federal_reserve', 'options_expiration', 'market_holidays'].forEach(category => {
         if (allEvents[category]) {
             allEvents[category].forEach(event => {
                 if (event.date === dateStr) {
@@ -536,7 +533,7 @@ function getFilteredEventsForDate(dateStr, filters) {
         
         if (event.event_type === 'earnings' && filters.earnings) showByType = true;
         if (event.event_type === 'federal_reserve' && filters.fed) showByType = true;
-        if (event.event_type === 'economic' && filters.economic) showByType = true;
+        if (event.event_type === 'economic_data' && filters.economic) showByType = true;
         if (event.event_type === 'options_expiration' && filters.options) showByType = true;
         if ((event.event_type === 'market_holidays' || event.event_type === 'market_holiday') && filters.holidays) showByType = true;
         

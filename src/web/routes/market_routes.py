@@ -19,10 +19,10 @@ log_exception = page_logger.exception
 EVENT_TYPE_TO_GROUP = {
     "earnings": "earnings",
     "federal_reserve": "federal_reserve",
-    "economic": "economic_data",
-    "economic_data": "economic_data",
-    "economic_event": "economic_data",
-    "economic_events": "economic_data",
+    "economic": "economic",
+    "economic_data": "economic",
+    "economic_event": "economic",
+    "economic_events": "economic",
     "options_expiration": "options_expiration",
     "market_holiday": "market_holidays",
     "market_holidays": "market_holidays",
@@ -106,7 +106,7 @@ def weekly_events_api():
         grouped_events = {
             "earnings": [],
             "federal_reserve": [],
-            "economic_data": [],
+            "economic": [],
             "options_expiration": [],
             "market_holidays": [],
         }

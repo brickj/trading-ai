@@ -249,78 +249,6 @@ class SentimentAnalyzer:
         except (TypeError, ValueError):
             return default
 
-    def _parse_text_sentiment_response(self, content: str) -> Optional[Dict]:
-        """Parse text format sentiment responses from AI models."""
-        
-        # Look for patterns like "Sentiment Score: -0.6 (Negative), Confidence: 0.9"
-        sentiment_patterns = [
-            r'Sentiment Score:\s*(-?\d+\.?\d*)\s*\([^)]*\),\s*Confidence:\s*(\d+\.?\d*)',
-            r'sentiment_score["\']?\s*:\s*(-?\d+\.?\d*)',
-            r'confidence["\']?\s*:\s*(\d+\.?\d*)',
-            r'Score:\s*(-?\d+\.?\d*)',
-            r'Confidence:\s*(\d+\.?\d*)'
-        ]
-        
-        sentiment_scores = []
-        confidence_scores = []
-        
-        # Extract all sentiment scores and confidences
-        for pattern in sentiment_patterns:
-            matches = re.findall(pattern, content, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:  # sentiment, confidence
-                    try:
-                        sentiment_scores.append(float(match[0]))
-                        confidence_scores.append(float(match[1]))
-                    except ValueError:
-                        continue
-                elif len(match) == 1:  # single value
-                    try:
-                        val = float(match[0])
-                        if -1.0 <= val <= 1.0:  # likely sentiment score
-                            sentiment_scores.append(val)
-                        elif 0.0 <= val <= 1.0:  # likely confidence
-                            confidence_scores.append(val)
-                    except ValueError:
-                        continue
-        
-        # If we found scores, calculate averages
-        if sentiment_scores and confidence_scores:
-            avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
-            avg_confidence = sum(confidence_scores) / len(confidence_scores)
-            
-            # Clamp values to valid ranges
-            avg_sentiment = max(-1.0, min(1.0, avg_sentiment))
-            avg_confidence = max(0.0, min(1.0, avg_confidence))
-            
-            # Extract summary if available
-            summary_match = re.search(r'Summary:\s*([^\n]+)', content, re.IGNORECASE)
-            summary = summary_match.group(1).strip() if summary_match else "Sentiment analysis from text format"
-            
-            return {
-                "sentiment_score": avg_sentiment,
-                "confidence": avg_confidence,
-                "summary": summary
-            }
-        
-        # Try to find any numeric values that could be sentiment scores
-        all_numbers = re.findall(r'-?\d+\.?\d*', content)
-        if all_numbers:
-            try:
-                # Look for values in sentiment range (-1 to 1)
-                sentiment_candidates = [float(n) for n in all_numbers if -1.0 <= float(n) <= 1.0]
-                if sentiment_candidates:
-                    avg_sentiment = sum(sentiment_candidates) / len(sentiment_candidates)
-                    return {
-                        "sentiment_score": avg_sentiment,
-                        "confidence": 0.5,  # Medium confidence for parsed text
-                        "summary": "Sentiment analysis parsed from text format"
-                    }
-            except ValueError:
-                pass
-        
-        return None
-
     def _load_historical_sentiment(self, symbol: Optional[str]) -> List[Dict]:
         """Load historical sentiment rows for the given symbol if configured."""
 
@@ -747,39 +675,29 @@ class SentimentAnalyzer:
         # Add context-specific prompt
         if is_crypto:
             # Simplified crypto prompt
-            prompt = f"""CRITICAL: You MUST return ONLY valid JSON format. NO TEXT, NO EXPLANATIONS, NO MARKDOWN.
-
-Analyze crypto news sentiment for {symbol}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
+            prompt = f"""Analyze crypto news sentiment for {symbol}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
 
 News: {news_text}
 
-MANDATORY JSON FORMAT ONLY:
-{{"sentiment_score": float, "confidence": float, "summary": "string"}}
-
-FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE. RETURN ONLY THE JSON OBJECT."""
+Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string"}}"""
             messages = [
                 {
                     "role": "system",
-                    "content": f"CRITICAL: You are a crypto news sentiment analyzer. You MUST return ONLY valid JSON format. NO TEXT, NO EXPLANATIONS, NO MARKDOWN. Focus on news related to {symbol}. FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE.",
+                    "content": f"You are a crypto news sentiment analyzer. Your job is to analyze crypto news content and provide sentiment scores. Focus on news related to {symbol}.",
                 },
                 {"role": "user", "content": prompt},
             ]
         else:
             # Simplified stock prompt
-            prompt = f"""CRITICAL: You MUST return ONLY valid JSON format. NO TEXT, NO EXPLANATIONS, NO MARKDOWN.
-
-Analyze stock news sentiment for {symbol if symbol else "stock"}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
+            prompt = f"""Analyze stock news sentiment for {symbol if symbol else "stock"}. Score: -1 (very negative) to 1 (very positive). Confidence: 0-1.
 
 News: {news_text}
 
-MANDATORY JSON FORMAT ONLY:
-{{"sentiment_score": float, "confidence": float, "summary": "string"}}
-
-FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE. RETURN ONLY THE JSON OBJECT."""
+Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string"}}"""
             messages = [
                 {
                     "role": "system",
-                    "content": f"CRITICAL: You are a news sentiment analyzer. You MUST return ONLY valid JSON format. NO TEXT, NO EXPLANATIONS, NO MARKDOWN. {f'Focus on news related to {symbol}.' if symbol else ''} FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE.",
+                    "content": f"You are a news sentiment analyzer. Your job is to analyze news content and provide sentiment scores. {f'Focus on news related to {symbol}.' if symbol else ''}",
                 },
                 {"role": "user", "content": prompt},
             ]
@@ -911,38 +829,6 @@ FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE. RETURN ONLY THE JSON
             try:
                 result = json.loads(content)
                 print(f"✅ Parsed JSON directly: {result}")
-                
-                # Handle array response - aggregate multiple sentiment scores
-                if isinstance(result, list) and len(result) > 0:
-                    sentiment_scores = []
-                    confidence_scores = []
-                    summaries = []
-                    
-                    for item in result:
-                        if isinstance(item, dict):
-                            if 'sentiment_score' in item:
-                                sentiment_scores.append(float(item['sentiment_score']))
-                            if 'confidence' in item:
-                                confidence_scores.append(float(item['confidence']))
-                            if 'summary' in item:
-                                summaries.append(str(item['summary']))
-                    
-                    if sentiment_scores and confidence_scores:
-                        # Calculate weighted averages
-                        avg_sentiment = sum(sentiment_scores) / len(sentiment_scores)
-                        avg_confidence = sum(confidence_scores) / len(confidence_scores)
-                        
-                        # Clamp values to valid ranges
-                        avg_sentiment = max(-1.0, min(1.0, avg_sentiment))
-                        avg_confidence = max(0.0, min(1.0, avg_confidence))
-                        
-                        result = {
-                            "sentiment_score": avg_sentiment,
-                            "confidence": avg_confidence,
-                            "summary": f"Aggregated from {len(result)} articles: " + "; ".join(summaries[:2])
-                        }
-                        print(f"✅ Aggregated array response: {result}")
-                
                 return result
             except json.JSONDecodeError as e:
                 print(f"⚠️ Direct JSON parsing failed: {e}")
@@ -1028,13 +914,6 @@ FAILURE TO RETURN VALID JSON WILL RESULT IN SYSTEM FAILURE. RETURN ONLY THE JSON
                         }
             else:
                 print(f"❌ No JSON brackets found in response: {content}")
-                
-                # Try to parse text format with sentiment scores
-                text_result = self._parse_text_sentiment_response(content)
-                if text_result:
-                    print(f"✅ Parsed sentiment from text format: {text_result}")
-                    return text_result
-                
                 # Check if Ollama returned code instead of JSON
                 if "import" in content or "def" in content or "print" in content:
                     print(

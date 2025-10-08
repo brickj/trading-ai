@@ -295,7 +295,7 @@ function displayOpportunities(data) {
         const hasSymbol = opp.symbol && opp.symbol.trim() !== '';
         const hasPrice = opp.price_data?.current_price > 0;
         const hasSentiment = opp.sentiment_data?.confidence > 0;
-        const hasSignal = opp.signal_data?.stock_recommendation?.action && opp.signal_data.stock_recommendation.action !== 'HOLD';
+        const hasSignal = opp.signal_data?.action && opp.signal_data.action !== 'HOLD';
         const hasNews = opp.news_count > 0;
         const hasTradeSignal = opp.trade_signal?.action;
         
@@ -312,7 +312,7 @@ function displayOpportunities(data) {
             isMeaningful,
             priceValue: opp.price_data?.current_price,
             sentimentConfidence: opp.sentiment_data?.confidence,
-            signalAction: opp.signal_data?.stock_recommendation?.action,
+            signalAction: opp.signal_data?.action,
             newsCount: opp.news_count,
             tradeSignalAction: opp.trade_signal?.action
         });
@@ -352,7 +352,7 @@ function displayOpportunities(data) {
         console.log(`🔍 [DISPLAY] Creating card ${index + 1} for:`, {
             symbol: opp.symbol,
             type: opp.type,
-            action: opp.signal_data?.stock_recommendation?.action
+            action: opp.signal_data?.action
         });
         
         const card = createOpportunityCard(opp);
@@ -383,7 +383,7 @@ function createOpportunityCard(opp) {
     const symbol = opp.symbol || 'UNKNOWN';
     const trigger = opp.trigger || 'unknown';
     const type = opp.type || 'stock';
-    const action = opp.signal_data?.stock_recommendation?.action || 'HOLD';
+    const action = opp.signal_data?.action || 'HOLD';
     const sentimentScore = opp.sentiment_data?.sentiment_score || 0;
     const confidence = opp.sentiment_data?.confidence || 0;
     const newsCount = opp.news_count || 0;
