@@ -1290,9 +1290,8 @@ class OptionsStrategy:
         self.initial_capital = 10000
         self.current_capital = self.initial_capital
         try:
-            from ..core.go_service_client import GoServiceClient
-
-            self.go_client = GoServiceClient()
+            # from ..core.go_service_client import GoServiceClient
+            # self.go_client = GoServiceClient()
         except ImportError:
             self.go_client = None
 

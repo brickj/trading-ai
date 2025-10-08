@@ -14,7 +14,6 @@ from .config import Config
 from .redis_cache import redis_cache
 
 # Import API tracker for monitoring API usage
-# from src.utils.api_tracker import api_tracker  # Module removed
 
 
 class SentimentAnalyzer:
@@ -74,7 +73,6 @@ class SentimentAnalyzer:
             result = response.json()
 
             # Track API usage
-            # api_tracker.record_request("ollama")  # Module removed
 
             # Return in the expected format for the sentiment analyzer
             return {"choices": [{"message": {"content": result.get("response", "")}}]}

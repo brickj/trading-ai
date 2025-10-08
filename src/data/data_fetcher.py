@@ -15,7 +15,6 @@ from src.core.redis_cache import redis_cache
 from src.core.go_services import go_services
 
 # Import API tracker for monitoring API usage
-# from src.utils.api_tracker import api_tracker  # Module removed
 
 # Optional import for web scraping
 try:
@@ -458,7 +457,6 @@ class DataFetcher:
         response.raise_for_status()
 
         # Track API usage
-        # api_tracker.record_request("finnhub")  # Module removed
 
         return response.json()
 
@@ -560,7 +558,6 @@ class DataFetcher:
                     )
                     response.raise_for_status()
                     data = response.json()
-                    # api_tracker.record_request("cryptopanic")  # Module removed
                     cryptopanic_articles = []
                     for item in data.get("results", []):
                         published_at = item.get("published_at")
@@ -594,7 +591,6 @@ class DataFetcher:
                     rate_limit_delay()
                 except Exception as e:
                     print(f"❌ CryptoPanic news failed: {e}")
-                    # api_tracker.record_failure("cryptopanic")  # Module removed
 
             # 3. NewsAPI for crypto news (if API key is configured)
             if (
@@ -619,7 +615,6 @@ class DataFetcher:
                     )
                     response.raise_for_status()
                     data = response.json()
-                    # api_tracker.record_request("newsapi")  # Module removed
                     newsapi_articles = []
                     for item in data.get("articles", []):
                         published_at = item.get("publishedAt")
@@ -649,7 +644,6 @@ class DataFetcher:
                     rate_limit_delay()
                 except Exception as e:
                     print(f"❌ NewsAPI crypto news failed: {e}")
-                    # api_tracker.record_failure("newsapi")  # Module removed
 
             # 4. Reddit crypto news (r/cryptocurrency, r/bitcoin, etc.)
             try:
@@ -1136,7 +1130,6 @@ class DataFetcher:
             print(f"[DEBUG][Reddit] Parsed {len(news)} articles for {symbol}")
 
             # Track API usage
-            # api_tracker.record_request("reddit")  # Module removed
 
             return news
         except Exception as e:
@@ -1180,7 +1173,6 @@ class DataFetcher:
                     )
 
                     # Track API usage
-                    # api_tracker.record_request("alpha_vantage")  # Module removed
 
                     return news_articles
                 else:
@@ -1307,7 +1299,6 @@ class DataFetcher:
             )
 
             # Track API usage
-            # api_tracker.record_request("yahoo_finance")  # Module removed
 
             return news_articles
 

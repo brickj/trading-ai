@@ -330,11 +330,11 @@ import traceback
 
 def run_scheduled_jobs():
     """Load job schedules from DB and schedule them with APScheduler."""
-    # from src.data.preload_news_opportunities import preload_news_opportunities  # Module removed
-    # from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities  # Module removed
+    # from src.data.preload_news_opportunities import preload_news_opportunities
+    # from src.data.preload_watchlist_opportunities import preload_watchlist_opportunities
     from src.core.database import get_db_connection, ensure_job_schedules_table
     from src.core.scalping_analyzer import scalping_analyzer
-    # from src.data.weekly_plan_populator import WeeklyPlanPopulator  # Module removed
+    # from src.data.weekly_plan_populator import WeeklyPlanPopulator
     from datetime import datetime, timedelta
     import calendar
     
@@ -386,7 +386,7 @@ def run_scheduled_jobs():
     scheduler = BackgroundScheduler()
     job_map = {
         'preload_news_opportunities': lambda: __import__('src.data.preload_news_opportunities', fromlist=['preload_news_opportunities']).preload_news_opportunities(),
-        # 'preload_watchlist_opportunities': preload_watchlist_opportunities,  # Module removed
+        # 'preload_watchlist_opportunities': preload_watchlist_opportunities,
         'preload_stock_data': preload_stock_data,
         'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis(),
         'populate_weekly_plan': lambda: populate_weekly_plan_job(),
@@ -443,7 +443,7 @@ def run_scheduled_jobs():
                     print("[SCHEDULER] No enabled jobs found in database. Setting up default jobs...")
                     # Run the job setup script
                     try:
-                        # from src.utils.setup_job_scheduler import setup_default_jobs  # Module removed
+                        # from src.utils.setup_job_scheduler import setup_default_jobs
                         if False:  # setup_default_jobs() removed
                             # Re-query for jobs after setup
                             cur.execute('SELECT id, job_name, run_time, enabled FROM job_schedules WHERE enabled = TRUE')
@@ -488,11 +488,11 @@ def run_scheduled_jobs():
 
 def main():
     """Main function"""
-    # from src.core.startup import run_startup_checks  # Module removed
+    # from src.core.startup import run_startup_checks
     print_header()
 
     # Start the update logic in a background thread
-    # update_thread = threading.Thread(target=run_startup_checks, daemon=True)  # Module removed
+    # update_thread = threading.Thread(target=run_startup_checks, daemon=True)
     # update_thread.start()
 
     # Check project directory

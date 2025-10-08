@@ -1,7 +1,6 @@
 import numpy as np
 from datetime import datetime
 from typing import Dict, List
-# from ..core.go_service_client import GoServiceClient  # Module removed
 
 
 class TradingStrategy:
@@ -10,7 +9,6 @@ class TradingStrategy:
         self.trade_history = []
         self.initial_capital = 10000
         self.current_capital = self.initial_capital
-        # self.go_client = GoServiceClient()  # Module removed
 
     def calculate_option_price_estimate(
         self,
@@ -284,7 +282,6 @@ class TradingStrategy:
                 "total_value": self.current_capital
                 + sum([p["total_cost"] for p in self.positions]),
             }
-            # risk_check = self.go_client.check_risk_limits(portfolio_data, trade_signal)  # Module removed
             if risk_check and not risk_check.get("approved", True):
                 return {
                     "status": "risk_rejected",

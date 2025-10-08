@@ -8,6 +8,6 @@ This package handles:
 
 from .data_fetcher import DataFetcher
 from .news_monitor import NewsMonitor
-# from .news_scanner import NewsScanner  # Module removed
+# from .news_scanner import NewsScanner
 
 __all__ = ["DataFetcher", "NewsMonitor"]  # NewsScanner removed
