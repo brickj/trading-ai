@@ -20,6 +20,7 @@ def register_routes(app):
     from .telegram_routes import telegram_bp
     from .logging_routes import logging_bp
     from .redis_routes import redis_bp
+    from .go_services_routes import go_services_bp
     
     # Register blueprints
     app.register_blueprint(analysis_bp)
@@ -36,6 +37,7 @@ def register_routes(app):
     app.register_blueprint(telegram_bp)
     app.register_blueprint(logging_bp)
     app.register_blueprint(redis_bp)
+    app.register_blueprint(go_services_bp)
     
     # Register scalping signals blueprint
     try:

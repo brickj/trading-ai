@@ -12,6 +12,7 @@ from src.core.config import Config
 from src.core.logger import log_error, log_debug
 from src.core.cache import cache
 from src.core.redis_cache import redis_cache
+from src.core.go_services import go_services
 
 # Import API tracker for monitoring API usage
 # from src.utils.api_tracker import api_tracker  # Module removed
@@ -89,6 +90,17 @@ class DataFetcher:
         Returns:
             Stock price data
         """
+        # Try Go service first for maximum performance
+        if go_services.enabled:
+            try:
+                go_result = go_services.data_fetcher.get_stock_price(symbol)
+                if go_result:
+                    log_debug(f"Go service returned stock price for: {symbol}")
+                    return go_result
+            except Exception as e:
+                log_error(f"Go service failed for stock price {symbol}: {e}")
+        
+        # Fallback to Python implementation
         cache_key = f"stock_price_{symbol}"
         
         # Try Redis cache first (faster)
@@ -225,6 +237,17 @@ class DataFetcher:
 
     def get_company_news(self, symbol: str, days_back: int = 7) -> list:
         """Fetch company news from multiple sources for better coverage with Redis caching"""
+        # Try Go service first for maximum performance
+        if go_services.enabled:
+            try:
+                go_result = go_services.data_fetcher.get_stock_news(symbol, days_back, 20)
+                if go_result and go_result.get('news'):
+                    log_debug(f"Go service returned news for: {symbol}")
+                    return go_result['news']
+            except Exception as e:
+                log_error(f"Go service failed for news {symbol}: {e}")
+        
+        # Fallback to Python implementation
         cache_key = f"company_news_{symbol}_{days_back}"
         
         # Try Redis cache first (faster)
