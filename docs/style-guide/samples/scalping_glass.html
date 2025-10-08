@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Glassy Scalping Signals</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --page-bg: radial-gradient(circle at 20% 20%, rgba(0, 255, 204, 0.15), transparent 60%),
+                radial-gradient(circle at 80% 0%, rgba(89, 92, 255, 0.18), transparent 55%),
+                #050511;
+            --card-bg: rgba(17, 20, 35, 0.65);
+            --card-border: rgba(255, 255, 255, 0.18);
+            --card-highlight: rgba(0, 255, 200, 0.45);
+            --text-primary: #f6f6ff;
+            --text-muted: rgba(246, 246, 255, 0.64);
+            --accent: #00ff9d;
+            --accent-soft: rgba(0, 255, 157, 0.15);
+            --danger: #ff4d6d;
+            --warning: #ffc857;
+            --glow: 0 0 35px rgba(0, 255, 204, 0.35);
+            --blur: 22px;
+            --spacing-xs: 0.4rem;
+            --spacing-sm: 0.8rem;
+            --spacing-md: 1.4rem;
+            --spacing-lg: 2.4rem;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--page-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-shell {
+            width: min(1200px, 94vw);
+            margin: var(--spacing-lg) auto;
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        header.hero {
+            position: relative;
+            padding: var(--spacing-lg);
+            border-radius: 32px;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(21, 26, 46, 0.78), rgba(11, 18, 33, 0.62));
+            backdrop-filter: blur(calc(var(--blur) * 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 24px 48px rgba(5, 9, 24, 0.45);
+        }
+
+        header.hero::after {
+            content: "";
+            position: absolute;
+            inset: -60% 20% 15% -15%;
+            background: radial-gradient(circle at center, rgba(0, 255, 157, 0.24), transparent 55%);
+            opacity: 0.8;
+            transform: skewX(-15deg) rotate(12deg);
+        }
+
+        header.hero h1 {
+            margin: 0 0 var(--spacing-sm);
+            font-size: clamp(2.6rem, 4vw, 3.4rem);
+            letter-spacing: -0.03em;
+        }
+
+        header.hero p {
+            max-width: 560px;
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .hero-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .metric-pill {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: 0.75rem 1.4rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(calc(var(--blur) * 0.4));
+            box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+            font-size: 0.95rem;
+        }
+
+        main.grid {
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+        }
+
+        .filters button {
+            position: relative;
+            padding: 0.65rem 1.4rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(17, 23, 43, 0.5);
+            color: var(--text-primary);
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.2s ease, color 0.2s ease;
+            backdrop-filter: blur(calc(var(--blur) * 0.3));
+        }
+
+        .filters button::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(0, 255, 157, 0.35), transparent 45%, rgba(82, 172, 255, 0.35));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .filters button:hover {
+            transform: translateY(-2px);
+            color: var(--accent);
+        }
+
+        .filters button:hover::after,
+        .filters button.is-active::after {
+            opacity: 1;
+        }
+
+        .filters button.is-active {
+            color: var(--accent);
+            box-shadow: 0 12px 22px rgba(0, 255, 157, 0.18);
+        }
+
+        .cards-grid {
+            display: grid;
+            gap: var(--spacing-lg);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .signal-card {
+            position: relative;
+            padding: var(--spacing-md);
+            border-radius: 26px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(var(--blur));
+            box-shadow: 0 18px 38px rgba(4, 8, 22, 0.42);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+            overflow: hidden;
+        }
+
+        .signal-card::before {
+            content: "";
+            position: absolute;
+            inset: 1px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            pointer-events: none;
+        }
+
+        .signal-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            border-color: rgba(0, 255, 157, 0.45);
+            box-shadow: 0 26px 54px rgba(0, 255, 204, 0.28);
+        }
+
+        .signal-card header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--spacing-md);
+        }
+
+        .signal-card header .badge {
+            padding: 0.45rem 1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: var(--text-primary);
+        }
+
+        .signal-card header .badge.long {
+            color: var(--accent);
+            border-color: rgba(0, 255, 157, 0.5);
+            box-shadow: 0 0 24px rgba(0, 255, 157, 0.25);
+        }
+
+        .signal-card header .badge.short {
+            color: var(--danger);
+            border-color: rgba(255, 77, 109, 0.4);
+            box-shadow: 0 0 22px rgba(255, 77, 109, 0.2);
+        }
+
+        .signal-card header .badge.momentum {
+            color: var(--warning);
+            border-color: rgba(255, 200, 87, 0.35);
+            box-shadow: 0 0 22px rgba(255, 200, 87, 0.2);
+        }
+
+        .signal-card h2 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .signal-card .meta {
+            display: flex;
+            gap: var(--spacing-sm);
+            color: var(--text-muted);
+            font-size: 0.92rem;
+        }
+
+        .signal-card .meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .signal-card .metrics {
+            display: grid;
+            gap: var(--spacing-sm);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .metric {
+            padding: 0.9rem 1rem;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(calc(var(--blur) * 0.4));
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .metric label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .metric strong {
+            font-size: 1.1rem;
+        }
+
+        .metric.positive strong {
+            color: var(--accent);
+        }
+
+        .metric.negative strong {
+            color: var(--danger);
+        }
+
+        .insight {
+            margin-top: var(--spacing-sm);
+            padding: 1.05rem 1.2rem;
+            border-radius: 18px;
+            background: rgba(0, 255, 157, 0.08);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            color: var(--accent);
+            font-weight: 500;
+            line-height: 1.5;
+            box-shadow: inset 0 0 20px rgba(0, 255, 157, 0.08);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .actions .confidence {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+        }
+
+        .actions .confidence strong {
+            color: var(--accent);
+            letter-spacing: 0.06em;
+        }
+
+        .actions button {
+            padding: 0.7rem 1.4rem;
+            border-radius: 16px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            background: linear-gradient(120deg, rgba(0, 255, 157, 0.82), rgba(82, 172, 255, 0.75));
+            color: #04101a;
+            box-shadow: 0 18px 35px rgba(0, 255, 204, 0.45);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .actions button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 22px 48px rgba(0, 255, 204, 0.55);
+        }
+
+        footer {
+            margin-top: auto;
+            padding: var(--spacing-lg) 0 var(--spacing-md);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 680px) {
+            header.hero,
+            .signal-card {
+                padding: var(--spacing-md);
+            }
+
+            .signal-card .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <h1>Glassy Scalping Signals</h1>
+            <p>
+                An AI-native surface for intraday opportunities. Borrow the typography, hierarchy, and data
+                presentation from the existing scalping page, and layer on glassmorphism, soft glow lighting,
+                and gradient motion to deliver a modern trading terminal aesthetic.
+            </p>
+            <div class="hero-metrics">
+                <span class="metric-pill">Live Signals: <strong>18</strong></span>
+                <span class="metric-pill">Strong Conviction: <strong>6</strong></span>
+                <span class="metric-pill">Updated: <strong>09:42 AM ET</strong></span>
+            </div>
+        </header>
+
+        <main class="grid">
+            <nav class="filters">
+                <button class="is-active">All</button>
+                <button>Equities</button>
+                <button>Crypto</button>
+                <button>Momentum</button>
+                <button>Watchlist</button>
+            </nav>
+
+            <section class="cards-grid">
+                <article class="signal-card">
+                    <header>
+                        <div>
+                            <h2>NVDA</h2>
+                            <div class="meta">
+                                <span>Equity</span>
+                                <span>Last Price: $921.14</span>
+                                <span>Spread: 0.08%</span>
+                            </div>
+                        </div>
+                        <span class="badge long">Long Bias</span>
+                    </header>
+
+                    <div class="metrics">
+                        <div class="metric positive">
+                            <label>Momentum</label>
+                            <strong>+3.4σ</strong>
+                        </div>
+                        <div class="metric positive">
+                            <label>Volume Surge</label>
+                            <strong>+28%</strong>
+                        </div>
+                        <div class="metric">
+                            <label>AI Sentiment</label>
+                            <strong>0.74</strong>
+                        </div>
+                        <div class="metric">
+                            <label>Exit Target</label>
+                            <strong>$934.40</strong>
+                        </div>
+                    </div>
+
+                    <div class="insight">AI scalp model flags an accelerated order book imbalance with macro tech flows supporting continuation.</div>
+
+                    <div class="actions">
+                        <span class="confidence">Confidence: <strong>High</strong></span>
+                        <button>Execute via Trade Desk</button>
+                    </div>
+                </article>
+
+                <article class="signal-card">
+                    <header>
+                        <div>
+                            <h2>SOL-USD</h2>
+                            <div class="meta">
+                                <span>Crypto</span>
+                                <span>Last Price: $132.87</span>
+                                <span>Spread: 0.12%</span>
+                            </div>
+                        </div>
+                        <span class="badge momentum">Momentum</span>
+                    </header>
+
+                    <div class="metrics">
+                        <div class="metric positive">
+                            <label>Momentum</label>
+                            <strong>+4.1σ</strong>
+                        </div>
+                        <div class="metric">
+                            <label>Liquidity Score</label>
+                            <strong>87/100</strong>
+                        </div>
+                        <div class="metric negative">
+                            <label>Volatility</label>
+                            <strong>2.1%</strong>
+                        </div>
+                        <div class="metric">
+                            <label>Exit Target</label>
+                            <strong>$139.20</strong>
+                        </div>
+                    </div>
+
+                    <div class="insight">Momentum ignition triggered on high-frequency venues. Watch for reversal signals in the 15-minute window.</div>
+
+                    <div class="actions">
+                        <span class="confidence">Confidence: <strong>Medium</strong></span>
+                        <button>Route via Smart Order</button>
+                    </div>
+                </article>
+
+                <article class="signal-card">
+                    <header>
+                        <div>
+                            <h2>TSLA</h2>
+                            <div class="meta">
+                                <span>Equity</span>
+                                <span>Last Price: $218.34</span>
+                                <span>Spread: 0.11%</span>
+                            </div>
+                        </div>
+                        <span class="badge short">Short Bias</span>
+                    </header>
+
+                    <div class="metrics">
+                        <div class="metric negative">
+                            <label>Momentum</label>
+                            <strong>-2.7σ</strong>
+                        </div>
+                        <div class="metric positive">
+                            <label>Put Flow</label>
+                            <strong>+36%</strong>
+                        </div>
+                        <div class="metric">
+                            <label>AI Sentiment</label>
+                            <strong>-0.41</strong>
+                        </div>
+                        <div class="metric">
+                            <label>Exit Target</label>
+                            <strong>$211.05</strong>
+                        </div>
+                    </div>
+
+                    <div class="insight">Aggressive sell programs and AI chatter align on downside skew. Monitor for macro catalysts before entry.</div>
+
+                    <div class="actions">
+                        <span class="confidence">Confidence: <strong>High</strong></span>
+                        <button>Open Short Ticket</button>
+                    </div>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        UI tokens mirror the production scalping page while adding glassmorphism, neon gradients, and AI-native motion accents.
+    </footer>
+</body>
+</html>

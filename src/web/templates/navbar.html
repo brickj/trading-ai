@@ -1,20 +1,23 @@
 <!-- Navigation -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
+<nav class="navbar navbar-expand-lg glassy-nav navbar-dark">
+    <div class="container-fluid nav-shell">
         <a class="navbar-brand" href="/">
-            <span class="fa-stack fa-sm">
-                <i class="fas fa-globe-americas fa-stack-2x"></i>
-                <i class="fas fa-robot fa-stack-1x"></i>
+            <span class="brand-icon">
+                <span class="brand-icon__orb"></span>
+                <i class="fas fa-robot"></i>
             </span>
-            Trading AI
+            <span class="brand-text">
+                <span class="brand-text__title">Trading AI</span>
+                <span class="brand-text__subtitle">Signals. Strategy. Speed.</span>
+            </span>
         </a>
-        
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
+            <ul class="navbar-nav nav-groups">
                 <!-- Primary Trading Pages -->
                 <li class="nav-item">
                     <div class="navbar-text navbar-section primary">
@@ -47,7 +50,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;" style="color: #6c757d !important; cursor: not-allowed;">
+                    <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;">
                         <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-secondary">Disabled</span>
                     </a>
                 </li>
@@ -78,7 +81,9 @@
                         <i class="fas fa-chart-line"></i> Scalping
                     </a>
                 </li>
-                
+
+                <li class="nav-break" role="presentation" aria-hidden="true"></li>
+
                 <!-- System & Monitoring -->
                 <li class="nav-item">
                     <div class="navbar-text navbar-section system">
@@ -101,7 +106,7 @@
                     </a>
                 </li>
             </ul>
-            
+
         </div>
     </div>
 </nav>
@@ -111,3 +116,4 @@ function showDisabledMessage(featureName) {
     alert(`${featureName} feature has been disabled.`);
 }
 </script>
+
