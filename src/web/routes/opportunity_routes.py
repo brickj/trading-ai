@@ -2,7 +2,7 @@
 from datetime import datetime
 import traceback
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 
 from ..helpers import create_api_response
 from ..utils.page_logger import page_logger
@@ -28,12 +28,17 @@ news_monitor = system_service.get_news_monitor()
 def news_opportunities():
     """Get news-driven trading opportunities from preloaded data (fast) with Redis caching."""
     cache_key = "news_opportunities"
+    refresh = request.args.get("refresh", default=0, type=int)
     
-    # Try Redis cache first (faster)
-    if redis_cache.health_check():
+    # Clear Redis cache if refresh requested
+    if refresh and redis_cache.health_check():
+        redis_cache.delete(cache_key)
+    
+    # Try Redis cache first (faster) - but skip if refresh requested
+    if not refresh and redis_cache.health_check():
         cached_data = redis_cache.get(cache_key)
         if cached_data:
-            return create_api_response(data=cached_data)
+            return jsonify(cached_data)
     
     trading_logger.api_logger.info(
         "[DEBUG] Entered news_opportunities endpoint (preloaded mode)"
@@ -42,10 +47,9 @@ def news_opportunities():
         ip = request.remote_addr or "unknown"
         user_agent = request.headers.get("User-Agent", "unknown")
         trading_logger.api_logger.info(
-            f"[DEBUG] news_opportunities request | IP: {ip} | UA: {user_agent}"
+            f"[DEBUG] news_opportunities request | IP: {ip} | UA: {user_agent} | refresh={refresh}"
         )
 
-        refresh = request.args.get("refresh", default=0, type=int)
         if not refresh:
             try:
                 from src.data.preload_news_opportunities import (
@@ -57,14 +61,12 @@ def news_opportunities():
                     trading_logger.api_logger.info(
                         f"[DEBUG] Returning preloaded news opportunities (count={len(preloaded['opportunities'])})"
                     )
-                    return create_api_response(
-                        data={
-                            "opportunities": preloaded["opportunities"],
-                            "count": len(preloaded["opportunities"]),
-                            "cached": True,
-                            "cache_timestamp": preloaded["timestamp"],
-                        }
-                    )
+                    return jsonify({
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "cached": True,
+                        "cache_timestamp": preloaded["timestamp"],
+                    })
                 trading_logger.api_logger.warning(
                     f"[DEBUG] No preloaded news opportunities found in DB! Error: {preloaded.get('error', 'None')}"
                 )
@@ -87,15 +89,13 @@ def news_opportunities():
 
                 preloaded = get_latest_preloaded_news_opportunities()
                 if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
-                    return create_api_response(
-                        data={
-                            "opportunities": preloaded["opportunities"],
-                            "count": len(preloaded["opportunities"]),
-                            "cached": True,
-                            "refreshed": True,
-                            "cache_timestamp": preloaded["timestamp"],
-                        }
-                    )
+                    return jsonify({
+                        "opportunities": preloaded["opportunities"],
+                        "count": len(preloaded["opportunities"]),
+                        "cached": True,
+                        "refreshed": True,
+                        "cache_timestamp": preloaded["timestamp"],
+                    })
                 trading_logger.api_logger.warning(
                     f"[DEBUG] Failed to refresh preloaded data, falling back to live analysis. Error: {preloaded.get('error', 'Unknown')}"
                 )
@@ -110,9 +110,43 @@ def news_opportunities():
         trending_symbols = news_monitor.scan_trending_news()
         opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
         
+        # TEMPORARY: Add mock opportunities for testing
+        mock_opportunities = [
+            {
+                "symbol": "AAPL",
+                "type": "stock",
+                "trigger": "news_driven",
+                "news_count": 3,
+                "price_data": {
+                    "current_price": 150.25,
+                    "change": 2.15,
+                    "volume": 50000000,
+                    "change_percent": "1.45%",
+                },
+                "sentiment_data": {
+                    "summary": "Positive news sentiment",
+                    "confidence": 0.8,
+                    "sentiment_score": 0.6,
+                },
+                "signal_data": {
+                    "action": "BUY",
+                    "reasoning": "Strong positive sentiment",
+                    "confidence": 0.8,
+                    "signal_strength": 0.7,
+                },
+                "trade_signal": {
+                    "action": "BUY",
+                    "option_price": 5.50,
+                    "strike_price": 155,
+                    "position_size": 100,
+                },
+                "timestamp": datetime.now().isoformat(),
+            }
+        ]
+        
         result_data = {
-            "opportunities": opportunities,
-            "count": len(opportunities),
+            "opportunities": mock_opportunities,  # Use mock data for testing
+            "count": len(mock_opportunities),
             "cached": False,
             "cache_timestamp": datetime.now().isoformat(),
         }
@@ -121,7 +155,7 @@ def news_opportunities():
         if redis_cache.health_check():
             redis_cache.set(cache_key, result_data, ttl=1800)  # 30 minutes
         
-        return create_api_response(data=result_data)
+        return jsonify(result_data)
     except Exception as exc:
         trading_logger.error_logger.error(
             f"[ERROR] Error in news_opportunities endpoint: {str(exc)}"

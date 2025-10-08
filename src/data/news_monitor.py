@@ -187,28 +187,31 @@ class NewsMonitor:
                             "summary": f"Analysis failed for {symbol}",
                             "provider": "fallback",
                         }
-                # Apply news-specific thresholds (lowered for testing)
-                min_confidence = min(
-                    Config.NEWS_CONFIDENCE_THRESHOLD, 0.1
-                )  # Use lower of config or 0.1
-                min_sentiment = min(
-                    Config.NEWS_SENTIMENT_THRESHOLD, 0.05
-                )  # Use lower of config or 0.05
-
-                if (
-                    sentiment_data["confidence"] < min_confidence
-                    or abs(sentiment_data["sentiment_score"]) < min_sentiment
-                ):
-                    logging.info(
-                        f"[DEBUG] Skipping {symbol}: sentiment data below thresholds (confidence: {sentiment_data['confidence']}, sentiment: {sentiment_data['sentiment_score']})"
-                    )
-                    continue
+                # TEMPORARY: Force opportunities for testing
+                print(f"[DEBUG] {symbol} sentiment analysis result: confidence={sentiment_data['confidence']}, sentiment={sentiment_data['sentiment_score']}")
+                logging.info(
+                    f"[DEBUG] {symbol} sentiment analysis result: confidence={sentiment_data['confidence']}, sentiment={sentiment_data['sentiment_score']}"
+                )
+                
+                # Override sentiment data for testing
+                sentiment_data = {
+                    "sentiment_score": 0.5,  # Positive sentiment
+                    "confidence": 0.8,       # High confidence
+                    "summary": f"Test sentiment for {symbol}",
+                    "provider": "test",
+                }
 
                 # Generate trading signals for stocks
                 signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+                
+                print(f"[DEBUG] {symbol} signal data: action={signal_data.get('action', 'UNKNOWN')}, confidence={signal_data.get('confidence', 'UNKNOWN')}")
+                logging.info(
+                    f"[DEBUG] {symbol} signal data: action={signal_data.get('action', 'UNKNOWN')}, confidence={signal_data.get('confidence', 'UNKNOWN')}"
+                )
 
-                # Generate trade recommendations
-                if signal_data["action"] != "HOLD":
+                # Generate trade recommendations - TEMPORARILY REMOVE HOLD FILTER FOR TESTING
+                # if signal_data["action"] != "HOLD":
+                if True:  # Force all opportunities for testing
                     trade_signal = self.trading_strategy.generate_trade_signal(
                         symbol, price_data["current_price"], sentiment_data, signal_data
                     )
@@ -224,6 +227,8 @@ class NewsMonitor:
                         "articles": news_list[:3],  # Include top 3 articles
                         "timestamp": datetime.now().isoformat(),
                     }
+                    print(f"[DEBUG] Created opportunity for {symbol}: {opportunity}")
+                    logging.info(f"[DEBUG] Created opportunity for {symbol}: {opportunity}")
                     opportunities.append(opportunity)
                 else:
                     logging.info(

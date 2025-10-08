@@ -1292,6 +1292,7 @@ class OptionsStrategy:
         try:
             # from ..core.go_service_client import GoServiceClient
             # self.go_client = GoServiceClient()
+            pass
         except ImportError:
             self.go_client = None
 
