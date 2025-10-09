@@ -156,7 +156,7 @@
                                     <h6><i class="fas fa-newspaper"></i> News Service</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                                    <p><strong>Status:</strong> <span id="newsServiceStatus" class="badge bg-success">Active</span></p>
                                     <p><strong>Function:</strong> News ingestion and sentiment analysis</p>
                                     <p><strong>Sources:</strong> Finnhub, Reddit, Yahoo Finance</p>
                                 </div>
@@ -169,7 +169,7 @@
                                     <h6><i class="fas fa-signal"></i> Trading Signals</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                                    <p><strong>Status:</strong> <span id="tradingSignalsStatus" class="badge bg-success">Active</span></p>
                                     <p><strong>Function:</strong> Signal calculation and analysis</p>
                                     <p><strong>Features:</strong> Technical indicators, sentiment</p>
                                 </div>
@@ -182,7 +182,7 @@
                                     <h6><i class="fas fa-robot"></i> AI Analysis</h6>
                                 </div>
                                 <div class="unified-card-body">
-                                    <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                                    <p><strong>Status:</strong> <span id="aiAnalysisStatus" class="badge bg-success">Active</span></p>
                                     <p><strong>Function:</strong> Sentiment analysis and recommendations</p>
                                     <p><strong>Providers:</strong> Ollama, DeepSeek, OpenAI</p>
                                 </div>
@@ -195,7 +195,7 @@
                                     <h6><i class="fas fa-chart-line"></i> Data Service</h6>
                                 </div>
                                 <div class="card-body">
-                                    <p><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
+                                    <p><strong>Status:</strong> <span id="dataServiceStatus" class="badge bg-success">Active</span></p>
                                     <p><strong>Function:</strong> Market data processing</p>
                                     <p><strong>Sources:</strong> Yahoo Finance, Alpha Vantage</p>
                                 </div>
@@ -596,6 +596,92 @@ function updateSystemMetrics(data) {
         const timestamp = new Date(data.timestamp);
         lastUpdatedElement.textContent = `Last updated: ${timestamp.toLocaleString()}`;
     }
+    
+    // Update services status
+    if (data.services) {
+        updateServicesStatus(data.services);
+    }
+    
+    // Update job schedules
+    if (data.job_schedules && data.job_schedules.jobs) {
+        updateJobSchedulesTable(data.job_schedules.jobs);
+    }
+}
+
+function updateServicesStatus(services) {
+    // Map service names to HTML element IDs
+    const serviceMappings = {
+        'data_fetcher': 'dataServiceStatus',
+        'sentiment_analyzer': 'aiAnalysisStatus', 
+        'trading_strategy': 'tradingSignalsStatus',
+        'cache': 'cacheServiceStatus',
+        'scheduler': 'schedulerServiceStatus'
+    };
+    
+    // Update each service status
+    Object.entries(services).forEach(([serviceName, serviceInfo]) => {
+        const elementId = serviceMappings[serviceName];
+        if (elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const status = serviceInfo.status;
+                let badgeClass = 'bg-secondary';
+                let statusText = 'Unknown';
+                
+                if (status === 'active') {
+                    badgeClass = 'bg-success';
+                    statusText = 'Active';
+                } else if (status === 'error') {
+                    badgeClass = 'bg-danger';
+                    statusText = 'Error';
+                } else if (status === 'no_data') {
+                    badgeClass = 'bg-warning';
+                    statusText = 'No Data';
+                }
+                
+                element.className = `badge ${badgeClass}`;
+                element.textContent = statusText;
+            }
+        }
+    });
+}
+
+function updateJobSchedulesTable(jobs) {
+    const tbody = document.getElementById('jobSchedulesTableBody');
+    if (!tbody || !jobs || jobs.length === 0) {
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No job schedules found</td></tr>';
+        }
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    jobs.forEach(job => {
+        // Format last_run date properly
+        let lastRunDisplay = '-';
+        if (job.last_run) {
+            try {
+                const lastRunDate = new Date(job.last_run);
+                lastRunDisplay = lastRunDate.toLocaleDateString() + ' ' + lastRunDate.toLocaleTimeString();
+            } catch (e) {
+                lastRunDisplay = String(job.last_run).replace('T', ' ').slice(0, 19);
+            }
+        }
+        
+        tbody.innerHTML += `
+            <tr data-id="${job.id}">
+                <td>${job.name || job.job_name}</td>
+                <td><input type="time" value="${job.run_time}" onchange="updateJobScheduleTime(${job.id}, this.value)"></td>
+                <td>
+                    <input type="checkbox" ${job.enabled ? 'checked' : ''} onchange="toggleJobSchedule(${job.id}, this.checked)">
+                </td>
+                <td>${lastRunDisplay}</td>
+                <td>
+                    <button class="btn btn-outline-primary btn-sm" onclick="updateJobScheduleTime(${job.id}, document.querySelector('#jobSchedulesTableBody tr[data-id=\'${job.id}\'] input[type=time]').value)"><i class="fas fa-save"></i> Save</button>
+                </td>
+            </tr>
+        `;
+    });
 }
 
 function updateApiStatus(apiStatus) {
@@ -973,16 +1059,16 @@ async function loadJobSchedules() {
     try {
         const response = await fetch('/api/job_schedules');
         const data = await response.json();
-        if (data.error) {
-            tbody.innerHTML = `<tr><td colspan='5' class='text-danger'>${data.error}</td></tr>`;
+        if (data.status !== 'success' || data.error) {
+            tbody.innerHTML = `<tr><td colspan='5' class='text-danger'>${data.error || data.message || 'Error loading schedules'}</td></tr>`;
             return;
         }
-        if (!data.schedules || data.schedules.length === 0) {
+        if (!data.data || !data.data.schedules || data.data.schedules.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No job schedules found</td></tr>';
             return;
         }
         tbody.innerHTML = '';
-        data.schedules.forEach(sch => {
+        data.data.schedules.forEach(sch => {
             // Format last_run date properly
             let lastRunDisplay = '-';
             if (sch.last_run) {
@@ -1075,6 +1161,5 @@ function showAlert(message, type) {
         }
     }, 5000);
 }
-</div>
 </script>
 {% endblock %}

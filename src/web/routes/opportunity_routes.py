@@ -126,43 +126,9 @@ def news_opportunities():
         trending_symbols = news_monitor.scan_trending_news()
         opportunities = news_monitor.analyze_news_driven_opportunities(trending_symbols)
         
-        # TEMPORARY: Add mock opportunities for testing
-        mock_opportunities = [
-            {
-                "symbol": "AAPL",
-                "type": "stock",
-                "trigger": "news_driven",
-                "news_count": 3,
-                "price_data": {
-                    "current_price": 150.25,
-                    "change": 2.15,
-                    "volume": 50000000,
-                    "change_percent": "1.45%",
-                },
-                "sentiment_data": {
-                    "summary": "Positive news sentiment",
-                    "confidence": 0.8,
-                    "sentiment_score": 0.6,
-                },
-                "signal_data": {
-                    "action": "BUY",
-                    "reasoning": "Strong positive sentiment",
-                    "confidence": 0.8,
-                    "signal_strength": 0.7,
-                },
-                "trade_signal": {
-                    "action": "BUY",
-                    "option_price": 5.50,
-                    "strike_price": 155,
-                    "position_size": 100,
-                },
-                "timestamp": datetime.now().isoformat(),
-            }
-        ]
-        
         result_data = {
-            "opportunities": mock_opportunities,  # Use mock data for testing
-            "count": len(mock_opportunities),
+            "opportunities": opportunities,  # Use real opportunities from analysis
+            "count": len(opportunities),
             "cached": False,
             "cache_timestamp": datetime.now().isoformat(),
         }

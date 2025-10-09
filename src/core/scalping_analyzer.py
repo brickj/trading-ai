@@ -203,7 +203,7 @@ class ScalpingAnalyzer:
                 return {"error": price_data["error"]}
             
             # Extract the data we need for scalping analysis
-            current_price = price_data.get("current_price", 0)
+            current_price = price_data.get("price", 0)  # Fixed: data fetcher returns "price", not "current_price"
             if current_price <= 0:
                 return {"error": f"No valid price data for {ticker}"}
 

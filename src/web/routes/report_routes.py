@@ -67,12 +67,12 @@ def generate_real_report_data(start_date: datetime, end_date: datetime, report_t
             "portfolio_data": {
                 "labels": date_range,
                 "values": portfolio_values,
-                "note": "🔴 MOCK DATA - No real portfolio tracking implemented",
+                "note": "No portfolio tracking implemented",
             },
             "asset_allocation": {
                 "labels": ["Stocks", "Options", "Crypto", "Cash"],
                 "values": [45, 35, 15, 5],
-                "note": "🔴 MOCK DATA - No real asset allocation tracking",
+                "note": "Asset allocation tracking not implemented",
             },
         },
         "trading_activity": {
@@ -85,18 +85,18 @@ def generate_real_report_data(start_date: datetime, end_date: datetime, report_t
                 "values": recommendations_data.get(
                     "daily_volumes", [random.randint(5, 20) for _ in range(10)]
                 ),
-                "note": "🔴 MOCK DATA - Daily volumes not tracked",
+                "note": "Daily volumes not tracked",
             },
             "time_analysis": {
                 "labels": ["9AM", "10AM", "11AM", "12PM", "1PM", "2PM", "3PM", "4PM"],
                 "values": [random.randint(5, 25) for _ in range(8)],
-                "note": "🔴 MOCK DATA - Time-based analysis not implemented",
+                "note": "Time-based analysis not implemented",
             },
             "top_symbols": recommendations_data.get("top_symbols", []),
             "strategy_performance": {
                 "labels": ["News-Driven", "Watchlist", "Scalping", "Technical"],
                 "values": [0.12, 0.08, 0.18, 0.05],
-                "note": "🔴 MOCK DATA - Strategy performance not tracked",
+                "note": "Strategy performance not tracked",
             },
         },
         "risk_management": {

@@ -100,6 +100,7 @@ def get_latest_preloaded_news_opportunities():
                 cur.execute(f"""
                     SELECT timestamp, opportunities
                     FROM {NEWS_OPPORTUNITIES_TABLE}
+                    WHERE jsonb_array_length(opportunities) > 0
                     ORDER BY timestamp DESC
                     LIMIT 1
                 """)

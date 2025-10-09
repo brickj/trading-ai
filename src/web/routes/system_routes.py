@@ -197,6 +197,7 @@ def system_status():
             "timestamp": datetime.now().isoformat(),
             "system": system_metrics,
             "database": db_stats,
+            "services": services_stats,
             "cache": cache_stats,
             "config": config_info,
             "historical_data": historical_data_status,
@@ -718,16 +719,43 @@ def performance_status():
 
 
 def get_database_status():
-    """Get database connection status"""
+    """Get database connection status with detailed information"""
     try:
         with system_service.get_database_connection() as conn:
             with conn.cursor() as cur:
+                # Basic connectivity test
                 cur.execute("SELECT 1")
                 result = cur.fetchone()
+                
+                # Get table count
+                cur.execute("""
+                    SELECT COUNT(*) as table_count 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public'
+                """)
+                table_result = cur.fetchone()
+                table_count = table_result['table_count'] if table_result else 0
+                
+                # Get active connections
+                cur.execute("""
+                    SELECT COUNT(*) as active_connections 
+                    FROM pg_stat_activity 
+                    WHERE state = 'active'
+                """)
+                connection_result = cur.fetchone()
+                active_connections = connection_result['active_connections'] if connection_result else 0
+                
+                # Get database size
+                cur.execute("SELECT pg_size_pretty(pg_database_size(current_database())) as size")
+                size_result = cur.fetchone()
+                db_size = size_result['size'] if size_result else 'Unknown'
                 
         return {
             "status": "connected",
             "type": "postgresql",
+            "tables": table_count,
+            "active_connections": active_connections,
+            "size": db_size,
             "last_check": datetime.now().isoformat()
         }
     except Exception as e:

@@ -57,6 +57,7 @@ populate_market_movers.py.log
 .env.production.local 
 *.secret
 node_modules/
+000_N0TES.txt
 
 # Sensitive configuration files
 config/secrets.yaml

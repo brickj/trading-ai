@@ -1,6 +1,6 @@
 <!-- ✅ NEW CLEAN NAVBAR -->
 <nav class="navbar navbar-expand-lg navbar-dark">
-  <div class="container">
+  <div class="container-fluid">
     
     <!-- Brand -->
     <a class="navbar-brand" href="/">
@@ -15,7 +15,7 @@
 
     <!-- Navigation -->
     <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
+      <ul class="navbar-nav me-auto">
         
         <!-- Primary Trading -->
         <li class="nav-item dropdown">
