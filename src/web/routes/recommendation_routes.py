@@ -162,7 +162,7 @@ def api_recommendations_stats():
                     FROM recommendations
                     GROUP BY symbol
                     ORDER BY count DESC
-                    LIMIT 20
+                    LIMIT 5
                     """
                 )
                 symbol_performance = []

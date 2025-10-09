@@ -90,40 +90,6 @@
     </div>
 </div>
 
-<!-- Recommendations Container - Required for tests -->
-<div class="row mt-4" id="recommendationsContainer">
-    <div class="col-12">
-        <div class="unified-card">
-            <div class="unified-card-header">
-                <h5><i class="fas fa-chart-line"></i> Trading Recommendations</h5>
-            </div>
-            <div class="unified-card-body">
-                <div class="table-responsive">
-                    <table class="table unified-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Symbol</th>
-                                <th>Type</th>
-                                <th>Action</th>
-                                <th>Confidence</th>
-                                <th>Entry Price</th>
-                                <th>Exit Price</th>
-                                <th>Outcome</th>
-                                <th>Profitable</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recommendations-table-body">
-                            <tr>
-                                <td colspan="9" class="text-center">Loading recommendations...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Recommendation Filters -->
 <div class="row mt-4">
@@ -187,7 +153,7 @@
 </div>
 
 <!-- Recommendations Table -->
-<div id="recommendationsSection" class="row mt-3">
+<div id="recommendationsContainer" class="row mt-3">
     <div class="col-12">
         <div class="unified-card">
             <div class="unified-card-header d-flex justify-content-between align-items-center">
@@ -293,36 +259,14 @@
 <script>
     $(document).ready(function() {
         console.log('Document ready, jQuery version:', $.fn.jquery);
+        console.log('JavaScript is executing!');
+        console.log('About to call loadRecommendationStats...');
         
         // Initialize variables at the top to avoid hoisting issues
         let typeChart = null;
         let performanceChart = null;
         let currentPage = 1;
         let hasMore = true;
-        
-        // Load initial data
-        loadRecommendationStats();
-        loadRecommendations();
-        
-        // Set up event handlers
-        $('#apply-filters').click(function() {
-            loadRecommendations(true);
-        });
-        
-        $('#reset-filters').click(function() {
-            // Clear all filters
-            $('#symbol-filter').val('');
-            $('#type-filter').val('');
-            $('#action-filter').val('');
-            $('#outcome-filter').val('');
-            
-            // Reload data
-            loadRecommendations(true);
-        });
-        
-        $('#load-more').click(function() {
-            loadMoreRecommendations();
-        });
         
         function loadRecommendationStats() {
             $.ajax({
@@ -516,23 +460,22 @@
         }
         
         function updateTopSymbols(data) {
-            const topSymbols = data.top_symbols || [];
-            const symbolPerformance = data.symbol_performance || {};
+            const symbolPerformance = data.symbol_performance || [];
             
             let html = '';
             
-            if (topSymbols.length === 0) {
+            if (symbolPerformance.length === 0) {
                 html = '<tr><td colspan="4" class="text-center">No symbol data available</td></tr>';
             } else {
-                topSymbols.forEach(symbol => {
-                    const symbolData = symbolPerformance[symbol.symbol] || {};
-                    const winRate = symbolData.win_rate || 0;
-                    const avgReturn = symbolData.avg_outcome || 0;
+                // Limit to top 5 symbols
+                symbolPerformance.slice(0, 5).forEach(symbol => {
+                    const winRate = symbol.success_rate || 0;
+                    const avgReturn = 0; // Not available in current API
                     
                     html += `
                         <tr>
                             <td><span class="symbol-badge">${symbol.symbol}</span></td>
-                            <td>${symbol.count}</td>
+                            <td>${symbol.total}</td>
                             <td>${(winRate * 100).toFixed(1)}%</td>
                             <td class="${avgReturn >= 0 ? 'positive' : 'negative'}">
                                 ${(avgReturn * 100).toFixed(2)}%
@@ -654,6 +597,9 @@
         
         function updateRecommendationsTable(data, reset) {
             console.log('updateRecommendationsTable called, data:', data, 'reset:', reset);
+            console.log('Data type:', typeof data);
+            console.log('Data keys:', Object.keys(data || {}));
+            
             const recommendations = data.recommendations || [];
             const totalCount = data.total_count || 0;
             hasMore = data.has_more || false;
@@ -662,68 +608,84 @@
             let html = '';
             
             if (recommendations.length === 0) {
+                console.log('No recommendations found, showing empty message');
                 html = '<tr><td colspan="9" class="text-center">No recommendations found</td></tr>';
             } else {
-                recommendations.forEach(rec => {
-                    const timestamp = moment(rec.timestamp).format('MMM D, YYYY h:mm A');
-                    const confidenceClass = rec.final_confidence >= 0.7 ? 'positive' : 
-                                           rec.final_confidence <= 0.3 ? 'negative' : '';
-                    
-                    // Format outcome
-                    let outcomeText = 'Pending';
-                    let outcomeClass = '';
-                    let profitableText = '-';
-                    let profitableClass = '';
-                    
-                    if (rec.actual_outcome !== null) {
-                        const outcome = rec.actual_outcome;
-                        outcomeText = (outcome * 100).toFixed(2) + '%';
-                        outcomeClass = outcome >= 0 ? 'positive' : 'negative';
+                console.log('Processing', recommendations.length, 'recommendations');
+                recommendations.forEach((rec, index) => {
+                    console.log('Processing recommendation', index, ':', rec.symbol);
+                    try {
+                        const timestamp = moment(rec.timestamp).format('MMM D, YYYY h:mm A');
+                        const confidenceClass = rec.final_confidence >= 0.7 ? 'positive' : 
+                                               rec.final_confidence <= 0.3 ? 'negative' : '';
                         
-                        profitableText = rec.profitable ? 'Yes' : 'No';
-                        profitableClass = rec.profitable ? 'positive' : 'negative';
+                        // Format outcome
+                        let outcomeText = 'Pending';
+                        let outcomeClass = '';
+                        let profitableText = '-';
+                        let profitableClass = '';
+                        
+                        if (rec.actual_outcome !== null) {
+                            const outcome = rec.actual_outcome;
+                            outcomeText = (outcome * 100).toFixed(2) + '%';
+                            outcomeClass = outcome >= 0 ? 'positive' : 'negative';
+                            
+                            profitableText = rec.profitable ? 'Yes' : 'No';
+                            profitableClass = rec.profitable ? 'positive' : 'negative';
+                        }
+                        
+                        // Format prices
+                        const entryPrice = rec.current_stock_price ? '$' + rec.current_stock_price.toFixed(2) : '-';
+                        
+                        // Current or exit price
+                        let exitPrice = '-';
+                        if (rec.exit_price) {
+                            exitPrice = '$' + rec.exit_price.toFixed(2);
+                        }
+                        
+                        html += `
+                            <tr>
+                                <td>${timestamp}</td>
+                                <td><span class="symbol-badge">${rec.symbol}</span></td>
+                                <td>${rec.recommendation_type}</td>
+                                <td>${rec.action}</td>
+                                <td class="${confidenceClass}">${(rec.final_confidence * 100).toFixed(1)}%</td>
+                                <td>${entryPrice}</td>
+                                <td>${exitPrice}</td>
+                                <td class="${outcomeClass}">${outcomeText}</td>
+                                <td class="${profitableClass}">${profitableText}</td>
+                            </tr>
+                        `;
+                    } catch (error) {
+                        console.error('Error processing recommendation', index, ':', error);
+                        console.error('Recommendation data:', rec);
                     }
-                    
-                    // Format prices
-                    const entryPrice = rec.current_stock_price ? '$' + rec.current_stock_price.toFixed(2) : '-';
-                    
-                    // Current or exit price
-                    let exitPrice = '-';
-                    if (rec.exit_price) {
-                        exitPrice = '$' + rec.exit_price.toFixed(2);
-                    }
-                    
-                    html += `
-                        <tr>
-                            <td>${timestamp}</td>
-                            <td><span class="symbol-badge">${rec.symbol}</span></td>
-                            <td>${rec.recommendation_type}</td>
-                            <td>${rec.action}</td>
-                            <td class="${confidenceClass}">${(rec.final_confidence * 100).toFixed(1)}%</td>
-                            <td>${entryPrice}</td>
-                            <td>${exitPrice}</td>
-                            <td class="${outcomeClass}">${outcomeText}</td>
-                            <td class="${profitableClass}">${profitableText}</td>
-                        </tr>
-                    `;
                 });
             }
             
+            console.log('Generated HTML length:', html.length);
+            console.log('About to update table with reset:', reset);
+            
             if (reset) {
                 $('#recommendations-table-body').html(html);
+                console.log('Table updated with reset=true');
             } else {
                 $('#recommendations-table-body').append(html);
+                console.log('Table appended with reset=false');
             }
             
             // Update showing results text
             const currentShowing = $('#recommendations-table-body tr').length;
             $('#showing-results').text(`Showing ${currentShowing} of ${totalCount} recommendations`);
+            console.log('Updated showing results:', currentShowing, 'of', totalCount);
             
             // Update load more button
             $('#load-more').prop('disabled', !hasMore).toggle(hasMore);
+            console.log('Updated load more button, hasMore:', hasMore);
             
             // Update performance summary
             updatePerformanceSummary(data);
+            console.log('updateRecommendationsTable completed successfully');
         }
         
         function updatePerformanceSummary(data) {
@@ -748,11 +710,34 @@
             `);
         }
         
+        // Set up event handlers after all functions are defined
+        $('#apply-filters').click(function() {
+            loadRecommendations(true);
+        });
+        
+        $('#reset-filters').click(function() {
+            // Clear all filters
+            $('#symbol-filter').val('');
+            $('#type-filter').val('');
+            $('#action-filter').val('');
+            $('#outcome-filter').val('');
+            
+            // Reload data
+            loadRecommendations(true);
+        });
+        
+        $('#load-more').click(function() {
+            loadMoreRecommendations();
+        });
+        
+        // Load initial data after all functions are defined
+        loadRecommendationStats();
+        loadRecommendations();
+        
         function showError(message) {
             // Simple error toast
             alert(message);
         }
     });
-</div>
 </script>
 {% endblock %} 
