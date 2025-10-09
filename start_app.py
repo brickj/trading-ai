@@ -94,7 +94,7 @@ def setup_logging():
         log_system_event(f"Script Path: {__file__}", "INFO")
 
         # Check environment
-        use_go_services = os.getenv('USE_GO_SERVICES', 'false').lower() == 'true'
+        use_go_services = os.getenv('USE_GO_SERVICES', 'true').lower() == 'true'
         log_system_event(f"Go Services Enabled: {use_go_services}", "INFO")
 
         print_success("Enhanced logging system initialized")
