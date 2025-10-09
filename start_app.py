@@ -218,8 +218,76 @@ def check_redis():
         print_status("To fix: Make sure Redis is running (redis-server)")
         return False
 
+def start_go_services():
+    """Start Go microservices if they're not running"""
+    try:
+        go_dir = Path("go")
+        start_script = go_dir / "scripts" / "start_services.sh"
+        
+        if not go_dir.exists():
+            print_warning("Go directory not found - skipping Go services startup")
+            return False
+            
+        if not start_script.exists():
+            print_warning("Go start script not found - skipping Go services startup")
+            return False
+            
+        print_status("Starting Go microservices...")
+        
+        # Make script executable
+        subprocess.run(['chmod', '+x', str(start_script)], check=False)
+        
+        # Set environment variables for Go services to match Python config
+        env = os.environ.copy()
+        env['POSTGRES_URL'] = 'postgresql://trading_user:trading_password@localhost:5432/trading_db'
+        env['REDIS_URL'] = 'redis://localhost:6379'
+        
+        # Read API keys from Python config
+        try:
+            from src.core.config import Config
+            config = Config()
+            env['FINNHUB_API_KEY'] = config.FINNHUB_API_KEY
+            env['ALPHA_VANTAGE_KEY'] = config.ALPHA_VANTAGE_API_KEY
+            env['YAHOO_API_KEY'] = ''  # Yahoo Finance doesn't require API key
+            env['REDDIT_CLIENT_ID'] = config.REDDIT_CLIENT_ID
+            env['REDDIT_SECRET'] = config.REDDIT_SECRET_KEY
+        except Exception as e:
+            print_warning(f"Failed to load API keys from config: {e}")
+            # Fallback to hardcoded values
+            env['FINNHUB_API_KEY'] = 'csro4gpr01qj3u0or4kgcsro4gpr01qj3u0or4l0'
+            env['ALPHA_VANTAGE_KEY'] = '71MHC1TB4RHKEZ02'
+            env['YAHOO_API_KEY'] = ''
+            env['REDDIT_CLIENT_ID'] = 'E-bGCTiAErxasGB5JZHAsA'
+            env['REDDIT_SECRET'] = 'z0WxODWAZgkRNCEYSITpWZCOTlaV8Q'
+        
+        # Start services in background
+        result = subprocess.run(
+            [str(start_script)], 
+            cwd=str(go_dir),
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=env
+        )
+        
+        if result.returncode == 0:
+            print_success("Go services startup script executed successfully")
+            # Wait a moment for services to initialize
+            time.sleep(3)
+            return True
+        else:
+            print_warning(f"Go services startup failed: {result.stderr}")
+            return False
+            
+    except subprocess.TimeoutExpired:
+        print_warning("Go services startup timed out")
+        return False
+    except Exception as e:
+        print_warning(f"Failed to start Go services: {e}")
+        return False
+
 def check_go_services():
-    """Check Go microservices status"""
+    """Check Go microservices status and start them if needed"""
     try:
         from src.core.go_services import go_services
         
@@ -242,14 +310,42 @@ def check_go_services():
                 print_warning(f"Go services performance check failed: {e}")
                 return False
         else:
-            print_warning("Go services are not enabled - using Python fallback")
-            print_status("To enable: Start Go services with: cd go && ./scripts/start_services.sh")
-            return False
+            print_warning("Go services are not enabled - attempting to start them...")
+            
+            # Try to start Go services
+            if start_go_services():
+                print_status("Waiting for Go services to initialize...")
+                time.sleep(5)  # Give services time to start
+                
+                # Check again after starting
+                try:
+                    from src.core.go_services import go_services
+                    if go_services.enabled:
+                        print_success("Go services started successfully")
+                        return True
+                    else:
+                        print_warning("Go services still not available after startup attempt")
+                        return False
+                except Exception as e:
+                    print_warning(f"Failed to verify Go services after startup: {e}")
+                    return False
+            else:
+                print_warning("Failed to start Go services - using Python fallback")
+                print_status("To manually start: cd go && ./scripts/start_services.sh")
+                return False
             
     except Exception as e:
         print_warning(f"Go services check failed: {e}")
-        print_status("Go services will use Python fallback")
-        return False
+        print_status("Attempting to start Go services...")
+        
+        # Try to start Go services as fallback
+        if start_go_services():
+            print_status("Waiting for Go services to initialize...")
+            time.sleep(5)
+            return True
+        else:
+            print_warning("Go services will use Python fallback")
+            return False
 
 def check_all_services():
     """Check all required services (PostgreSQL, Redis, Go)"""
@@ -351,7 +447,7 @@ def print_app_info():
     print(f"{Colors.CYAN}⚡ Features enabled:{Colors.NC}")
     print("   🗄️  PostgreSQL database (2,400x performance improvement)")
     print("   🚀 Redis caching (ultra-fast data access)")
-    print("   ⚡ Go microservices (maximum performance when available)")
+    print("   ⚡ Go microservices (auto-started for maximum performance)")
     print("   📡 Smart batching (5-10x faster bulk analysis)")
     print("   🌐 WebSocket real-time progress updates")
     print("   🤖 Ollama AI sentiment analysis (local & free)")

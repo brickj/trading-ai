@@ -142,23 +142,13 @@
                     <h5><i class="fas fa-list"></i> Detailed Events List</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="eventsTable" style="background-color: #000000 !important; color: #ffffff !important; border: none !important; border-collapse: collapse !important;">
-                            <thead style="background-color: #111111 !important; color: #ffffff !important; border: none !important;">
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Day</th>
-                                    <th>Event</th>
-                                    <th>Type</th>
-                                    <th>Impact</th>
-                                    <th>Symbol</th>
-                                    <th>Timing</th>
-                                </tr>
-                            </thead>
-                            <tbody id="eventsTableBody" style="background-color: #000000 !important; border: none !important;">
-                                <!-- Events will be populated by JavaScript -->
-                            </tbody>
-                        </table>
+                    <div id="eventsContainer" style="max-height: 600px; overflow-y: auto; background-color: var(--bs-card-bg); border: 1px solid var(--bs-border-color); border-radius: 5px; padding: 15px;">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading events...</span>
+                            </div>
+                            <p class="mt-2">Loading market events...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -397,7 +387,7 @@ function updateSummary() {
 }
 
 function renderEventsTable() {
-    const tbody = document.getElementById('eventsTableBody');
+    const container = document.getElementById('eventsContainer');
     const allEventsList = [];
     
     // Collect all events
@@ -415,27 +405,70 @@ function renderEventsTable() {
     // Sort by date
     weeklyEvents.sort((a, b) => parseDateString(a.date) - parseDateString(b.date));
 
+    // If no events, show message
+    if (weeklyEvents.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p class="h5">No events found</p>
+                <p class="text-muted">Try adjusting your filters or check back later.</p>
+            </div>
+        `;
+        return;
+    }
+
     let html = '';
     weeklyEvents.forEach(event => {
         // Parse date as local time to avoid timezone offset issues
         const date = parseDateString(event.date);
         const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
         const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const timestamp = `${formattedDate} ${dayName}`;
+
+        // Get event level class based on impact
+        const levelClass = getEventLevelClass(event.impact);
+        const levelIcon = getEventLevelIcon(event.impact);
 
         html += `
-            <tr class="event-row" data-type="${event.event_type}" data-impact="${event.impact}" style="background-color: #000000 !important; color: #ffffff !important;">
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;">${formattedDate}</td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;">${dayName}</td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;">${event.name || event.symbol}</td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;"><span class="${getEventBadge(event)}">${event.event_type.replace('_', ' ')}</span></td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;"><span class="badge bg-${getImpactColor(event.impact)}">${event.impact}</span></td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;">${event.symbol || '-'}</td>
-                <td style="background-color: #000000 !important; color: #ffffff !important; border-color: #333333 !important;">${event.timing || '-'}</td>
-            </tr>
+            <div class="log-entry mb-2 p-2 border rounded ${levelClass}" style="font-family: 'Courier New', monospace; font-size: 0.9em;" data-type="${event.event_type}" data-impact="${event.impact}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center mb-1">
+                            <i class="${levelIcon} me-2"></i>
+                            <span class="badge bg-secondary me-2">${event.event_type.replace('_', ' ').toUpperCase()}</span>
+                            <span class="badge bg-info me-2">${event.impact.toUpperCase()}</span>
+                            <span class="text-primary fw-bold" style="margin-left: 8px;">${timestamp}</span>
+                        </div>
+                        <div class="log-message">
+                            <strong>${event.name || event.symbol}</strong>
+                            ${event.symbol ? ` (${event.symbol})` : ''}
+                            ${event.timing ? ` - ${event.timing}` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
     });
     
-    tbody.innerHTML = html;
+    container.innerHTML = html;
+}
+
+function getEventLevelClass(impact) {
+    switch (impact) {
+        case 'high': return 'border-danger bg-danger bg-opacity-10';
+        case 'medium': return 'border-accent bg-accent bg-opacity-10';
+        case 'low': return 'border-info bg-info bg-opacity-10';
+        default: return 'border-light';
+    }
+}
+
+function getEventLevelIcon(impact) {
+    switch (impact) {
+        case 'high': return 'fas fa-exclamation-triangle text-danger';
+        case 'medium': return 'fas fa-exclamation-triangle text-accent';
+        case 'low': return 'fas fa-info-circle text-info';
+        default: return 'fas fa-circle text-muted';
+    }
 }
 
 function getImpactColor(impact) {
@@ -457,11 +490,11 @@ function filterEvents() {
         highImpact: document.getElementById('filterHighImpact').checked
     };
     
-    const rows = document.querySelectorAll('.event-row');
+    const logEntries = document.querySelectorAll('.log-entry');
     
-    rows.forEach(row => {
-        const type = row.dataset.type;
-        const impact = row.dataset.impact;
+    logEntries.forEach(entry => {
+        const type = entry.dataset.type;
+        const impact = entry.dataset.impact;
         
         let show = false;
         
@@ -475,7 +508,7 @@ function filterEvents() {
         // Apply high impact filter
         if (filters.highImpact && impact !== 'high') show = false;
         
-        row.style.display = show ? '' : 'none';
+        entry.style.display = show ? '' : 'none';
     });
     
     // Also apply filters to calendar view

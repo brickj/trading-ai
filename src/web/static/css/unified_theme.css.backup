@@ -557,7 +557,7 @@ table.unified-table tbody td {
 
 .bg-card { background: var(--bg-card) !important; }
 .bg-primary { background: var(--primary-color) !important; }
-.bg-accent { background-color: var(--primary-color) !important; }
+.bg-accent { background: var(--primary-color) !important; }
 .bg-success { background: var(--success-color) !important; }
 .bg-danger { background: var(--danger-color) !important; }
 .bg-warning { background: var(--warning-color) !important; }
@@ -1360,38 +1360,4 @@ span.badge.bg-secondary {
 .card.bg-warning {
     background: #ffc107 !important;
     color: #000000 !important;
-}
-
-/* Log entry styles for consistency with Live Logs */
-.log-entry {
-    border-left: 4px solid;
-    padding: 8px 12px;
-    margin-bottom: 4px;
-    background: rgba(26, 26, 26, 0.85);
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.log-entry.error {
-    border-color: #ff4444;
-    background: rgba(255, 68, 68, 0.1);
-}
-
-.log-entry.warn {
-    border-color: #ffaa00;
-    background: rgba(255, 170, 0, 0.1);
-}
-
-.log-entry.info {
-    border-color: #38c6d9;
-    background: rgba(56, 198, 217, 0.1);
-}
-
-.log-entry.debug {
-    border-color: #6c757d;
-    background: rgba(108, 117, 125, 0.1);
 }

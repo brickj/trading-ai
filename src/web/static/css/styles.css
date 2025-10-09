@@ -843,6 +843,28 @@ p.lead {
     border-color: rgba(255, 255, 255, 0.06) !important;
 }
 
+/* Custom dark table theme to match Live Logs table */
+.table-dark-custom {
+    background-color: #000000 !important; /* Black background */
+    color: #ffffff !important; /* White text */
+    border: 1px solid #333333 !important; /* Dark borders */
+}
+.table-dark-custom th,
+.table-dark-custom td {
+    border-color: #444444 !important; /* Subtle border color */
+    padding: 8px !important; /* Adjust padding as needed */
+}
+.table-dark-custom tbody tr {
+    background-color: #000000 !important; /* Black background for rows */
+}
+.table-dark-custom tbody tr:hover {
+    background-color: #222222 !important; /* Darker hover effect */
+}
+.table-dark-custom thead th {
+    background-color: #111111 !important; /* Even darker header */
+    color: #ffffff !important;
+}
+
 /* Finance data styling - Green color for all financial numbers */
 .finance-data,
 .price,
