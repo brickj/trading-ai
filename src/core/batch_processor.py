@@ -74,7 +74,7 @@ class BatchProcessor:
             try:
                 if crypto_news and len(crypto_news) > 0:
                     sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
-                        crypto_news, symbol=symbol
+                        crypto_news, ai_provider="ollama", symbol=symbol
                     )
                 else:
                     sentiment_data = (
@@ -195,7 +195,7 @@ class BatchProcessor:
             try:
                 if news and len(news) > 0:
                     sentiment_data = self.sentiment_analyzer.analyze_news_sentiment(
-                        news, symbol=symbol
+                        news, ai_provider="ollama", symbol=symbol
                     )
                 else:
                     sentiment_data = (

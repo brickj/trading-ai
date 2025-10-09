@@ -52,7 +52,7 @@ def generate_recommendations_for_symbols(symbols):
                         "summary": "Limited news data available for analysis",
                     }
                 else:
-                    sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
+                    sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider="ollama", symbol=symbol)
                 
                 # Get trading signal
                 signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)

@@ -362,9 +362,9 @@ class ScalpingAnalyzer:
                     "headlines": [],
                 }
 
-            # Perform sentiment analysis
+            # Perform sentiment analysis using Ollama (local, free)
             sentiment_result = self.sentiment_analyzer.analyze_news_sentiment(
-                news_articles, symbol=ticker
+                news_articles, ai_provider="ollama", symbol=ticker
             )
 
             # Extract headlines for storage

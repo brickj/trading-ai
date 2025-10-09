@@ -66,7 +66,7 @@ class AnalysisService:
                 return {"error": f"Failed to fetch price data: {price_data['error']}"}
             
             # Sentiment analysis
-            sentiment_result = self.sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
+            sentiment_result = self.sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider="ollama", symbol=symbol)
             
             # Trading recommendation
             recommendation = self.trading_strategy.get_recommendation(

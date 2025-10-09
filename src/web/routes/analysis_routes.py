@@ -217,7 +217,7 @@ def enhanced_analysis():
             "summary": "Enhanced analysis with limited news data",
         }
     else:
-        sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
+        sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider="ollama", symbol=symbol)
     signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
 
     recommendations = enhanced_strategy.get_comprehensive_recommendations(
@@ -289,7 +289,7 @@ def comprehensive_analysis():
     if len(news_data) > 5:
         news_data = news_data[:5]
 
-    sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
+    sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, ai_provider="ollama", symbol=symbol)
     signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
 
     recommendation = trading_strategy.get_recommendation(
