@@ -516,13 +516,22 @@ class EnhancedTradingStrategy(TradingStrategy):
             return None
 
         try:
+            # Map foreign stock symbols to Alpha Vantage supported symbols
+            foreign_stock_mapping = {
+                '0005.HK': 'HSBC',      # HSBC Holdings (Hong Kong) -> HSBC ADR
+                '0700.HK': 'TCEHY',     # Tencent Holdings (Hong Kong) -> Tencent ADR
+                '6758.T': 'SNE',        # Sony Group (Japan) -> Sony ADR
+                '7203.T': 'TM',         # Toyota Motor (Japan) -> Toyota ADR
+            }
+            alpha_vantage_symbol = foreign_stock_mapping.get(symbol, symbol)
+            
             # Rate limiting for Alpha Vantage free tier
             time.sleep(self.rate_limit_delay)
 
             url = "https://www.alphavantage.co/query"
             params = {
                 "function": "TIME_SERIES_DAILY",
-                "symbol": symbol,
+                "symbol": alpha_vantage_symbol,
                 "outputsize": "full" if days > 100 else "compact",
                 "apikey": self.alpha_vantage_api_key,
             }
@@ -533,16 +542,16 @@ class EnhancedTradingStrategy(TradingStrategy):
                 data = response.json()
 
                 if "Error Message" in data:
-                    print(f"❌ Alpha Vantage error: {data['Error Message']}")
+                    print(f"❌ Alpha Vantage error for {symbol} (mapped to {alpha_vantage_symbol}): {data['Error Message']}")
                     return None
 
                 if "Note" in data:
-                    print(f"⚠️ Alpha Vantage rate limit: {data['Note']}")
+                    print(f"⚠️ Alpha Vantage rate limit for {symbol}: {data['Note']}")
                     return None
 
                 time_series_key = "Time Series (Daily)"
                 if time_series_key not in data:
-                    print(f"❌ No daily time series data for {symbol}")
+                    print(f"❌ No daily time series data for {symbol} (mapped to {alpha_vantage_symbol})")
                     return None
 
                 # Convert to DataFrame
@@ -571,7 +580,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 self.cache[cache_key] = (datetime.now(), df)
 
                 print(
-                    f"✅ Got {len(df)} days of Alpha Vantage historical data for {symbol}"
+                    f"✅ Got {len(df)} days of Alpha Vantage historical data for {symbol} (mapped to {alpha_vantage_symbol})"
                 )
                 return df
 

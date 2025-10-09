@@ -175,13 +175,22 @@ class HistoricalDataUpdater:
                 logger.warning("Alpha Vantage API key not configured")
                 return None
             
+            # Map foreign stock symbols to Alpha Vantage supported symbols
+            foreign_stock_mapping = {
+                '0005.HK': 'HSBC',      # HSBC Holdings (Hong Kong) -> HSBC ADR
+                '0700.HK': 'TCEHY',     # Tencent Holdings (Hong Kong) -> Tencent ADR
+                '6758.T': 'SNE',        # Sony Group (Japan) -> Sony ADR
+                '7203.T': 'TM',         # Toyota Motor (Japan) -> Toyota ADR
+            }
+            alpha_vantage_symbol = foreign_stock_mapping.get(symbol, symbol)
+            
             # Rate limiting for Alpha Vantage free tier
             time.sleep(12)  # 5 calls per minute limit
             
             url = "https://www.alphavantage.co/query"
             params = {
                 "function": "TIME_SERIES_DAILY",
-                "symbol": symbol,
+                "symbol": alpha_vantage_symbol,
                 "outputsize": "full",
                 "apikey": Config.ALPHA_VANTAGE_API_KEY,
             }
@@ -193,7 +202,7 @@ class HistoricalDataUpdater:
                 data = response.json()
                 
                 if "Error Message" in data:
-                    logger.error(f"Alpha Vantage error for {symbol}: {data['Error Message']}")
+                    logger.error(f"Alpha Vantage error for {symbol} (mapped to {alpha_vantage_symbol}): {data['Error Message']}")
                     return None
                 
                 if "Note" in data:
@@ -225,7 +234,7 @@ class HistoricalDataUpdater:
                 cutoff_date = datetime.now() - timedelta(days=self.lookback_days)
                 df = df[df.index >= cutoff_date]
                 
-                logger.info(f"Got {len(df)} days of Alpha Vantage data for {symbol}")
+                logger.info(f"Got {len(df)} days of Alpha Vantage data for {symbol} (mapped to {alpha_vantage_symbol})")
                 return df
             else:
                 logger.error(f"Alpha Vantage API error {response.status_code} for {symbol}")
