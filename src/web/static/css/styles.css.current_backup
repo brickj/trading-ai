@@ -248,6 +248,25 @@ p.lead {
     width: 100%;
 }
 
+/* Force section headers to start on new lines */
+.nav-groups > li:nth-child(8),  /* Analysis & Research header */
+.nav-groups > li:nth-child(13) { /* System & Monitoring header */
+    width: 100%;
+    margin-top: 0.5rem;
+    order: 1;
+}
+
+/* Ensure pages after section headers stay on same line */
+.nav-groups > li:nth-child(9),
+.nav-groups > li:nth-child(10),
+.nav-groups > li:nth-child(11),
+.nav-groups > li:nth-child(12),
+.nav-groups > li:nth-child(14),
+.nav-groups > li:nth-child(15),
+.nav-groups > li:nth-child(16) {
+    order: 2;
+}
+
 .glassy-nav .nav-link,
 .glassy-nav .navbar-text.navbar-section {
     color: rgba(246, 246, 255, 0.85);
