@@ -75,3 +75,4 @@ test-artifacts/
 scripts/
 AWS/*
 !AWS/00_create_machine.py
+pg_backup.dump
