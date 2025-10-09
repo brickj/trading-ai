@@ -9,7 +9,7 @@ from typing import Callable, Any, Dict, Optional
 from flask import request, jsonify
 
 from ...core.logger import trading_logger
-from ...core.cache import get_cached_result, cache_result
+from ...core.redis_cache import get_cached_result, cache_result
 
 
 def cache_response(cache_key_prefix: str = None, timeout: int = 300, 

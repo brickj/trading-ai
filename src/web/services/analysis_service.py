@@ -12,7 +12,7 @@ from ...core.sentiment_analyzer import SentimentAnalyzer
 from ...trading.trading_strategy import TradingStrategy
 from ...trading.enhanced_trading_strategy import EnhancedTradingStrategy
 from ...core.logger import trading_logger, log_exception
-from ...core.cache import get_cached_result, cache_result
+from ...core.redis_cache import get_cached_result, cache_result
 from ...core.watchlist_manager import watchlist_manager
 from ..helpers import get_preloaded_opportunities
 

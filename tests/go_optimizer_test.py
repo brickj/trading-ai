@@ -73,10 +73,11 @@ class GoOptimizerTest:
             return False
         
         try:
-            # Change to project root and build
+            # Change to go directory and build
+            go_dir = self.project_root / "go"
             result = subprocess.run(
-                ["go", "build", "-o", "sentiment_optimizer", "./go/cmd/sentiment_optimizer"],
-                cwd=self.project_root,
+                ["go", "build", "-o", "sentiment_optimizer", "./cmd/sentiment_optimizer"],
+                cwd=go_dir,
                 capture_output=True,
                 text=True,
                 timeout=30
@@ -85,7 +86,7 @@ class GoOptimizerTest:
             if result.returncode == 0:
                 print("✅ Go module builds successfully")
                 # Clean up binary
-                binary_path = self.project_root / "sentiment_optimizer"
+                binary_path = go_dir / "sentiment_optimizer"
                 if binary_path.exists():
                     binary_path.unlink()
                 return True
@@ -147,10 +148,11 @@ class GoOptimizerTest:
         }
         
         try:
-            # Build the optimizer
+            # Build the optimizer from go directory
+            go_dir = self.project_root / "go"
             build_result = subprocess.run(
-                ["go", "build", "-o", "test_optimizer", "./go/cmd/sentiment_optimizer"],
-                cwd=self.project_root,
+                ["go", "build", "-o", "test_optimizer", "./cmd/sentiment_optimizer"],
+                cwd=go_dir,
                 capture_output=True,
                 text=True,
                 timeout=30
@@ -161,7 +163,7 @@ class GoOptimizerTest:
                 return False
             
             # Run the optimizer with test input
-            optimizer_path = self.project_root / "test_optimizer"
+            optimizer_path = go_dir / "test_optimizer"
             result = subprocess.run(
                 [str(optimizer_path)],
                 input=json.dumps(test_input),
@@ -208,7 +210,8 @@ class GoOptimizerTest:
             return False
         finally:
             # Clean up test binary
-            test_binary = self.project_root / "test_optimizer"
+            go_dir = self.project_root / "go"
+            test_binary = go_dir / "test_optimizer"
             if test_binary.exists():
                 test_binary.unlink()
     

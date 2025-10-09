@@ -10,7 +10,6 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from src.core.config import Config
 from src.core.logger import log_error, log_debug
-from src.core.cache import cache
 from src.core.redis_cache import redis_cache
 from src.core.go_services import go_services
 
@@ -108,14 +107,6 @@ class DataFetcher:
             if cached_data:
                 log_debug(f"Redis cache hit for stock price: {symbol}")
                 return cached_data
-        
-        # Fallback to PostgreSQL cache
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            # Store in Redis for future requests
-            if redis_cache.health_check():
-                redis_cache.set(cache_key, cached_data, ttl=300)  # 5 minutes
-            return cached_data
 
         # Map foreign stock symbols to Alpha Vantage supported symbols
         alpha_vantage_symbol = self._get_alpha_vantage_symbol(symbol)
@@ -137,19 +128,21 @@ class DataFetcher:
                 if fallback_price and fallback_price > 0:
                     result = {
                         "symbol": symbol,
-                        "current_price": float(fallback_price),
+                        "price": float(fallback_price),
                         "change": 0.0,
                         "change_percent": "0%",
                         "volume": 0,
                         "timestamp": datetime.now().isoformat(),
                         "source": "yfinance_fallback",
                     }
-                    cache.set(cache_key, result, ttl=300)
+                    # Cache in Redis only
+                    if redis_cache.health_check():
+                        redis_cache.set(cache_key, result, ttl=300)
                     return result
                 else:
                     return {
                         "symbol": symbol,
-                        "current_price": 0,
+                        "price": 0,
                         "error": f"Symbol {symbol} may be delisted or invalid",
                     }
 
@@ -163,13 +156,13 @@ class DataFetcher:
             if current_price <= 0:
                 return {
                     "symbol": symbol,
-                    "current_price": 0,
+                    "price": 0,
                     "error": f"No valid price data for {symbol}",
                 }
 
             result = {
                 "symbol": symbol,  # Use original symbol, not mapped symbol
-                "current_price": current_price,
+                "price": current_price,
                 "change": float(quote.get("09. change", 0)),
                 "change_percent": quote.get("10. change percent", "0%"),
                 "volume": int(quote.get("06. volume", 0)),
@@ -178,10 +171,9 @@ class DataFetcher:
                 "mapped_symbol": alpha_vantage_symbol if alpha_vantage_symbol != symbol else None,
             }
             
-            # Cache in both Redis (primary) and PostgreSQL (fallback)
+            # Cache in Redis only
             if redis_cache.health_check():
                 redis_cache.set(cache_key, result, ttl=300)  # 5 minutes
-            cache.set(cache_key, result, ttl=300)  # PostgreSQL fallback
             return result
 
         # Fallback: Try Yahoo Finance (yfinance) last price if Alpha Vantage failed
@@ -189,19 +181,21 @@ class DataFetcher:
         if fallback_price and fallback_price > 0:
             result = {
                 "symbol": symbol,
-                "current_price": float(fallback_price),
+                "price": float(fallback_price),
                 "change": 0.0,
                 "change_percent": "0%",
                 "volume": 0,
                 "timestamp": datetime.now().isoformat(),
                 "source": "yfinance_fallback",
             }
-            cache.set(cache_key, result, ttl=300)
+            # Cache in Redis only  
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, result, ttl=300)
             return result
 
         return {
             "symbol": symbol,
-            "current_price": 0,
+            "price": 0,
             "error": "Failed to fetch price data",
         }
 
@@ -255,14 +249,6 @@ class DataFetcher:
             if cached_news:
                 log_debug(f"Redis cache hit for company news: {symbol}")
                 return cached_news
-        
-        # Fallback to PostgreSQL cache
-        cached_news = cache.get(cache_key)
-        if cached_news:
-            # Store in Redis for future requests
-            if redis_cache.health_check():
-                redis_cache.set(cache_key, cached_news, ttl=1800)  # 30 minutes
-            return cached_news
         
         try:
             all_news = []
@@ -431,10 +417,9 @@ class DataFetcher:
             
             result = unique_news[:20]  # Limit to 20 most recent articles
             
-            # Cache in both Redis (primary) and PostgreSQL (fallback)
+            # Cache in Redis only
             if redis_cache.health_check():
                 redis_cache.set(cache_key, result, ttl=1800)  # 30 minutes
-            cache.set(cache_key, result, ttl=1800)  # PostgreSQL fallback
             
             return result
 
@@ -469,9 +454,12 @@ class DataFetcher:
             Crypto price data including 24h change and market cap
         """
         cache_key = f"crypto_price_{symbol}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
+        
+        # Try Redis cache first
+        if redis_cache.health_check():
+            cached_data = redis_cache.get(cache_key)
+            if cached_data:
+                return cached_data
 
         # Use Alpha Vantage for crypto data (CoinGecko removed due to rate limiting)
         # No symbol mapping needed for Alpha Vantage
@@ -483,7 +471,7 @@ class DataFetcher:
             log_error(f"[Alpha Vantage] Error fetching crypto price for {symbol}: {e}")
             return {
                 "symbol": symbol,
-                "current_price": 0,
+                "price": 0,
                 "error": f"Failed to fetch price for {symbol}",
             }
 
@@ -512,7 +500,7 @@ class DataFetcher:
 
             result = {
                 "symbol": symbol,
-                "current_price": current_price,
+                "price": current_price,
                 "change_24h": 0,  # Alpha Vantage doesn't provide 24h change
                 "market_cap": 0,  # Alpha Vantage doesn't provide market cap
                 "volume_24h": 0,
@@ -766,9 +754,11 @@ class DataFetcher:
             List of current S&P 500 symbols
         """
         cache_key = "sp500_symbols"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
+        # Try Redis cache first
+        if redis_cache.health_check():
+            cached_data = redis_cache.get(cache_key)
+            if cached_data:
+                return cached_data
 
         # Try to get symbols from database first
         try:
@@ -786,7 +776,9 @@ class DataFetcher:
                             if len(s) >= 2 and len(s) <= 5 and s.isalpha()
                         ]
                         if valid_symbols:
-                            cache.set(cache_key, valid_symbols, ttl=86400)
+                            # Cache in Redis only
+                            if redis_cache.health_check():
+                                redis_cache.set(cache_key, valid_symbols, ttl=86400)
                             return valid_symbols
         except Exception as e:
             log_debug(f"S&P 500 symbols database not available: {e}")
@@ -801,14 +793,18 @@ class DataFetcher:
                     s for s in symbols if len(s) >= 2 and len(s) <= 5 and s.isalpha()
                 ]
                 if valid_symbols:
-                    cache.set(cache_key, valid_symbols, ttl=86400)
+                    # Cache in Redis only
+                    if redis_cache.health_check():
+                        redis_cache.set(cache_key, valid_symbols, ttl=86400)
                     return valid_symbols
         except Exception as e:
             log_error(f"Failed to load S&P 500 symbols from Wikipedia: {e}")
 
         # All S&P 500 sources failed
         log_error("All S&P 500 sources failed, returning empty list")
-        cache.set(cache_key, [], ttl=300)  # Cache empty result for 5 minutes
+        # Cache empty result in Redis only
+        if redis_cache.health_check():
+            redis_cache.set(cache_key, [], ttl=300)  # Cache empty result for 5 minutes
         return []
 
     def get_sp500_winners_losers(self) -> Dict[str, List[Dict]]:
@@ -818,9 +814,11 @@ class DataFetcher:
             Dictionary with 'winners' and 'losers' lists
         """
         cache_key = "sp500_winners_losers"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
+        # Try Redis cache first
+        if redis_cache.health_check():
+            cached_data = redis_cache.get(cache_key)
+            if cached_data:
+                return cached_data
 
         try:
             # Get current S&P 500 symbols
@@ -862,7 +860,9 @@ class DataFetcher:
             }
 
             # Cache for 15 minutes
-            cache.set(cache_key, result, ttl=900)
+            # Cache in Redis only
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, result, ttl=900)
             return result
 
         except Exception as e:
@@ -876,9 +876,26 @@ class DataFetcher:
         """
         try:
             import pandas as pd
+            import requests
 
             url = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
-            tables = pd.read_html(url)
+            
+            # Use proper headers to avoid 403 errors
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+            }
+            
+            # Fetch the page with proper headers
+            response = requests.get(url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            # Parse HTML tables from the response
+            tables = pd.read_html(response.text)
             df = tables[0][["Symbol", "Security"]]
 
             # Convert to list of dicts
@@ -913,7 +930,7 @@ class DataFetcher:
                 with conn.cursor() as cur:
                     # Get existing symbols
                     cur.execute("SELECT symbol FROM sp500_symbols")
-                    existing_symbols = {row[0] for row in cur.fetchall()}
+                    existing_symbols = {row["symbol"] for row in cur.fetchall()}
 
                     # Get new symbols
                     new_symbol_set = {s["symbol"] for s in new_symbols}
@@ -936,13 +953,9 @@ class DataFetcher:
                             "DELETE FROM sp500_symbols WHERE symbol = %s", (symbol,)
                         )
 
-                    # Update names for existing symbols
-                    for symbol_data in new_symbols:
-                        cur.execute(
-                            "UPDATE sp500_symbols SET name = %s WHERE symbol = %s",
-                            (symbol_data["name"], symbol_data["symbol"]),
-                        )
-
+                    # Update last_updated timestamp for all symbols
+                    cur.execute("UPDATE sp500_symbols SET last_updated = NOW()")
+                    
                     conn.commit()
 
                     if additions or removals:
@@ -950,10 +963,12 @@ class DataFetcher:
                             f"✅ Updated S&P 500 symbols: +{len(additions)} added, -{len(removals)} removed"
                         )
                     else:
-                        print("✅ No S&P 500 symbol changes detected")
+                        print("✅ No S&P 500 symbol changes detected - data refreshed")
 
         except Exception as e:
             log_error(f"Failed to update S&P 500 symbols table: {e}")
+            import traceback
+            log_error(f"Traceback: {traceback.format_exc()}")
 
     def fetch_and_store_historical_data_for_symbol(self, symbol, months=12):
         """
@@ -1212,7 +1227,7 @@ class DataFetcher:
         """
         # Check if we've hit rate limits recently
         cache_key = f"yf_rate_limit_{symbol}"
-        if cache.get(cache_key):
+        if redis_cache.health_check() and redis_cache.get(cache_key):
             print(
                 f"[DEBUG][YahooFinance] Rate limit active for {symbol}, using cached data"
             )
@@ -1239,7 +1254,8 @@ class DataFetcher:
             # Handle rate limiting
             if response.status_code == 429:
                 # Set a 1-hour cooldown for this symbol
-                cache.set(cache_key, True, ttl=3600)
+                if redis_cache.health_check():
+                    redis_cache.set(cache_key, True, ttl=3600)
                 print(
                     f"[WARNING][YahooFinance] Rate limited for {symbol}, cooling down for 1 hour"
                 )
@@ -1305,7 +1321,8 @@ class DataFetcher:
         except requests.exceptions.RequestException as e:
             log_error(f"Yahoo Finance API request failed for {symbol}: {e}")
             # Set a shorter cooldown for network errors
-            cache.set(cache_key, True, ttl=300)  # 5 minutes
+            if redis_cache.health_check():
+                redis_cache.set(cache_key, True, ttl=300)  # 5 minutes
             return []
 
         except Exception as e:
@@ -1433,9 +1450,11 @@ class DataFetcher:
             Dict with 'gainers' and 'losers' lists containing stock symbols
         """
         cache_key = f"top_gainers_losers_{limit}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return cached_data
+        # Try Redis cache first
+        if redis_cache.health_check():
+            cached_data = redis_cache.get(cache_key)
+            if cached_data:
+                return cached_data
 
         url = "https://www.alphavantage.co/query"
         params = {
@@ -1503,7 +1522,8 @@ class DataFetcher:
                 }
 
                 # Cache for 1 hour since market data changes frequently
-                cache.set(cache_key, result, ttl=3600)
+                if redis_cache.health_check():
+                    redis_cache.set(cache_key, result, ttl=3600)
                 return result
             else:
                 log_error("Failed to get top gainers/losers from Alpha Vantage")

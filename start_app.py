@@ -170,21 +170,118 @@ def check_dependencies():
 def check_postgresql():
     """Check PostgreSQL connection"""
     try:
-        # Try to connect to PostgreSQL
-        result = subprocess.run([
-            'psql', '-h', 'localhost', '-U', 'trading_user', '-d', 'trading_db',
-            '-c', 'SELECT 1;'
-        ], capture_output=True, text=True, timeout=5)
-
-        if result.returncode == 0:
-            print_success("PostgreSQL connection working")
-            return True
-        else:
-            print_warning("PostgreSQL connection issue - cache will use fallback")
-            return False
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        print_warning("PostgreSQL not accessible - cache will use fallback")
+        # Try to connect to PostgreSQL using the application's database configuration
+        from src.core.database import get_db_connection
+        
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT 1;')
+                result = cur.fetchone()
+                if result:
+                    print_success("PostgreSQL connection working")
+                    return True
+        
+        print_warning("PostgreSQL connection issue - cache will use fallback")
+        return False
+        
+    except Exception as e:
+        print_warning(f"PostgreSQL not accessible: {e}")
         print_status("To fix: Make sure PostgreSQL is running and database is set up")
+        return False
+
+def check_redis():
+    """Check Redis connection"""
+    try:
+        from src.core.redis_cache import redis_cache
+        
+        if redis_cache.health_check():
+            print_success("Redis connection working")
+            
+            # Test basic operations
+            test_key = "startup_test"
+            redis_cache.set(test_key, "test_value", ttl=10)
+            result = redis_cache.get(test_key)
+            
+            if result == "test_value":
+                print_success("Redis read/write operations working")
+                redis_cache.delete(test_key)  # Clean up
+                return True
+            else:
+                print_warning("Redis read/write test failed")
+                return False
+        else:
+            print_warning("Redis health check failed")
+            return False
+            
+    except Exception as e:
+        print_warning(f"Redis not accessible: {e}")
+        print_status("To fix: Make sure Redis is running (redis-server)")
+        return False
+
+def check_go_services():
+    """Check Go microservices status"""
+    try:
+        from src.core.go_services import go_services
+        
+        if go_services.enabled:
+            print_success("Go services are enabled and healthy")
+            
+            # Get performance stats to verify services are working
+            try:
+                stats = go_services.get_performance_stats()
+                if stats.get('overall_health'):
+                    print_success("All Go microservices are operational")
+                    print_status("  ✅ Data Fetcher (port 8080)")
+                    print_status("  ✅ Cache Service (port 8081)")  
+                    print_status("  ✅ Background Workers (port 8082)")
+                    return True
+                else:
+                    print_warning("Some Go services are not healthy")
+                    return False
+            except Exception as e:
+                print_warning(f"Go services performance check failed: {e}")
+                return False
+        else:
+            print_warning("Go services are not enabled - using Python fallback")
+            print_status("To enable: Start Go services with: cd go && ./scripts/start_services.sh")
+            return False
+            
+    except Exception as e:
+        print_warning(f"Go services check failed: {e}")
+        print_status("Go services will use Python fallback")
+        return False
+
+def check_all_services():
+    """Check all required services (PostgreSQL, Redis, Go)"""
+    print_status("Checking service dependencies...")
+    
+    services_status = {
+        'postgresql': check_postgresql(),
+        'redis': check_redis(), 
+        'go_services': check_go_services()
+    }
+    
+    # Print summary
+    print()
+    print_status("Service Status Summary:")
+    for service, status in services_status.items():
+        status_icon = "✅" if status else "⚠️"
+        service_name = service.replace('_', ' ').title()
+        print(f"  {status_icon} {service_name}: {'OK' if status else 'Fallback'}")
+    
+    # Determine overall health
+    critical_services = ['postgresql']  # Redis and Go are optional with fallbacks
+    critical_ok = all(services_status[service] for service in critical_services)
+    
+    if critical_ok:
+        print_success("All critical services are available")
+        if all(services_status.values()):
+            print_success("All services including performance optimizations are available")
+        else:
+            print_status("Application will run with some fallback systems")
+        return True
+    else:
+        print_error("Critical services are not available")
         return False
 
 def check_port(port=5001):
@@ -252,9 +349,11 @@ def print_app_info():
     print("   🔍 Logs Viewer:   http://localhost:5001/logs")
     print()
     print(f"{Colors.CYAN}⚡ Features enabled:{Colors.NC}")
-    print("   🗄️  PostgreSQL cache (2,400x performance improvement)")
-    print("   🚀 Smart batching (5-10x faster bulk analysis)")
-    print("   📡 WebSocket real-time progress updates")
+    print("   🗄️  PostgreSQL database (2,400x performance improvement)")
+    print("   🚀 Redis caching (ultra-fast data access)")
+    print("   ⚡ Go microservices (maximum performance when available)")
+    print("   📡 Smart batching (5-10x faster bulk analysis)")
+    print("   🌐 WebSocket real-time progress updates")
     print("   🤖 Ollama AI sentiment analysis (local & free)")
     print("   📊 Enhanced logging system with web viewer")
     print()
@@ -376,6 +475,36 @@ def run_scheduled_jobs():
             print(f"[SCHEDULER ERROR] Weekly plan population failed: {e}")
             traceback.print_exc()
     
+    def update_sp500_symbols_job():
+        """Update S&P 500 symbols from Wikipedia"""
+        print("[SCHEDULER] Starting S&P 500 symbols update...")
+        try:
+            from src.data.data_fetcher import DataFetcher
+            fetcher = DataFetcher()
+            
+            # Get current count before update
+            from src.core.database import get_db_connection
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT COUNT(*) FROM sp500_symbols')
+                    old_count = cur.fetchone()['count'] if isinstance(cur.fetchone(), dict) else cur.fetchone()[0]
+            
+            # Update the symbols
+            fetcher.update_sp500_symbols_table()
+            
+            # Get new count after update
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute('SELECT COUNT(*) FROM sp500_symbols')
+                    new_count = cur.fetchone()['count'] if isinstance(cur.fetchone(), dict) else cur.fetchone()[0]
+            
+            print(f"[SCHEDULER] S&P 500 symbols update completed successfully")
+            print(f"[SCHEDULER] Symbols count: {old_count} -> {new_count}")
+            
+        except Exception as e:
+            print(f"[SCHEDULER ERROR] S&P 500 symbols update failed: {e}")
+            traceback.print_exc()
+    
     # Ensure job_schedules table exists
     ensure_job_schedules_table()
     
@@ -390,7 +519,8 @@ def run_scheduled_jobs():
         'preload_stock_data': preload_stock_data,
         'run_scalping_analysis': lambda: scalping_analyzer.run_morning_scalping_analysis(),
         'populate_weekly_plan': lambda: populate_weekly_plan_job(),
-        'update_historical_data': update_historical_data
+        'update_historical_data': update_historical_data,
+        'update_sp500_symbols': update_sp500_symbols_job
     }
     
     # If it's a trading day and the app is starting, run any missed jobs from today
@@ -510,8 +640,10 @@ def main():
         print_error("Missing dependencies. Please install them first.")
         sys.exit(1)
 
-    # Check PostgreSQL
-    check_postgresql()
+    # Check all services (PostgreSQL, Redis, Go)
+    if not check_all_services():
+        print_error("Critical services are not available. Please fix the issues above.")
+        sys.exit(1)
 
     # Check if port is available
     if not check_port():

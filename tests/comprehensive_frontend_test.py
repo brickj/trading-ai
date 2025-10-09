@@ -872,7 +872,7 @@ class ComprehensiveFrontendTest(unittest.TestCase):
                 
                 # Check nested data
                 if "price_data" in analysis_data:
-                    self.assertIn("current_price", analysis_data["price_data"], "Price data should have current_price")
+                    self.assertIn("price", analysis_data["price_data"], "Price data should have price")
                 if "sentiment_data" in analysis_data:
                     self.assertIn("sentiment_score", analysis_data["sentiment_data"], "Sentiment data should have sentiment_score")
                 if "signal_data" in analysis_data:

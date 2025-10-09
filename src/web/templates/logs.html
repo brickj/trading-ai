@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="container">
 <div class="row">
     <div class="col-12">
         <h1 class="mb-4">
@@ -158,6 +159,7 @@ let autoRefreshInterval = null;
 let currentLogs = [];
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, starting logs...');
     loadLogs();
     setupEventListeners();
     initVerboseToggle();
@@ -195,9 +197,13 @@ function setupEventListeners() {
 }
 
 async function loadLogs() {
+    console.log('loadLogs called');
     const logContainer = document.getElementById('logContainer');
     const refreshBtn = document.getElementById('refreshLogsBtn');
     const originalText = refreshBtn.innerHTML;
+    
+    console.log('logContainer found:', logContainer);
+    console.log('refreshBtn found:', refreshBtn);
     
     try {
         // Show loading state
@@ -225,9 +231,12 @@ async function loadLogs() {
         params.append('limit', logLimit);
         
         const response = await fetch(`/api/logs?${params.toString()}`);
+        console.log('Fetch response:', response.status);
         const data = await response.json();
+        console.log('Fetch data:', data);
         
         if (!response.ok || !data.success) {
+            console.log('API error:', data.error);
             const errorMessage = data.error || 'Failed to load logs';
             logContainer.innerHTML = `
                 <div class="alert alert-danger">
@@ -239,6 +248,7 @@ async function loadLogs() {
         
         // Store the logs for filtering/exporting
         currentLogs = data.data?.logs || [];
+        console.log('Current logs count:', currentLogs.length);
         
         // Update the display with the logs or a message if no logs found
         if (currentLogs.length === 0) {
@@ -250,6 +260,7 @@ async function loadLogs() {
                 </div>
             `;
         } else {
+            console.log('Calling displayLogs with', currentLogs.length, 'logs');
             displayLogs(currentLogs);
         }
         
@@ -269,10 +280,13 @@ async function loadLogs() {
 }
 
 function displayLogs(logs) {
+    console.log('displayLogs called with', logs.length, 'logs');
     const container = document.getElementById('logContainer');
+    console.log('Container found:', container);
     
     // If no logs, show a message
     if (!logs || logs.length === 0) {
+        console.log('No logs to display');
         container.innerHTML = `
             <div class="text-center py-4">
                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
@@ -321,7 +335,9 @@ function displayLogs(logs) {
         </div>`;
     });
     
+    console.log('Generated HTML length:', html.length);
     container.innerHTML = html;
+    console.log('HTML set in container');
     
     // Auto-scroll to bottom
     container.scrollTop = container.scrollHeight;
@@ -596,6 +612,29 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function showAlert(message, type = 'info') {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;';
+    
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        ${escapeHtml(message)}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
 }
 
 // Add floating search button

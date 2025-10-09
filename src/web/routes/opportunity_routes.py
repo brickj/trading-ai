@@ -38,7 +38,8 @@ def news_opportunities():
     if not refresh and redis_cache.health_check():
         cached_data = redis_cache.get(cache_key)
         if cached_data:
-            return jsonify(cached_data)
+            # Return cached data using create_api_response for consistency
+            return create_api_response(data=cached_data)
     
     trading_logger.api_logger.info(
         "[DEBUG] Entered news_opportunities endpoint (preloaded mode)"
@@ -61,12 +62,20 @@ def news_opportunities():
                     trading_logger.api_logger.info(
                         f"[DEBUG] Returning preloaded news opportunities (count={len(preloaded['opportunities'])})"
                     )
-                    return jsonify({
+                    
+                    # Create response with status field
+                    response_data = {
                         "opportunities": preloaded["opportunities"],
                         "count": len(preloaded["opportunities"]),
                         "cached": True,
                         "cache_timestamp": preloaded["timestamp"],
-                    })
+                    }
+                    
+                    # Cache in Redis for future requests
+                    if redis_cache.health_check():
+                        redis_cache.set(cache_key, response_data, ttl=1800)  # 30 minutes
+                    
+                    return create_api_response(data=response_data)
                 trading_logger.api_logger.warning(
                     f"[DEBUG] No preloaded news opportunities found in DB! Error: {preloaded.get('error', 'None')}"
                 )
@@ -89,13 +98,20 @@ def news_opportunities():
 
                 preloaded = get_latest_preloaded_news_opportunities()
                 if preloaded and preloaded.get("opportunities") is not None and not preloaded.get("error"):
-                    return jsonify({
+                    # Create response with status field
+                    response_data = {
                         "opportunities": preloaded["opportunities"],
                         "count": len(preloaded["opportunities"]),
                         "cached": True,
                         "refreshed": True,
                         "cache_timestamp": preloaded["timestamp"],
-                    })
+                    }
+                    
+                    # Cache in Redis for future requests
+                    if redis_cache.health_check():
+                        redis_cache.set(cache_key, response_data, ttl=1800)  # 30 minutes
+                    
+                    return create_api_response(data=response_data)
                 trading_logger.api_logger.warning(
                     f"[DEBUG] Failed to refresh preloaded data, falling back to live analysis. Error: {preloaded.get('error', 'Unknown')}"
                 )
@@ -155,7 +171,7 @@ def news_opportunities():
         if redis_cache.health_check():
             redis_cache.set(cache_key, result_data, ttl=1800)  # 30 minutes
         
-        return jsonify(result_data)
+        return create_api_response(data=result_data)
     except Exception as exc:
         trading_logger.error_logger.error(
             f"[ERROR] Error in news_opportunities endpoint: {str(exc)}"

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"tradingai/go/pkg/optimizer"
+	"trading-ai-go/pkg/optimizer"
 )
 
 func main() {

@@ -18,8 +18,6 @@ class BaseRepository:
     """
     
     def __init__(self):
-        self._connection_cache = {}
-        self._query_cache = {}
         self._cache_timeout = 300  # 5 minutes
     
     @contextmanager
@@ -54,14 +52,6 @@ class BaseRepository:
                 cached_result = redis_cache.get(cache_key)
                 if cached_result is not None:
                     return cached_result
-            
-            # Fallback to local cache
-            cached_result = self._get_cached_result(cache_key)
-            if cached_result is not None:
-                # Store in Redis for future requests
-                if redis_cache.health_check():
-                    redis_cache.set(cache_key, cached_result, ttl=self._cache_timeout)
-                return cached_result
         
         try:
             # Use the context manager directly
@@ -80,12 +70,10 @@ class BaseRepository:
                     if not query.strip().upper().startswith('SELECT'):
                         conn.commit()
                     
-                    # Cache result if requested
+                    # Cache result if requested (Redis only)
                     if use_cache and cache_key and result is not None:
-                        # Cache in Redis (primary) and local cache (fallback)
                         if redis_cache.health_check():
                             redis_cache.set(cache_key, result, ttl=self._cache_timeout)
-                        self._cache_result(cache_key, result)
                     
                     # Log slow queries
                     execution_time = time.time() - start_time
@@ -205,25 +193,4 @@ class BaseRepository:
                 "table": table,
                 "error": str(e)
             }
-    
-    def _get_cached_result(self, cache_key: str) -> Any:
-        """Get result from query cache"""
-        if cache_key in self._query_cache:
-            cached_data, timestamp = self._query_cache[cache_key]
-            if time.time() - timestamp < self._cache_timeout:
-                return cached_data
-            else:
-                # Remove expired cache entry
-                del self._query_cache[cache_key]
-        return None
-    
-    def _cache_result(self, cache_key: str, result: Any) -> None:
-        """Cache query result with timestamp"""
-        self._query_cache[cache_key] = (result, time.time())
-        
-        # Simple cache cleanup - remove oldest entries if cache gets too large
-        if len(self._query_cache) > 100:
-            oldest_key = min(self._query_cache.keys(), 
-                           key=lambda k: self._query_cache[k][1])
-            del self._query_cache[oldest_key]
     

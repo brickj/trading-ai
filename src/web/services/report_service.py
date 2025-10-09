@@ -9,7 +9,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 from ...core.logger import trading_logger, log_exception
-from ...core.cache import get_cached_result, cache_result
+from ...core.redis_cache import get_cached_result, cache_result
 from ..helpers import execute_db_query
 
 

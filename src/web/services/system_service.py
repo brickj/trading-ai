@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Any
 import json
 
 from ...core.logger import trading_logger, log_exception
-from ...core.cache import get_cached_result, cache_result, get_cache_stats
+from ...core.redis_cache import get_cached_result, cache_result, redis_cache
 from ...core.database import get_db_connection
 from ...core.config import Config
 from ...core.telegram_alerts import telegram_alerter
@@ -66,7 +66,7 @@ class SystemService:
     def get_cache_stats(self) -> Dict:
         """Get cache statistics"""
         try:
-            stats = get_cache_stats()
+            stats = redis_cache.get_stats() if redis_cache.health_check() else {"error": "Redis not available"}
             return {
                 "cache_stats": stats,
                 "timestamp": datetime.now().isoformat()
@@ -226,7 +226,7 @@ class SystemService:
     def _check_cache_status(self) -> Dict:
         """Check cache system status"""
         try:
-            stats = get_cache_stats()
+            stats = redis_cache.get_stats() if redis_cache.health_check() else {"error": "Redis not available"}
             return {
                 "status": "active",
                 "stats": stats

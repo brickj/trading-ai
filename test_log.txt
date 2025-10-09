@@ -1360,3 +1360,267 @@ Call log:
 2025-09-25 02:36:58,138 - INFO - Test report saved: test_artifacts/test_report_20250925_023658.json
 2025-09-25 02:36:58,138 - INFO - Text report saved: test_artifacts/test_report_20250925_023658.txt
 2025-09-25 02:36:58,473 - INFO - Browser teardown complete
+2025-10-09 01:21:58,665 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-10-09 01:21:58,665 - INFO - Base URL: http://localhost:5001
+2025-10-09 01:21:58,665 - INFO - Artifacts directory: test_artifacts
+2025-10-09 01:22:01,048 - INFO - Browser setup complete with video recording enabled
+2025-10-09 01:22:01,048 - INFO - Testing page: Homepage (/)
+2025-10-09 01:22:01,840 - INFO - Page load time: 555.84ms
+2025-10-09 01:22:02,163 - INFO - Screenshot saved: test_artifacts/homepage_20251009_012201.png
+2025-10-09 01:22:04,165 - INFO - ✅ Homepage: PASSED (populated in 555.84ms)
+2025-10-09 01:22:04,165 - INFO - Testing page: Stocks Page (/stocks)
+2025-10-09 01:22:04,765 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-10-09 01:22:04,775 - INFO - Found element: #stocksTableBody
+2025-10-09 01:22:04,779 - INFO - Found element: #winnersList
+2025-10-09 01:22:04,782 - INFO - Found element: #losersList
+2025-10-09 01:22:04,784 - INFO - Found element: #stockAnalysisSection
+2025-10-09 01:22:06,786 - INFO - Page load time: 2581.03ms
+2025-10-09 01:22:06,805 - INFO - Stocks data: {'hasStocksTable': True, 'stockRowsCount': 6, 'hasWinnersList': True, 'winnerItemsCount': 0, 'hasLosersList': True, 'loserItemsCount': 0, 'stockSymbols': ['NXL', 'ATON', 'XBIO', 'COCH', 'ZNB', 'CENN'], 'hasRealData': True, 'tableHasPlaceholders': False}
+2025-10-09 01:22:06,806 - INFO - Stocks verification: data_errors=2, has_real_data=True, missing_elements=0, has_stocks_table=True
+2025-10-09 01:22:07,225 - INFO - Screenshot saved: test_artifacts/stocks_page_20251009_012206.png
+2025-10-09 01:22:09,227 - INFO - ✅ Stocks Page: PASSED (populated in 2581.03ms)
+2025-10-09 01:22:09,227 - INFO - Testing page: Crypto Page (/crypto)
+2025-10-09 01:22:09,803 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-10-09 01:22:09,812 - INFO - Found element: #cryptoAnalysisContainer
+2025-10-09 01:22:09,816 - INFO - Found element: #cryptoCardsRow
+2025-10-09 01:22:09,818 - INFO - Found element: #sentimentChartContainer
+2025-10-09 01:22:11,820 - INFO - Page load time: 2578.65ms
+2025-10-09 01:22:12,075 - INFO - Screenshot saved: test_artifacts/crypto_page_20251009_012211.png
+2025-10-09 01:22:14,075 - INFO - ✅ Crypto Page: PASSED (populated in 2578.65ms)
+2025-10-09 01:22:14,075 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-10-09 01:22:14,663 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-10-09 01:22:14,671 - INFO - Found element: #opportunitiesContainer
+2025-10-09 01:22:14,677 - INFO - Found element: #newsBtn
+2025-10-09 01:22:14,679 - INFO - Found element: #watchlistBtn
+2025-10-09 01:22:14,682 - INFO - Found element: #refreshBtn
+2025-10-09 01:22:14,684 - INFO - Found element: #lastUpdated
+2025-10-09 01:22:14,686 - INFO - Found element: #opportunitiesTitle
+2025-10-09 01:22:16,687 - INFO - Page load time: 2596.65ms
+2025-10-09 01:22:16,708 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-10-09T00:50:48.189379', 'cached': True, 'count': 1, 'opportunities': [{'articles': [{'published_at': '2025-10-09T00:50:35.697398-04:00', 'relevance': 0.85, 'sentiment': 'positive', 'source': 'Financial News', 'summary': 'Recent market developments and analysis', 'title': 'Market update for HL-PB', 'url': 'https://example.com/news'}], 'news_count': 1, 'price_data': {'change': 0, 'change_percent': '0%', 'current_price': 57.880001068115234, 'source': 'yfinance_fallback', 'symbol': 'HL-PB', 'timestamp': '2025-10-09T00:50:43.912951', 'volume': 0}, 'sentiment_data': {'confidence': 0.8, 'provider': 'test', 'sentiment_score': 0.5, 'summary': 'Test sentiment for HL-PB'}, 'signal_data': {'options_recommendation': {'action': 'CALL', 'confidence': 0.8, 'reasoning': 'Positive sentiment (0.50) with high confidence (0.80)', 'signal_strength': 0.4}, 'stock_recommendation': {'action': 'BUY', 'confidence': 0.8, 'reasoning': 'Positive sentiment (0.50) with high confidence (0.80)', 'signal_strength': 0.4}}, 'symbol': 'HL-PB', 'timestamp': '2025-10-09T00:50:45.209700', 'trade_signal': {'action': 'BUY', 'confidence': 0.5, 'current_price': 57.880001068115234, 'day_trading_notes': ['Strategy: Day Trade based on sentiment analysis', 'Conviction Level: Medium', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '📊 Moderate conviction - wait for technical confirmation', '🎯 Stick to planned exit levels', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Look for volume spike or technical confirmation', 'method': 'Limit order at mid-price or better', 'timing': 'Wait for 5-15 minute confirmation of price direction', 'volume_check': 'Check option chain liquidity before entry'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 15% gain or better', 'stop_loss': 'Hard stop at 12% loss', 'time_stop': 'Exit before 15-60 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '15-60 minutes', 'option_price': 0.58, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 103, 'potential_gain': 8.94, 'potential_loss': 7.15, 'risk_amount': 59.62, 'risk_percent': 3, 'risk_reward_ratio': 1.25, 'stop_price': 0.51, 'target_price': 0.67, 'total_cost': 59.62}}, 'position_size': 1, 'reasoning': 'No specific reasoning provided', 'sentiment_score': 0.5, 'signal_strength': 0.5, 'stop_loss_percent': 12, 'strategy_type': 'Day Trade', 'strike_price': 57.59, 'symbol': 'HL-PB', 'target_gain_percent': 15}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'status': 'success', 'success': True, 'timestamp': '2025-10-09T01:22:16.706194'}, 'opportunities_count': 1}
+2025-10-09 01:22:16,712 - INFO - Found 1 opportunity cards
+2025-10-09 01:22:16,970 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20251009_012216.png
+2025-10-09 01:22:16,970 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20251009_012216.png
+2025-10-09 01:22:17,303 - INFO - Screenshot saved: test_artifacts/opportunities_page_20251009_012216.png
+2025-10-09 01:22:19,305 - INFO - ✅ Opportunities Page: PASSED (populated in 2596.65ms)
+2025-10-09 01:22:19,305 - INFO - Testing page: System Status Page (/system_status)
+2025-10-09 01:22:20,218 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-10-09 01:22:35,220 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:22:35,223 - INFO - Found element: .card
+2025-10-09 01:22:35,227 - INFO - Found element: h1
+2025-10-09 01:22:37,229 - INFO - Page load time: 17899.77ms
+2025-10-09 01:22:37,643 - INFO - Screenshot saved: test_artifacts/system_status_page_20251009_012237.png
+2025-10-09 01:22:39,644 - ERROR - ❌ System Status Page: FAILED - ['.container']
+2025-10-09 01:22:39,644 - INFO - Testing page: Logs Page (/logs)
+2025-10-09 01:22:40,221 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-10-09 01:22:40,229 - INFO - Found element: #logContainer
+2025-10-09 01:22:40,233 - INFO - Found element: #logStats
+2025-10-09 01:22:50,235 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 10000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:22:52,238 - INFO - Page load time: 12575.87ms
+2025-10-09 01:22:52,535 - INFO - Screenshot saved: test_artifacts/logs_page_20251009_012252.png
+2025-10-09 01:22:54,536 - ERROR - ❌ Logs Page: FAILED - ['.container']
+2025-10-09 01:22:54,536 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-10-09 01:22:55,115 - INFO - Waiting for data to load on Portfolio Page (timeout: 10000ms)
+2025-10-09 01:22:55,124 - INFO - Found element: #portfolioContainer
+2025-10-09 01:22:55,128 - INFO - Found element: #portfolioSection
+2025-10-09 01:22:55,129 - INFO - Found element: #addPositionForm
+2025-10-09 01:22:55,131 - INFO - Found element: #positionsTable
+2025-10-09 01:22:55,132 - INFO - Found element: #tradesTable
+2025-10-09 01:22:55,134 - INFO - Found element: #currentCapital
+2025-10-09 01:22:55,136 - INFO - Found element: #totalValue
+2025-10-09 01:22:55,137 - INFO - Found element: #unrealizedPnl
+2025-10-09 01:22:55,139 - INFO - Found element: #openPositions
+2025-10-09 01:22:57,139 - INFO - Page load time: 2583.42ms
+2025-10-09 01:22:57,164 - INFO - Portfolio data: {'currentCapital': '$125,000.00', 'totalValue': '$125,000.00', 'unrealizedPnl': '$25,000.00', 'openPositions': '8', 'hasPositions': True, 'hasTrades': True, 'positionsCount': 2, 'tradesCount': 4}
+2025-10-09 01:22:57,552 - INFO - Snapshot saved to test_artifacts/portfolio_verified_20251009_012257.png
+2025-10-09 01:22:57,552 - INFO - Portfolio snapshot saved to test_artifacts/portfolio_verified_20251009_012257.png
+2025-10-09 01:22:57,911 - INFO - Screenshot saved: test_artifacts/portfolio_page_20251009_012257.png
+2025-10-09 01:22:59,912 - INFO - ✅ Portfolio Page: PASSED (populated in 2583.42ms)
+2025-10-09 01:22:59,912 - INFO - Testing page: Backtest Page (/backtest)
+2025-10-09 01:23:00,491 - INFO - Page load time: 558.60ms
+2025-10-09 01:23:00,511 - INFO - Backtest config: {'hasSymbolInput': True, 'hasDaysBackSelect': True, 'hasBacktestForm': True, 'hasResultsSection': True, 'hasPerformanceChart': True, 'symbolPlaceholder': 'e.g., AAPL, TSLA, MSFT', 'daysBackOptions': 6, 'formAction': 'http://localhost:5001/backtest', 'resultsVisible': True}
+2025-10-09 01:23:00,678 - ERROR - Error checking chart content: Page.evaluate: IndexSizeError: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source width is 0.
+    at eval (eval at evaluate (:291:30), <anonymous>:7:43)
+    at UtilityScript.evaluate (<anonymous>:298:18)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+2025-10-09 01:23:01,126 - INFO - Snapshot saved to test_artifacts/backtest_errors_20251009_012300.png
+2025-10-09 01:23:01,126 - INFO - Backtest snapshot saved to test_artifacts/backtest_errors_20251009_012300.png
+2025-10-09 01:23:01,595 - INFO - Screenshot saved: test_artifacts/backtest_page_20251009_012301.png
+2025-10-09 01:23:03,596 - ERROR - ❌ Backtest Page: FAILED - []
+2025-10-09 01:23:03,596 - INFO - Testing page: Weekly Plan Page (/weekly_plan)
+2025-10-09 01:23:04,176 - INFO - Waiting for data to load on Weekly Plan Page (timeout: 15000ms)
+2025-10-09 01:23:04,184 - INFO - Found element: h1
+2025-10-09 01:23:04,190 - INFO - Found element: #weekSelector
+2025-10-09 01:23:04,191 - INFO - Found element: #weeklyCalendar
+2025-10-09 01:23:04,193 - INFO - Found element: #eventSummary
+2025-10-09 01:23:19,195 - WARNING - Element #loadingIndicator not found: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("#loadingIndicator") to be visible
+    35 × locator resolved to hidden <div id="loadingIndicator" class="text-center py-4">…</div>
+
+2025-10-09 01:23:19,199 - INFO - Found element: #filterEarnings
+2025-10-09 01:23:19,202 - INFO - Found element: #filterFed
+2025-10-09 01:23:19,204 - INFO - Found element: #filterEconomic
+2025-10-09 01:23:19,205 - INFO - Found element: #filterOptions
+2025-10-09 01:23:19,207 - INFO - Found element: #filterHolidays
+2025-10-09 01:23:19,210 - INFO - Found element: .card
+2025-10-09 01:23:21,211 - INFO - Page load time: 17595.38ms
+2025-10-09 01:23:21,239 - INFO - ✅ Weekly Plan page verification passed:
+2025-10-09 01:23:21,239 - INFO -    - Calendar container: ✅
+2025-10-09 01:23:21,239 - INFO -    - Week selector: ✅
+2025-10-09 01:23:21,239 - INFO -    - Event filters: 6
+2025-10-09 01:23:21,239 - INFO -    - Summary cards: 4
+2025-10-09 01:23:21,239 - INFO -    - Navigation buttons: ✅
+2025-10-09 01:23:21,550 - INFO - Screenshot saved: test_artifacts/weekly_plan_page_20251009_012321.png
+2025-10-09 01:23:23,552 - INFO - ✅ Weekly Plan Page: PASSED (populated in 17595.38ms)
+2025-10-09 01:23:23,552 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-10-09 01:23:24,130 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-10-09 01:23:44,133 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:23:44,137 - INFO - Found element: h1
+2025-10-09 01:23:44,143 - INFO - Found element: .stats-card
+2025-10-09 01:23:46,145 - INFO - Page load time: 22575.02ms
+2025-10-09 01:23:46,579 - INFO - Screenshot saved: test_artifacts/recommendations_page_20251009_012346.png
+2025-10-09 01:23:48,580 - ERROR - ❌ Recommendations Page: FAILED - ['.container']
+2025-10-09 01:23:48,581 - INFO - Test report saved: test_artifacts/test_report_20251009_012348.json
+2025-10-09 01:23:48,581 - INFO - Text report saved: test_artifacts/test_report_20251009_012348.txt
+2025-10-09 01:23:48,625 - INFO - Browser teardown complete
+2025-10-09 01:28:49,719 - INFO - 🚀 Starting Comprehensive Page Population Test
+2025-10-09 01:28:49,719 - INFO - Base URL: http://localhost:5001
+2025-10-09 01:28:49,719 - INFO - Artifacts directory: test_artifacts
+2025-10-09 01:28:49,969 - INFO - Browser setup complete with video recording enabled
+2025-10-09 01:28:49,969 - INFO - Testing page: Homepage (/)
+2025-10-09 01:28:50,767 - INFO - Page load time: 557.57ms
+2025-10-09 01:28:51,147 - INFO - Screenshot saved: test_artifacts/homepage_20251009_012850.png
+2025-10-09 01:28:53,150 - INFO - ✅ Homepage: PASSED (populated in 557.57ms)
+2025-10-09 01:28:53,150 - INFO - Testing page: Stocks Page (/stocks)
+2025-10-09 01:28:53,753 - INFO - Waiting for data to load on Stocks Page (timeout: 30000ms)
+2025-10-09 01:28:53,763 - INFO - Found element: #stocksTableBody
+2025-10-09 01:28:53,767 - INFO - Found element: #winnersList
+2025-10-09 01:28:53,769 - INFO - Found element: #losersList
+2025-10-09 01:28:53,771 - INFO - Found element: #stockAnalysisSection
+2025-10-09 01:28:55,772 - INFO - Page load time: 2584.39ms
+2025-10-09 01:28:55,792 - INFO - Stocks data: {'hasStocksTable': True, 'stockRowsCount': 6, 'hasWinnersList': True, 'winnerItemsCount': 0, 'hasLosersList': True, 'loserItemsCount': 0, 'stockSymbols': ['NXL', 'ATON', 'XBIO', 'COCH', 'ZNB', 'CENN'], 'hasRealData': True, 'tableHasPlaceholders': False}
+2025-10-09 01:28:55,792 - INFO - Stocks verification: data_errors=2, has_real_data=True, missing_elements=0, has_stocks_table=True
+2025-10-09 01:28:56,208 - INFO - Screenshot saved: test_artifacts/stocks_page_20251009_012855.png
+2025-10-09 01:28:58,210 - INFO - ✅ Stocks Page: PASSED (populated in 2584.39ms)
+2025-10-09 01:28:58,210 - INFO - Testing page: Crypto Page (/crypto)
+2025-10-09 01:28:58,787 - INFO - Waiting for data to load on Crypto Page (timeout: 20000ms)
+2025-10-09 01:28:58,795 - INFO - Found element: #cryptoAnalysisContainer
+2025-10-09 01:28:58,799 - INFO - Found element: #cryptoCardsRow
+2025-10-09 01:28:58,801 - INFO - Found element: #sentimentChartContainer
+2025-10-09 01:29:00,803 - INFO - Page load time: 2578.17ms
+2025-10-09 01:29:01,059 - INFO - Screenshot saved: test_artifacts/crypto_page_20251009_012900.png
+2025-10-09 01:29:03,061 - INFO - ✅ Crypto Page: PASSED (populated in 2578.17ms)
+2025-10-09 01:29:03,061 - INFO - Testing page: Opportunities Page (/opportunities)
+2025-10-09 01:29:03,648 - INFO - Waiting for data to load on Opportunities Page (timeout: 30000ms)
+2025-10-09 01:29:03,657 - INFO - Found element: #opportunitiesContainer
+2025-10-09 01:29:03,661 - INFO - Found element: #newsBtn
+2025-10-09 01:29:03,663 - INFO - Found element: #watchlistBtn
+2025-10-09 01:29:03,664 - INFO - Found element: #refreshBtn
+2025-10-09 01:29:03,666 - INFO - Found element: #lastUpdated
+2025-10-09 01:29:03,667 - INFO - Found element: #opportunitiesTitle
+2025-10-09 01:29:05,669 - INFO - Page load time: 2592.42ms
+2025-10-09 01:29:05,693 - INFO - API Response: {'source': 'api_call', 'status': 200, 'data': {'data': {'cache_timestamp': '2025-10-09T00:50:48.189379', 'cached': True, 'count': 1, 'opportunities': [{'articles': [{'published_at': '2025-10-09T00:50:35.697398-04:00', 'relevance': 0.85, 'sentiment': 'positive', 'source': 'Financial News', 'summary': 'Recent market developments and analysis', 'title': 'Market update for HL-PB', 'url': 'https://example.com/news'}], 'news_count': 1, 'price_data': {'change': 0, 'change_percent': '0%', 'current_price': 57.880001068115234, 'source': 'yfinance_fallback', 'symbol': 'HL-PB', 'timestamp': '2025-10-09T00:50:43.912951', 'volume': 0}, 'sentiment_data': {'confidence': 0.8, 'provider': 'test', 'sentiment_score': 0.5, 'summary': 'Test sentiment for HL-PB'}, 'signal_data': {'options_recommendation': {'action': 'CALL', 'confidence': 0.8, 'reasoning': 'Positive sentiment (0.50) with high confidence (0.80)', 'signal_strength': 0.4}, 'stock_recommendation': {'action': 'BUY', 'confidence': 0.8, 'reasoning': 'Positive sentiment (0.50) with high confidence (0.80)', 'signal_strength': 0.4}}, 'symbol': 'HL-PB', 'timestamp': '2025-10-09T00:50:45.209700', 'trade_signal': {'action': 'BUY', 'confidence': 0.5, 'current_price': 57.880001068115234, 'day_trading_notes': ['Strategy: Day Trade based on sentiment analysis', 'Conviction Level: Medium', '⚠️ Day trading options carries high risk - never risk more than you can afford to lose', '📊 Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay', '⏰ Time decay accelerates rapidly on 0-2 DTE options', '💧 Ensure sufficient liquidity - avoid wide bid-ask spreads', '📈 Consider market conditions: trending vs. choppy markets affect success rates', '📊 Moderate conviction - wait for technical confirmation', '🎯 Stick to planned exit levels', '✅ High confidence in sentiment analysis'], 'days_to_expiry': 2, 'direction': 'BEARISH', 'entry_strategy': {'confirmation': 'Look for volume spike or technical confirmation', 'method': 'Limit order at mid-price or better', 'timing': 'Wait for 5-15 minute confirmation of price direction', 'volume_check': 'Check option chain liquidity before entry'}, 'exit_strategy': {'market_close': 'Close all positions 30 minutes before market close', 'partial_exits': 'Consider taking 50% profits at half target, let rest run', 'profit_target': 'Exit at 15% gain or better', 'stop_loss': 'Hard stop at 12% loss', 'time_stop': 'Exit before 15-60 minutes regardless of P&L if no momentum', 'trailing_stop': 'Consider trailing stop after 50% of target is reached'}, 'hold_time': '15-60 minutes', 'option_price': 0.58, 'option_type': 'put', 'position_recommendations': {'${amount}': {'contracts': 103, 'potential_gain': 8.94, 'potential_loss': 7.15, 'risk_amount': 59.62, 'risk_percent': 3, 'risk_reward_ratio': 1.25, 'stop_price': 0.51, 'target_price': 0.67, 'total_cost': 59.62}}, 'position_size': 1, 'reasoning': 'No specific reasoning provided', 'sentiment_score': 0.5, 'signal_strength': 0.5, 'stop_loss_percent': 12, 'strategy_type': 'Day Trade', 'strike_price': 57.59, 'symbol': 'HL-PB', 'target_gain_percent': 15}, 'trigger': 'news_driven', 'type': 'stock'}]}, 'message': '', 'status': 'success', 'success': True, 'timestamp': '2025-10-09T01:29:05.691299'}, 'opportunities_count': 1}
+2025-10-09 01:29:05,698 - INFO - Found 1 opportunity cards
+2025-10-09 01:29:05,994 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20251009_012905.png
+2025-10-09 01:29:05,994 - INFO - Snapshot saved to test_artifacts/opportunities_verified_20251009_012905.png
+2025-10-09 01:29:06,271 - INFO - Screenshot saved: test_artifacts/opportunities_page_20251009_012905.png
+2025-10-09 01:29:08,274 - INFO - ✅ Opportunities Page: PASSED (populated in 2592.42ms)
+2025-10-09 01:29:08,274 - INFO - Testing page: System Status Page (/system_status)
+2025-10-09 01:29:09,215 - INFO - Waiting for data to load on System Status Page (timeout: 15000ms)
+2025-10-09 01:29:24,218 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:29:24,221 - INFO - Found element: .card
+2025-10-09 01:29:24,225 - INFO - Found element: h1
+2025-10-09 01:29:26,228 - INFO - Page load time: 17937.72ms
+2025-10-09 01:29:26,672 - INFO - Screenshot saved: test_artifacts/system_status_page_20251009_012926.png
+2025-10-09 01:29:28,674 - ERROR - ❌ System Status Page: FAILED - ['.container']
+2025-10-09 01:29:28,674 - INFO - Testing page: Logs Page (/logs)
+2025-10-09 01:29:29,250 - INFO - Waiting for data to load on Logs Page (timeout: 10000ms)
+2025-10-09 01:29:29,258 - INFO - Found element: #logContainer
+2025-10-09 01:29:29,262 - INFO - Found element: #logStats
+2025-10-09 01:29:39,265 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 10000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:29:41,266 - INFO - Page load time: 12573.44ms
+2025-10-09 01:29:41,506 - INFO - Screenshot saved: test_artifacts/logs_page_20251009_012941.png
+2025-10-09 01:29:43,508 - ERROR - ❌ Logs Page: FAILED - ['.container']
+2025-10-09 01:29:43,508 - INFO - Testing page: Portfolio Page (/portfolio_page)
+2025-10-09 01:29:44,089 - INFO - Waiting for data to load on Portfolio Page (timeout: 10000ms)
+2025-10-09 01:29:44,099 - INFO - Found element: #portfolioContainer
+2025-10-09 01:29:44,103 - INFO - Found element: #portfolioSection
+2025-10-09 01:29:44,104 - INFO - Found element: #addPositionForm
+2025-10-09 01:29:44,106 - INFO - Found element: #positionsTable
+2025-10-09 01:29:44,107 - INFO - Found element: #tradesTable
+2025-10-09 01:29:44,109 - INFO - Found element: #currentCapital
+2025-10-09 01:29:44,110 - INFO - Found element: #totalValue
+2025-10-09 01:29:44,112 - INFO - Found element: #unrealizedPnl
+2025-10-09 01:29:44,113 - INFO - Found element: #openPositions
+2025-10-09 01:29:46,115 - INFO - Page load time: 2589.27ms
+2025-10-09 01:29:46,151 - INFO - Portfolio data: {'currentCapital': '$125,000.00', 'totalValue': '$125,000.00', 'unrealizedPnl': '$25,000.00', 'openPositions': '8', 'hasPositions': True, 'hasTrades': True, 'positionsCount': 2, 'tradesCount': 4}
+2025-10-09 01:29:46,519 - INFO - Snapshot saved to test_artifacts/portfolio_verified_20251009_012946.png
+2025-10-09 01:29:46,520 - INFO - Portfolio snapshot saved to test_artifacts/portfolio_verified_20251009_012946.png
+2025-10-09 01:29:46,836 - INFO - Screenshot saved: test_artifacts/portfolio_page_20251009_012946.png
+2025-10-09 01:29:48,838 - INFO - ✅ Portfolio Page: PASSED (populated in 2589.27ms)
+2025-10-09 01:29:48,838 - INFO - Testing page: Backtest Page (/backtest)
+2025-10-09 01:29:49,416 - INFO - Page load time: 554.75ms
+2025-10-09 01:29:49,434 - INFO - Backtest config: {'hasSymbolInput': True, 'hasDaysBackSelect': True, 'hasBacktestForm': True, 'hasResultsSection': True, 'hasPerformanceChart': True, 'symbolPlaceholder': 'e.g., AAPL, TSLA, MSFT', 'daysBackOptions': 6, 'formAction': 'http://localhost:5001/backtest', 'resultsVisible': True}
+2025-10-09 01:29:49,601 - ERROR - Error checking chart content: Page.evaluate: IndexSizeError: Failed to execute 'getImageData' on 'CanvasRenderingContext2D': The source width is 0.
+    at eval (eval at evaluate (:291:30), <anonymous>:7:43)
+    at UtilityScript.evaluate (<anonymous>:298:18)
+    at UtilityScript.<anonymous> (<anonymous>:1:44)
+2025-10-09 01:29:50,051 - INFO - Snapshot saved to test_artifacts/backtest_errors_20251009_012949.png
+2025-10-09 01:29:50,051 - INFO - Backtest snapshot saved to test_artifacts/backtest_errors_20251009_012949.png
+2025-10-09 01:29:50,526 - INFO - Screenshot saved: test_artifacts/backtest_page_20251009_012950.png
+2025-10-09 01:29:52,526 - ERROR - ❌ Backtest Page: FAILED - []
+2025-10-09 01:29:52,526 - INFO - Testing page: Weekly Plan Page (/weekly_plan)
+2025-10-09 01:29:53,107 - INFO - Waiting for data to load on Weekly Plan Page (timeout: 15000ms)
+2025-10-09 01:29:53,116 - INFO - Found element: h1
+2025-10-09 01:29:53,120 - INFO - Found element: #weekSelector
+2025-10-09 01:29:53,123 - INFO - Found element: #weeklyCalendar
+2025-10-09 01:29:53,125 - INFO - Found element: #eventSummary
+2025-10-09 01:30:08,127 - WARNING - Element #loadingIndicator not found: Page.wait_for_selector: Timeout 15000ms exceeded.
+Call log:
+  - waiting for locator("#loadingIndicator") to be visible
+    35 × locator resolved to hidden <div id="loadingIndicator" class="text-center py-4">…</div>
+
+2025-10-09 01:30:08,129 - INFO - Found element: #filterEarnings
+2025-10-09 01:30:08,131 - INFO - Found element: #filterFed
+2025-10-09 01:30:08,133 - INFO - Found element: #filterEconomic
+2025-10-09 01:30:08,135 - INFO - Found element: #filterOptions
+2025-10-09 01:30:08,136 - INFO - Found element: #filterHolidays
+2025-10-09 01:30:08,138 - INFO - Found element: .card
+2025-10-09 01:30:10,139 - INFO - Page load time: 17592.29ms
+2025-10-09 01:30:10,161 - INFO - ✅ Weekly Plan page verification passed:
+2025-10-09 01:30:10,162 - INFO -    - Calendar container: ✅
+2025-10-09 01:30:10,162 - INFO -    - Week selector: ✅
+2025-10-09 01:30:10,162 - INFO -    - Event filters: 6
+2025-10-09 01:30:10,162 - INFO -    - Summary cards: 4
+2025-10-09 01:30:10,162 - INFO -    - Navigation buttons: ✅
+2025-10-09 01:30:10,465 - INFO - Screenshot saved: test_artifacts/weekly_plan_page_20251009_013010.png
+2025-10-09 01:30:12,466 - INFO - ✅ Weekly Plan Page: PASSED (populated in 17592.29ms)
+2025-10-09 01:30:12,466 - INFO - Testing page: Recommendations Page (/recommendations)
+2025-10-09 01:30:13,044 - INFO - Waiting for data to load on Recommendations Page (timeout: 20000ms)
+2025-10-09 01:30:33,046 - WARNING - Element .container not found: Page.wait_for_selector: Timeout 20000ms exceeded.
+Call log:
+  - waiting for locator(".container") to be visible
+
+2025-10-09 01:30:33,050 - INFO - Found element: h1
+2025-10-09 01:30:33,054 - INFO - Found element: .stats-card
+2025-10-09 01:30:35,055 - INFO - Page load time: 22570.85ms
+2025-10-09 01:30:35,493 - INFO - Screenshot saved: test_artifacts/recommendations_page_20251009_013035.png
+2025-10-09 01:30:37,495 - ERROR - ❌ Recommendations Page: FAILED - ['.container']
+2025-10-09 01:30:37,497 - INFO - Test report saved: test_artifacts/test_report_20251009_013037.json
+2025-10-09 01:30:37,497 - INFO - Text report saved: test_artifacts/test_report_20251009_013037.txt
+2025-10-09 01:30:37,537 - INFO - Browser teardown complete

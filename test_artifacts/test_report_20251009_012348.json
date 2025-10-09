@@ -1,0 +1,416 @@
+{
+  "test_run": {
+    "timestamp": "2025-10-09T01:23:48.580623",
+    "base_url": "http://localhost:5001",
+    "total_pages_tested": 10,
+    "pages_passed": 6,
+    "pages_failed": 4,
+    "success_rate": "60.0%",
+    "average_load_time_ms": 8210.02
+  },
+  "page_results": [
+    {
+      "page_name": "Homepage",
+      "route": "/",
+      "timestamp": "2025-10-09T01:22:04.164967",
+      "load_success": true,
+      "load_time_ms": 555.8431148529053,
+      "total_test_time_ms": 3116.3723468780518,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#howItWorksCard: Card contains placeholder text: How It Works\n                        \n                            \n                        \n                    \n                \n                \n                     Standard Analysis Process\n                    \n                        News Collection: Fetch latest financial news from multiple sources (Finnhub, Reddit, Yahoo Finance)\n                        AI Sentiment Analysis: Use advanced AI models (Ollama, DeepSeek, or OpenAI) for sentiment analysis\n                        Sentiment Scoring: Convert news sentiment into quantitative scores (-1 to +1)\n                        Signal Generation: Transform sentiment into actionable trading signals\n                        Trading Recommendations: Generate optimized options strategies with strike prices and expiry dates\n                    \n                    \n                    \n                    \n                     Enhanced Analysis Process\n                    \n                        Multi-Strategy Generation: Create distinct trading strategies (Conservative, Moderate, Income-Focused)\n                        Historical Backtesting: Test each strategy against 730 days (2 years) of real market data from Alpha Vantage\n                        Performance Validation: Calculate win rates, average returns, and consistency scores for each strategy\n                        Advanced Confidence Scoring: Combine sentiment analysis (30%) with historical performance (70%)\n                        Strategy Ranking: Rank all strategies by confidence and select the highest-performing approach\n                    \n                    \n                    \n                         Free AI: Ollama (local) and DeepSeek are completely FREE!\n                    \n                    \n                    \n                         Enhanced Analysis: Uses sophisticated backtesting with 730 days (2 years) of historical data to validate strategies before recommendations. This provides much higher confidence in trade outcomes!"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 20076
+      },
+      "screenshot_path": "test_artifacts/homepage_20251009_012201.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Stocks Page",
+      "route": "/stocks",
+      "timestamp": "2025-10-09T01:22:09.227659",
+      "load_success": true,
+      "load_time_ms": 2581.0320377349854,
+      "total_test_time_ms": 5062.530040740967,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#winnersList: List has no items",
+          "#losersList: List has no items"
+        ],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 41021,
+        "stocks_data": {
+          "hasStocksTable": true,
+          "stockRowsCount": 6,
+          "hasWinnersList": true,
+          "winnerItemsCount": 0,
+          "hasLosersList": true,
+          "loserItemsCount": 0,
+          "stockSymbols": [
+            "NXL",
+            "ATON",
+            "XBIO",
+            "COCH",
+            "ZNB",
+            "CENN"
+          ],
+          "hasRealData": true,
+          "tableHasPlaceholders": false
+        },
+        "console_errors": []
+      },
+      "screenshot_path": "test_artifacts/stocks_page_20251009_012206.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Crypto Page",
+      "route": "/crypto",
+      "timestamp": "2025-10-09T01:22:14.075773",
+      "load_success": true,
+      "load_time_ms": 2578.6490440368652,
+      "total_test_time_ms": 4847.964286804199,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "data_validation_errors": [
+          "#cryptoCardsRow: Card contains placeholder text: ADA\n                        HOLD\n                    \n                \n                \n                    \n                        \n                            Price\n                            $0.868500\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    -0.200\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         BTC\n                        HOLD\n                    \n                \n                \n                    \n                        \n                            Price\n                            $124,668.7\n                        \n                        \n                            Signal Strength\n                            0.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.000\n                                \n                            \n                        \n                        \n                            Confidence\n                            0.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         DOT\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $4.38\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.500\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         ETH\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $4,682.01\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.600\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         SOL\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $233.60\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.300\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         SOLUSD\n                        BUY\n                    \n                \n                \n                    \n                        \n                            Price\n                            $233.60\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    0.300\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details\n                        \n                    \n                \n            \n        \n            \n                \n                    \n                         USDT\n                        HOLD\n                    \n                \n                \n                    \n                        \n                            Price\n                            $1.00\n                        \n                        \n                            Signal Strength\n                            32.0%\n                        \n                    \n                    \n                    \n                        \n                            Sentiment\n                            \n                                \n                                    -0.200\n                                \n                            \n                        \n                        \n                            Confidence\n                            80.0%\n                        \n                    \n                    \n                    \n                        \n                             Details",
+          "#sentimentChartContainer: Validation error: Locator.evaluate: TypeError: canvas.toDataURL is not a function\n    at eval (eval at evaluate (:291:30), <anonymous>:1:18)\n    at UtilityScript.evaluate (<anonymous>:298:18)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+        ],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 29577
+      },
+      "screenshot_path": "test_artifacts/crypto_page_20251009_012211.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Opportunities Page",
+      "route": "/opportunities",
+      "timestamp": "2025-10-09T01:22:19.305412",
+      "load_success": true,
+      "load_time_ms": 2596.6451168060303,
+      "total_test_time_ms": 5229.4981479644775,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 21680,
+        "opportunities_count": 1,
+        "snapshot_path": "test_artifacts/opportunities_verified_20251009_012216.png",
+        "api_response": {
+          "source": "api_call",
+          "status": 200,
+          "data": {
+            "data": {
+              "cache_timestamp": "2025-10-09T00:50:48.189379",
+              "cached": true,
+              "count": 1,
+              "opportunities": [
+                {
+                  "articles": [
+                    {
+                      "published_at": "2025-10-09T00:50:35.697398-04:00",
+                      "relevance": 0.85,
+                      "sentiment": "positive",
+                      "source": "Financial News",
+                      "summary": "Recent market developments and analysis",
+                      "title": "Market update for HL-PB",
+                      "url": "https://example.com/news"
+                    }
+                  ],
+                  "news_count": 1,
+                  "price_data": {
+                    "change": 0,
+                    "change_percent": "0%",
+                    "current_price": 57.880001068115234,
+                    "source": "yfinance_fallback",
+                    "symbol": "HL-PB",
+                    "timestamp": "2025-10-09T00:50:43.912951",
+                    "volume": 0
+                  },
+                  "sentiment_data": {
+                    "confidence": 0.8,
+                    "provider": "test",
+                    "sentiment_score": 0.5,
+                    "summary": "Test sentiment for HL-PB"
+                  },
+                  "signal_data": {
+                    "options_recommendation": {
+                      "action": "CALL",
+                      "confidence": 0.8,
+                      "reasoning": "Positive sentiment (0.50) with high confidence (0.80)",
+                      "signal_strength": 0.4
+                    },
+                    "stock_recommendation": {
+                      "action": "BUY",
+                      "confidence": 0.8,
+                      "reasoning": "Positive sentiment (0.50) with high confidence (0.80)",
+                      "signal_strength": 0.4
+                    }
+                  },
+                  "symbol": "HL-PB",
+                  "timestamp": "2025-10-09T00:50:45.209700",
+                  "trade_signal": {
+                    "action": "BUY",
+                    "confidence": 0.5,
+                    "current_price": 57.880001068115234,
+                    "day_trading_notes": [
+                      "Strategy: Day Trade based on sentiment analysis",
+                      "Conviction Level: Medium",
+                      "\u26a0\ufe0f Day trading options carries high risk - never risk more than you can afford to lose",
+                      "\ud83d\udcca Monitor option Greeks: Focus on Delta for directional moves, Theta for time decay",
+                      "\u23f0 Time decay accelerates rapidly on 0-2 DTE options",
+                      "\ud83d\udca7 Ensure sufficient liquidity - avoid wide bid-ask spreads",
+                      "\ud83d\udcc8 Consider market conditions: trending vs. choppy markets affect success rates",
+                      "\ud83d\udcca Moderate conviction - wait for technical confirmation",
+                      "\ud83c\udfaf Stick to planned exit levels",
+                      "\u2705 High confidence in sentiment analysis"
+                    ],
+                    "days_to_expiry": 2,
+                    "direction": "BEARISH",
+                    "entry_strategy": {
+                      "confirmation": "Look for volume spike or technical confirmation",
+                      "method": "Limit order at mid-price or better",
+                      "timing": "Wait for 5-15 minute confirmation of price direction",
+                      "volume_check": "Check option chain liquidity before entry"
+                    },
+                    "exit_strategy": {
+                      "market_close": "Close all positions 30 minutes before market close",
+                      "partial_exits": "Consider taking 50% profits at half target, let rest run",
+                      "profit_target": "Exit at 15% gain or better",
+                      "stop_loss": "Hard stop at 12% loss",
+                      "time_stop": "Exit before 15-60 minutes regardless of P&L if no momentum",
+                      "trailing_stop": "Consider trailing stop after 50% of target is reached"
+                    },
+                    "hold_time": "15-60 minutes",
+                    "option_price": 0.58,
+                    "option_type": "put",
+                    "position_recommendations": {
+                      "${amount}": {
+                        "contracts": 103,
+                        "potential_gain": 8.94,
+                        "potential_loss": 7.15,
+                        "risk_amount": 59.62,
+                        "risk_percent": 3,
+                        "risk_reward_ratio": 1.25,
+                        "stop_price": 0.51,
+                        "target_price": 0.67,
+                        "total_cost": 59.62
+                      }
+                    },
+                    "position_size": 1,
+                    "reasoning": "No specific reasoning provided",
+                    "sentiment_score": 0.5,
+                    "signal_strength": 0.5,
+                    "stop_loss_percent": 12,
+                    "strategy_type": "Day Trade",
+                    "strike_price": 57.59,
+                    "symbol": "HL-PB",
+                    "target_gain_percent": 15
+                  },
+                  "trigger": "news_driven",
+                  "type": "stock"
+                }
+              ]
+            },
+            "message": "",
+            "status": "success",
+            "success": true,
+            "timestamp": "2025-10-09T01:22:16.706194"
+          },
+          "opportunities_count": 1
+        },
+        "console_errors": [],
+        "data_validation_errors": [
+          "#watchlistBtn: List has no items"
+        ]
+      },
+      "screenshot_path": "test_artifacts/opportunities_page_20251009_012216.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "System Status Page",
+      "route": "/system_status",
+      "timestamp": "2025-10-09T01:22:39.644186",
+      "load_success": true,
+      "load_time_ms": 17899.772882461548,
+      "total_test_time_ms": 20338.61494064331,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          ".container"
+        ],
+        "data_validation_errors": [
+          ".card: Card contains placeholder text: Refresh Status\n                    \n                    Last updated: 10/9/2025, 1:22:19 AM\n                    \n                    \n                        \n                        \n                            Auto-refresh (30s)"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 77378
+      },
+      "screenshot_path": "test_artifacts/system_status_page_20251009_012237.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Logs Page",
+      "route": "/logs",
+      "timestamp": "2025-10-09T01:22:54.536878",
+      "load_success": true,
+      "load_time_ms": 12575.865268707275,
+      "total_test_time_ms": 14892.55404472351,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          ".container"
+        ],
+        "data_validation_errors": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 120334
+      },
+      "screenshot_path": "test_artifacts/logs_page_20251009_012252.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Portfolio Page",
+      "route": "/portfolio_page",
+      "timestamp": "2025-10-09T01:22:59.912562",
+      "load_success": true,
+      "load_time_ms": 2583.420991897583,
+      "total_test_time_ms": 5375.542879104614,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 32608,
+        "portfolio_data": {
+          "currentCapital": "$125,000.00",
+          "totalValue": "$125,000.00",
+          "unrealizedPnl": "$25,000.00",
+          "openPositions": "8",
+          "hasPositions": true,
+          "hasTrades": true,
+          "positionsCount": 2,
+          "tradesCount": 4
+        },
+        "data_validation_errors": [],
+        "console_errors": [],
+        "snapshot_path": "test_artifacts/portfolio_verified_20251009_012257.png"
+      },
+      "screenshot_path": "test_artifacts/portfolio_page_20251009_012257.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Backtest Page",
+      "route": "/backtest",
+      "timestamp": "2025-10-09T01:23:03.596217",
+      "load_success": true,
+      "load_time_ms": 558.6020946502686,
+      "total_test_time_ms": 3683.5100650787354,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [],
+        "loading_indicators": 1,
+        "error_messages": 0,
+        "page_content_length": 66130,
+        "backtest_config": {
+          "hasSymbolInput": true,
+          "hasDaysBackSelect": true,
+          "hasBacktestForm": true,
+          "hasResultsSection": true,
+          "hasPerformanceChart": true,
+          "symbolPlaceholder": "e.g., AAPL, TSLA, MSFT",
+          "daysBackOptions": 6,
+          "formAction": "http://localhost:5001/backtest",
+          "resultsVisible": true
+        },
+        "chart_test_results": {
+          "chart_created": false,
+          "chart_has_content": false,
+          "console_errors": [],
+          "form_submitted": true
+        },
+        "data_validation_errors": [],
+        "console_errors": [],
+        "snapshot_path": "test_artifacts/backtest_errors_20251009_012300.png"
+      },
+      "screenshot_path": "test_artifacts/backtest_page_20251009_012301.png",
+      "status": "FAIL"
+    },
+    {
+      "page_name": "Weekly Plan Page",
+      "route": "/weekly_plan",
+      "timestamp": "2025-10-09T01:23:23.552341",
+      "load_success": true,
+      "load_time_ms": 17595.377922058105,
+      "total_test_time_ms": 19955.98578453064,
+      "population_result": {
+        "is_populated": true,
+        "missing_elements": [
+          "#filterEarnings (empty)",
+          "#filterFed (empty)",
+          "#filterEconomic (empty)",
+          "#filterOptions (empty)",
+          "#filterHolidays (empty)"
+        ],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "page_content_length": 40876,
+        "weekly_plan_data": {
+          "hasCalendar": true,
+          "hasWeekSelector": true,
+          "hasEventSummary": true,
+          "hasWeeklyPlanTitle": true,
+          "filtersCount": 6,
+          "hasEarningsFilter": true,
+          "hasFedFilter": true,
+          "hasEconomicFilter": true,
+          "hasOptionsFilter": true,
+          "hasHolidaysFilter": true,
+          "hasPrevWeekBtn": true,
+          "hasNextWeekBtn": true,
+          "summaryCardsCount": 4,
+          "pageTitle": "Weekly Market Plan - Trading AI",
+          "hasLoadingIndicator": true
+        },
+        "data_validation_errors": [],
+        "console_errors": []
+      },
+      "screenshot_path": "test_artifacts/weekly_plan_page_20251009_012321.png",
+      "status": "PASS"
+    },
+    {
+      "page_name": "Recommendations Page",
+      "route": "/recommendations",
+      "timestamp": "2025-10-09T01:23:48.580487",
+      "load_success": true,
+      "load_time_ms": 22575.02007484436,
+      "total_test_time_ms": 25027.978897094727,
+      "population_result": {
+        "is_populated": false,
+        "missing_elements": [
+          ".container"
+        ],
+        "data_validation_errors": [],
+        "loading_indicators": 0,
+        "error_messages": 0,
+        "console_errors": [],
+        "page_content_length": 51099
+      },
+      "screenshot_path": "test_artifacts/recommendations_page_20251009_012346.png",
+      "status": "FAIL"
+    }
+  ]
+}
