@@ -1,10 +1,13 @@
 <!-- ✅ FINAL FULL NAVBAR -->
-<nav class="navbar navbar-expand-lg glassy-nav navbar-dark">
+<nav id="ai-navbar" class="navbar navbar-expand-lg navbar-dark">
   <div class="container-xxl nav-shell">
 
     <!-- Brand -->
     <a class="navbar-brand" href="/">
-      <span class="brand-icon"><i class="fas fa-robot"></i></span>
+      <span class="brand-icon">
+        <span class="brand-icon__orb"></span>
+        <i class="fas fa-robot"></i>
+      </span>
       <span class="brand-text">
         <span class="brand-text__title">TRADING AI</span>
         <span class="brand-text__subtitle">Signals. Strategy. Speed.</span>
@@ -21,18 +24,15 @@
       <div class="nav-sections">
 
         <!-- Row 1: Primary Trading -->
-        <div class="nav-row">
-          <span class="navbar-section primary">
-            <i class="fas fa-chart-line"></i> Primary Trading
-          </span>
-          <a class="nav-link" href="/"><i class="fas fa-home"></i> Dashboard</a>
-          <a class="nav-link" href="/opportunities"><i class="fas fa-bell"></i> Opportunities</a>
-          <a class="nav-link" href="/weekly_plan"><i class="fas fa-calendar-week"></i> Weekly Plan</a>
-          <a class="nav-link" href="/foreign_markets_overview"><i class="fas fa-globe-americas"></i> Foreign Markets</a>
-          <a class="nav-link" href="/recommendations"><i class="fas fa-check-circle"></i> Recommendations</a>
-          <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;">
-            <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-secondary">Disabled</span>
-          </a>
+        <div class="nav-row primary-row">
+          <span class="navbar-section primary">Primary Trading</span>
+          <a class="nav-link" href="/">Dashboard</a>
+          <a class="nav-link" href="/opportunities">Opportunities</a>
+          <a class="nav-link" href="/weekly_plan">Weekly Plan</a>
+          <a class="nav-link" href="/foreign_markets_overview">Foreign Markets</a>
+          <a class="nav-link" href="/recommendations">Recommendations</a>
+          <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;">Portfolio</a>
+          <span class="nav-pill disabled-pill">Disabled</span>
         </div>
 
         <!-- Row 2: Analysis & Research -->
@@ -70,124 +70,223 @@ function showDisabledMessage(featureName) {
 
 <!-- CSS -->
 <style>
-/* ===== Navbar Container ===== */
-.glassy-nav {
-  background: linear-gradient(180deg, rgba(10, 15, 25, 0.85), rgba(10, 15, 25, 0.8));
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
-  padding: 16px 20px;
+#ai-navbar {
+  border-radius: 28px;
+  padding: 0.85rem 1.4rem;
+  background: linear-gradient(135deg, rgba(16, 18, 35, 0.74), rgba(12, 16, 28, 0.58));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 36px rgba(6, 10, 30, 0.48);
 }
-.nav-shell {
+
+#ai-navbar .navbar-toggler {
+  border: none;
+  padding: 0.45rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+#ai-navbar .navbar-toggler-icon {
+  filter: brightness(5);
+}
+
+#ai-navbar .navbar-toggler:focus {
+  box-shadow: none;
+}
+
+#ai-navbar .nav-shell {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
   max-width: 1320px;
   margin: 0 auto;
 }
 
-/* Make collapse take its own full row */
-.navbar-collapse.w-100 {
+#ai-navbar .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-right: 1rem;
+  margin-right: 1rem;
+  border-right: 1px dashed rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+
+#ai-navbar .brand-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(0, 255, 178, 0.36), rgba(85, 143, 255, 0.28));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.25);
+}
+
+#ai-navbar .brand-icon__orb {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.45), transparent 60%);
+  opacity: 0.45;
+}
+
+#ai-navbar .brand-icon i {
+  color: #050505;
+  font-size: 1.2rem;
+  position: relative;
+  z-index: 1;
+}
+
+#ai-navbar .brand-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+#ai-navbar .brand-text__title {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(246, 246, 255, 0.92);
+}
+
+#ai-navbar .brand-text__subtitle {
+  font-size: 0.7rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(246, 246, 255, 0.55);
+}
+
+#ai-navbar .navbar-collapse.w-100 {
   flex-basis: 100%;
   flex-wrap: wrap;
 }
 
-/* ===== Section Groups ===== */
-.nav-sections {
+#ai-navbar .nav-sections {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 10px;
+  gap: 0.65rem;
 }
-.nav-row {
+
+#ai-navbar .nav-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 12px;
+  gap: 0.6rem 0.75rem;
   width: 100%;
 }
 
-/* ===== Section Labels ===== */
-.navbar-section {
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #dde7ff;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 999px;
-  padding: 6px 12px;
+#ai-navbar .navbar-section {
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(246, 246, 255, 0.35);
+  padding: 0;
+  border: none;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  gap: 0.35rem;
 }
-.navbar-section i { opacity: 0.9; }
 
-/* ===== Link Pills ===== */
-.nav-link {
+#ai-navbar .navbar-section i {
+  opacity: 0.7;
+}
+
+#ai-navbar .navbar-section.primary {
+  color: #51d7ff;
+}
+
+#ai-navbar .primary-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#ai-navbar .primary-row::-webkit-scrollbar {
+  display: none;
+}
+
+#ai-navbar .nav-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: #d8e4f8;
-  font-weight: 600;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 999px;
-  padding: 6px 12px;
-  text-decoration: none;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+  gap: 0.45rem;
+  color: rgba(246, 246, 255, 0.85);
+  border-radius: 14px;
+  padding: 0.65rem 0.95rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  transition: transform 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
-.nav-link:hover {
-  color: #fff;
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(255,255,255,0.18);
+
+#ai-navbar .nav-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(0, 255, 178, 0.28), transparent 50%, rgba(82, 172, 255, 0.35));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#ai-navbar .nav-link:hover,
+#ai-navbar .nav-link:focus {
+  color: #00ffb2;
   transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(0, 255, 178, 0.18);
 }
-.nav-link.disabled {
+
+#ai-navbar .nav-link:hover::after,
+#ai-navbar .nav-link:focus::after,
+#ai-navbar .nav-link.active::after {
+  opacity: 1;
+}
+
+#ai-navbar .nav-link.disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  pointer-events: auto;
+  color: rgba(246, 246, 255, 0.35);
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
 }
 
-/* ===== Badge ===== */
-.badge.bg-secondary {
-  background: rgba(255,255,255,0.15) !important;
-  border: 1px solid rgba(255,255,255,0.25);
-  color: #e1e7f8;
-  font-weight: 700;
-  border-radius: 999px;
-  font-size: 0.65rem;
-  padding: 2px 7px;
-}
-
-/* ===== Brand ===== */
-.navbar-brand {
-  display: flex;
+#ai-navbar .nav-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding-right: 14px;
-  margin-right: 12px;
-  border-right: 1px dashed rgba(255,255,255,0.08);
-}
-.brand-icon i {
-  font-size: 20px;
-  color: #9bd1ff;
-}
-.brand-text__title {
-  font-weight: 800;
-  color: #eaf1ff;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.brand-text__subtitle {
-  display: block;
+  justify-content: center;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
   font-size: 0.75rem;
-  color: #96a5c4;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(246, 246, 255, 0.7);
 }
 
-/* ===== Responsive ===== */
+#ai-navbar .disabled-pill {
+  background: rgba(255, 86, 86, 0.15);
+  border-color: rgba(255, 86, 86, 0.25);
+  color: rgba(255, 120, 120, 0.85);
+}
+
 @media (max-width: 992px) {
-  .navbar-brand { border-right: none; margin-bottom: 8px; }
-  .nav-row { flex-direction: column; align-items: flex-start; }
-  .nav-link, .navbar-section { padding: 7px 11px; }
+  #ai-navbar .navbar-brand {
+    border-right: none;
+    margin-bottom: 0.75rem;
+  }
+
+  #ai-navbar .nav-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #ai-navbar .nav-link {
+    width: 100%;
+  }
 }
 </style>
