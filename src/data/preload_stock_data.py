@@ -11,6 +11,74 @@ from datetime import datetime
 from ..data.data_fetcher import DataFetcher
 from ..core.database import get_db_connection
 from ..core.config import Config
+from ..core.sentiment_analyzer import SentimentAnalyzer
+from ..trading.enhanced_trading_strategy import EnhancedTradingStrategy
+
+
+def generate_recommendations_for_symbols(symbols):
+    """Generate recommendations for a list of symbols"""
+    if not symbols:
+        print("[DEBUG] No symbols provided for recommendation generation")
+        return
+    
+    try:
+        # Initialize analysis components
+        data_fetcher = DataFetcher()
+        sentiment_analyzer = SentimentAnalyzer()
+        trading_strategy = EnhancedTradingStrategy()
+        
+        print(f"[DEBUG] Generating recommendations for {len(symbols)} symbols: {symbols}")
+        
+        for symbol in symbols:
+            try:
+                print(f"[DEBUG] Analyzing {symbol}...")
+                
+                # Get price data
+                price_data = data_fetcher.get_stock_price(symbol)
+                if "error" in price_data:
+                    print(f"[WARNING] Could not get price data for {symbol}: {price_data['error']}")
+                    continue
+                
+                # Get news data for sentiment analysis
+                news_data = data_fetcher.get_company_news(symbol, days_back=2)
+                if len(news_data) > 3:
+                    news_data = news_data[:3]
+                
+                # Analyze sentiment
+                if len(news_data) < 2:
+                    sentiment_data = {
+                        "sentiment_score": 0.1,
+                        "confidence": 0.6,
+                        "summary": "Limited news data available for analysis",
+                    }
+                else:
+                    sentiment_data = sentiment_analyzer.analyze_news_sentiment(news_data, symbol=symbol)
+                
+                # Get trading signal
+                signal_data = sentiment_analyzer.get_trading_signal(sentiment_data)
+                
+                # Generate comprehensive recommendation (this saves to database)
+                recommendation = trading_strategy.get_comprehensive_recommendations(
+                    symbol, price_data["current_price"], sentiment_data, signal_data
+                )
+                
+                if recommendation and "error" not in recommendation:
+                    print(f"[DEBUG] Generated recommendation for {symbol}: {recommendation.get('action', 'N/A')} with confidence {recommendation.get('final_confidence', 'N/A')}")
+                else:
+                    print(f"[WARNING] Failed to generate recommendation for {symbol}: {recommendation}")
+                
+            except Exception as e:
+                print(f"[ERROR] Failed to generate recommendation for {symbol}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
+        
+        print(f"[DEBUG] Completed recommendation generation for {len(symbols)} symbols")
+        
+    except Exception as e:
+        print(f"[ERROR] Exception in generate_recommendations_for_symbols: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def preload_stock_data():
@@ -192,6 +260,12 @@ def preload_stock_data():
                     
                     conn.commit()
                     print(f"[DEBUG] Successfully saved {len(gainers)} gainers and {len(losers)} losers to market_movers table")
+                    
+                    # Generate recommendations for all market movers
+                    print("[DEBUG] Generating recommendations for market movers...")
+                    all_symbols = [g.get('symbol') for g in gainers if g] + [l.get('symbol') for l in losers if l]
+                    generate_recommendations_for_symbols(all_symbols)
+                    
         except Exception as e:
             print(f"[ERROR] Failed to save to market_movers table: {e}")
             import traceback

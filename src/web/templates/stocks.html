@@ -244,7 +244,6 @@
                                 <th>Confidence</th>
                                 <th>Signal</th>
                                 <th>Signal Strength</th>
-                                <th>News Count</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -285,19 +284,12 @@
                                                 --
                                             {% endif %}
                                         </td>
-                                        <td>
-                                            {% if stock.reasoning %}
-                                                <span class="text-muted" title="{{ stock.reasoning }}">📰</span>
-                                            {% else %}
-                                                --
-                                            {% endif %}
-                                        </td>
                                         <td><button class="btn btn-sm btn-outline-primary" onclick="viewStockDetails('{{ stock.symbol }}')">View</button></td>
                                     </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="9" class="text-center text-muted">
+                                    <td colspan="8" class="text-center text-muted">
                                         No stock data available
                                     </td>
                                 </tr>
