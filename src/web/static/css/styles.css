@@ -1023,8 +1023,8 @@ a:hover,
 }
 
 .footer {
-    background: var(--bs-card-bg);
-    border-top: 1px solid var(--bs-border-color);
+    background: var(--card-glass);
+    border-top: 1px solid var(--card-border);
     margin-top: 3rem;
 }
 
@@ -1079,8 +1079,8 @@ table {
 #crypto-progress-container,
 #watchlist-progress-container,
 #analysisLoading {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: var(--card-glass);
+    border: 1px solid var(--card-border);
     border-radius: 0.375rem;
     padding: 1rem;
 }
@@ -1089,8 +1089,8 @@ table {
 #resultsSection,
 #enhancedRecommendationsSection,
 #executionResultsSection {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: var(--card-glass);
+    border: 1px solid var(--card-border);
     border-radius: 0.375rem;
 }
 
@@ -1098,7 +1098,7 @@ table {
 #requestData,
 #responseData {
     background-color: var(--light-color);
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--card-border);
     border-radius: 0.375rem;
     font-family: 'Courier New', Monaco, monospace;
     font-size: 0.85rem;
@@ -1114,8 +1114,8 @@ table {
 
 /* Log containers */
 #logContainer {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: var(--table-row-bg) !important;
+    border: 1px solid var(--card-border) !important;
     border-radius: 0.375rem;
     font-family: 'Courier New', Monaco, monospace;
     max-height: 600px;
@@ -1123,8 +1123,8 @@ table {
 }
 
 #stocksTableContainer {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
+    background: var(--table-row-bg);
+    border: 1px solid var(--card-border);
     border-radius: 0.375rem;
     max-height: 600px;
     overflow-y: auto;

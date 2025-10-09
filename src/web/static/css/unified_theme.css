@@ -338,34 +338,58 @@ p.lead {
     color: var(--text-muted);
 }
 
-/* Table System */
-.unified-table {
-    color: var(--text-primary);
-    background: transparent;
+/* Table System - Higher specificity to override styles.css */
+#stocksTableContainer {
+    background: transparent !important;
+    border: none !important;
+    max-height: none !important;
+    overflow: visible !important;
 }
 
-.unified-table thead th {
-    background: rgba(0, 255, 136, 0.08);
+table.unified-table {
     color: var(--text-primary) !important;
-    border-bottom: 1px solid var(--border-accent);
-    font-weight: 600;
-    padding: var(--spacing-md);
+    background: transparent !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: none !important;
 }
 
-.unified-table tbody tr {
-    background: rgba(26, 26, 26, 0.85);
-    transition: background 0.3s ease;
-    border-color: rgba(255, 255, 255, 0.05);
-}
-
-.unified-table tbody tr:hover {
-    background: rgba(0, 255, 136, 0.12);
-}
-
-.unified-table tbody td {
+table.unified-table thead th {
+    background: rgba(0, 255, 136, 0.08) !important;
     color: var(--text-primary) !important;
-    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-accent) !important;
+    font-weight: 600 !important;
+    padding: var(--spacing-md) !important;
+    text-transform: none !important;
+    font-size: inherit !important;
+    letter-spacing: normal !important;
+}
+
+table.unified-table tbody tr {
+    background: rgba(26, 26, 26, 0.85) !important;
+    transition: background 0.3s ease !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    transform: none !important;
+}
+
+table.unified-table tbody tr:nth-child(even) {
+    background: rgba(26, 26, 26, 0.85) !important;
+}
+
+table.unified-table tbody tr:hover {
+    background: rgba(0, 255, 136, 0.12) !important;
+    transform: none !important;
+}
+
+table.unified-table tbody td {
+    color: var(--text-primary) !important;
+    padding: var(--spacing-md) !important;
     border-color: rgba(255, 255, 255, 0.06) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Summary Pills */
