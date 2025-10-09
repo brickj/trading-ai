@@ -1,117 +1,193 @@
-<!-- Navigation -->
+<!-- ✅ FINAL FULL NAVBAR -->
 <nav class="navbar navbar-expand-lg glassy-nav navbar-dark">
-    <div class="container-fluid nav-shell">
-        <a class="navbar-brand" href="/">
-            <span class="brand-icon">
-                <span class="brand-icon__orb"></span>
-                <i class="fas fa-robot"></i>
-            </span>
-            <span class="brand-text">
-                <span class="brand-text__title">Trading AI</span>
-                <span class="brand-text__subtitle">Signals. Strategy. Speed.</span>
-            </span>
-        </a>
+  <div class="container-xxl nav-shell">
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <!-- Brand -->
+    <a class="navbar-brand" href="/">
+      <span class="brand-icon"><i class="fas fa-robot"></i></span>
+      <span class="brand-text">
+        <span class="brand-text__title">TRADING AI</span>
+        <span class="brand-text__subtitle">Signals. Strategy. Speed.</span>
+      </span>
+    </a>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav nav-groups">
-                <!-- Primary Trading Pages -->
-                <li class="nav-item">
-                    <div class="navbar-text navbar-section primary">
-                        <i class="fas fa-chart-line"></i> Primary Trading
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/opportunities">
-                        <i class="fas fa-bell"></i> Opportunities
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/weekly_plan">
-                        <i class="fas fa-calendar-week"></i> Weekly Plan
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/foreign_markets_overview">
-                        <i class="fas fa-globe-americas"></i> Foreign Markets
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/recommendations">
-                        <i class="fas fa-check-circle"></i> Recommendations
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;">
-                        <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-secondary">Disabled</span>
-                    </a>
-                </li>
-                
-                <!-- Analysis & Research -->
-                <li class="nav-item">
-                    <div class="navbar-text navbar-section analysis">
-                        <i class="fas fa-search"></i> Analysis & Research
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/stocks">
-                        <i class="fas fa-chart-bar"></i> S&P 500
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/crypto">
-                        <i class="fab fa-bitcoin"></i> Crypto
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/backtest">
-                        <i class="fas fa-history"></i> Backtest
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/scalping_signals">
-                        <i class="fas fa-chart-line"></i> Scalping
-                    </a>
-                </li>
+    <!-- Mobile Toggler -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-                <!-- System & Monitoring -->
-                <li class="nav-item nav-item--group-heading nav-item--system-group">
-                    <div class="navbar-text navbar-section system">
-                        <i class="fas fa-cog"></i> System & Monitoring
-                    </div>
-                </li>
-                <li class="nav-item nav-item--system-group">
-                    <a class="nav-link" href="/reporting">
-                        <i class="fas fa-chart-bar"></i> Reporting
-                    </a>
-                </li>
-                <li class="nav-item nav-item--system-group">
-                    <a class="nav-link" href="/system_status">
-                        <i class="fas fa-server"></i> System Status
-                    </a>
-                </li>
-                <li class="nav-item nav-item--system-group">
-                    <a class="nav-link" href="/logs">
-                        <i class="fas fa-file-alt"></i> Logs
-                    </a>
-                </li>
-            </ul>
+    <!-- Collapsible Nav -->
+    <div class="collapse navbar-collapse w-100" id="navbarNav">
+      <div class="nav-sections">
 
+        <!-- Row 1: Primary Trading -->
+        <div class="nav-row">
+          <span class="navbar-section primary">
+            <i class="fas fa-chart-line"></i> Primary Trading
+          </span>
+          <a class="nav-link" href="/"><i class="fas fa-home"></i> Dashboard</a>
+          <a class="nav-link" href="/opportunities"><i class="fas fa-bell"></i> Opportunities</a>
+          <a class="nav-link" href="/weekly_plan"><i class="fas fa-calendar-week"></i> Weekly Plan</a>
+          <a class="nav-link" href="/foreign_markets_overview"><i class="fas fa-globe-americas"></i> Foreign Markets</a>
+          <a class="nav-link" href="/recommendations"><i class="fas fa-check-circle"></i> Recommendations</a>
+          <a class="nav-link disabled" href="#" onclick="showDisabledMessage('Portfolio'); return false;">
+            <i class="fas fa-briefcase"></i> Portfolio <span class="badge bg-secondary">Disabled</span>
+          </a>
         </div>
+
+        <!-- Row 2: Analysis & Research -->
+        <div class="nav-row">
+          <span class="navbar-section analysis">
+            <i class="fas fa-search"></i> Analysis & Research
+          </span>
+          <a class="nav-link" href="/stocks"><i class="fas fa-chart-bar"></i> S&amp;P 500</a>
+          <a class="nav-link" href="/crypto"><i class="fab fa-bitcoin"></i> Crypto</a>
+          <a class="nav-link" href="/backtest"><i class="fas fa-history"></i> Backtest</a>
+          <a class="nav-link" href="/scalping_signals"><i class="fas fa-bolt"></i> Scalping</a>
+        </div>
+
+        <!-- Row 3: System & Monitoring -->
+        <div class="nav-row">
+          <span class="navbar-section system">
+            <i class="fas fa-cog"></i> System & Monitoring
+          </span>
+          <a class="nav-link" href="/reporting"><i class="fas fa-chart-pie"></i> Reporting</a>
+          <a class="nav-link" href="/system_status"><i class="fas fa-server"></i> System Status</a>
+          <a class="nav-link" href="/logs"><i class="fas fa-file-alt"></i> Logs</a>
+        </div>
+
+      </div>
     </div>
+  </div>
 </nav>
 
+<!-- JS -->
 <script>
 function showDisabledMessage(featureName) {
-    alert(`${featureName} feature has been disabled.`);
+  alert(`${featureName} feature has been disabled.`);
 }
 </script>
 
+<!-- CSS -->
+<style>
+/* ===== Navbar Container ===== */
+.glassy-nav {
+  background: linear-gradient(180deg, rgba(10, 15, 25, 0.85), rgba(10, 15, 25, 0.8));
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  padding: 16px 20px;
+}
+.nav-shell {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+/* Make collapse take its own full row */
+.navbar-collapse.w-100 {
+  flex-basis: 100%;
+  flex-wrap: wrap;
+}
+
+/* ===== Section Groups ===== */
+.nav-sections {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+}
+.nav-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  width: 100%;
+}
+
+/* ===== Section Labels ===== */
+.navbar-section {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #dde7ff;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.navbar-section i { opacity: 0.9; }
+
+/* ===== Link Pills ===== */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #d8e4f8;
+  font-weight: 600;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 6px 12px;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.08s ease;
+}
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+.nav-link.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+/* ===== Badge ===== */
+.badge.bg-secondary {
+  background: rgba(255,255,255,0.15) !important;
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #e1e7f8;
+  font-weight: 700;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+}
+
+/* ===== Brand ===== */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-right: 14px;
+  margin-right: 12px;
+  border-right: 1px dashed rgba(255,255,255,0.08);
+}
+.brand-icon i {
+  font-size: 20px;
+  color: #9bd1ff;
+}
+.brand-text__title {
+  font-weight: 800;
+  color: #eaf1ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.brand-text__subtitle {
+  display: block;
+  font-size: 0.75rem;
+  color: #96a5c4;
+  letter-spacing: 0.3px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+  .navbar-brand { border-right: none; margin-bottom: 8px; }
+  .nav-row { flex-direction: column; align-items: flex-start; }
+  .nav-link, .navbar-section { padding: 7px 11px; }
+}
+</style>
