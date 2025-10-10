@@ -127,7 +127,7 @@ func loadConfig() Config {
 	return Config{
 		Port:        getEnv("PORT", "8082"),
 		RedisURL:    getEnv("REDIS_URL", "redis://localhost:6379"),
-		PostgresURL: getEnv("POSTGRES_URL", "postgres://user:pass@localhost/trading"),
+		PostgresURL: getEnv("POSTGRES_URL", "postgres://trading_user:trading_password@localhost:5432/trading_db"),
 		WorkerCount: getEnvInt("WORKER_COUNT", 5),
 	}
 }

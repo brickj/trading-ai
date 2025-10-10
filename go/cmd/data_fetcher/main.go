@@ -137,12 +137,12 @@ func loadConfig() Config {
 	return Config{
 		Port:           getEnv("PORT", "8080"),
 		RedisURL:       getEnv("REDIS_URL", "redis://localhost:6379"),
-		PostgresURL:    getEnv("POSTGRES_URL", "postgres://user:pass@localhost/trading"),
-		FinnhubAPIKey:  getEnv("FINNHUB_API_KEY", ""),
-		AlphaVantageKey: getEnv("ALPHA_VANTAGE_KEY", ""),
+		PostgresURL:    getEnv("POSTGRES_URL", "postgres://trading_user:trading_password@localhost:5432/trading_db"),
+		FinnhubAPIKey:  getEnv("FINNHUB_API_KEY", "csro4gpr01qj3u0or4kgcsro4gpr01qj3u0or4l0"),
+		AlphaVantageKey: getEnv("ALPHA_VANTAGE_KEY", "71MHC1TB4RHKEZ02"),
 		YahooAPIKey:    getEnv("YAHOO_API_KEY", ""),
-		RedditClientID: getEnv("REDDIT_CLIENT_ID", ""),
-		RedditSecret:   getEnv("REDDIT_SECRET", ""),
+		RedditClientID: getEnv("REDDIT_CLIENT_ID", "E-bGCTiAErxasGB5JZHAsA"),
+		RedditSecret:   getEnv("REDDIT_SECRET", "z0WxODWAZgkRNCEYSITpWZCOTlaV8Q"),
 	}
 }
 
