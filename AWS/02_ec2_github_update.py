@@ -575,7 +575,7 @@ class EC2GitHubUpdater:
             exit 1
         fi
         
-        # Check port
+        # Check port using netstat now that it's installed
         if netstat -tlnp | grep -q ":{self.app_port}"; then
             echo "✅ Application is listening on port {self.app_port}"
         else
@@ -583,9 +583,13 @@ class EC2GitHubUpdater:
             exit 1
         fi
         
-        # Show recent logs
+        # Show recent logs if app.log exists
         echo "Recent application logs:"
-        tail -10 app.log
+        if [ -f "app.log" ]; then
+            tail -10 app.log
+        else
+            echo "app.log not found yet. Application may still be starting."
+        fi
         """
         
         result = self.run_command([

@@ -107,10 +107,10 @@ class DataFetcher:
             if cached_data:
                 log_debug(f"Redis cache hit for stock price: {symbol}")
                 return cached_data
-
+        
         # Map foreign stock symbols to Alpha Vantage supported symbols
         alpha_vantage_symbol = self._get_alpha_vantage_symbol(symbol)
-
+        
         url = "https://www.alphavantage.co/query"
         params = {
             "function": "GLOBAL_QUOTE",
@@ -136,9 +136,10 @@ class DataFetcher:
                     "symbol": symbol,
                     "timestamp": datetime.now().isoformat(),
                 }
-                # Cache in Redis for 5 minutes
+                # Cache in Redis for 15 minutes
                 if redis_cache.health_check():
-                    redis_cache.set(cache_key, result, ttl=300)
+                    redis_cache.set(cache_key, result, ttl=900)
+                    log_debug(f"Cached Alpha Vantage data for {symbol} with TTL 900 seconds")
                 return result
             else:
                 log_error(f"Alpha Vantage API response for {symbol} missing expected fields: {data}")
