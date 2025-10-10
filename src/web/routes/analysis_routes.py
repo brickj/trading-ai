@@ -18,7 +18,7 @@ from ..utils import api_error_handler
 from ..utils.decorators import rate_limit
 
 # Import core modules
-from ...core.logger import trading_logger, log_info, log_error, log_exception, log_timing, log_user_actions
+from ...core.logger import trading_logger, log_info, log_error, log_exception, log_timing, log_user_actions, log_debug
 
 # Import services
 from ..services import analysis_service, system_service
@@ -194,6 +194,15 @@ def enhanced_analysis():
             status_code=400
         )
 
+    # Check cache for enhanced analysis result
+    cache_key = f"enhanced_analysis:{symbol}"
+    if redis_cache.health_check():
+        cached_result = redis_cache.get(cache_key)
+        if cached_result:
+            log_debug(f"Cache hit for enhanced analysis of {symbol}")
+            return create_api_response(data=cached_result)
+
+    log_debug(f"Cache miss for enhanced analysis of {symbol}, performing analysis")
     # Services now available via system_service
     enhanced_strategy = system_service.get_enhanced_trading_strategy()
     data_fetcher = system_service.get_data_fetcher()
@@ -247,6 +256,11 @@ def enhanced_analysis():
         },
         "timestamp": datetime.now().isoformat(),
     }
+
+    # Cache the entire result for 15 minutes
+    if redis_cache.health_check():
+        redis_cache.set(cache_key, response_data, ttl=900)  # Cache for 15 minutes
+        log_debug(f"Cached enhanced analysis data for {symbol} with TTL 900 seconds")
 
     return create_api_response(
         data=response_data,
