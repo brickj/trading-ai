@@ -80,7 +80,7 @@ function startAnalysis(symbol, analysisType) {
     
     // Create AbortController for timeout handling
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout to match backend
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout to match backend
     
     fetch(endpoint, {
         method: 'POST',
@@ -105,8 +105,8 @@ function startAnalysis(symbol, analysisType) {
         
         // Handle timeout specifically
         if (error.name === 'AbortError') {
-            updateDebugPanel('response', { error: 'Request timed out after 20 seconds' });
-            handleAnalysisError(new Error('Analysis timed out. Ollama may be taking too long to respond.'));
+            updateDebugPanel('response', { error: 'Request timed out after 90 seconds' });
+            handleAnalysisError(new Error('Analysis timed out. The backend service might be busy or taking longer than expected to respond. Please try again later.'));
         } else {
             updateDebugPanel('response', { error: error.message });
             handleAnalysisError(error);
@@ -120,10 +120,15 @@ function startAnalysis(symbol, analysisType) {
 }
 
 function handleAnalysisResponse(data, analysisType) {
+    console.log('Analysis response structure:', data);
+    updateDebugPanel('response', data);
+    
     if (data.success || data.status === 'success') {
         showResults(data, analysisType);
+    } else if (data.data && (data.data.success || data.data.status === 'success')) {
+        showResults(data.data, analysisType);
     } else {
-        showAlert('Analysis failed: ' + (data.message || 'Unknown error'), 'danger');
+        showAlert('Analysis failed: ' + (data.error || data.message || 'Unknown error'), 'danger');
     }
 }
 

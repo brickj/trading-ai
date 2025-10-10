@@ -202,7 +202,7 @@ def enhanced_analysis():
     price_data = data_fetcher.get_stock_price(symbol)
     if not price_data or "current_price" not in price_data:
         return create_api_response(
-            error=f"Could not fetch price data for {symbol}",
+            error=f"Could not fetch price data for {symbol}. Possible reasons: API key issue, rate limiting, or network connectivity problem.",
             status_code=400
         )
 
@@ -281,7 +281,7 @@ def comprehensive_analysis():
     price_data = data_fetcher.get_stock_price(symbol)
     if not price_data or "current_price" not in price_data:
         return create_api_response(
-            error=f"Could not fetch price data for {symbol}",
+            error=f"Could not fetch price data for {symbol}. Possible reasons: API key issue, rate limiting, or network connectivity problem.",
             status_code=400
         )
 

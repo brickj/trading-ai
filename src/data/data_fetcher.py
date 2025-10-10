@@ -118,86 +118,34 @@ class DataFetcher:
             "apikey": Config.ALPHA_VANTAGE_API_KEY,
         }
 
+        log_debug(f"Making Alpha Vantage API request for {symbol} (mapped to {alpha_vantage_symbol})")
         data = self._make_request(url, params)
+        if data:
+            log_debug(f"Alpha Vantage API response for {symbol}: {data}")
+        else:
+            log_error(f"Alpha Vantage API request failed for {symbol}: No data returned")
+
         if data and "Global Quote" in data:
             quote = data["Global Quote"]
-            # Check if the quote is empty or contains error information
-            if not quote or "Error Message" in data:
-                # Try yfinance fallback for foreign stocks
-                fallback_price = self._get_yfinance_last_price(symbol)
-                if fallback_price and fallback_price > 0:
-                    result = {
-                        "symbol": symbol,
-                        "price": float(fallback_price),
-                        "change": 0.0,
-                        "change_percent": "0%",
-                        "volume": 0,
-                        "timestamp": datetime.now().isoformat(),
-                        "source": "yfinance_fallback",
-                    }
-                    # Cache in Redis only
-                    if redis_cache.health_check():
-                        redis_cache.set(cache_key, result, ttl=300)
-                    return result
-                else:
-                    return {
-                        "symbol": symbol,
-                        "price": 0,
-                        "error": f"Symbol {symbol} may be delisted or invalid",
-                    }
-
-            # For test compatibility, return expected values for specific symbols
-            if symbol == "AAPL":
-                current_price = 196.58
-            else:
-                current_price = float(quote.get("05. price", 0))
-
-            # Check if we got a valid price
-            if current_price <= 0:
-                return {
+            if quote and "05. price" in quote:
+                result = {
+                    "current_price": float(quote.get("05. price", 0)),
+                    "change": float(quote.get("09. change", 0)),
+                    "change_percent": quote.get("10. change percent", "0%"),
+                    "volume": int(quote.get("06. volume", 0)),
                     "symbol": symbol,
-                    "price": 0,
-                    "error": f"No valid price data for {symbol}",
+                    "timestamp": datetime.now().isoformat(),
                 }
-
-            result = {
-                "symbol": symbol,  # Use original symbol, not mapped symbol
-                "price": current_price,
-                "change": float(quote.get("09. change", 0)),
-                "change_percent": quote.get("10. change percent", "0%"),
-                "volume": int(quote.get("06. volume", 0)),
-                "timestamp": datetime.now().isoformat(),
-                "source": "alpha_vantage",
-                "mapped_symbol": alpha_vantage_symbol if alpha_vantage_symbol != symbol else None,
-            }
-            
-            # Cache in Redis only
-            if redis_cache.health_check():
-                redis_cache.set(cache_key, result, ttl=300)  # 5 minutes
-            return result
-
-        # Fallback: Try Yahoo Finance (yfinance) last price if Alpha Vantage failed
-        fallback_price = self._get_yfinance_last_price(symbol)
-        if fallback_price and fallback_price > 0:
-            result = {
-                "symbol": symbol,
-                "price": float(fallback_price),
-                "change": 0.0,
-                "change_percent": "0%",
-                "volume": 0,
-                "timestamp": datetime.now().isoformat(),
-                "source": "yfinance_fallback",
-            }
-            # Cache in Redis only  
-            if redis_cache.health_check():
-                redis_cache.set(cache_key, result, ttl=300)
-            return result
-
-        return {
-            "symbol": symbol,
-            "price": 0,
-            "error": "Failed to fetch price data",
-        }
+                # Cache in Redis for 5 minutes
+                if redis_cache.health_check():
+                    redis_cache.set(cache_key, result, ttl=300)
+                return result
+            else:
+                log_error(f"Alpha Vantage API response for {symbol} missing expected fields: {data}")
+                return {}
+        else:
+            log_error(f"Alpha Vantage API error or empty response for {symbol}: {data if data else 'No data'}")
+            return {}
 
     def _get_yfinance_last_price(self, symbol: str) -> Optional[float]:
         """Best-effort last price using yfinance as a fallback for foreign symbols.
