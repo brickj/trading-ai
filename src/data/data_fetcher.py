@@ -514,60 +514,11 @@ class DataFetcher:
                 time.sleep(1)  # 1 second delay between API calls
 
             # CoinGecko API removed due to rate limiting issues
+            # CryptoPanic API removed - quota exceeded, using NewsAPI and Marketaux instead
             log_debug("[CoinGecko] Crypto news disabled (CoinGecko removed)")
+            log_debug("[CryptoPanic] Removed - monthly quota exceeded")
 
-            # 2. CryptoPanic API (if API key is configured)
-            if (
-                hasattr(Config, "CRYPTOPANIC_API_KEY")
-                and Config.CRYPTOPANIC_API_KEY
-                and Config.CRYPTOPANIC_API_KEY != "your_cryptopanic_api_key_here"
-            ):
-                try:
-                    url = "https://cryptopanic.com/api/v1/posts/"
-                    params = {
-                        "auth_token": Config.CRYPTOPANIC_API_KEY,
-                        "filter": "hot",
-                        "currencies": "BTC,ETH,ADA,DOT,SOL,LINK",
-                        "public": "true",
-                    }
-                    response = self.session.get(
-                        url, params=params, timeout=Config.REQUEST_TIMEOUT
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    cryptopanic_articles = []
-                    for item in data.get("results", []):
-                        published_at = item.get("published_at")
-                        if published_at:
-                            try:
-                                dt = datetime.strptime(
-                                    published_at, "%Y-%m-%dT%H:%M:%SZ"
-                                )
-                            except Exception:
-                                dt = datetime.utcnow()
-                            if (datetime.utcnow() - dt).days > days_back:
-                                continue
-                        else:
-                            dt = datetime.utcnow()
-                        cryptopanic_articles.append(
-                            {
-                                "headline": item.get("title", ""),
-                                "summary": item.get("metadata", {}).get(
-                                    "description", ""
-                                ),
-                                "url": item.get("url", ""),
-                                "datetime": dt.isoformat(),
-                                "source": "CryptoPanic",
-                                "category": "crypto",
-                            }
-                        )
-                    all_news.extend(cryptopanic_articles)
-                    log_debug(f"Got {len(cryptopanic_articles)} CryptoPanic news articles")
-                    rate_limit_delay()
-                except Exception as e:
-                    log_error(f"CryptoPanic news failed: {e}")
-
-            # 3. NewsAPI for crypto news (if API key is configured)
+            # 2. NewsAPI for crypto news (if API key is configured)
             if (
                 hasattr(Config, "NEWSAPI_API_KEY")
                 and Config.NEWSAPI_API_KEY

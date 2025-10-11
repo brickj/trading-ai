@@ -116,6 +116,13 @@ class SentimentAnalyzer:
     def _call_openai_api(self, messages: List[Dict], max_tokens: int = 200) -> Dict:
         """
         Call OpenAI API for sentiment analysis
+        
+        NOTE: This method exists but is NOT CURRENTLY USED.
+        All analyze_news_sentiment() calls are hardcoded to use Ollama.
+        To use OpenAI, you would need to:
+        1. Add a real OpenAI API key to config
+        2. Update all calls to pass ai_provider="openai"
+        3. Or wire up the UI selector to actually work
         """
         if self.use_new_openai_api:
             response = self.openai_client.chat.completions.create(

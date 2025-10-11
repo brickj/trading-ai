@@ -175,16 +175,27 @@ class NewsMonitor:
                 logger.info(f"[DEBUG] {symbol} sentiment analysis result: confidence={sentiment_data['confidence']}, sentiment={sentiment_data['sentiment_score']}")
 
                 # Generate trading signals for stocks using news-specific thresholds
+                # Returns both stock and options recommendations
                 signal_data = self._get_news_trading_signal(sentiment_data)
                 
-                logger.info(f"[DEBUG] {symbol} signal data: action={signal_data.get('action', 'UNKNOWN')}, confidence={signal_data.get('confidence', 'UNKNOWN')}")
+                # Extract both recommendations
+                stock_recommendation = signal_data.get("stock_recommendation", {})
+                options_recommendation = signal_data.get("options_recommendation", {})
+                
+                stock_action = stock_recommendation.get("action", "HOLD")
+                options_action = options_recommendation.get("action", "HOLD")
+                
+                logger.info(f"[DEBUG] {symbol} signal data: stock_action={stock_action}, options_action={options_action}, confidence={stock_recommendation.get('confidence', 'UNKNOWN')}")
 
-                # Generate trade recommendations - TEMPORARILY REMOVE HOLD FILTER FOR TESTING
-                # if signal_data["action"] != "HOLD":
-                if True:  # Force all opportunities for testing
-                    trade_signal = self.trading_strategy.generate_trade_signal(
-                        symbol, price_data["current_price"], sentiment_data, signal_data
-                    )
+                # Generate trade recommendations only for actionable signals
+                if stock_action != "HOLD" or options_action != "HOLD":
+                    # Generate detailed options trade signal if options recommendation exists
+                    trade_signal = {}
+                    if options_action != "HOLD":
+                        trade_signal = self.trading_strategy.generate_trade_signal(
+                            symbol, price_data["current_price"], sentiment_data, signal_data
+                        )
+                    
                     opportunity = {
                         "symbol": symbol,
                         "type": "stock",
@@ -192,16 +203,16 @@ class NewsMonitor:
                         "news_count": len(news_list),
                         "price_data": price_data,
                         "sentiment_data": sentiment_data,
-                        "signal_data": signal_data,
+                        "signal_data": signal_data,  # Include full signal_data with BOTH recommendations
                         "trade_signal": trade_signal,
                         "articles": news_list[:3],  # Include top 3 articles
                         "timestamp": datetime.now().isoformat(),
                     }
-                    logger.info(f"[DEBUG] Created opportunity for {symbol}: {opportunity}")
+                    logger.info(f"[DEBUG] Created opportunity for {symbol}: stock={stock_action}, options={options_action}")
                     opportunities.append(opportunity)
                 else:
                     logger.info(
-                        f"[DEBUG] Skipping {symbol}: signal_data action is HOLD"
+                        f"[DEBUG] Skipping {symbol}: both stock and options actions are HOLD"
                     )
             except Exception as e:
                 logger.info(f"Error analyzing {symbol}: {e}")
@@ -338,9 +349,18 @@ class NewsMonitor:
             options_action = "HOLD"
             reasoning = "Neutral sentiment"
 
+        # Return same structure as sentiment_analyzer.get_trading_signal()
         return {
-            "action": stock_action,
-            "confidence": confidence,
-            "reasoning": reasoning,
-            "signal_strength": abs(sentiment_score) * confidence if stock_action in ["BUY", "SELL"] else 0,
+            "stock_recommendation": {
+                "action": stock_action,
+                "signal_strength": abs(sentiment_score) * confidence if stock_action in ["BUY", "SELL"] else 0,
+                "confidence": confidence,
+                "reasoning": reasoning,
+            },
+            "options_recommendation": {
+                "action": options_action,
+                "signal_strength": abs(sentiment_score) * confidence if options_action in ["CALL", "PUT"] else 0,
+                "confidence": confidence,
+                "reasoning": reasoning,
+            }
         }

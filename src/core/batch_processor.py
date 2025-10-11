@@ -226,19 +226,28 @@ class BatchProcessor:
                     "error": "Sentiment analysis returned no data",
                 }
 
+            # Get both stock and options recommendations from sentiment analyzer
             signal_data = self.sentiment_analyzer.get_trading_signal(sentiment_data)
+            
+            # Extract recommendations - sentiment analyzer returns both
+            stock_recommendation = signal_data.get("stock_recommendation", {})
+            options_recommendation = signal_data.get("options_recommendation", {})
+            
+            stock_action = stock_recommendation.get("action", "HOLD")
+            options_action = options_recommendation.get("action", "HOLD")
+            
+            # Generate detailed options trade signal for options recommendations
             from ..trading.trading_strategy import TradingStrategy
-
             trading_strategy = TradingStrategy()
-            trade_signal = (
-                trading_strategy.generate_trade_signal(
+            
+            trade_signal = {}
+            if options_action != "HOLD":
+                trade_signal = trading_strategy.generate_trade_signal(
                     symbol, price_data["current_price"], sentiment_data, signal_data
                 )
-                if signal_data and signal_data.get("action") != "HOLD"
-                else {}
-            )
-
-            if signal_data and signal_data.get("action") != "HOLD":
+            
+            # Only return opportunities with actionable signals (either stock or options)
+            if stock_action != "HOLD" or options_action != "HOLD":
                 return {
                     "symbol": symbol,
                     "type": "stock",
@@ -246,8 +255,8 @@ class BatchProcessor:
                     "news_count": news_count,
                     "price_data": price_data,
                     "sentiment_data": sentiment_data,
-                    "signal_data": signal_data,
-                    "trade_signal": trade_signal,
+                    "signal_data": signal_data,  # Include full signal_data with both recommendations
+                    "trade_signal": trade_signal,  # Detailed options strategy
                     "articles": articles,
                     "timestamp": datetime.now().isoformat(),
                 }

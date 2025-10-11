@@ -58,13 +58,38 @@ def analyze_stock():
             status_code=400
         )
 
+    # Validate symbol format (basic check for obviously invalid symbols)
+    import re
+    if not re.match(r'^[A-Z0-9\.\-\^]+$', symbol):
+        return create_api_response(
+            error=f"Invalid symbol format: '{symbol}'",
+            status_code=400
+        )
+
     # Use the analysis service
-    result = analysis_service.analyze_single_stock(symbol, use_cache=True)
+    try:
+        result = analysis_service.analyze_single_stock(symbol, use_cache=True)
+    except Exception as e:
+        # Catch any exceptions from the analysis service
+        error_msg = str(e).lower()
+        if any(keyword in error_msg for keyword in ["no data", "delisted", "invalid", "not found", "404", "unknown"]):
+            return create_api_response(
+                error=f"Invalid symbol '{symbol}': {str(e)}",
+                status_code=400
+            )
+        raise  # Re-raise for api_error_handler to catch
 
     if "error" in result:
         # Check if it's a data fetching error (invalid symbol) vs server error
         error_msg = result["error"].lower()
-        if any(keyword in error_msg for keyword in ["no data found", "delisted", "invalid", "not found", "404", "may be delisted"]):
+        # Keywords that indicate invalid symbol or data not available (not a server error)
+        invalid_symbol_keywords = [
+            "no data", "delisted", "invalid", "not found", "404", 
+            "may be delisted", "unknown symbol", "symbol not found",
+            "all price data sources failed", "failed to fetch price data",
+            "no price data", "quote not found"
+        ]
+        if any(keyword in error_msg for keyword in invalid_symbol_keywords):
             return create_api_response(
                 error=f"Invalid symbol '{symbol}': {result['error']}",
                 status_code=400

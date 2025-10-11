@@ -383,7 +383,17 @@ function createOpportunityCard(opp) {
     const symbol = opp.symbol || 'UNKNOWN';
     const trigger = opp.trigger || 'unknown';
     const type = opp.type || 'stock';
-    const action = opp.signal_data?.action || 'HOLD';
+    
+    // Handle both new structure (signal_data with stock/options recommendations) and old structure (direct action)
+    const stockRecommendation = opp.signal_data?.stock_recommendation || {};
+    const optionsRecommendation = opp.signal_data?.options_recommendation || {};
+    
+    const stockAction = stockRecommendation.action || 'HOLD';
+    const optionsAction = optionsRecommendation.action || 'HOLD';
+    
+    // Fallback to old structure if new structure not present
+    const action = opp.signal_data?.action || stockAction;
+    
     const sentimentScore = opp.sentiment_data?.sentiment_score || 0;
     const confidence = opp.sentiment_data?.confidence || 0;
     const newsCount = opp.news_count || 0;
@@ -391,8 +401,10 @@ function createOpportunityCard(opp) {
     const strikePrice = opp.trade_signal?.strike_price || 0;
     const optionPrice = opp.trade_signal?.option_price || 0;
     const positionSize = opp.trade_signal?.position_size || 1;
-    const signalStrength = opp.signal_data?.signal_strength || 0;
-    const reasoning = opp.signal_data?.reasoning || 'No reasoning provided';
+    
+    // Get signal strength and reasoning from the appropriate recommendation
+    const signalStrength = stockRecommendation.signal_strength || optionsRecommendation.signal_strength || opp.signal_data?.signal_strength || 0;
+    const reasoning = stockRecommendation.reasoning || optionsRecommendation.reasoning || opp.signal_data?.reasoning || 'No reasoning provided';
     
     console.log('🔍 [CARD] Extracted values:', {
         symbol, trigger, type, action, sentimentScore, confidence,
@@ -406,29 +418,70 @@ function createOpportunityCard(opp) {
     
     const typeBadge = '<span class="badge bg-primary">Stock</span>';
     
-    const actionBadge = action === 'CALL' ? 
-        '<span class="badge bg-success">CALL</span>' : 
-        action === 'PUT' ? '<span class="badge bg-danger">PUT</span>' :
-        action === 'SELL' ? '<span class="badge bg-danger">SELL</span>' :
-        '<span class="badge bg-secondary">HOLD</span>';
-    
     const sentimentClass = getSentimentClass(sentimentScore);
     
-    console.log('🔍 [CARD] Generated badges:', {
-        triggerBadge: triggerBadge.includes('News-Driven') ? 'News-Driven' : 'Watchlist',
-        typeBadge: 'Stock',
-        actionBadge: actionBadge.includes('CALL') ? 'CALL' : 'PUT',
-        sentimentClass
+    console.log('🔍 [CARD] Extracted recommendations:', {
+        symbol,
+        stockAction,
+        optionsAction,
+        hasStock: stockAction !== 'HOLD',
+        hasOptions: optionsAction !== 'HOLD',
+        sentiment: sentimentScore,
+        confidence
     });
+    
+    // Build HTML - show BOTH stock and options recommendations when available
+    const hasStockRec = stockAction !== 'HOLD';
+    const hasOptionsRec = optionsAction !== 'HOLD';
+    
+    let priceSection = `
+        <div class="col-md-3">
+            <h6>Current Price</h6>
+            <p><strong>Stock:</strong> ${currentPrice > 0 ? formatCurrency(currentPrice) : '<span class="text-muted">N/A</span>'}</p>
+            ${hasOptionsRec ? `
+                <p><strong>Strike:</strong> ${strikePrice > 0 ? formatCurrency(strikePrice) : '<span class="text-muted">N/A</span>'}</p>
+                <p><strong>Premium:</strong> ${optionPrice > 0 ? formatCurrency(optionPrice) : '<span class="text-muted">N/A</span>'}</p>
+            ` : ''}
+        </div>
+    `;
+    
+    let recommendationsSection = `
+        <div class="col-md-3">
+            <h6>Recommendations</h6>
+            ${hasStockRec ? `
+                <div class="mb-2">
+                    <span class="badge bg-${stockAction === 'BUY' ? 'success' : 'danger'} me-1">STOCK</span>
+                    <strong>${stockAction}</strong> at ${currentPrice > 0 ? formatCurrency(currentPrice) : 'market'}
+                    <br><small class="text-muted">Strength: ${stockRecommendation.signal_strength ? stockRecommendation.signal_strength.toFixed(3) : 'N/A'}</small>
+                </div>
+            ` : ''}
+            ${hasOptionsRec ? `
+                <div class="mb-2">
+                    <span class="badge bg-${optionsAction === 'CALL' ? 'success' : 'danger'} me-1">OPTION</span>
+                    <strong>${optionsAction}</strong> @ ${strikePrice > 0 ? formatCurrency(strikePrice) : 'N/A'}
+                    <br><small class="text-muted">Premium: ${optionPrice > 0 ? formatCurrency(optionPrice) : 'N/A'}</small>
+                </div>
+            ` : ''}
+            ${!hasStockRec && !hasOptionsRec ? '<p class="text-muted">No clear signals</p>' : ''}
+        </div>
+    `;
+    
+    // Build header badges based on what recommendations are available
+    let headerBadges = `${typeBadge} ${triggerBadge}`;
+    if (hasStockRec && hasOptionsRec) {
+        headerBadges += ` <span class="badge bg-info">BOTH</span>`;
+    } else if (hasStockRec) {
+        headerBadges += ` <span class="badge bg-${stockAction === 'BUY' ? 'success' : 'danger'}">${stockAction} STOCK</span>`;
+    } else if (hasOptionsRec) {
+        headerBadges += ` <span class="badge bg-${optionsAction === 'CALL' ? 'success' : 'danger'}">${optionsAction} OPTION</span>`;
+    }
     
     card.innerHTML = `
         <div class="card-header d-flex justify-content-between align-items-center">
             <div>
                 <h6 class="mb-0">
                     <strong>${symbol}</strong>
-                    ${typeBadge}
-                    ${triggerBadge}
-                    ${actionBadge}
+                    ${headerBadges}
                 </h6>
             </div>
             <div>
@@ -439,37 +492,27 @@ function createOpportunityCard(opp) {
         </div>
         <div class="card-body">
             <div class="row">
+                ${priceSection}
+                ${recommendationsSection}
                 <div class="col-md-3">
-                    <h6>Price Info</h6>
-                    <p><strong>Current:</strong> ${currentPrice > 0 ? formatCurrency(currentPrice) : '<span class="text-muted">N/A</span>'}</p>
-                    <p><strong>Strike:</strong> ${strikePrice > 0 ? formatCurrency(strikePrice) : '<span class="text-muted">N/A</span>'}</p>
-                    <p><strong>Option Price:</strong> ${optionPrice > 0 ? formatCurrency(optionPrice) : '<span class="text-muted">N/A</span>'}</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Sentiment</h6>
+                    <h6>Sentiment Analysis</h6>
                     <p><strong>Score:</strong> <span class="${sentimentClass}">${sentimentScore.toFixed(3)}</span></p>
                     <p><strong>Confidence:</strong> ${confidence > 0 ? (confidence * 100).toFixed(1) + '%' : '<span class="text-muted">N/A</span>'}</p>
-                    <p><strong>News Count:</strong> ${newsCount}</p>
+                    <p><strong>News Articles:</strong> ${newsCount}</p>
                 </div>
                 <div class="col-md-3">
-                    <h6>Trade Details</h6>
-                    <p><strong>Position Size:</strong> ${positionSize} contracts</p>
-                    <p><strong>Total Cost:</strong> ${optionPrice > 0 ? formatCurrency(optionPrice * positionSize) : '<span class="text-muted">N/A</span>'}</p>
-                    <p><strong>Signal Strength:</strong> ${signalStrength > 0 ? signalStrength.toFixed(3) : '<span class="text-muted">N/A</span>'}</p>
-                </div>
-                <div class="col-md-3">
-                    <h6>Strategy</h6>
+                    <h6>Analysis</h6>
                     <p class="small">${reasoning}</p>
-                    ${opp.articles ? `<p class="small text-muted">Based on ${opp.articles.length} recent articles</p>` : ''}
+                    ${opp.articles ? `<p class="small text-muted">Based on ${opp.articles.length} recent article${opp.articles.length !== 1 ? 's' : ''}</p>` : ''}
                 </div>
             </div>
             
-            ${opp.articles ? `
+            ${opp.articles && opp.articles.length > 0 ? `
             <div class="mt-3">
                 <h6>Recent News Headlines:</h6>
                 <ul class="small">
                     ${opp.articles.slice(0, 3).map(article => 
-                        `<li>${article.headline || 'No headline'}</li>`
+                        `<li>${article.headline || article.title || 'No headline'}</li>`
                     ).join('')}
                 </ul>
             </div>

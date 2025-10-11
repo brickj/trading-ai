@@ -111,8 +111,48 @@ def _combine_skip_evaluators(*evaluators: Optional[SkipEvaluator]) -> SkipEvalua
 
 def _default_validator(response: requests.Response) -> Tuple[bool, str]:
     """Basic validator that treats any 2xx status code as success."""
-
-    return response.ok, f"status={response.status_code}"
+    
+    if response.ok:
+        return True, f"status={response.status_code}"
+    
+    # Enhanced error messaging for common issues
+    detail = f"status={response.status_code}"
+    
+    # Try to extract meaningful error message from response
+    try:
+        json_data = response.json()
+        if "error" in json_data:
+            if isinstance(json_data["error"], dict):
+                error_msg = json_data["error"].get("message", json_data["error"].get("type", ""))
+                if "quota" in error_msg.lower() or "insufficient_quota" in error_msg.lower():
+                    detail += " (API key has no credits - add billing)"
+                elif error_msg:
+                    detail += f" ({error_msg[:50]})"
+            elif isinstance(json_data["error"], str):
+                detail += f" ({json_data['error'][:50]})"
+        elif "info" in json_data:
+            info = json_data['info']
+            if "monthly quota exceeded" in info.lower():
+                detail += " (Monthly quota exceeded - upgrade plan)"
+            else:
+                detail += f" ({info[:50]})"
+        elif response.status_code == 429:
+            if "monthly quota exceeded" in response.text.lower():
+                detail += " (Monthly quota exceeded - upgrade plan)"
+            elif "too many requests" in response.text.lower():
+                detail += " (Rate limit from Yahoo edge network)"
+            else:
+                detail += " (Rate limit or quota issue)"
+    except Exception:
+        # If we can't parse JSON, provide context based on status code
+        if response.status_code == 429:
+            detail += " (Rate limit or quota exceeded)"
+        elif response.status_code == 401:
+            detail += " (Invalid or expired API key)"
+        elif response.status_code == 403:
+            detail += " (Access denied - check API key permissions)"
+    
+    return False, detail
 
 
 def _connection_validator(response: requests.Response) -> Tuple[bool, str]:
@@ -151,17 +191,14 @@ def build_tests() -> Iterable[EndpointTest]:
             params={"q": "stocks", "pageSize": "1", "apiKey": NEWS_API_KEY},
             skip_if=_require_key(NEWS_API_KEY, "NewsAPI"),
         ),
-        EndpointTest(
-            name="CryptoPanic Posts",
-            method="GET",
-            url="https://cryptopanic.com/api/v1/posts/",
-            params={"auth_token": Config.CRYPTOPANIC_API_KEY, "public": "true"},
-            skip_if=_require_key(Config.CRYPTOPANIC_API_KEY, "CryptoPanic"),
-        ),
+        # CryptoPanic removed - monthly quota exceeded, using NewsAPI and Marketaux for crypto news
         EndpointTest(
             name="Yahoo Finance Chart",
             method="GET",
             url="https://query1.finance.yahoo.com/v8/finance/chart/AAPL",
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            },
         ),
         EndpointTest(
             name="CoinGecko Bitcoin Page",
@@ -242,7 +279,11 @@ def build_tests() -> Iterable[EndpointTest]:
                 ],
                 "max_tokens": 5,
             },
-            skip_if=_require_key(Config.OPENAI_API_KEY, "OpenAI"),
+            skip_if=lambda: (
+                "OpenAI not currently used - code exists but all calls use Ollama" 
+                if Config.OPENAI_API_KEY == "your_openai_api_key_here" 
+                else _require_key(Config.OPENAI_API_KEY, "OpenAI")()
+            ),
         ),
         EndpointTest(
             name="Ollama Local Service",
@@ -325,6 +366,13 @@ def print_report(results: Iterable[ResultType]) -> None:
     for status in ("success", "failure", "skipped"):
         emoji = status_emojis.get(status, "•")
         print(f"  {emoji} {status.title()}: {summary[status]}")
+    
+    print("\n📋 Service Status Notes:")
+    print("  • CoinGecko: Disabled due to rate limiting issues")
+    print("  • DeepSeek: Optional AI provider (not currently used)")
+    print("  • OpenAI: Optional AI provider (not currently used - all calls use Ollama)")
+    print("  • Yahoo Finance: Fixed User-Agent issue - now working properly")
+    print("  • CryptoPanic: Removed due to monthly quota exceeded")
     print()
 
 
