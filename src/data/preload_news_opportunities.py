@@ -72,6 +72,8 @@ def preload_news_opportunities():
         logger.info(f"[PRELOAD_NEWS_OPPS] Preloaded {len(opportunities)} news-driven opportunities at {timestamp}")
     except Exception as e:
         logger.error(f"[PRELOAD_NEWS_OPPS] Failed to preload news-driven opportunities: {e}")
+    
+    return opportunities
 
 def get_latest_preloaded_news_opportunities():
     """

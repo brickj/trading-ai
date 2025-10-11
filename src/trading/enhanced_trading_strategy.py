@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, cast
 from datetime import datetime, timedelta
 from ..core.config import Config
 from ..core.recommendation_manager import get_recommendation_manager
+from ..core.logger import log_debug, log_error, log_warning
 from .trading_strategy import TradingStrategy
 
 # Use config for historical data period
@@ -40,14 +41,14 @@ class EnhancedTradingStrategy(TradingStrategy):
         recommendations = []
 
         # Base parameters
-        print(f"🔍 Debug: Generating recommendations for {symbol}")
-        print(f"🔍 Debug: sentiment_data keys: {list(sentiment_data.keys()) if isinstance(sentiment_data, dict) else 'Not a dict'}")
-        print(f"🔍 Debug: signal_data keys: {list(signal_data.keys()) if isinstance(signal_data, dict) else 'Not a dict'}")
+        log_debug(f"Debug: Generating recommendations for {symbol}")
+        log_debug(f"Debug: sentiment_data keys: {list(sentiment_data.keys()) if isinstance(sentiment_data, dict) else 'Not a dict'}")
+        log_debug(f"Debug: signal_data keys: {list(signal_data.keys()) if isinstance(signal_data, dict) else 'Not a dict'}")
         
         sentiment_score = sentiment_data["sentiment_score"]
         base_confidence = sentiment_data["confidence"]
         action = signal_data.get("stock_recommendation", {}).get("action", "HOLD")
-        print(f"🔍 Debug: Action extracted: {action}")
+        log_debug(f"Debug: Action extracted: {action}")
 
         # Even for HOLD, generate recommendations with neutral bias
         if action == "HOLD":
@@ -405,7 +406,7 @@ class EnhancedTradingStrategy(TradingStrategy):
         if historical_data is None or (
             isinstance(historical_data, pd.DataFrame) and historical_data.empty
         ):
-            print(f"❌ No historical data available for {symbol}")
+            log_error(f"No historical data available for {symbol}")
             for rec in recommendations:
                 rec["historical_confidence"] = rec["base_confidence"]
                 rec["confidence"] = rec["base_confidence"]
@@ -417,7 +418,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                 symbol, days_back=lookback_days
             )
         except Exception as e:
-            print(f"⚠️ Could not get database performance history: {e}")
+            log_warning(f"Could not get database performance history: {e}")
             db_performance = None
 
         # Test each recommendation
@@ -471,10 +472,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                     rec["db_samples"] = int(matching_types[0].get("total_recommendations", 0) or 0)
                     rec["confidence"] = round(final_confidence, 3)
 
-                    print(
-                        f"📊 Adjusted confidence for {rec['recommendation_type']} using DB history: "
-                        + f"{rec['historical_confidence']:.3f} → {final_confidence:.3f}"
-                    )
+                    log_debug(f"Adjusted confidence for {rec['recommendation_type']} using DB history: {rec['historical_confidence']:.3f} → {final_confidence:.3f}")
                 else:
                     # Calculate final confidence (weighted average)
                     final_confidence = (
@@ -542,16 +540,16 @@ class EnhancedTradingStrategy(TradingStrategy):
                 data = response.json()
 
                 if "Error Message" in data:
-                    print(f"❌ Alpha Vantage error for {symbol} (mapped to {alpha_vantage_symbol}): {data['Error Message']}")
+                    log_error(f"Alpha Vantage error for {symbol} (mapped to {alpha_vantage_symbol}): {data['Error Message']}")
                     return None
 
                 if "Note" in data:
-                    print(f"⚠️ Alpha Vantage rate limit for {symbol}: {data['Note']}")
+                    log_warning(f"Alpha Vantage rate limit for {symbol}: {data['Note']}")
                     return None
 
                 time_series_key = "Time Series (Daily)"
                 if time_series_key not in data:
-                    print(f"❌ No daily time series data for {symbol} (mapped to {alpha_vantage_symbol})")
+                    log_error(f"No daily time series data for {symbol} (mapped to {alpha_vantage_symbol})")
                     return None
 
                 # Convert to DataFrame
@@ -579,17 +577,15 @@ class EnhancedTradingStrategy(TradingStrategy):
                 # Cache the result
                 self.cache[cache_key] = (datetime.now(), df)
 
-                print(
-                    f"✅ Got {len(df)} days of Alpha Vantage historical data for {symbol} (mapped to {alpha_vantage_symbol})"
-                )
+                log_debug(f"Got {len(df)} days of Alpha Vantage historical data for {symbol} (mapped to {alpha_vantage_symbol})")
                 return df
 
             else:
-                print(f"❌ Alpha Vantage API error {response.status_code}")
+                log_error(f"Alpha Vantage API error {response.status_code}")
                 return None
 
         except Exception as e:
-            print(f"❌ Alpha Vantage historical data fetch failed for {symbol}: {e}")
+            log_error(f"Alpha Vantage historical data fetch failed for {symbol}: {e}")
             return None
 
     def _get_yahoo_historical_data(
@@ -630,15 +626,13 @@ class EnhancedTradingStrategy(TradingStrategy):
             df = cast(pd.DataFrame, hist_data)
 
             if df.empty:
-                print(
-                    f"❌ No historical data available from Yahoo Finance for {symbol}"
-                )
+                log_error(f"No historical data available from Yahoo Finance for {symbol}")
                 return None
 
             return df
 
         except Exception as e:
-            print(f"❌ Error fetching Yahoo Finance data for {symbol}: {e}")
+            log_error(f"Error fetching Yahoo Finance data for {symbol}: {e}")
             return None
 
     def _backtest_recommendation(
@@ -1009,7 +1003,7 @@ class EnhancedTradingStrategy(TradingStrategy):
             # Save to database
             self.recommendation_manager.save_recommendations(all_recommendations)
         except Exception as e:
-            print(f"⚠️ Error saving recommendations to database: {e}")
+            log_warning(f"Error saving recommendations to database: {e}")
 
         # Send Telegram alerts for high-confidence recommendations
         try:
@@ -1040,7 +1034,7 @@ class EnhancedTradingStrategy(TradingStrategy):
                         additional_data=additional_data
                     )
         except Exception as e:
-            print(f"⚠️ Error sending Telegram alerts: {e}")
+            log_warning(f"Error sending Telegram alerts: {e}")
 
         return {
             "top_recommendation": top_recommendation,
@@ -1095,12 +1089,10 @@ class EnhancedTradingStrategy(TradingStrategy):
         if historical_data is None or (
             isinstance(historical_data, pd.DataFrame) and historical_data.empty
         ):
-            print(f"❌ No historical data available for stock backtesting of {symbol}")
+            log_error(f"No historical data available for stock backtesting of {symbol}")
             return recommendations
 
-        print(
-            f"✅ Testing {len(recommendations)} stock recommendations against {len(historical_data)} days of data"
-        )
+        log_debug(f"Testing {len(recommendations)} stock recommendations against {len(historical_data)} days of data")
 
         # Test each recommendation
         for rec in recommendations:

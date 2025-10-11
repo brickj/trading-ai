@@ -12,6 +12,7 @@ import re  # Added for regex fallback
 
 from .config import Config
 from .redis_cache import redis_cache
+from .logger import log_info, log_debug, log_error, log_warning
 
 # Import API tracker for monitoring API usage
 
@@ -83,30 +84,6 @@ class SentimentAnalyzer:
         except Exception as e:
             raise Exception(f"Ollama API error: {str(e)}")
 
-    def _fallback_sentiment_analysis(self, news_articles: List[Dict], symbol: str = None) -> Dict:
-        """
-        Fallback sentiment analysis when AI services are unavailable.
-        Returns neutral sentiment when no AI provider is available.
-        """
-        print(f"🔄 Using fallback sentiment analysis for {symbol or 'unknown symbol'}")
-        
-        if not news_articles:
-            return {
-                "sentiment": 0.0,
-                "confidence": 0.1,
-                "analysis": "No news data available for analysis",
-                "provider": "fallback",
-                "method": "no_data"
-            }
-        
-        # Return neutral sentiment when AI services are unavailable
-        return {
-            "sentiment": 0.0,
-            "confidence": 0.1,
-            "analysis": "AI sentiment analysis unavailable, using neutral sentiment",
-            "provider": "fallback",
-            "method": "neutral"
-        }
 
     def _call_deepseek_api(self, messages: List[Dict], max_tokens: int = 200) -> Dict:
         """
@@ -265,7 +242,7 @@ class SentimentAnalyzer:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except Exception as exc:  # pragma: no cover - defensive logging only
-            print(f"⚠️ Unable to read historical sentiment data: {exc}")
+            log_warning(f"Unable to read historical sentiment data: {exc}")
             return []
 
         if not isinstance(payload, dict):
@@ -315,9 +292,7 @@ class SentimentAnalyzer:
         go_binary = shutil.which("go")
         if not go_binary:
             if not self._go_missing_logged:
-                print(
-                    "⚠️ Go runtime is not available on the system. Skipping optimizer step."
-                )
+                log_warning("Go runtime is not available on the system. Skipping optimizer step.")
                 self._go_missing_logged = True
             return None
 
@@ -328,7 +303,7 @@ class SentimentAnalyzer:
 
         try:
             completed = subprocess.run(
-                [go_binary, "run", "./go/cmd/sentiment_optimizer"],
+                [go_binary, "run", "./go/cmd/sentiment_optimizer/main.go"],
                 input=json.dumps(payload).encode("utf-8"),
                 capture_output=True,
                 check=True,
@@ -336,17 +311,15 @@ class SentimentAnalyzer:
                 timeout=8,
             )
         except subprocess.TimeoutExpired:
-            print("⚠️ Go optimizer timed out; continuing without adjustments.")
+            log_warning("Go optimizer timed out; continuing without adjustments.")
             return None
         except subprocess.CalledProcessError as exc:
             stderr = exc.stderr.decode("utf-8", errors="ignore") if exc.stderr else ""
-            print(
-                f"⚠️ Go optimizer failed with exit code {exc.returncode}: {stderr.strip()}"
-            )
+            log_warning(f"Go optimizer failed with exit code {exc.returncode}: {stderr.strip()}")
             return None
         except FileNotFoundError:
             if not self._go_missing_logged:
-                print("⚠️ Go toolchain not found. Skipping optimizer step.")
+                log_warning("Go toolchain not found. Skipping optimizer step.")
                 self._go_missing_logged = True
             return None
 
@@ -357,7 +330,7 @@ class SentimentAnalyzer:
         try:
             result = json.loads(raw_output)
         except json.JSONDecodeError:
-            print(f"⚠️ Unable to parse Go optimizer output: {raw_output[:200]}...")
+            log_warning(f"Unable to parse Go optimizer output: {raw_output[:200]}...")
             return None
 
         if not isinstance(result, dict):
@@ -610,7 +583,7 @@ class SentimentAnalyzer:
                 published_at = self._normalize_timestamp(published_raw)
             else:
                 # If article is not a dict, skip it
-                print(f"Warning: Skipping non-dict article: {type(article)}")
+                log_warning(f"Skipping non-dict article: {type(article)}")
                 continue
 
             if headline or summary:
@@ -670,9 +643,7 @@ class SentimentAnalyzer:
         # Limit text length to prevent Ollama timeouts (reduced for faster processing)
         max_text_length = 1600
         if raw_prompt_length > max_text_length:
-            print(
-                f"⚠️  Truncating news text from {raw_prompt_length} to {max_text_length} characters to prevent timeout"
-            )
+            log_warning(f"Truncating news text from {raw_prompt_length} to {max_text_length} characters to prevent timeout")
             truncated_text = news_text[:max_text_length]
             last_break = truncated_text.rfind("\n")
             if last_break > max_text_length * 0.6:
@@ -721,25 +692,21 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
 
         # Use only the selected provider - no fallback to mock data
         if selected_provider == "ollama":
-            print("🔍 Using Ollama (local) for sentiment analysis...")
+            log_debug("Using Ollama (local) for sentiment analysis...")
             # Log the full Ollama response before any parsing
             ollama_response = self._call_ollama_api(messages)
             content = ollama_response["choices"][0]["message"]["content"]
-            print(
-                f"[OLLAMA RAW RESPONSE] symbol={symbol} content=\n{content}\n---END---"
-            )
+            log_debug(f"[OLLAMA RAW RESPONSE] symbol={symbol} content=\n{content}\n---END---")
             # Continue with the rest of the logic using 'content' as before
             # (The rest of the function should use 'content' instead of calling _call_ollama_api again)
-            print("📝 News content being analyzed:")
-            print(f"   Stock-specific news: {len(stock_specific_news)} articles")
-            print(f"   General news: {len(general_news)} articles")
-            print(f"   Total weight: {total_weight}")
-            print(
-                f"   News text length: {raw_prompt_length} characters (post-truncation {len(news_text)})"
-            )
-            print(f"   Articles included in prompt: {prompt_articles}")
+            log_debug("News content being analyzed:")
+            log_debug(f"   Stock-specific news: {len(stock_specific_news)} articles")
+            log_debug(f"   General news: {len(general_news)} articles")
+            log_debug(f"   Total weight: {total_weight}")
+            log_debug(f"   News text length: {raw_prompt_length} characters (post-truncation {len(news_text)})")
+            log_debug(f"   Articles included in prompt: {prompt_articles}")
             if raw_prompt_length < 100:
-                print(f"   ⚠️  WARNING: Very short news text: '{news_text}'")
+                log_debug(f"   WARNING: Very short news text: '{news_text}'")
             try:
                 response = self._call_ollama_api(messages)
                 # Validate response structure
@@ -760,16 +727,19 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                 content = response["choices"][0]["message"]["content"]
                 provider_used = "ollama"
 
-                # Log the Ollama response for debugging
-                print("🔍 Ollama response for sentiment analysis:")
-                print(f"   Content: {content}")
-                print(f"   Content length: {len(content)}")
+                log_debug("Ollama response for sentiment analysis:")
+                log_debug(f"   Content: {content}")
+                log_debug(f"   Content length: {len(content)}")
             except Exception as e:
-                print(
-                    f"⚠️ Ollama API failed: {str(e)}. Falling back to price-based analysis..."
-                )
-                # Return a fallback sentiment analysis based on price data
-                return self._fallback_sentiment_analysis(news_articles, symbol)
+                log_error(f"OLLAMA API FAILED FOR {symbol}: {str(e)}")
+                log_error(f"OLLAMA BASE URL: {self.ollama_base_url}")
+                log_error(f"OLLAMA MODEL: {self.ollama_model}")
+                log_error(f"NEWS ARTICLES COUNT: {len(news_articles) if news_articles else 0}")
+                log_error(f"MESSAGES SENT TO OLLAMA: {messages}")
+                log_error(f"EXCEPTION TYPE: {type(e).__name__}")
+                import traceback
+                log_error(f"FULL TRACEBACK: {traceback.format_exc()}")
+                raise Exception(f"Sentiment analysis failed for {symbol}: {str(e)}")
         elif selected_provider == "deepseek":
             if (
                 not self.deepseek_api_key
@@ -778,7 +748,7 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                 raise Exception(
                     "DeepSeek API key not configured. Please set DEEPSEEK_API_KEY in config.py"
                 )
-            print("🔍 Using DeepSeek for sentiment analysis...")
+            log_debug("Using DeepSeek for sentiment analysis...")
             try:
                 response = self._call_deepseek_api(messages)
                 # Validate response structure
@@ -810,7 +780,7 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                 raise Exception(
                     "OpenAI API key not configured. Please set OPENAI_API_KEY in config.py"
                 )
-            print("🔍 Using OpenAI for sentiment analysis...")
+            log_debug("Using OpenAI for sentiment analysis...")
             try:
                 response = self._call_openai_api(messages)
                 # Validate response structure for OpenAI
@@ -840,15 +810,15 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
             # Clean the content - remove any leading/trailing whitespace and normalize newlines
             content = content.strip()
             # Log the full content before parsing
-            print(f"[LOG] Full AI response content before parsing: {content}")
+            log_debug(f"Full AI response content before parsing: {content}")
 
             # Try direct JSON parsing first
             try:
                 result = json.loads(content)
-                print(f"✅ Parsed JSON directly: {result}")
+                log_debug(f"Parsed JSON directly: {result}")
                 return result
             except json.JSONDecodeError as e:
-                print(f"⚠️ Direct JSON parsing failed: {e}")
+                log_debug(f"Direct JSON parsing failed: {e}")
 
             # Extract JSON substring - find the first { and last }
             start_idx = content.find("{")
@@ -856,14 +826,14 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
 
             if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
                 json_string = content[start_idx : end_idx + 1]
-                print(f"[LOG] Extracted JSON string: {json_string}")
+                log_debug(f"Extracted JSON string: {json_string}")
 
                 try:
                     result = json.loads(json_string)
-                    print(f"✅ Parsed JSON from extraction: {result}")
+                    log_debug(f"Parsed JSON from extraction: {result}")
                     return result
                 except json.JSONDecodeError as e:
-                    print(f"❌ JSON parsing failed for extracted string: {e}")
+                    log_debug(f"JSON parsing failed for extracted string: {e}")
 
                     # Check if the JSON is truncated (missing closing brace)
                     if not json_string.endswith("}"):
@@ -877,10 +847,10 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                                 completed_json = json_string[: last_quote + 1] + "}"
                                 try:
                                     result = json.loads(completed_json)
-                                    print(f"✅ Parsed JSON from completion: {result}")
+                                    log_debug(f"Parsed JSON from completion: {result}")
                                     return result
                                 except json.JSONDecodeError:
-                                    print("❌ JSON completion failed")
+                                    log_debug("JSON completion failed")
 
                     # Try regex fallback as last resort
                     sentiment_match = re.search(
@@ -901,10 +871,10 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                             if summary_match
                             else "Summary unavailable",
                         }
-                        print(f"✅ Parsed JSON from regex fallback: {result}")
+                        log_debug(f"Parsed JSON from regex fallback: {result}")
                         return result
                     else:
-                        print(f"❌ Regex fallback also failed for: {json_string}")
+                        log_debug(f"Regex fallback also failed for: {json_string}")
                         # Try to extract any numeric values that might be sentiment scores
                         any_number_match = re.search(r"(-?\d+\.?\d*)", json_string)
                         if any_number_match:
@@ -917,9 +887,7 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                                     "confidence": 0.3,  # Low confidence since parsing failed
                                     "summary": "Sentiment analysis completed with fallback parsing",
                                 }
-                                print(
-                                    f"✅ Parsed sentiment score from fallback: {result}"
-                                )
+                                log_debug(f"Parsed sentiment score from fallback: {result}")
                                 return result
                             except ValueError:
                                 pass
@@ -930,12 +898,10 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
                             "summary": "Sentiment analysis unavailable - parsing failed",
                         }
             else:
-                print(f"❌ No JSON brackets found in response: {content}")
+                log_debug(f"No JSON brackets found in response: {content}")
                 # Check if Ollama returned code instead of JSON
                 if "import" in content or "def" in content or "print" in content:
-                    print(
-                        "⚠️ Ollama returned code instead of JSON. Using fallback sentiment."
-                    )
+                    log_warning("Ollama returned code instead of JSON. Using fallback sentiment.")
                     return {
                         "sentiment_score": 0.0,
                         "confidence": 0.1,
@@ -950,9 +916,7 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
 
         except Exception as e:
             # If parsing fails, log the full response and return a fallback neutral sentiment
-            print(
-                f"[ERROR] Could not parse AI response: {content[:500]}... Exception: {e}"
-            )
+            log_error(f"Could not parse AI response: {content[:500]}... Exception: {e}")
             result = {
                 "sentiment_score": 0.0,
                 "confidence": 0.5,
@@ -969,9 +933,7 @@ Return JSON: {{"sentiment_score": float, "confidence": float, "summary": "string
 
         # Provide fallback for zero confidence cases
         if confidence == 0:
-            print(
-                f"⚠️ AI provider {selected_provider} returned zero confidence for {symbol}, using neutral fallback"
-            )
+            log_warning(f"AI provider {selected_provider} returned zero confidence for {symbol}, using neutral fallback")
             return {
                 "sentiment_score": 0.0,
                 "confidence": 0.1,  # Minimal confidence for fallback

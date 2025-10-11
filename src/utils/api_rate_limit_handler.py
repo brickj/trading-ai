@@ -4,11 +4,11 @@ Provides better error handling for rate-limited APIs with graceful fallbacks
 """
 
 import time
-import logging
 from typing import Dict, Any, Optional, Callable
 from functools import wraps
+from src.core.logger import trading_logger
 
-logger = logging.getLogger(__name__)
+logger = trading_logger
 
 class APIRateLimitHandler:
     """Handles API rate limiting with exponential backoff and fallbacks"""

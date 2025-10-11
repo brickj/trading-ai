@@ -13,6 +13,13 @@ from src.core.logger import log_error, log_debug
 from src.core.redis_cache import redis_cache
 from src.core.go_services import go_services
 
+# Import pandas for yfinance fallback
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+
 # Import API tracker for monitoring API usage
 
 # Optional import for web scraping
@@ -135,6 +142,7 @@ class DataFetcher:
                     "volume": int(quote.get("06. volume", 0)),
                     "symbol": symbol,
                     "timestamp": datetime.now().isoformat(),
+                    "source": "alpha_vantage",
                 }
                 # Cache in Redis for 15 minutes
                 if redis_cache.health_check():
@@ -143,38 +151,80 @@ class DataFetcher:
                 return result
             else:
                 log_error(f"Alpha Vantage API response for {symbol} missing expected fields: {data}")
-                return {}
         else:
             log_error(f"Alpha Vantage API error or empty response for {symbol}: {data if data else 'No data'}")
-            return {}
+        
+        # Alpha Vantage failed, try yfinance fallback
+        log_debug(f"Alpha Vantage failed for {symbol}, trying yfinance fallback")
+        try:
+            yf_data = self._get_yfinance_last_price(symbol)
+            if yf_data and yf_data.get("current_price", 0) > 0:
+                # Cache in Redis for 10 minutes (shorter TTL for fallback data)
+                if redis_cache.health_check():
+                    redis_cache.set(cache_key, yf_data, ttl=600)
+                    log_debug(f"Cached yfinance fallback data for {symbol} with TTL 600 seconds")
+                log_debug(f"yfinance fallback successful for {symbol}: ${yf_data['current_price']}")
+                return yf_data
+            else:
+                log_error(f"yfinance fallback failed for {symbol}: no valid price data")
+        except Exception as e:
+            log_error(f"yfinance fallback error for {symbol}: {e}")
+        
+        # All sources failed
+        log_error(f"All price data sources failed for {symbol}")
+        return {"error": "Failed to fetch price from all sources", "symbol": symbol}
 
-    def _get_yfinance_last_price(self, symbol: str) -> Optional[float]:
-        """Best-effort last price using yfinance as a fallback for foreign symbols.
-        Returns None if unavailable.
+    def _get_yfinance_last_price(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """Best-effort price data using yfinance as a fallback.
+        Returns dict with price data or None if unavailable.
         """
         try:
             import yfinance as yf
 
             ticker = yf.Ticker(symbol)
-            # Try fast_info if available
-            last_price = None
+            
+            # Try to get comprehensive data from history
+            hist = ticker.history(period="2d", interval="1d")
+            if hist is not None and not hist.empty:
+                latest = hist.iloc[-1]
+                previous = hist.iloc[-2] if len(hist) > 1 else latest
+                
+                current_price = float(latest["Close"])
+                change = float(latest["Close"] - previous["Close"])
+                change_percent = (change / previous["Close"]) * 100 if previous["Close"] > 0 else 0
+                volume = int(latest["Volume"]) if PANDAS_AVAILABLE and not pd.isna(latest["Volume"]) else 0
+                
+                return {
+                    "current_price": current_price,
+                    "change": change,
+                    "change_percent": f"{change_percent:.2f}%",
+                    "volume": volume,
+                    "symbol": symbol,
+                    "timestamp": datetime.now().isoformat(),
+                    "source": "yfinance_fallback",
+                }
+            
+            # Fallback to fast_info if history fails
             try:
                 fast_info = getattr(ticker, "fast_info", None)
                 if fast_info and isinstance(fast_info, dict):
-                    lp = fast_info.get("last_price") or fast_info.get("last_price")
-                    if lp:
-                        last_price = float(lp)
+                    last_price = fast_info.get("last_price")
+                    if last_price:
+                        return {
+                            "current_price": float(last_price),
+                            "change": 0.0,
+                            "change_percent": "0%",
+                            "volume": 0,
+                            "symbol": symbol,
+                            "timestamp": datetime.now().isoformat(),
+                            "source": "yfinance_fallback",
+                        }
             except Exception:
-                last_price = None
-
-            if not last_price:
-                # Fall back to a small history window
-                hist = ticker.history(period="1d", interval="1m")
-                if hist is not None and not hist.empty:
-                    last_price = float(hist["Close"].iloc[-1])
-
-            return float(last_price) if last_price else None
-        except Exception:
+                pass
+                
+            return None
+        except Exception as e:
+            log_error(f"yfinance error for {symbol}: {e}")
             return None
 
     def get_company_news(self, symbol: str, days_back: int = 7) -> list:
@@ -210,40 +260,36 @@ class DataFetcher:
             try:
                 alpha_news = self.get_alpha_vantage_news(symbol, limit=5)
                 all_news.extend(alpha_news)
-                print(
-                    f"✅ Got {len(alpha_news)} Alpha Vantage news articles for {symbol}"
-                )
+                log_debug(f"Got {len(alpha_news)} Alpha Vantage news articles for {symbol}")
                 rate_limit_delay()
             except Exception as e:
-                print(f"❌ Alpha Vantage news failed for {symbol}: {e}")
+                log_error(f"Alpha Vantage news failed for {symbol}: {e}")
 
             # 2. Get news from Reddit
             try:
                 reddit_news = self.get_reddit_news(symbol, limit=5)
                 all_news.extend(reddit_news)
-                print(f"✅ Got {len(reddit_news)} Reddit posts for {symbol}")
+                log_debug(f"Got {len(reddit_news)} Reddit posts for {symbol}")
                 rate_limit_delay()
             except Exception as e:
-                print(f"❌ Reddit news failed for {symbol}: {e}")
+                log_error(f"Reddit news failed for {symbol}: {e}")
 
             # 3. Get news from Finnhub API (skip if rate limited)
             try:
                 finnhub_news = self._get_finnhub_news(symbol, days_back)
                 all_news.extend(finnhub_news)
-                print(f"✅ Got {len(finnhub_news)} Finnhub news articles for {symbol}")
+                log_debug(f"Got {len(finnhub_news)} Finnhub news articles for {symbol}")
                 rate_limit_delay()
             except Exception as e:
-                print(f"❌ Finnhub news failed for {symbol}: {e}")
+                log_error(f"Finnhub news failed for {symbol}: {e}")
 
             # 4. Get news from Yahoo Finance (skip if rate limited)
             try:
                 yahoo_news = self.get_yahoo_finance_news(symbol, limit=5)
                 all_news.extend(yahoo_news)
-                print(
-                    f"✅ Got {len(yahoo_news)} Yahoo Finance news articles for {symbol}"
-                )
+                log_debug(f"Got {len(yahoo_news)} Yahoo Finance news articles for {symbol}")
             except Exception as e:
-                print(f"❌ Yahoo Finance news failed for {symbol}: {e}")
+                log_error(f"Yahoo Finance news failed for {symbol}: {e}")
 
             # Remove duplicates based on headline
             seen_headlines = set()
@@ -302,16 +348,12 @@ class DataFetcher:
                 return False
 
             filtered_news = [a for a in unique_news if is_stock_specific(a, symbol)]
-            print(
-                f"[DEBUG] Filtered {len(filtered_news)} stock-specific news articles for {symbol} (from {len(unique_news)} total)"
-            )
+            log_debug(f"Filtered {len(filtered_news)} stock-specific news articles for {symbol} (from {len(unique_news)} total)")
             unique_news = filtered_news
 
             # If after filtering, not enough news, add fallback news
             if len(unique_news) < 2:
-                print(
-                    f"⚠️ Not enough news for {symbol} after filtering, adding fallback news"
-                )
+                log_debug(f"Not enough news for {symbol} after filtering, adding fallback news")
                 fallback_news = [
                     {
                         "headline": f"{symbol} Market Analysis",
@@ -360,9 +402,7 @@ class DataFetcher:
                 if isinstance(article, dict):
                     source = article.get("source", "Unknown")
                     source_counts[source] = source_counts.get(source, 0) + 1
-            print(
-                f"[DEBUG] News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}"
-            )
+            log_debug(f"News source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
             
             result = unique_news[:20]  # Limit to 20 most recent articles
             
@@ -522,12 +562,10 @@ class DataFetcher:
                             }
                         )
                     all_news.extend(cryptopanic_articles)
-                    print(
-                        f"✅ Got {len(cryptopanic_articles)} CryptoPanic news articles"
-                    )
+                    log_debug(f"Got {len(cryptopanic_articles)} CryptoPanic news articles")
                     rate_limit_delay()
                 except Exception as e:
-                    print(f"❌ CryptoPanic news failed: {e}")
+                    log_error(f"CryptoPanic news failed: {e}")
 
             # 3. NewsAPI for crypto news (if API key is configured)
             if (
@@ -577,19 +615,19 @@ class DataFetcher:
                             }
                         )
                     all_news.extend(newsapi_articles)
-                    print(f"✅ Got {len(newsapi_articles)} NewsAPI crypto articles")
+                    log_debug(f"Got {len(newsapi_articles)} NewsAPI crypto articles")
                     rate_limit_delay()
                 except Exception as e:
-                    print(f"❌ NewsAPI crypto news failed: {e}")
+                    log_error(f"NewsAPI crypto news failed: {e}")
 
             # 4. Reddit crypto news (r/cryptocurrency, r/bitcoin, etc.)
             try:
                 reddit_crypto_news = self.get_reddit_crypto_news(limit=10)
                 all_news.extend(reddit_crypto_news)
-                print(f"✅ Got {len(reddit_crypto_news)} Reddit crypto posts")
+                log_debug(f"Got {len(reddit_crypto_news)} Reddit crypto posts")
                 rate_limit_delay()
             except Exception as e:
-                print(f"❌ Reddit crypto news failed: {e}")
+                log_error(f"Reddit crypto news failed: {e}")
 
             # Remove duplicates based on headline
             seen_headlines = set()
@@ -627,13 +665,11 @@ class DataFetcher:
                     source = article.get("source", "Unknown")
                     source_counts[source] = source_counts.get(source, 0) + 1
 
-            print(
-                f"[DEBUG] Crypto news source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}"
-            )
+            log_debug(f"Crypto news source counts: {', '.join([f'{k}={v}' for k, v in source_counts.items()])}")
 
             # If no news was found from any source, provide fallback crypto news
             if not unique_news:
-                print("⚠️ No crypto news found, providing fallback news")
+                log_debug("No crypto news found, providing fallback news")
                 unique_news = [
                     {
                         "headline": "Bitcoin Market Analysis",
@@ -866,13 +902,13 @@ class DataFetcher:
         from src.core.database import get_db_connection
 
         # Always fetch fresh data from Wikipedia
-        print("🔄 Fetching S&P 500 symbols from Wikipedia...")
+        log_debug("Fetching S&P 500 symbols from Wikipedia...")
         new_symbols = self.check_sp500_updates_from_wikipedia()
         if not new_symbols:
             log_error("No S&P 500 symbols fetched from Wikipedia.")
             return
 
-        print(f"📊 Retrieved {len(new_symbols)} S&P 500 symbols from Wikipedia")
+        log_debug(f"Retrieved {len(new_symbols)} S&P 500 symbols from Wikipedia")
 
         try:
             with get_db_connection() as conn:
@@ -908,11 +944,9 @@ class DataFetcher:
                     conn.commit()
 
                     if additions or removals:
-                        print(
-                            f"✅ Updated S&P 500 symbols: +{len(additions)} added, -{len(removals)} removed"
-                        )
+                        log_debug(f"Updated S&P 500 symbols: +{len(additions)} added, -{len(removals)} removed")
                     else:
-                        print("✅ No S&P 500 symbol changes detected - data refreshed")
+                        log_debug("No S&P 500 symbol changes detected - data refreshed")
 
         except Exception as e:
             log_error(f"Failed to update S&P 500 symbols table: {e}")
@@ -934,9 +968,7 @@ class DataFetcher:
         start_date = end_date - timedelta(days=max(months * 30, 60))  # At least 60 days
 
         try:
-            print(
-                f"📊 Fetching Yahoo Finance data for {symbol} from {start_date} to {end_date}"
-            )
+            log_debug(f"Fetching Yahoo Finance data for {symbol} from {start_date} to {end_date}")
 
             # Use a more conservative approach with period instead of start/end dates
             # This often works better with Yahoo Finance
@@ -958,34 +990,34 @@ class DataFetcher:
                 )
                 df = ticker.history(period=period)
                 if not df.empty:
-                    print(f"✅ Got data using period={period}")
+                    log_debug(f"Got data using period={period}")
             except Exception as e:
-                print(f"⚠️ Period method failed for {symbol}: {e}")
+                log_debug(f"Period method failed for {symbol}: {e}")
 
             # Second try: Use start/end dates if period failed
             if df is None or df.empty:
                 try:
                     df = ticker.history(start=start_date, end=end_date)
                     if not df.empty:
-                        print("✅ Got data using start/end dates")
+                        log_debug("Got data using start/end dates")
                 except Exception as e:
-                    print(f"⚠️ Start/end method failed for {symbol}: {e}")
+                    log_debug(f"Start/end method failed for {symbol}: {e}")
 
             # Third try: Use a longer period as fallback
             if df is None or df.empty:
                 try:
                     df = ticker.history(period="1y")
                     if not df.empty:
-                        print("✅ Got data using 1y fallback")
+                        log_debug("Got data using 1y fallback")
                 except Exception as e:
-                    print(f"⚠️ 1y fallback failed for {symbol}: {e}")
+                    log_debug(f"1y fallback failed for {symbol}: {e}")
 
             if df is None or df.empty:
-                print(f"❌ No Yahoo Finance data found for {symbol}")
+                log_error(f"No Yahoo Finance data found for {symbol}")
                 return
 
             df = df.reset_index()
-            print(f"📈 Got {len(df)} data points for {symbol}")
+            log_debug(f"Got {len(df)} data points for {symbol}")
 
             # Store in DB
             with get_db_connection() as conn:
@@ -1027,9 +1059,9 @@ class DataFetcher:
                             ),
                         )
                     conn.commit()
-            print(f"✅ Stored historical data for {symbol} ({len(df)} rows)")
+            log_debug(f"Stored historical data for {symbol} ({len(df)} rows)")
         except Exception as e:
-            print(f"❌ Failed to get data for {symbol}: {e}")
+            log_error(f"Failed to get data for {symbol}: {e}")
 
     def get_reddit_news(self, symbol: str, limit: int = 5) -> list:
         """Get Reddit news for a symbol using Reddit API (OAuth2)"""
@@ -1037,7 +1069,7 @@ class DataFetcher:
 
         # Check if Reddit is enabled and credentials are configured
         if not getattr(Config, 'REDDIT_ENABLED', True):
-            print(f"🔕 Reddit API disabled for {symbol}")
+            log_debug(f"Reddit API disabled for {symbol}")
             return []
             
         client_id = Config.REDDIT_CLIENT_ID
@@ -1046,7 +1078,7 @@ class DataFetcher:
         # Check if credentials are properly configured
         if (not client_id or client_id == "your_reddit_client_id_here" or
             not client_secret or client_secret == "your_reddit_secret_key_here"):
-            print(f"🔕 Reddit API not configured for {symbol}")
+            log_debug(f"Reddit API not configured for {symbol}")
             return []
             
         user_agent = "trading-ai-news-bot/0.1 by YourUsername"
@@ -1070,9 +1102,7 @@ class DataFetcher:
             headers = {"Authorization": f"bearer {token}", "User-Agent": user_agent}
             params = {"q": symbol, "restrict_sr": 1, "sort": "new", "limit": limit}
             resp = requests.get(search_url, headers=headers, params=params)
-            print(
-                f"[DEBUG][Reddit] Raw response for {symbol}: {resp.status_code} {resp.text[:500]}"
-            )
+            log_debug(f"[Reddit] Raw response for {symbol}: {resp.status_code} {resp.text[:500]}")
             resp.raise_for_status()
             posts = resp.json().get("data", {}).get("children", [])
             news = []
@@ -1091,7 +1121,7 @@ class DataFetcher:
                         "category": "discussion",
                     }
                 )
-            print(f"[DEBUG][Reddit] Parsed {len(news)} articles for {symbol}")
+            log_debug(f"[Reddit] Parsed {len(news)} articles for {symbol}")
 
             # Track API usage
 
@@ -1118,7 +1148,7 @@ class DataFetcher:
                 }
 
                 data = self._make_request(url, params)
-                print(f"[DEBUG][AlphaVantage] Raw response for {symbol}: {data}")
+                log_debug(f"[AlphaVantage] Raw response for {symbol}: {data}")
                 if data and "feed" in data:
                     news_articles = []
                     for article in data["feed"][:limit]:
@@ -1132,15 +1162,13 @@ class DataFetcher:
                                 "category": "news",
                             }
                         )
-                    print(
-                        f"[DEBUG][AlphaVantage] Parsed {len(news_articles)} articles for {symbol}"
-                    )
+                    log_debug(f"[AlphaVantage] Parsed {len(news_articles)} articles for {symbol}")
 
                     # Track API usage
 
                     return news_articles
                 else:
-                    print(f"[DEBUG][AlphaVantage] No feed found in response for {symbol}")
+                    log_debug(f"[AlphaVantage] No feed found in response for {symbol}")
                     # Fallback: return sample news if API fails
                     return [
                         {
@@ -1156,7 +1184,7 @@ class DataFetcher:
             except Exception as e:
                 if attempt < max_retries - 1:
                     log_error(f"get_alpha_vantage_news error for {symbol} (attempt {attempt + 1}): {e}")
-                    print(f"Retrying in {retry_delay} seconds...")
+                    log_debug(f"Retrying in {retry_delay} seconds...")
                     time.sleep(retry_delay)
                     retry_delay *= 2  # Exponential backoff
                 else:
@@ -1177,9 +1205,7 @@ class DataFetcher:
         # Check if we've hit rate limits recently
         cache_key = f"yf_rate_limit_{symbol}"
         if redis_cache.health_check() and redis_cache.get(cache_key):
-            print(
-                f"[DEBUG][YahooFinance] Rate limit active for {symbol}, using cached data"
-            )
+            log_debug(f"[YahooFinance] Rate limit active for {symbol}, using cached data")
             return []
 
         try:
@@ -1205,9 +1231,7 @@ class DataFetcher:
                 # Set a 1-hour cooldown for this symbol
                 if redis_cache.health_check():
                     redis_cache.set(cache_key, True, ttl=3600)
-                print(
-                    f"[WARNING][YahooFinance] Rate limited for {symbol}, cooling down for 1 hour"
-                )
+                log_debug(f"[YahooFinance] Rate limited for {symbol}, cooling down for 1 hour")
                 return []
 
             response.raise_for_status()
@@ -1220,7 +1244,7 @@ class DataFetcher:
             items = soup.find_all("item")
 
             if not items:
-                print(f"[DEBUG][YahooFinance] No news items found for {symbol}")
+                log_debug(f"[YahooFinance] No news items found for {symbol}")
                 return self._get_fallback_news(symbol)
 
             news_articles = []

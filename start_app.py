@@ -181,7 +181,7 @@ def check_postgresql():
                     print_success("PostgreSQL connection working")
                     return True
         
-        print_warning("PostgreSQL connection issue - cache will use fallback")
+        print_error("PostgreSQL connection issue - REQUIRED SERVICE FAILED")
         return False
         
     except Exception as e:
@@ -207,29 +207,31 @@ def check_redis():
                 redis_cache.delete(test_key)  # Clean up
                 return True
             else:
-                print_warning("Redis read/write test failed")
+                print_error("Redis connection issue - REQUIRED SERVICE FAILED")
                 return False
         else:
-            print_warning("Redis health check failed")
+            print_error("Redis health check failed - REQUIRED SERVICE FAILED")
             return False
             
     except Exception as e:
-        print_warning(f"Redis not accessible: {e}")
+        print_error(f"Redis not accessible: {e} - REQUIRED SERVICE FAILED")
         print_status("To fix: Make sure Redis is running (redis-server)")
         return False
 
 def start_go_services():
     """Start Go microservices if they're not running"""
     try:
-        go_dir = Path("go")
+        # Get the absolute path to the go directory relative to this script
+        script_dir = Path(__file__).parent.resolve()
+        go_dir = script_dir / "go"
         start_script = go_dir / "scripts" / "start_services.sh"
         
         if not go_dir.exists():
-            print_warning("Go directory not found - skipping Go services startup")
+            print_error(f"Go directory not found at {go_dir} - REQUIRED SERVICE FAILED")
             return False
             
         if not start_script.exists():
-            print_warning("Go start script not found - skipping Go services startup")
+            print_error(f"Go start script not found at {start_script} - REQUIRED SERVICE FAILED")
             return False
             
         print_status("Starting Go microservices...")
@@ -272,79 +274,99 @@ def start_go_services():
         
         if result.returncode == 0:
             print_success("Go services startup script executed successfully")
-            # Wait a moment for services to initialize
-            time.sleep(3)
+            # Wait longer for services to initialize
+            print_status("Waiting for Go services to fully initialize...")
+            time.sleep(10)  # Increased from 3 to 10 seconds
             return True
         else:
-            print_warning(f"Go services startup failed: {result.stderr}")
+            print_error(f"Go services startup failed: {result.stderr} - REQUIRED SERVICE FAILED")
             return False
             
     except subprocess.TimeoutExpired:
-        print_warning("Go services startup timed out")
+        print_error("Go services startup timed out - REQUIRED SERVICE FAILED")
         return False
     except Exception as e:
-        print_warning(f"Failed to start Go services: {e}")
+        print_error(f"Failed to start Go services: {e} - REQUIRED SERVICE FAILED")
         return False
+
+def check_go_services_health():
+    """Simple health check for GO services without importing the problematic module"""
+    import requests
+    
+    services = [
+        ("Data Fetcher", "http://localhost:8080/health"),
+        ("Cache Service", "http://localhost:8081/health"),
+        ("Background Workers", "http://localhost:8082/health")
+    ]
+    
+    all_healthy = True
+    for service_name, url in services:
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'healthy':
+                    print_status(f"  ✅ {service_name} (healthy)")
+                else:
+                    print_error(f"  ❌ {service_name} (unhealthy)")
+                    all_healthy = False
+            else:
+                print_error(f"  ❌ {service_name} (HTTP {response.status_code})")
+                all_healthy = False
+        except Exception as e:
+            print_error(f"  ❌ {service_name} (connection failed)")
+            all_healthy = False
+    
+    return all_healthy
 
 def check_go_services():
     """Check Go microservices status and start them if needed"""
     try:
-        from src.core.go_services import go_services
+        # FIRST: Check if GO services are already running and healthy
+        print_status("Checking GO services health...")
         
-        if go_services.enabled:
-            print_success("Go services are enabled and healthy")
-            
-            # Get performance stats to verify services are working
-            try:
-                stats = go_services.get_performance_stats()
-                if stats.get('overall_health'):
-                    print_success("All Go microservices are operational")
-                    print_status("  ✅ Data Fetcher (port 8080)")
-                    print_status("  ✅ Cache Service (port 8081)")  
-                    print_status("  ✅ Background Workers (port 8082)")
-                    return True
-                else:
-                    print_warning("Some Go services are not healthy")
-                    return False
-            except Exception as e:
-                print_warning(f"Go services performance check failed: {e}")
-                return False
+        if check_go_services_health():
+            print_success("Go services are already running and healthy")
+            return True
         else:
-            print_warning("Go services are not enabled - attempting to start them...")
+            # SECOND: GO services are not running - attempt to start them
+            print_error("Go services are not running - attempting to start them...")
             
             # Try to start Go services
             if start_go_services():
                 print_status("Waiting for Go services to initialize...")
-                time.sleep(5)  # Give services time to start
+                time.sleep(15)  # Increased wait time
                 
-                # Check again after starting
-                try:
-                    from src.core.go_services import go_services
-                    if go_services.enabled:
+                # Check again after starting with retries
+                max_retries = 3
+                for attempt in range(max_retries):
+                    print_status(f"Checking GO services health... (attempt {attempt + 1}/{max_retries})")
+                    if check_go_services_health():
                         print_success("Go services started successfully")
                         return True
                     else:
-                        print_warning("Go services still not available after startup attempt")
-                        return False
-                except Exception as e:
-                    print_warning(f"Failed to verify Go services after startup: {e}")
-                    return False
+                        if attempt < max_retries - 1:
+                            print_status(f"Go services not ready yet, retrying... (attempt {attempt + 1}/{max_retries})")
+                            time.sleep(5)
+                        else:
+                            print_error("Go services still not available after startup attempt - REQUIRED SERVICE FAILED")
+                            return False
             else:
-                print_warning("Failed to start Go services - using Python fallback")
-                print_status("To manually start: cd go && ./scripts/start_services.sh")
+                print_error("Failed to start Go services - REQUIRED SERVICE FAILED")
+                print_error("To manually start: cd go && ./scripts/start_services.sh")
                 return False
             
     except Exception as e:
-        print_warning(f"Go services check failed: {e}")
+        print_error(f"Go services check failed: {e} - REQUIRED SERVICE FAILED")
         print_status("Attempting to start Go services...")
         
         # Try to start Go services as fallback
         if start_go_services():
             print_status("Waiting for Go services to initialize...")
-            time.sleep(5)
+            time.sleep(10)
             return True
         else:
-            print_warning("Go services will use Python fallback")
+            print_error("Go services will NOT start - REQUIRED SERVICE FAILED")
             return False
 
 def check_all_services():
@@ -361,23 +383,20 @@ def check_all_services():
     print()
     print_status("Service Status Summary:")
     for service, status in services_status.items():
-        status_icon = "✅" if status else "⚠️"
+        status_icon = "✅" if status else "❌"
         service_name = service.replace('_', ' ').title()
-        print(f"  {status_icon} {service_name}: {'OK' if status else 'Fallback'}")
+        print(f"  {status_icon} {service_name}: {'OK' if status else 'FAILED - REQUIRED'}")
     
     # Determine overall health
-    critical_services = ['postgresql']  # Redis and Go are optional with fallbacks
+    critical_services = ['postgresql', 'redis', 'go_services']  # ALL services are required - NO FALLBACKS
     critical_ok = all(services_status[service] for service in critical_services)
     
     if critical_ok:
-        print_success("All critical services are available")
-        if all(services_status.values()):
-            print_success("All services including performance optimizations are available")
-        else:
-            print_status("Application will run with some fallback systems")
+        print_success("All critical services are available and running")
         return True
     else:
-        print_error("Critical services are not available")
+        print_error("CRITICAL SERVICES ARE NOT AVAILABLE - APP CANNOT START")
+        print_error("All services (PostgreSQL, Redis, GO) are REQUIRED - NO FALLBACKS ALLOWED")
         return False
 
 def check_port(port=5001):
@@ -445,9 +464,9 @@ def print_app_info():
     print("   🔍 Logs Viewer:   http://localhost:5001/logs")
     print()
     print(f"{Colors.CYAN}⚡ Features enabled:{Colors.NC}")
-    print("   🗄️  PostgreSQL database (2,400x performance improvement)")
-    print("   🚀 Redis caching (ultra-fast data access)")
-    print("   ⚡ Go microservices (auto-started for maximum performance)")
+    print("   🗄️  PostgreSQL database (REQUIRED)")
+    print("   🚀 Redis caching (REQUIRED)")
+    print("   ⚡ Go microservices (REQUIRED - NO FALLBACKS)")
     print("   📡 Smart batching (5-10x faster bulk analysis)")
     print("   🌐 WebSocket real-time progress updates")
     print("   🤖 Ollama AI sentiment analysis (local & free)")
@@ -736,9 +755,10 @@ def main():
         print_error("Missing dependencies. Please install them first.")
         sys.exit(1)
 
-    # Check all services (PostgreSQL, Redis, Go)
+    # Check all services (PostgreSQL, Redis, Go) - ALL REQUIRED
     if not check_all_services():
-        print_error("Critical services are not available. Please fix the issues above.")
+        print_error("CRITICAL SERVICES ARE NOT AVAILABLE - APP CANNOT START")
+        print_error("All services (PostgreSQL, Redis, GO) are REQUIRED - NO FALLBACKS ALLOWED")
         sys.exit(1)
 
     # Check if port is available

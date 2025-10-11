@@ -18,7 +18,7 @@ from ..utils import api_error_handler
 from ..utils.decorators import rate_limit
 
 # Import core modules
-from ...core.logger import trading_logger, log_info, log_error, log_exception, log_timing, log_user_actions, log_debug
+from ...core.logger import trading_logger, log_info, log_error, log_exception, log_timing, log_user_actions, log_debug, log_warning
 
 # Import services
 from ..services import analysis_service, system_service
@@ -237,7 +237,7 @@ def enhanced_analysis():
         for rec in recommendations["all_recommendations"]:
             if "historical_stats" in rec:
                 if rec["historical_stats"].get("total_trades", 0) < 10:
-                    print(f"⚠️ Enhanced Analysis: {symbol} has insufficient historical data for proper backtesting")
+                    log_warning(f"Enhanced Analysis: {symbol} has insufficient historical data for proper backtesting")
 
     response_data = {
         "symbol": symbol,

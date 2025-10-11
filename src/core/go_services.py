@@ -57,6 +57,11 @@ class GoDataFetcherClient(GoServiceClient):
         try:
             response = self._make_request('POST', '/api/stock/price', {'symbol': symbol})
             log_debug(f"Go data fetcher returned price for {symbol}")
+            
+            # Rename "price" to "current_price" to match Python format
+            if response and "price" in response:
+                response["current_price"] = response.pop("price")
+            
             return response
         except Exception as e:
             log_error(f"Failed to get stock price for {symbol}: {e}")
@@ -268,7 +273,19 @@ class GoServicesManager:
         self.data_fetcher = GoDataFetcherClient()
         self.cache = GoCacheClient()
         self.background_workers = GoBackgroundWorkerClient()
-        self.enabled = self._check_services_health()
+        self._enabled = None  # Lazy initialization
+    
+    @property
+    def enabled(self):
+        """Check if Go services are enabled (lazy evaluation)"""
+        if self._enabled is None:
+            self._enabled = self._check_services_health()
+        return self._enabled
+    
+    def refresh_health_status(self):
+        """Force refresh of health status"""
+        self._enabled = self._check_services_health()
+        return self._enabled
     
     def _check_services_health(self) -> bool:
         """Check if all Go services are healthy"""

@@ -455,8 +455,5 @@ def get_latest_preloaded_watchlist_opportunities():
         return {**default_response, "error": error_msg}
 
 if __name__ == "__main__":
-    # Set up logging
-    logging.basicConfig(level=logging.INFO)
-    
     # Run the preload function
     preload_watchlist_opportunities()

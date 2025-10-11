@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Trading AI - EC2 GitHub Update Script
+Trading AI - GitHub Update Script
 This script commits local changes to GitHub and updates the EC2 instance with the latest code.
+Does NOT start/stop the application - use a separate script for that.
 """
 
 import subprocess
@@ -172,56 +173,6 @@ class EC2GitHubUpdater:
             self.print_error("SSH connection failed")
             return False
 
-    def stop_application(self):
-        """Stop the application on EC2"""
-        self.print_status("Stopping application on EC2...")
-        
-        # Find and kill the application process
-        stop_script = f"""
-        # Find the application process
-        APP_PID=$(ps aux | grep '{self.process_name}' | grep -v grep | awk '{{print $2}}')
-        
-        if [ -n "$APP_PID" ]; then
-            echo "Found application process: $APP_PID"
-            kill -TERM $APP_PID
-            sleep 5
-            
-            # Check if still running
-            if ps -p $APP_PID > /dev/null 2>&1; then
-                echo "Process still running, force killing..."
-                kill -KILL $APP_PID
-            fi
-            echo "Application stopped"
-        else
-            echo "No application process found"
-        fi
-        
-        # Also kill any processes using the app port
-        PORT_PID=$(lsof -ti:{self.app_port})
-        if [ -n "$PORT_PID" ]; then
-            echo "Killing process using port {self.app_port}: $PORT_PID"
-            kill -TERM $PORT_PID
-            sleep 2
-            if ps -p $PORT_PID > /dev/null 2>&1; then
-                kill -KILL $PORT_PID
-            fi
-        fi
-        """
-        
-        result = self.run_command([
-            "ssh", "-i", self.pem_file,
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null",
-            f"{self.ssh_user}@{self.elastic_ip}",
-            stop_script
-        ])
-        
-        if result and result.returncode == 0:
-            self.print_success("Application stopped successfully")
-            return True
-        else:
-            self.print_warning("Application stop command completed (may not have been running)")
-            return True
 
     def update_code_on_ec2(self):
         """Pull latest code from GitHub on EC2 with conflict resolution"""
@@ -329,59 +280,6 @@ class EC2GitHubUpdater:
                 print(result.stderr)
             return False
 
-    def restart_application(self):
-        """Restart the application on EC2"""
-        self.print_status("Restarting application on EC2...")
-        
-        restart_script = f"""
-        cd {self.remote_repo_dir}
-        
-        # Activate virtual environment
-        source venv/bin/activate
-        
-        # Start the application in background
-        echo "Starting application..."
-        nohup python start_app.py > app.log 2>&1 &
-        
-        # Wait a moment for startup
-        sleep 5
-        
-        # Check if the application is running
-        APP_PID=$(ps aux | grep '{self.process_name}' | grep -v grep | awk '{{print $2}}')
-        
-        if [ -n "$APP_PID" ]; then
-            echo "✅ Application started successfully (PID: $APP_PID)"
-            
-            # Check if port is listening
-            if netstat -tlnp | grep -q ":{self.app_port}"; then
-                echo "✅ Application is listening on port {self.app_port}"
-            else
-                echo "⚠️ Application may not be listening on port {self.app_port}"
-            fi
-        else
-            echo "❌ Application failed to start"
-            echo "Last 20 lines of app.log:"
-            tail -20 app.log
-            exit 1
-        fi
-        """
-        
-        result = self.run_command([
-            "ssh", "-i", self.pem_file,
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null",
-            f"{self.ssh_user}@{self.elastic_ip}",
-            restart_script
-        ])
-        
-        if result and result.returncode == 0:
-            self.print_success("Application restarted successfully")
-            return True
-        else:
-            self.print_error("Failed to restart application")
-            if result:
-                print(result.stderr)
-            return False
 
     def sync_missing_files(self):
         """Sync missing files from local to EC2"""
@@ -550,146 +448,12 @@ class EC2GitHubUpdater:
         
         return True
 
-    def verify_deployment(self):
-        """Verify the deployment is working"""
-        self.print_status("Verifying deployment...")
-        
-        # Wait a bit for the app to fully start
-        time.sleep(10)
-        
-        # Test if the application is responding
-        test_script = f"""
-        # Test if the application is responding
-        if curl -s -f http://localhost:{self.app_port}/health > /dev/null 2>&1; then
-            echo "✅ Application health check passed"
-        else
-            echo "⚠️ Application health check failed, but checking if it's running..."
-        fi
-        
-        # Check if the process is running
-        APP_PID=$(ps aux | grep '{self.process_name}' | grep -v grep | awk '{{print $2}}')
-        if [ -n "$APP_PID" ]; then
-            echo "✅ Application process is running (PID: $APP_PID)"
-        else
-            echo "❌ Application process not found"
-            exit 1
-        fi
-        
-        # Check port using netstat now that it's installed
-        if netstat -tlnp | grep -q ":{self.app_port}"; then
-            echo "✅ Application is listening on port {self.app_port}"
-        else
-            echo "❌ Application not listening on port {self.app_port}"
-            exit 1
-        fi
-        
-        # Show recent logs if app.log exists
-        echo "Recent application logs:"
-        if [ -f "app.log" ]; then
-            tail -10 app.log
-        else
-            echo "app.log not found yet. Application may still be starting."
-        fi
-        """
-        
-        result = self.run_command([
-            "ssh", "-i", self.pem_file,
-            "-o", "StrictHostKeyChecking=no",
-            "-o", "UserKnownHostsFile=/dev/null",
-            f"{self.ssh_user}@{self.elastic_ip}",
-            test_script
-        ])
-        
-        if result and result.returncode == 0:
-            self.print_success("Deployment verification successful")
-            return True
-        else:
-            self.print_error("Deployment verification failed")
-            if result:
-                print(result.stderr)
-            return False
 
-    def build_and_start_go_services(self):
-        """Build and start Go microservices with hardcoded API keys"""
-        self.print_status("Building and starting Go microservices...")
-        
-        # Stop existing Go services
-        self.print_status("Stopping existing Go services...")
-        self.run_command(["pkill", "-f", "data_fetcher"])
-        self.run_command(["pkill", "-f", "cache_service"])
-        self.run_command(["pkill", "-f", "background_workers"])
-        time.sleep(2)
-        
-        # Build Go services
-        self.print_status("Building Go services...")
-        build_script = """
-cd /home/ubuntu/trading-ai/go
-export PATH=$PATH:/usr/local/go/bin
-
-# Build all services (API keys are hardcoded in the source code)
-go build -o bin/data_fetcher cmd/data_fetcher/main.go
-go build -o bin/cache_service cmd/cache_service/main.go
-go build -o bin/background_workers cmd/background_workers/main.go
-
-echo "✅ All Go services built successfully"
-"""
-        
-        result = self.run_command(["bash", "-c", build_script])
-        if not result or result.returncode != 0:
-            self.print_error("Failed to build Go services")
-            if result:
-                print(result.stderr)
-            return False
-        
-        # Start Go services (API keys are now hardcoded in the Go services)
-        self.print_status("Starting Go services...")
-        start_script = """
-cd /home/ubuntu/trading-ai
-
-# Start services in background (API keys are hardcoded in the Go binaries)
-nohup ./go/bin/data_fetcher > go/logs/data_fetcher.log 2>&1 &
-nohup ./go/bin/cache_service > go/logs/cache_service.log 2>&1 &
-nohup ./go/bin/background_workers > go/logs/background_workers.log 2>&1 &
-
-echo "✅ All Go services started"
-"""
-        
-        result = self.run_command(["bash", "-c", start_script])
-        if not result or result.returncode != 0:
-            self.print_error("Failed to start Go services")
-            if result:
-                print(result.stderr)
-            return False
-        
-        # Wait for services to start
-        self.print_status("Waiting for Go services to start...")
-        time.sleep(5)
-        
-        # Test Go services
-        self.print_status("Testing Go services...")
-        test_script = """
-# Test data_fetcher
-curl -s -X POST -H 'Content-Type: application/json' -d '{"symbol":"AAPL"}' http://localhost:8080/api/stock/price | grep -q "price" && echo "✅ Data Fetcher working" || echo "❌ Data Fetcher failed"
-
-# Test cache_service
-curl -s http://localhost:8081/health | grep -q "healthy" && echo "✅ Cache Service working" || echo "❌ Cache Service failed"
-
-# Test background_workers
-curl -s http://localhost:8082/health | grep -q "healthy" && echo "✅ Background Workers working" || echo "❌ Background Workers failed"
-"""
-        
-        result = self.run_command(["bash", "-c", test_script])
-        if result and result.returncode == 0:
-            self.print_success("Go services are working correctly")
-            return True
-        else:
-            self.print_warning("Some Go services may not be fully ready yet")
-            return True  # Don't fail the deployment for this
 
     def run(self, commit_message=None):
         """Run the complete update process"""
-        print("🚀 TRADING AI - EC2 GITHUB UPDATE")
-        print("==================================")
+        print("🚀 TRADING AI - GITHUB UPDATE")
+        print("=============================")
         print(f"Local repo: {self.local_repo_dir}")
         print(f"EC2 instance: {self.elastic_ip}")
         print(f"Remote repo: {self.remote_repo_dir}")
@@ -714,49 +478,31 @@ curl -s http://localhost:8082/health | grep -q "healthy" && echo "✅ Background
             self.print_error("Cannot connect to EC2 instance")
             return False
         
-        # Step 5: Stop application
-        if not self.stop_application():
-            self.print_error("Failed to stop application")
-            return False
-        
-        # Step 6: Update code on EC2
+        # Step 5: Update code on EC2
         if not self.update_code_on_ec2():
             self.print_error("Failed to update code on EC2")
             return False
         
-        # Step 7: Sync missing files
+        # Step 6: Sync missing files
         if not self.sync_missing_files():
             self.print_warning("Some files may not have synced properly")
         
-        # Step 7.5: Sync config files from .gitignore
+        # Step 7: Sync config files from .gitignore
         if not self.sync_config_files():
             self.print_warning("Some config files may not have synced properly")
         
-        # Step 7.6: Build and start Go services
-        if not self.build_and_start_go_services():
-            self.print_error("Failed to build and start Go services")
-            return False
-        
-        # Step 8: Restart application
-        if not self.restart_application():
-            self.print_error("Failed to restart application")
-            return False
-        
-        # Step 9: Verify deployment
-        if not self.verify_deployment():
-            self.print_error("Deployment verification failed")
-            return False
-        
         print("\n" + "="*60)
-        print("🎉 DEPLOYMENT COMPLETE!")
+        print("🎉 GITHUB UPDATE COMPLETE!")
         print("="*60)
         print(f"✅ Local changes committed and pushed to GitHub")
         print(f"✅ EC2 instance updated with latest code")
         print(f"✅ Config files synced from .gitignore")
-        print(f"✅ Go microservices built and started")
-        print(f"✅ Application restarted successfully")
         print("")
         print(f"🌐 Application URL: http://{self.elastic_ip}:{self.app_port}")
+        print("")
+        print("Next Steps:")
+        print("1. Use a separate script to start/restart the application")
+        print("2. Use a separate script to manage Go services")
         print("="*60)
         
         return True
@@ -765,11 +511,11 @@ def main():
     """Main function"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Update Trading AI on EC2 from GitHub')
+    parser = argparse.ArgumentParser(description='Update Trading AI code on EC2 from GitHub (no application management)')
     parser.add_argument('--commit-message', '-m', 
                        help='Custom commit message for the changes')
     parser.add_argument('--skip-git', action='store_true',
-                       help='Skip git operations and only update EC2')
+                       help='Skip git operations and only update EC2 code')
     
     args = parser.parse_args()
     
@@ -783,9 +529,6 @@ def main():
         if not updater.test_ssh_connection():
             sys.exit(1)
         
-        if not updater.stop_application():
-            sys.exit(1)
-        
         if not updater.update_code_on_ec2():
             sys.exit(1)
         
@@ -795,17 +538,10 @@ def main():
         if not updater.sync_config_files():
             print("Warning: Some config files may not have synced properly")
         
-        if not updater.build_and_start_go_services():
-            print("Failed to build and start Go services")
-            sys.exit(1)
-        
-        if not updater.restart_application():
-            sys.exit(1)
-        
-        if not updater.verify_deployment():
-            sys.exit(1)
-        
         print("\n🎉 EC2 UPDATE COMPLETE!")
+        print("Next Steps:")
+        print("1. Use a separate script to start/restart the application")
+        print("2. Use a separate script to manage Go services")
     else:
         # Full update process
         success = updater.run(args.commit_message)

@@ -120,7 +120,7 @@ class BatchProcessor:
                 "timestamp": datetime.now().isoformat(),
             }
         except Exception as e:
-            print(f"Error analyzing {symbol}: {e}")
+            log_error(f"Error analyzing {symbol}: {e}")
             return None
 
     def process_batch_sync(self, tasks, progress_callback=None):
