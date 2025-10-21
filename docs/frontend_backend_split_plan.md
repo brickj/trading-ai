@@ -2,8 +2,8 @@
 
 ## 1. Executive Summary
 - **Goal**: Separate the monolithic Trading AI project into two independently deployable repositories: a Flask-based backend API/service repo and a front-end UI repo.
-- **Difficulty**: **High (≈4/5)**. The current Flask app intertwines server-rendered templates, Socket.IO streaming, Redis/PostgreSQL caches, and ~80 REST endpoints, so the split requires careful untangling of routing, shared helpers, and deployment scripts.
-- **Key Risks**: Maintaining API parity for existing JavaScript clients, replacing Flask template rendering, coordinating WebSocket events (`analysis_progress`, `watchlist_progress`, `sp500_progress`), and preserving the job scheduler/Go subprocess integrations.
+- **Difficulty**: **Medium (≈3/5)** with simplified approach. The current Flask app intertwines server-rendered templates, Socket.IO streaming, Redis/PostgreSQL caches, and ~80 REST endpoints, but can be split using a minimal approach without Docker complexity.
+- **Key Risks**: Maintaining API parity for existing JavaScript clients, coordinating WebSocket events (`analysis_progress`, `watchlist_progress`, `sp500_progress`), and configuring CORS for cross-origin requests.
 
 ## 2. Current Architecture Assessment
 - **Backend logic** lives in `src/core`, `src/data`, and `src/trading` packages. Flask routes import these services directly via central dependency wiring (`src/web/dependencies.py`).【F:src/web/dependencies.py†L1-L26】
@@ -19,15 +19,55 @@
 4. **Scheduler & Background Jobs**: `start_app.py` spawns APScheduler tasks alongside the Flask app. Backend deployment scripts must preserve this lifecycle, while the front-end repo should drop scheduler concerns.
 5. **Go Integration & Batch Processor**: Routes trigger Go services and CPU-heavy batch processing (`src/core/go_services.py`, `src/core/batch_processor.py`). These remain backend responsibilities, but API contracts must expose progress/state so the new front-end can display results without template coupling.
 
-## 4. Proposed Split Plan
-### Phase 0 – Discovery & Contract Freezing
+## 4. Simplified Split Plan (Recommended)
+
+### Phase 1 – Backend Extraction (1 day)
+1. **Create `trading-ai-backend` repo** containing:
+   - Copy `src/core/`, `src/data/`, `src/trading/` (keep as-is)
+   - Copy `src/web/routes/` → `src/api/routes/` (rename)
+   - Copy `src/web/helpers.py`, `src/web/services/` (keep)
+   - **Remove** `src/web/templates/` and `src/web/static/`
+   - Create `start_backend.py` (simplified version of `start_app.py`)
+   - Update CORS config to allow frontend domain
+
+2. **CORS & Socket.IO Configuration**:
+   - Set `CORS_ORIGINS = ["http://localhost:3000"]` in backend
+   - Set `SOCKETIO_CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]` in backend
+   - Ensure Socket.IO events work across domains
+
+### Phase 2 – Frontend Repository (1 day)
+1. **Create `trading-ai-frontend` repo** containing:
+   - Copy `src/web/templates/` → `templates/`
+   - Copy `src/web/static/` → `static/`
+   - Create simple `index.html` (static file server)
+   - Update all API calls from relative URLs to absolute URLs
+   - Configure environment variable for backend URL
+
+2. **API Client Updates**:
+   - Change `/api/analyze_stock` → `http://localhost:5001/api/analyze_stock`
+   - Update all 81 endpoints in JavaScript files
+   - Add error handling for cross-origin requests
+   - Update Socket.IO connection to backend URL
+
+### Phase 3 – Integration Testing (30 minutes)
+1. **Run Both Services**:
+   - **Terminal 1:** `cd trading-ai-backend && python start_backend.py` (port 5001)
+   - **Terminal 2:** `cd trading-ai-frontend && python -m http.server 3000` (port 3000)
+
+2. **Test Integration**:
+   - Open `http://localhost:3000` in browser
+   - Verify all pages load and API calls work
+   - Test Socket.IO connections for real-time features
+   - Validate error handling and loading states
+
+### Phase 0 – Discovery & Contract Freezing (Optional)
 1. **Endpoint Inventory**: Export a list of all API routes (~81) and classify by purpose (analysis, portfolio, admin, etc.). Capture request/response schemas by sampling code paths and JSON helpers.【F:src/web/routes/analysis_routes.py†L1-L120】
 2. **WebSocket Event Map**: Document every emitted event name, payload shape, and triggering workflow (`analysis_progress`, `watchlist_progress`, `sp500_progress`).
 3. **UI Feature Catalog**: For each template (dashboard, opportunities, portfolio, etc.), map which endpoints it consumes and any inline logic.
 4. **Shared Asset Audit**: Identify static assets that can be reused directly (CSS, icons) vs. those needing refactoring (Jinja macros, template inheritance).
 5. **Config & Secrets Review**: List environment variables and config files consumed by the web layer (`Config`, `.env`, `config/secrets.yaml`). Decide which belong to backend vs. front-end build tooling.
 
-### Phase 1 – Backend Extraction
+### Phase 1 – Backend Extraction (Complex Version)
 1. **Create `trading-ai-backend` repo** containing:
    - `src/core`, `src/data`, `src/trading`, and a renamed `src/api` (former `src/web` minus templates/static).
    - `start_backend.py` derived from `start_app.py` (strip UI-specific checks, keep scheduler, CORS/Socket.IO configuration).
@@ -39,7 +79,7 @@
 4. **API Schema Contracts**: Freeze response formats (success/error envelope) and publish OpenAPI/JSON Schema definitions for front-end integration.
 5. **Automated Tests**: Add endpoint tests to ensure behavior parity before and after the split (use pytest + Flask test client), including WebSocket event smoke tests.
 
-### Phase 2 – Front-end Repo Creation
+### Phase 2 – Front-end Repo Creation (Complex Version)
 1. **Scaffold `trading-ai-frontend`** with a modern build tool (e.g., Vite + React) or a lightweight static site generator if React is overkill. Import existing CSS/JS assets as interim modules.
 2. **Port Templates to Components/Pages**:
    - Translate Jinja templates (`src/web/templates/*.html`) into front-end views.
@@ -51,22 +91,60 @@
 5. **Environment & Build Config**: Introduce `.env` variables for `VITE_API_BASE_URL`, `VITE_SOCKET_URL`, etc. Provide separate dev/prod configurations pointing to backend deployments.
 6. **Testing & Linting**: Add unit/UI tests (Jest/Cypress) focusing on API integration and WebSocket interactions.
 
-### Phase 3 – Cross-Repo Integration
+### Phase 3 – Cross-Repo Integration (Complex Version)
 1. **CI/CD Coordination**: Establish pipelines that build and test each repo independently, then run integration smoke tests that spin up backend + front-end to ensure compatibility.
 2. **Versioned API Releases**: Adopt semantic versioning for backend API. Publish changelog so front-end can align.
 3. **Shared Types/SDK (Optional)**: If response contracts are complex, generate a shared TypeScript/Pydantic schema package published to an internal registry to prevent drift.
 4. **Infrastructure Updates**: Update deployment scripts (Docker Compose, Kubernetes, etc.) to run front-end (static hosting/CDN) separately from backend service. Ensure networking, TLS, and CORS policies are configured.
 5. **Observability**: Move logging/monitoring responsibilities to the backend service. Front-end should capture client errors and send them to a new telemetry endpoint or external service.
 
-### Phase 4 – Decommission Monolith
+### Phase 4 – Decommission Monolith (Complex Version)
 1. **Gradual Rollout**: Deploy backend repo first, pointing old Flask templates to ensure parity. Then switch traffic to new front-end build.
 2. **Retire Template Routes**: Once front-end is live, remove template blueprints from backend and delete `templates/` & `static/` directories in backend repo.
 3. **Archive Legacy Scripts**: Replace `start_app.py` with new backend service launcher; document migration for developers/operators.
 
-## 5. Risk Mitigation & Recommendations
+## 6. Risk Mitigation & Recommendations
 - **Migration Testing**: Use automated regression tests covering representative symbols, watchlist workflows, and long-running analyses to catch regressions introduced by the split.
 - **Incremental Migration**: Consider serving the new front-end from within Flask during transition (via static file route) to validate API compatibility before full repo separation.
 - **Documentation**: Provide comprehensive developer docs describing new repo structures, API contracts, and local dev setup (Docker Compose to run backend + front-end together).
 - **Operational Playbooks**: Update runbooks for scheduler tasks, Redis/PostgreSQL maintenance, and Go optimizer deployment since these move exclusively to the backend repo.
 
 By following this phased plan, the project can evolve into two focused repositories while minimizing service disruption and preserving the existing analytical capabilities of Trading AI.
+
+## 7. Summary: Minimal Steps for Frontend/Backend Separation
+
+### **Step 1: Create Backend Repository**
+- Copy `src/core/`, `src/data/`, `src/trading/` (keep as-is)
+- Copy `src/web/routes/` → `src/api/routes/` (rename)
+- Copy `src/web/helpers.py`, `src/web/services/` (keep)
+- **Remove** `src/web/templates/` and `src/web/static/`
+- Create `start_backend.py` (simplified version of `start_app.py`)
+- Update CORS config to allow frontend domain
+
+### **Step 2: Create Frontend Repository**
+- Copy `src/web/templates/` → `templates/`
+- Copy `src/web/static/` → `static/`
+- Create simple `index.html` (static file server)
+- Update all API calls from relative URLs to absolute URLs
+- Configure environment variable for backend URL
+
+### **Step 3: Update API Calls**
+- Change `/api/analyze_stock` → `http://localhost:5001/api/analyze_stock`
+- Update all 81 endpoints in JavaScript files
+- Add error handling for cross-origin requests
+
+### **Step 4: Configure CORS**
+- Set `CORS_ORIGINS = ["http://localhost:3000"]` in backend
+- Set `SOCKETIO_CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]` in backend
+
+### **Step 5: Run Both Services**
+- **Terminal 1:** `cd trading-ai-backend && python start_backend.py` (port 5001)
+- **Terminal 2:** `cd trading-ai-frontend && python -m http.server 3000` (port 3000)
+
+### **Step 6: Test Integration**
+- Open `http://localhost:3000` in browser
+- Verify all pages load and API calls work
+- Test Socket.IO connections for real-time features
+
+**Time Estimate:** 1-2 days  
+**Result:** Functional frontend/backend separation without Docker complexity
