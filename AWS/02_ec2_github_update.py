@@ -179,6 +179,18 @@ class EC2GitHubUpdater:
         self.print_status("Updating code on EC2 from GitHub...")
         
         update_script = f"""
+        # Check if repository directory exists
+        if [ ! -d "{self.remote_repo_dir}" ]; then
+            echo "Repository directory doesn't exist. Cloning from GitHub..."
+            cd /home/ubuntu
+            git clone https://github.com/brickj/trading-ai.git
+            if [ $? -ne 0 ]; then
+                echo "ERROR: Failed to clone repository from GitHub"
+                exit 1
+            fi
+            echo "✅ Repository cloned successfully"
+        fi
+        
         cd {self.remote_repo_dir}
         
         # Check if it's a git repository
@@ -296,7 +308,7 @@ class EC2GitHubUpdater:
         
         # Config files that are in .gitignore but needed on EC2
         config_files = [
-            "src/core/config.py"  # The actual config file with hardcoded API keys
+            "src/core/config.template.py"  # The actual config file with hardcoded API keys
         ]
         
         # Sync critical files (only if they don't exist on EC2)
@@ -384,7 +396,7 @@ class EC2GitHubUpdater:
         
         # The actual config file with hardcoded API keys
         config_files = [
-            "src/core/config.py"  # Contains hardcoded API keys from config.template.py
+            "src/core/config.template.py"  # Contains hardcoded API keys and settings
         ]
         
         synced_count = 0

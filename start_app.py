@@ -449,19 +449,21 @@ def get_local_ip():
 def print_app_info():
     """Print application information"""
     local_ip = get_local_ip()
+    public_ip = "54.163.187.86"  # EC2 Elastic IP
 
     print()
     print(f"{Colors.CYAN}🔗 Application will be available at:{Colors.NC}")
     print(f"   📱 Local:   http://localhost:5001")
     print(f"   🌐 Network: http://{local_ip}:5001")
+    print(f"   🌍 Public:  http://{public_ip}:5001")
     print()
     print(f"{Colors.CYAN}📊 Available pages:{Colors.NC}")
-    print("   🏠 Dashboard:     http://localhost:5001/")
-    print("   📈 Stocks:        http://localhost:5001/stocks")
-    print("   💰 Crypto:        http://localhost:5001/crypto")
-    print("   🎯 Opportunities: http://localhost:5001/opportunities")
-    print("   ⚙️  System Status: http://localhost:5001/system_status")
-    print("   🔍 Logs Viewer:   http://localhost:5001/logs")
+    print(f"   🏠 Dashboard:     http://{public_ip}:5000/")
+    print(f"   📈 Stocks:        http://{public_ip}:5000/stocks")
+    print(f"   💰 Crypto:        http://{public_ip}:5000/crypto")
+    print(f"   🎯 Opportunities: http://{public_ip}:5000/opportunities")
+    print(f"   ⚙️  System Status: http://{public_ip}:5000/system_status")
+    print(f"   🔍 Logs Viewer:   http://{public_ip}:5000/logs")
     print()
     print(f"{Colors.CYAN}⚡ Features enabled:{Colors.NC}")
     print("   🗄️  PostgreSQL database (REQUIRED)")
